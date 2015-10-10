@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://easy.dans.knaw.nl/easy/dataset-administrative-metadata/"
+    xmlns:damd="http://easy.dans.knaw.nl/easy/dataset-administrative-metadata/"
+    xmlns:wfs="http://easy.dans.knaw.nl/easy/workflow/"> 
+    
+    <xs:import schemaLocation="workflow.xsd" namespace="http://easy.dans.knaw.nl/easy/workflow/"/>
+    
+    <xs:element name="administrative-md">     
+        <xs:complexType> 
+            <xs:sequence>
+                <xs:element name="datasetState" type="damd:dateset-state" />
+                <xs:element name="previousState" type="damd:dateset-state" minOccurs="0"/>
+                <xs:element name="lastStateChange" type="xs:dateTime" minOccurs="0" />
+                <xs:element name="depositorId" type="xs:string" />
+                <xs:element name="stateChangeDates" minOccurs="0">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element ref="damd:stateChangeDate" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="groupIds" minOccurs="0">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="groupId" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="workflowData" type="damd:workflowData" minOccurs="0" form="qualified"/>
+            </xs:sequence>
+            <xs:attribute name="version" type="xs:string" use="required"/>
+        </xs:complexType>
+    </xs:element>
+    
+    <xs:element name="stateChangeDate" type="damd:state-change" />
+    
+    <xs:complexType name="state-change">
+        <xs:sequence>
+            <xs:element name="fromState" type="damd:dateset-state" />
+            <xs:element name="toState" type="damd:dateset-state" />
+            <xs:element name="changeDate" type="xs:dateTime" />
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:simpleType name="dateset-state">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="DRAFT"/>
+            <xs:enumeration value="SUBMITTED"/>
+            <xs:enumeration value="PUBLISHED"/>
+            <xs:enumeration value="MAINTENANCE"/>
+            <xs:enumeration value="DELETED"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:complexType name="workflowData">
+        <xs:sequence>
+            <xs:element name="assigneeId" type="xs:string" minOccurs="0" />
+            <xs:element ref="wfs:workflow" minOccurs="0" />
+        </xs:sequence>
+        <xs:attribute name="version" type="xs:string" use="required"/>
+    </xs:complexType>
+
+</xs:schema>

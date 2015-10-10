@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://easy.dans.knaw.nl/easy/workflow/"
+    xmlns:wfs="http://easy.dans.knaw.nl/easy/workflow/"> 
+    
+    <xs:element name="workflow">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:string"/>
+                <xs:element name="required" type="xs:boolean" minOccurs="0" />
+                <xs:element name="timeSpentWritable" type="xs:boolean" minOccurs="0" />
+                <xs:element name="completed" type="xs:boolean" minOccurs="0" />
+                <xs:element name="doneById" type="xs:string" minOccurs="0" />
+                <xs:element name="completionTime" type="xs:dateTime" minOccurs="0" />
+                <xs:element name="timeSpent" type="xs:double" minOccurs="0" />
+                <xs:element name="remarks" minOccurs="0">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="remark" type="wfs:remark" minOccurs="0" maxOccurs="unbounded" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="steps" minOccurs="0">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element ref="wfs:workflow" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    
+
+    <xs:complexType name="remark">
+        <xs:sequence>
+            <xs:element name="text" type="xs:string" minOccurs="0" />
+            <xs:element name="remarkerId" type="xs:string" minOccurs="0" />
+            <xs:element name="remarkDate" type="xs:dateTime" minOccurs="0" />
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>
