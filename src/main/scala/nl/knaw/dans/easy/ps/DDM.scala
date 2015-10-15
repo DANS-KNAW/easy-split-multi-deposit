@@ -54,7 +54,7 @@ object DDM {
   def isPartOfComposedContributor(key: MdKey) = composedContributorFields.keySet.contains(key)
 
   def datasetsToXml(datasets: Datasets): Observable[String] =
-    Observable.from(datasets.map(_._2)).map(DDM.datasetToXml).map(_.toString)
+    Observable.from(datasets.map(_._2)).map(DDM.datasetToXml).map(_.toString).doOnNext(ddm => println(ddm))
 
   def datasetToXml(dataset: Dataset) = {
     new PrettyPrinter(160, 2).format(
@@ -104,7 +104,7 @@ object DDM {
 
   def createComposedAuthors(dataset: Dataset, isPartOfAuthor: (MdKey => Boolean), createAuthor: (Dictionary, Iterable[(MdKey, String)]) => Elem ) = {
     val authorsData = dataset.filter(x => isPartOfAuthor(x._1))
-    if(authorsData.size > 0)
+    if(authorsData.nonEmpty)
       (0 to authorsData.values.head.size-1)
         .map(i => authorsData.map { case (key, values) => (key, values(i)) })
         .filter(author => author.values.exists(x => x != null && x.length > 0))
@@ -113,10 +113,33 @@ object DDM {
 
   def createComposedCreator(dictionary: Dictionary, authorFields: Iterable[(MdKey, String)]) = {
     <dcx-dai:creatorDetails>
-      <dcx-dai:author>
-        { authorFields.map(composedEntry(dictionary)) }
-      </dcx-dai:author>
+      {
+      if (isOrganization(authorFields))
+        <dcx-dai:organization>
+          <dcx-dai:name xml:lang="zh-CN">
+            {authorFields.find(field => isOrganizationKey(field._1)).getOrElse(("",""))._2}
+          </dcx-dai:name>
+        </dcx-dai:organization>
+      else
+        <dcx-dai:author>
+          {authorFields.map(composedEntry(dictionary))}
+        </dcx-dai:author>
+      }
     </dcx-dai:creatorDetails>
+  }
+
+  def isOrganization(authorFields: Iterable[(MdKey, String)]): Boolean = {
+    val othersEmpty = authorFields
+      .filterNot(field => isOrganizationKey(field._1))
+      .forall(field => field._2 == "")
+    val hasOrganization = authorFields.toList.exists(field => isOrganizationKey(field._1))
+    othersEmpty && hasOrganization
+  }
+
+  def isOrganizationKey(key: MdKey) = key match {
+    case "DCX_CREATOR_ORGANIZATION" => true
+    case "DCX_CONTRIBUTOR_ORGANIZATION" => true
+    case _ => false
   }
 
   def createComposedContributor(dictionary: Dictionary, authorFields: Iterable[(MdKey, String)]) = {
