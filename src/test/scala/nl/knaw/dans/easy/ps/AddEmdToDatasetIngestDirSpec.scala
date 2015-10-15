@@ -38,7 +38,7 @@ class AddEmdToDatasetIngestDirSpec extends UnitSpec {
     action checkPreconditionsShould be(a[Success[_]])
   }
 
-  ignore should "succeeed with just an organisation as creator" in {
+  it should "succeeed with just an organisation as creator" in {
 
     AddEmdToDatasetIngestDir("1", {enoughEmd -
         "DCX_CREATOR_INITIALS" -
