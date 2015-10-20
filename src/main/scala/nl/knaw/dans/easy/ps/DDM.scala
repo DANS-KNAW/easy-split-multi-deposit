@@ -54,7 +54,7 @@ object DDM {
   def isPartOfComposedContributor(key: MdKey) = composedContributorFields.keySet.contains(key)
 
   def datasetsToXml(datasets: Datasets): Observable[String] =
-    Observable.from(datasets.map(_._2)).map(DDM.datasetToXml).map(_.toString).doOnNext(ddm => println(ddm))
+    Observable.from(datasets.map(_._2)).map(DDM.datasetToXml).map(_.toString)
 
   def datasetToXml(dataset: Dataset) = {
     new PrettyPrinter(160, 2).format(
