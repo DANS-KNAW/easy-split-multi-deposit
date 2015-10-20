@@ -116,7 +116,7 @@ object DDM {
       {
       if (isOrganization(authorFields))
         <dcx-dai:organization>
-          <dcx-dai:name xml:lang="zh-CN">
+          <dcx-dai:name xml:lang="en">
             {authorFields.find(field => isOrganizationKey(field._1)).getOrElse(("",""))._2}
           </dcx-dai:name>
         </dcx-dai:organization>
