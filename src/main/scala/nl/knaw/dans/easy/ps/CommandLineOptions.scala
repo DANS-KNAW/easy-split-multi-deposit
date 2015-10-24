@@ -65,7 +65,7 @@ object CommandLineOptions {
     val user = opts.username.get.getOrElse(askUsername())
     val password = opts.password.get.getOrElse(askPassword())
     val settings = Settings(
-      appHomeDir = new File(Option(System.getenv("PROCESS_SIP_HOME")).
+      appHomeDir = new File(Option(System.getProperty("app.home")).
                             getOrElse( scala.util.Properties.propOrNull("process.sip.home"))),
       sipDir = opts.sipDir.apply(),
       ebiuDir = opts.ebiuDir.apply(),
