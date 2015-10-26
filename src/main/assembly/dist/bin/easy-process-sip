@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
-java -Dlogback.configurationFile=$PROCESS_SIP_HOME/cfg/logback.xml \
-     -Dconfig.file=$PROCESS_SIP_HOME/cfg/application.conf \
-     -jar $PROCESS_SIP_HOME/bin/process-sip.jar $@
+BINPATH=`readlink -f $0`
+APPHOME=`dirname \`dirname $BINPATH \``
+
+java -Dlogback.configurationFile=$APPHOME/cfg/logback.xml \
+     -Dconfig.file=$APPHOME/cfg/application.conf \
+     -Dapp.home=$APPHOME \
+     -jar $APPHOME/bin/easy-process-sip.jar $@
