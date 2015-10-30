@@ -8,7 +8,7 @@
     </parent>
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-process-sip</artifactId>
-    <version>1.x-SNAPSHOT</version>
+    <version>1.0-beta-1</version>
     <name>EASY Process SIP</name>
     <description>Processes a Submission Information Package (SIP) for ingest into the EASY Archive</description>
     <properties>
@@ -16,7 +16,7 @@
     </properties>
     <scm>
         <developerConnection>scm:git:https://github.com/DANS-KNAW/${project.artifactId}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v1.0-beta-1</tag>
     </scm>
     <dependencies>
         <dependency>
