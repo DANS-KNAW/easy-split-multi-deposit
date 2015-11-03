@@ -38,12 +38,19 @@ class AddEmdToDatasetIngestDirSpec extends UnitSpec {
     action checkPreconditionsShould be(a[Success[_]])
   }
 
-  ignore should "succeeed with just an organisation as creator" in {
+  it should "succeeed with just an organisation as creator" in {
 
     AddEmdToDatasetIngestDir("1", {enoughEmd -
         "DCX_CREATOR_INITIALS" -
         "DCX_CREATOR_SURNAME" +=
         ("DCX_CREATOR_ORGANIZATION" -> List("dans"))
+    }) checkPreconditionsShould be(a[Success[_]])
+  }
+
+it should "fail if person creators and organization-only creators are mixed" in {
+
+    AddEmdToDatasetIngestDir("1", {enoughEmd +=
+      ("DCX_CREATOR_ORGANIZATION" -> List("dans"))
     }) checkPreconditionsShould be(a[Success[_]])
   }
 
