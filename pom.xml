@@ -87,6 +87,15 @@
             <version>1.6</version>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <id>DANS</id>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <url>https://easy.dans.knaw.nl/maven/</url>
+        </repository>
+    </repositories>
     <build>
         <finalName>easy-process-sip</finalName>
         <sourceDirectory>src/main/scala</sourceDirectory>
