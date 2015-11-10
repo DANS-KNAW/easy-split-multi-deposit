@@ -3,8 +3,8 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
-        <artifactId>dans-prototype</artifactId>
-        <version>1.14</version>
+        <artifactId>dans-scala-prototype</artifactId>
+        <version>1.15</version>
     </parent>
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-process-sip</artifactId>
@@ -27,7 +27,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>1.1</version>
         </dependency>
         <dependency>
             <groupId>com.github.lookfirst</groupId>
@@ -37,11 +36,6 @@
         <dependency>
             <groupId>com.typesafe</groupId>
             <artifactId>config</artifactId>
-            <version>1.2.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
         </dependency>
         <dependency>
             <groupId>org.rogach</groupId>
@@ -84,7 +78,6 @@
             <!-- Necessary to get rid of joda warnings about missing FromString -->
             <groupId>org.joda</groupId>
             <artifactId>joda-convert</artifactId>
-            <version>1.6</version>
         </dependency>
     </dependencies>
     <repositories>
@@ -97,72 +90,23 @@
         </repository>
     </repositories>
     <build>
-        <finalName>easy-process-sip</finalName>
-        <sourceDirectory>src/main/scala</sourceDirectory>
-        <testSourceDirectory>src/test/scala</testSourceDirectory>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <includes>
-                    <include>Version.properties</include>
-                </includes>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <artifactId>maven-jar-plugin</artifactId>
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
             </plugin>
             <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven-jar-plugin.version}</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <classpathPrefix>../lib/</classpathPrefix>
-                            <mainClass>${main-class}</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.7</version>
-                <configuration>
-                    <skipTests>true</skipTests>
-                </configuration>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
-                <version>${scalatest-maven-plugin.version}</version>
-                <configuration>
-                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-                    <junitxml>.</junitxml>
-                    <filereports>WDF TestSuite.txt</filereports>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>test</id>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
