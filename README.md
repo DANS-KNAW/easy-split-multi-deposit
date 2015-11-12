@@ -114,9 +114,6 @@ SIP INSTRUCTIONS FILE FORMAT
 
 The SIP Instructions file format is documented [here][SIP Instructions]
 
-[//]: # ----- end of document -------------------------------------------------------
-[//]: # links and images
-[EBIU]: {{ site.baseurl }}/reqs/ebiu
 [Excel to UTF-8 CSV]: https://www.ablebits.com/office-addins-blog/2014/04/24/convert-excel-csv/#export-csv-utf8
 [LibreOffice]: https://www.libreoffice.org/
 [Dublin Core elements]: http://www.dublincore.org/documents/dces/
