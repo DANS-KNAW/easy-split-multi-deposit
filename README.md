@@ -1,6 +1,6 @@
 easy-process-sip
 ================
-
+[![Build Status](https://travis-ci.org/DANS-KNAW/easy-process-sip.png?branch=master)](https://travis-ci.org/DANS-KNAW/easy-process-sip)
 
 SYNOPSIS
 --------
