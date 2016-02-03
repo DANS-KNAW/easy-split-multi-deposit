@@ -23,6 +23,7 @@ import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
+import scala.language.reflectiveCalls
 
 
 object CommandLineOptions {

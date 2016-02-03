@@ -1,131 +1,92 @@
-easy-process-sip
-================
-[![Build Status](https://travis-ci.org/DANS-KNAW/easy-process-sip.png?branch=master)](https://travis-ci.org/DANS-KNAW/easy-process-sip)
+easy-split-multi-deposit
+========================
+[![Build Status](https://travis-ci.org/DANS-KNAW/easy-split-multi-deposit.png?branch=master)](https://travis-ci.org/DANS-KNAW/easy-split-multi-deposit)
+
+Convert a Multi-Deposit splitting it into several Dataset Deposits.
 
 SYNOPSIS
 --------
 
-    easy-process-sip [{--ebiu-dir|-e} <ebui-dir>] \
-                [{--springfield-inbox|-s} <springfield-inbox>] \
-                [{--username|-u} {--password|-p}] \
-                <sip-dir>
-                
+    easy-split-multi-deposit [{--deposits-dir|-d} <dir>][{--springfield-inbox|-s} <dir>] <multi-deposit-dir>
+
 
 DESCRIPTION
 -----------
 
-A command-line tool that processes the directory *sip-dir* containing a
-Submission Information Package (SIP) using the instructions provided in the file
-at `<sip-dir>/instructions.csv` (subsequently referred to as the [SIP Instructions]
-File).
+A command line tool to process a Multi-Deposit into several Dataset Deposit. A Multi-Deposit
+is a deposit containing data files and metadata for several datasets. The tools splits the
+Multi-Deposit into separate Dataset Deposit directories that can be ingested into the archive by 
+[easy-ingest-flow].
 
-If the SIP Instructions file is found and is correct the following actions are taken:
+The Multi-Deposit may also contain audio/visual data files that are to be sent to a Springfield TV
+installationg to be converted to a streamable surrogate.
 
-* The SIP Instructions file is read and checked. If the contents is invalid the 
-  tool reports the errors and exits.
-* The necessary preconditions for the instructions to be carried out are checked. 
-  If the preconditions are not met, the tool reports the problems and exits.
-* One ore more Dataset Ingest Directories are prepared. The [EBIU] tool can 
-  subsequently be used to ingest those directories into the EASY Fedora 
-  repository.
-* Some Data Files in the SIP may be sent to non-default storage locations *or*
-  the prior existence of those files in these storage locations may be checked.
-* Audio/Visual Data Files may be sent to a Springfield Inbox directory for
-  subsequent processing by the Springfield Streaming Media Platform, along with
-  a Springfield Instructions XML and---optionally---subtitles files.
+`easy-split-multi-deposit` is controlled by the Multi-Deposit Instructions (MDI) file. This is a CSV file,
+that must be located at `<multi-deposit-dir>/instructions.csv`. It should contain the metadata for the
+datasets that are to be created and may also contain instructions about how to process individual files.
+See the [Multi-Deposit Instructions] page for details.
+
+If the MDI file is found and is correct the following actions are taken:
+
+1. The MDI file is read and checked. If the contents is invalid the tool reports the errors and exits.
+2. The necessary preconditions for the instructions to be carried out are checked. 
+   If the preconditions are not met, the tool reports the problems and exits.
+3. One or more deposit directories are created, one for each dataset
+4. Depending on whether the MDI file contains any processing instructions for the audio/visual files 
+   in the Multi-Deposit they may be sent to a Springfield Inbox directory for
+   subsequent processing by the Springfield Streaming Media Platform, along with
+   a Springfield Actions XML and---optionally---subtitles files. 
   
   
 ARGUMENTS
 ---------
+<!-- TODO replace this with output from command line --help -->
 
---ebiu-dir | -e (optional)
-:   A directory in which the Dataset Ingest Directories must be created.
-    Defaults to ``$HOME/batch/ingest`` (``HOME`` is a standard environment variable that
-    points to the user's home directory).
-
+--deposits-dir | -d (optional)
+:   A directory in which the deposit directories must be created. The deposit directory 
+    layout is described in the easy-deposit documenation
+    
 --springfield-inbox | -s (optional)
 :   The inbox directory of a Springfield Streaming Media Platform installation. If not 
-    specified the value of ``springfield-inbox`` in
-   [``application.properties``] is used.
-
---username | -u and --password | -p (optional)
-:   Default username and password to use for the non-default storage service. If
-    not provided the program will ask the user for these credentials interactively when
-    required. Use of these option is discouraged as it may lead to visibility of 
-    the password in the command line history or in script files, which is a security
-    risk.
+    specified the value of `springfield-inbox` in `application.properties` is used.
 
 sip-dir (required)
 :   A directory containing the Submission Information Package (SIP)
 
 
-INSTALLATION AND CONFIGURATION
-------------------------------
+### Installation steps:
 
-``process-sip`` needs Java 1.6 or higher to run. To install it unzip the tar-archive
-``process-sip-<version>.tgz`` to a directory of your choice (e.g., ``/opt``) and proceed
-to specify the following configuration settings.
+1. Unzip the tarball to a directory of your choice, e.g. `/opt/`
+2. A new directory called easy-split-mult-deposit-<version> will be created, referred to below as `${app.home}`
+3. Create a symbolic link to the executable script in a directory that is in your `PATH`, e.g.
 
-
-### PROCESS\_SIP\_HOME
-
-Create the environment variable ``PROCESS_SIP_HOME`` and let it point to the top 
-directory of the unzipped package (e.g., ``/opt/process-sip-<version>``). Also, add
-``PROCESS_SIP_HOME/bin`` to your ``PATH`` environment variable.
-
-### application.conf
-
-The following settings can be configured:
-
-springfield-inbox
-:	This is the default path for the Springfield Inbox, which is used if the
-    ``--springfield-inbox`` command line parameter is not specified
-    
-springfield-streaming-baseurl
-:	The URL to use as a base for the ``STREAMING_SURROGATE_RELATION``. (See
-    [here](sip-instructions.html#audio--video-springfield-metadata) for details
-    
-storage-services
-:	A list of mappings from shortnames to URLs. The shortnames can be used in 
-    the SIP Instructions file in the column FILE\_STORAGE\_SERVICE
-
-Example:
-
-    springfield-inbox = /mnt/springfield-inbox
-    springfield-streaming-baseurl = \
-     "http://streaming11.dans.knaw.nl/site/index.html?presentation="
-    storage-services {
-       zandbak = "http://zandbak11.dans.knaw.nl/webdav/"
-       data2 = "http://data2.dans.knaw.nl/" 
-    }
-
-Note that values that contain colons (such as URLs) must be enclosed in doublequote
-characters.
+        ln -s ${app.home}/bin/easy-split-multi-deposit /usr/bin/easy-split-multi-deposit
 
 
-### logback.xml
+### Configuration
 
-The [logback] configuration file that determines how and how much output from
-``process-sip`` is displayed. See
-
-
-SIP INSTRUCTIONS FILE FORMAT
-----------------------------
-
-The SIP Instructions file format is documented [here][SIP Instructions]
-
-[Excel to UTF-8 CSV]: https://www.ablebits.com/office-addins-blog/2014/04/24/convert-excel-csv/#export-csv-utf8
-[LibreOffice]: https://www.libreoffice.org/
-[Dublin Core elements]: http://www.dublincore.org/documents/dces/
-[Dublin Core Term elements]: http://dublincore.org/documents/dcmi-terms/
-[RFC4180]: http://tools.ietf.org/html/rfc4180
-[WebDAV]: https://en.wikipedia.org/wiki/WebDAV
-[logback]: http://logback.qos.ch/
-[``application.yml``]: #applicationyml
-[SIP Instructions]: sip-instructions.html
+General configuration settings can be set in `${app.home}/cfg/application.properties` and logging can be
+configured in `${app.home}/cfg/logback.xml`. The available settings are explained in comments in 
+aforementioned files.
 
 
+BUILDING FROM SOURCE
+--------------------
 
+Prerequisites:
+
+* Java 8 or higher
+* Maven 3.3.3 or higher
+ 
+Steps:
+
+        git clone https://github.com/DANS-KNAW/easy-split-multi-deposit
+        cd easy-split-multi-deposit
+        mvn install
+
+
+[Multi-Deposit Instructions]: multi-deposit-instructions.html
+[easy-ingest-flow]: https://github.com/DANS-KNAW/easy-ingest-flow
 
   
 

@@ -21,14 +21,14 @@
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
         <artifactId>dans-scala-prototype</artifactId>
-        <version>1.18</version>
+        <version>1.20</version>
     </parent>
     <groupId>nl.knaw.dans.easy</groupId>
-    <artifactId>easy-process-sip</artifactId>
+    <artifactId>easy-split-multi-deposit</artifactId>
     <version>1.x-SNAPSHOT</version>
     <inceptionYear>2015-2016</inceptionYear>
-    <name>EASY Process SIP</name>
-    <description>Processes a Submission Information Package (SIP) for ingest into the EASY Archive</description>
+    <name>EASY Split Multi-Deposit</name>
+    <description>Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive</description>
     <properties>
         <main-class>nl.knaw.dans.easy.ps.Main</main-class>
     </properties>
