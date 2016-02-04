@@ -20,6 +20,7 @@ import scala.util.Success
 import scala.util.Failure
 import org.slf4j.LoggerFactory
 
+@Deprecated
 case class CheckExistenceInStorage(row: String, fileStorageService: String, fileStoragePath: String)(implicit s: Settings) extends Action(row) {
   val log = LoggerFactory.getLogger(getClass)
 

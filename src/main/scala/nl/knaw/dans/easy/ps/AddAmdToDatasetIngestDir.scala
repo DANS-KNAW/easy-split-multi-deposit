@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
 
+@Deprecated
 case class AddAmdToDatasetIngestDir(row: String, datasetId: DatasetID)(implicit s: Settings) extends Action(row) {
   val log = LoggerFactory.getLogger(getClass)
   val AMD = "Administrative metadata"
