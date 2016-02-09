@@ -3,10 +3,8 @@ package nl.knaw.dans.easy.multiDeposit
 import java.io.File
 
 import org.apache.commons.csv.{CSVFormat, CSVParser}
-import org.slf4j.LoggerFactory
 import rx.lang.scala.Observable
-import scala.collection.JavaConversions.{iterableAsScalaIterable}
-import scala.collection.mutable
+import scala.collection.JavaConversions.{ asScalaBuffer, iterableAsScalaIterable }
 
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
@@ -22,25 +20,35 @@ object MultiDepositParser {
     * @return a stream of datasets coming from the file
     */
   def parse(file: File): Observable[Datasets] = {
-    val rawContent = Source.fromFile(file).mkString
-    val parser = CSVParser.parse(rawContent, CSVFormat.RFC4180)
-    val headers :: data = parser.getRecords.map(_.toList)
-    validateDatasetHeaders(headers)
-      .map(_ => {
-        case class IndexDatasets(index: Int, datasets: Datasets)
+    Observable(subscriber => {
+      try {
+        val rawContent = Source.fromFile(file).mkString
+        val parser = CSVParser.parse(rawContent, CSVFormat.RFC4180)
+        val output = parser.getRecords.map(_.toList)
+        validateDatasetHeaders(output.head)
+          .map(_ => {
+            case class IndexDatasets(index: Int, datasets: Datasets)
 
-        Observable.from(data.map(headers zip _))
-          .foldLeft(IndexDatasets(1, new Datasets)) {
-            case (IndexDatasets(row, datasets), csvValues) => IndexDatasets(row + 1, updateDatasets(datasets, csvValues, row + 1))
-          }
-          .map(_.datasets)
-      })
-      .onError(Observable.error(_))
+            Observable.from(output.tail.map(output.head zip _))
+              .foldLeft(IndexDatasets(1, new Datasets)) {
+                case (IndexDatasets(row, datasets), csvValues) =>
+                  IndexDatasets(row + 1, updateDatasets(datasets, csvValues, row + 1))
+              }
+              .map(_.datasets)
+          })
+          .onError(Observable.error(_))
+          .subscribe(subscriber)
+      }
+      catch {
+        case e => subscriber.onError(e)
+      }
+    })
   }
 
   /**
     * Tests whether the given list of headers is valid. If so, `Success(Unit)` is returned,
     * else a `Failure` with a detailed `ActionException` is returned.
+    *
     * @param headers the headers to be validated
     * @return `Success` if the `headers` are valid, `Failure` if the `headers` are invalid
     */
@@ -88,7 +96,7 @@ object MultiDepositParser {
     * @param row     the `row` number that will be added to the `dataset`
     * @return the `dataset`
     */
-  private def updateDataset(dataset: Dataset, values: CsvValues, row: Int): Dataset = {
+  def updateDataset(dataset: Dataset, values: CsvValues, row: Int): Dataset = {
     def addToDataset(dataset: Dataset)(kvPair: (String, String)): Unit = {
       val (key, value) = kvPair
       dataset.put(key, dataset.getOrElseUpdate(key, List()) :+ value)

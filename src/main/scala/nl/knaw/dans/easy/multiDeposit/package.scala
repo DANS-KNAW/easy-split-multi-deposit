@@ -67,7 +67,7 @@ package object multiDeposit {
     */
   def extractFileParametersList(d: Dataset): List[FileParameters] = {
     List("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
-      .map(header => d.get(header))
+      .map(d.get)
       .find(_.isDefined)
       .flatMap(_.map(_.size))
       .map(rowCount => (0 until rowCount)
