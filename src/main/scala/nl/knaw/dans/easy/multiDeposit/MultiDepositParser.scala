@@ -57,7 +57,7 @@ object MultiDepositParser {
       "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_SUBTITLES",
       "SF_DOMAIN", "SF_USER", "SF_COLLECTION", "SF_PRESENTATION", "SF_SUBTITLES") ++ DDM.allFields
     if (headers.forall(validHeaders.contains)) Success(Unit)
-    else Failure(new ActionException("0", "SIP Instructions file contains unknown headers: "
+    else Failure(new ActionException(0, "SIP Instructions file contains unknown headers: "
       + headers.filter(!validHeaders.contains(_)).mkString(", ") + ". "
       + "Please, check for spelling errors and consult the documentation for the list of valid headers."))
   }

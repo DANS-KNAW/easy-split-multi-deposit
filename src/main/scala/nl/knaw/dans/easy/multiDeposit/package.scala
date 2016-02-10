@@ -1,5 +1,7 @@
 package nl.knaw.dans.easy
 
+import java.io.File
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import org.apache.commons.lang.StringUtils._
@@ -17,8 +19,9 @@ package object multiDeposit {
   case class FileParameters(row: Option[String], sip: Option[String], dataset: Option[String],
                             storageService: Option[String], storagePath: Option[String],
                             audioVideo: Option[String])
+  case class Settings(sipDir: File = null)
 
-  case class ActionException(row: String, message: String) extends RuntimeException(message)
+  case class ActionException(row: Int, message: String) extends RuntimeException(message)
 
   implicit class StringToOption(val s: String) extends AnyVal {
     /** Converts a `String` to an `Option[String]`. If the `String` is blank
@@ -85,5 +88,27 @@ package object multiDeposit {
           case _ => true
         })
       .getOrElse(Nil)
+  }
+
+  /** Generates an error report with a `heading` and a list of `ActionException`s coming from a
+    * list of `Try`s, sorted by row number. Supplying other exceptions than `ActionException` will
+    * cause an `AssertionError`. `Success` input in `trys` are ignored.
+    *
+    * @param heading a piece of text before the list of errors
+    * @param trys the failures to be reported
+    * @tparam T
+    * @return the error report
+    */
+  def generateErrorReport[T](heading: String, trys: Seq[Try[T]]): String = {
+    heading.toOption.map(s => s"$s\n").getOrElse("") +
+      trys.filter(_.isFailure)
+        .map {
+          case Failure(actionEx: ActionException) => actionEx
+          // TODO add other Failure(exceptions) cases if needed and adjust the error message below accordingly
+          case _ => throw new AssertionError("Only Failures of ActionException are expected here")
+        }
+        .sortBy(_.row)
+        .map(actionEx => s" - row ${actionEx.row}: ${actionEx.message}")
+        .mkString("\n")
   }
 }
