@@ -3,6 +3,7 @@ package nl.knaw.dans.easy.multiDeposit
 import java.io.File
 
 import org.apache.commons.csv.{CSVFormat, CSVParser}
+import org.slf4j.LoggerFactory
 import rx.lang.scala.Observable
 import scala.collection.JavaConversions.{ asScalaBuffer, iterableAsScalaIterable }
 
@@ -13,6 +14,8 @@ object MultiDepositParser {
 
   type CsvValues = List[(String, String)]
 
+  val log = LoggerFactory.getLogger(MultiDepositParser.getClass)
+
   /**
     * Transforms a `File` into a stream of `Datasets` by parsing the csv.
     *
@@ -21,6 +24,7 @@ object MultiDepositParser {
     */
   def parse(file: File): Observable[Datasets] = {
     Observable(subscriber => {
+      log.debug("Start parsing SIP Instructions at {}", file)
       try {
         val rawContent = Source.fromFile(file).mkString
         val parser = CSVParser.parse(rawContent, CSVFormat.RFC4180)
@@ -29,7 +33,9 @@ object MultiDepositParser {
           .map(_ => {
             case class IndexDatasets(index: Int, datasets: Datasets)
 
-            Observable.from(output.tail.map(output.head zip _))
+            val csvData = output.tail.map(output.head zip _)
+            log.debug("Successfully loaded CSV file")
+            Observable.from(csvData)
               .foldLeft(IndexDatasets(1, new Datasets)) {
                 case (IndexDatasets(row, datasets), csvValues) =>
                   IndexDatasets(row + 1, updateDatasets(datasets, csvValues, row + 1))
@@ -80,6 +86,7 @@ object MultiDepositParser {
     datasets.find(_._1 == id)
       .map { case (_, dataset) => updateDataset(dataset, values, row) }
       .getOrElse {
+        log.debug("Found new Dataset")
         val newDataset = new Dataset
         datasets += id -> newDataset
         updateDataset(newDataset, values, row)
@@ -102,6 +109,7 @@ object MultiDepositParser {
       dataset.put(key, dataset.getOrElseUpdate(key, List()) :+ value)
     }
 
+    log.debug(s"Processing SIP Intructions line: $values}", values)
     values.foreach(addToDataset(dataset))
     addToDataset(dataset)(("ROW", row.toString))
 
