@@ -1,6 +1,7 @@
 package nl.knaw.dans.easy
 
 import java.io.File
+import java.util.Properties
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -19,7 +20,14 @@ package object multiDeposit {
   case class FileParameters(row: Option[String], sip: Option[String], dataset: Option[String],
                             storageService: Option[String], storagePath: Option[String],
                             audioVideo: Option[String])
-  case class Settings(sipDir: File = null)
+  case class Settings(appHomeDir: File = null,
+                      mdDir: File = null,
+                      springfieldInbox: File = null,
+                      springfieldStreamingBaseUrl: String = null) {
+    override def toString: String =
+      s"Settings(home=$appHomeDir, md-dir=$mdDir, springfield-inbox=$springfieldInbox, " +
+        s"springfield-streaming-baseurl=$springfieldStreamingBaseUrl)"
+  }
 
   case class ActionException(row: Int, message: String) extends RuntimeException(message)
 
@@ -44,6 +52,14 @@ package object multiDeposit {
         if (isBlank(s)) Option.empty
         else Option(s.toInt)
       } onError (_ => Option.empty)
+    }
+  }
+
+  object Version {
+    def apply(): String = {
+      val properties = new Properties()
+      properties.load(getClass.getResourceAsStream("/Version.properties"))
+      properties.getProperty("process-sip.version")
     }
   }
 
