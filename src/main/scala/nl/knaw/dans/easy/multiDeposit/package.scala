@@ -69,7 +69,7 @@ package object multiDeposit {
       * @param handle converts `Throwable` to a value of type `T`
       * @return either the value inside `Try` (on success) or the result of `handle` (on failure)
       */
-    def onError(handle: Throwable => T): T = {
+    def onError[S >: T](handle: Throwable => S): S = {
       t match {
         case Success(value) => value
         case Failure(throwable) => handle(throwable)

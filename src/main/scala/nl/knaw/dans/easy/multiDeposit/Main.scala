@@ -82,8 +82,9 @@ object Main {
     log.debug("Looking for file instructions ...")
 
     fpss.flatMap(fps => {
-      try getActions(fps).map(Success(_))
-      catch {
+      Try {
+        getActions(fps).map(Success(_))
+      }.onError {
         case e: ActionException => List(Failure(e))
       }
     })
