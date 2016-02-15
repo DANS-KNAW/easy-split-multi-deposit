@@ -8,7 +8,7 @@ import scala.util.{Failure, Success}
 
 class MainSpec extends UnitSpec with MockFactory {
 
-  abstract class MockedAction extends Action("mocked action")
+  abstract class MockedAction extends Action(42)
 
   "checkActionPreconditions" should "succeed if the preconditions of are met" in {
     val m1 = mock[MockedAction]

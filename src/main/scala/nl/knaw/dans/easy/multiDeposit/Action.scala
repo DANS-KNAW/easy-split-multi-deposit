@@ -8,7 +8,7 @@ import scala.util.Try
   *
   * @param row the row on which this action is executed
   */
-abstract class Action(row: String) {
+abstract class Action(row: Int) {
 
   /**
     * Verifies whether all preconditions are met for this specific action.
