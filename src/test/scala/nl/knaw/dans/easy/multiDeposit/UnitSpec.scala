@@ -73,14 +73,14 @@ OptionValues with Inside with Inspectors with OneInstancePerTest {
   def testDatasets: Datasets = ListBuffer(("dataset-1", testDataset1), ("dataset-2", testDataset2))
 
   def testFileParameters1: List[FileParameters] = {
-    FileParameters(Option("2"), Option("videos/centaur.mpg"), Option("footage/centaur.mpg"), Option("http://zandbak11.dans.knaw.nl/webdav"), None, Option("Yes")) ::
+    FileParameters(Option(2), Option("videos/centaur.mpg"), Option("footage/centaur.mpg"), Option("http://zandbak11.dans.knaw.nl/webdav"), None, Option("Yes")) ::
     Nil
   }
 
   def testFileParameters2: List[FileParameters] = {
-    FileParameters(Some("2"), Some("dataset-1/no-default-processing.txt"), Some("some/other/dir/path/non-default-1.txt"), None, None, None) ::
-    FileParameters(Some("3"), Some("dataset-1/some/dir/path/no-default-processing-2.txt"), Some("some/other/dir/path/non-default-2.txt"), None, None, None) ::
-    FileParameters(Some("4"), Some("videos/centaur.mpg"), None, None, None, Some("Yes")) ::
+    FileParameters(Some(2), Some("dataset-1/no-default-processing.txt"), Some("some/other/dir/path/non-default-1.txt"), None, None, None) ::
+    FileParameters(Some(3), Some("dataset-1/some/dir/path/no-default-processing-2.txt"), Some("some/other/dir/path/non-default-2.txt"), None, None, None) ::
+    FileParameters(Some(4), Some("videos/centaur.mpg"), None, None, None, Some("Yes")) ::
     Nil
   }
 }

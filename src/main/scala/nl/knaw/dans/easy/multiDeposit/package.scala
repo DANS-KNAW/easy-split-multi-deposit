@@ -17,7 +17,7 @@ package object multiDeposit {
   type Dataset = mutable.HashMap[MultiDepositKey, MultiDepositValues]
   type Datasets = ListBuffer[(DatasetID, Dataset)]
 
-  case class FileParameters(row: Option[String], sip: Option[String], dataset: Option[String],
+  case class FileParameters(row: Option[Int], sip: Option[String], dataset: Option[String],
                             storageService: Option[String], storagePath: Option[String],
                             audioVideo: Option[String])
   case class Settings(appHomeDir: File = null,
@@ -94,9 +94,13 @@ package object multiDeposit {
           def valueAt(key: String): Option[String] = {
             d.get(key).flatMap(_ (index).toOption)
           }
+          def intAt(key: String): Option[Int] = {
+            d.get(key).flatMap(_ (index).toIntOption)
+          }
 
-          FileParameters(valueAt("ROW"), valueAt("FILE_SIP"), valueAt("FILE_DATASET"),
-            valueAt("FILE_STORAGE_SERVICE"), valueAt("FILE_STORAGE_PATH"), valueAt("FILE_AUDIO_VIDEO"))
+          FileParameters(intAt("ROW"), valueAt("FILE_SIP"), valueAt("FILE_DATASET"),
+            valueAt("FILE_STORAGE_SERVICE"), valueAt("FILE_STORAGE_PATH"),
+            valueAt("FILE_AUDIO_VIDEO"))
         })
         .toList
         .filter {
