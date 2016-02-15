@@ -77,7 +77,7 @@ class MultiDepositSpec extends UnitSpec with BeforeAndAfter {
     extractFileParametersList(dataset1) shouldBe Nil
   }
 
-  "createErrorMessage" should "return an empty String when no header nor failure is provided" in {
+  "generateErrorReport" should "return an empty String when no header nor failure is provided" in {
     generateErrorReport("", Nil) shouldBe ""
   }
 
