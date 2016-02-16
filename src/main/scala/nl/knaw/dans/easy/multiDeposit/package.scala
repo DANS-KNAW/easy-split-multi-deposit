@@ -89,6 +89,7 @@ package object multiDeposit {
 
   implicit class FileExtensions(val file: File) extends AnyVal {
     def write(string: String) = FileUtils.write(file, string)
+    def directoryContains(file2: File) = FileUtils.directoryContains(file, file2)
   }
 
   implicit class DatasetExtensions(val dataset: Dataset) extends AnyVal {
