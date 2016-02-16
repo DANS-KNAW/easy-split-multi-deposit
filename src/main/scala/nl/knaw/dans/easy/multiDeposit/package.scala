@@ -3,9 +3,11 @@ package nl.knaw.dans.easy
 import java.io.File
 import java.util.Properties
 
+import org.apache.commons.io.FileUtils
+import org.apache.commons.lang.StringUtils
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import org.apache.commons.lang.StringUtils._
 
 import scala.util.{Failure, Success, Try}
 
@@ -31,7 +33,15 @@ package object multiDeposit {
 
   case class ActionException(row: Int, message: String) extends RuntimeException(message)
 
-  implicit class StringToOption(val s: String) extends AnyVal {
+  implicit class StringExtensions(val s: String) extends AnyVal {
+    /**
+      * Checks whether the `String` is blank
+      * (according to [[org.apache.commons.lang.StringUtils.isBlank]])
+      *
+      * @return
+      */
+    def isBlank = StringUtils.isBlank(s)
+
     /** Converts a `String` to an `Option[String]`. If the `String` is blank
       * (according to [[org.apache.commons.lang.StringUtils.isBlank]])
       * the empty `Option` is returned, otherwise the `String` is returned
@@ -39,7 +49,7 @@ package object multiDeposit {
       *
       * @return an `Option` of the input string that indicates whether it is blank
       */
-    def toOption = if (isBlank(s)) Option.empty else Option(s)
+    def toOption = if (s.isBlank) Option.empty else Option(s)
 
     /** Converts a `String` into an `Option[Int]` if it is not blank
       * (according to [[org.apache.commons.lang.StringUtils.isBlank]]).
@@ -49,7 +59,7 @@ package object multiDeposit {
       */
     def toIntOption = {
       Try {
-        if (isBlank(s)) Option.empty
+        if (s.isBlank) Option.empty
         else Option(s.toInt)
       } onError (_ => Option.empty)
     }
@@ -74,6 +84,19 @@ package object multiDeposit {
         case Success(value) => value
         case Failure(throwable) => handle(throwable)
       }
+    }
+  }
+
+  implicit class FileExtensions(val file: File) extends AnyVal {
+    def write(string: String) = FileUtils.write(file, string)
+  }
+
+  implicit class DatasetExtensions(val dataset: Dataset) extends AnyVal {
+    def getValue(key: String)(i: Int) = {
+      for {
+        values <- dataset.get(key)
+        value <- Try(values(i)).toOption
+      } yield value
     }
   }
 
