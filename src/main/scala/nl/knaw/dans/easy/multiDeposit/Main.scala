@@ -2,6 +2,7 @@ package nl.knaw.dans.easy.multiDeposit
 
 import java.io.File
 
+import nl.knaw.dans.easy.multiDeposit.actions.CreateSpringfieldAction
 import nl.knaw.dans.easy.multiDeposit.{CommandLineOptions => cmd, MultiDepositParser => parser}
 import org.slf4j.LoggerFactory
 import rx.lang.scala.Observable
@@ -45,7 +46,8 @@ object Main {
 
   def getActions(dss: Datasets)(implicit s: Settings): Observable[Action] = {
     log.info("Compiling list of actions to perform ...")
-    val tryActions = dss.flatMap(getDatasetActions).toList // TODO add extra actions with :+ ...
+    val tryActions = dss.flatMap(getDatasetActions).toList :+
+      Success(CreateSpringfieldAction(-1, dss)) // SpringfieldAction runs on multiple rows, so -1 here
     val failures = tryActions.filter(_.isFailure)
     if (failures.isEmpty)
       tryActions.map(_.get).toObservable
