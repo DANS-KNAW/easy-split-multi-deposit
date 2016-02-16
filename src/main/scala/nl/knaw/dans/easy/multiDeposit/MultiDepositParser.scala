@@ -25,7 +25,7 @@ object MultiDepositParser {
   def parse(file: File): Observable[Datasets] = {
     Observable(subscriber => {
       log.debug("Start parsing SIP Instructions at {}", file)
-      try {
+      Try {
         val rawContent = Source.fromFile(file).mkString
         val parser = CSVParser.parse(rawContent, CSVFormat.RFC4180)
         val output = parser.getRecords.map(_.toList)
@@ -42,12 +42,9 @@ object MultiDepositParser {
               }
               .map(_.datasets)
           })
-          .onError(Observable.error(_))
+          .onError(Observable.error)
           .subscribe(subscriber)
-      }
-      catch {
-        case e => subscriber.onError(e)
-      }
+      }.onError(subscriber.onError)
     })
   }
 

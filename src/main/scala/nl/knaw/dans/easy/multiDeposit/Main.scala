@@ -18,10 +18,9 @@ object Main {
   def main(args: Array[String]) {
     log.debug("Starting application.")
     implicit val settings = cmd.parse(args)
-    println(settings)
     getActionsStream
       .doOnError(e => log.error(e.getMessage, e))
-      .doOnCompleted(() => log.info("Finished successfully!"))
+      .doOnCompleted { log.info("Finished successfully!") }
       .subscribe
   }
 
@@ -113,11 +112,10 @@ object Main {
     *         of the preconditions fails.
     */
   def checkActionPreconditions(actions: Observable[Action]): Observable[Action] = {
-    log.info("Checking preconditions ...")
-
     case class ActionAndResult(actions: List[Action] = Nil, result: List[Try[Unit]] = Nil)
 
     actions
+      .doOnNext(action => log.info(s"Checking preconditions of ${action.getClass.getSimpleName} ..."))
       .foldLeft(ActionAndResult()) {
         case (ActionAndResult(total, fails), t) => ActionAndResult(total :+ t, {
           val check = t.checkPreconditions
@@ -142,13 +140,12 @@ object Main {
     * @return a stream containing the actions if successfull and an error on failure.
     */
   def runActions(actions: Observable[Action]): Observable[Action] = {
-    log.info("Executing actions ...")
-
     // you can't do this within the Observable sequence, since the stack would
     // not be available when we need it in the .doOnError(e => ...)
     val stack = mutable.Stack[Action]()
 
     actions
+      .doOnNext(action => log.info(s"Executing action of ${action.getClass.getSimpleName} ..."))
       .flatMap(action => action.run()
         .map(_ => Observable.just(action))
         .onError(error => Observable.just(action) ++ Observable.error(error)))

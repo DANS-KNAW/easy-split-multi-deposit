@@ -38,7 +38,7 @@ object CreateSpringfieldAction {
     new PrettyPrinter(80, 2).format(
       <actions> {
         for {
-          dataset <- datasets.map(_._2)
+          (id, dataset) <- datasets
           (target, videos) <- extractVideos(dataset)
         } yield createAddElement(target, videos)
       }</actions>)
@@ -58,7 +58,7 @@ object CreateSpringfieldAction {
     def emptyMap = Map[String, List[Video]]()
 
     getSpringfieldPath(dataset, 0)
-      .map(target => (emptyMap /: (0 until dataset.values.head.size)) {
+      .map(target => (emptyMap /: dataset.values.head.indices) {
         (map, i) => {
           (for {
             fileAudioVideo <- dataset.getValue("FILE_AUDIO_VIDEO")(i)
@@ -66,7 +66,7 @@ object CreateSpringfieldAction {
             video = Video(i.toString, dataset.getValue("FILE_SIP")(i), dataset.getValue("FILE_SUBTITLES")(i))
             videos = map.getOrElse(target, Nil)
           } yield map + (target -> (videos :+ video)))
-            .getOrElse(emptyMap)
+            .getOrElse(map)
         }
       })
       .getOrElse(emptyMap)

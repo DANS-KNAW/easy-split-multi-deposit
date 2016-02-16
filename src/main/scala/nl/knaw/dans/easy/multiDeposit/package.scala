@@ -96,7 +96,8 @@ package object multiDeposit {
       for {
         values <- dataset.get(key)
         value <- Try(values(i)).toOption
-      } yield value
+        value2 <- value.toOption
+      } yield value2
     }
   }
 
