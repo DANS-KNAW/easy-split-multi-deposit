@@ -48,11 +48,17 @@ object Main {
     log.info("Compiling list of actions to perform ...")
     val tryActions = dss.flatMap(getDatasetActions).toList :+
       Success(CreateSpringfieldAction(-1, dss)) // SpringfieldAction runs on multiple rows, so -1 here
-    val failures = tryActions.filter(_.isFailure)
-    if (failures.isEmpty)
-      tryActions.map(_.get).toObservable
-    else
-      Observable.error(new Exception(generateErrorReport("Errors in Multi-Deposit Instructions file:", failures)))
+
+    case class TryAndFailure(total: List[Try[Action]] = Nil, result: List[Try[Action]] = Nil)
+
+    tryActions.toObservable
+      .foldLeft(TryAndFailure()) {
+        case (TryAndFailure(total, fails), t) => TryAndFailure(total :+ t, if (t.isFailure) fails :+ t else fails)
+      }
+      .flatMap {
+        case TryAndFailure(total, Nil) => total.toObservable.map(_.get)
+        case TryAndFailure(_, fails) => Observable.error(new Exception(generateErrorReport("Errors in Multi-Deposit Instructions file:", fails)))
+      }
   }
 
   def getDatasetActions(entry: (DatasetID, Dataset))(implicit s: Settings): List[Try[Action]] = {
