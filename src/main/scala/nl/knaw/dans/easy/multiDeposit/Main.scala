@@ -2,7 +2,7 @@ package nl.knaw.dans.easy.multiDeposit
 
 import java.io.File
 
-import nl.knaw.dans.easy.multiDeposit.actions.CreateSpringfieldAction
+import nl.knaw.dans.easy.multiDeposit.actions.{CopyToSpringfieldInbox, CreateSpringfieldAction}
 import nl.knaw.dans.easy.multiDeposit.{CommandLineOptions => cmd, MultiDepositParser => parser}
 import org.slf4j.LoggerFactory
 import rx.lang.scala.Observable
@@ -84,7 +84,7 @@ object Main {
             s"FILE_STORAGE_SERVICE = $p3, FILE_STORAGE_PATH = $p4, FILE_AUDIO_VIDEO = $p5")
       }
 
-      Nil
+      Nil // TODO remove later
     }
 
     log.debug("Looking for file instructions ...")
@@ -95,8 +95,11 @@ object Main {
       }.onError {
         case e: ActionException => List(Failure(e))
       }
-    })
-    // TODO add actions here using :::
+    }) :::
+      fpss.collect {
+        case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo)) if isThisAudioVideo matches "(?i)yes" =>
+          Success(CopyToSpringfieldInbox(row, fileMd))
+      }
   }
 
   /**
