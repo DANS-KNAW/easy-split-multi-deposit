@@ -7,6 +7,7 @@ import nl.knaw.dans.easy.multiDeposit.{CommandLineOptions => cmd, MultiDepositPa
 import org.slf4j.LoggerFactory
 import rx.lang.scala.Observable
 import rx.lang.scala.ObservableExtensions
+import rx.schedulers.Schedulers
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
@@ -22,6 +23,8 @@ object Main {
       .doOnError(e => log.error(e.getMessage, e))
       .doOnCompleted { log.info("Finished successfully!") }
       .subscribe
+
+    Schedulers.shutdown
   }
 
   def getActionsStream(implicit settings: Settings): Observable[Action] = {
