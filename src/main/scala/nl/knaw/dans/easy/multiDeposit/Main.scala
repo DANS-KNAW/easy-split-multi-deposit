@@ -80,12 +80,12 @@ object Main {
   def getFileActions(d: Dataset, fpss: List[FileParameters])(implicit s: Settings): List[Try[Action]] = {
 
     def getActions(fps: FileParameters): List[Action] = {
-      fps match {
-        // TODO add actions here
-        case FileParameters(Some(row), p1, p2, p3, p4, p5) => throw ActionException(row,
-          s"Invalid combination of file parameters: FILE_SIP = $p1, FILE_DATASET = $p2, " +
-            s"FILE_STORAGE_SERVICE = $p3, FILE_STORAGE_PATH = $p4, FILE_AUDIO_VIDEO = $p5")
-      }
+//      fps match {
+//        // TODO add actions here
+//        case FileParameters(Some(row), p1, p2, p3, p4, p5) => throw ActionException(row,
+//          s"Invalid combination of file parameters: FILE_SIP = $p1, FILE_DATASET = $p2, " +
+//            s"FILE_STORAGE_SERVICE = $p3, FILE_STORAGE_PATH = $p4, FILE_AUDIO_VIDEO = $p5")
+//      }
 
       Nil // TODO remove later
     }
