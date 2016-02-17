@@ -31,15 +31,16 @@ object MultiDepositParser {
         val output = parser.getRecords.map(_.toList)
         validateDatasetHeaders(output.head)
           .map(_ => {
-            case class IndexDatasets(index: Int, datasets: Datasets)
+            case class IndexDatasets(index: Int, datasets: Datasets) {
+              def +=(csvValues: CsvValues) = {
+                IndexDatasets(index + 1, updateDatasets(datasets, csvValues, index + 1))
+              }
+            }
 
             val csvData = output.tail.map(output.head zip _)
             log.debug("Successfully loaded CSV file")
             Observable.from(csvData)
-              .foldLeft(IndexDatasets(1, new Datasets)) {
-                case (IndexDatasets(row, datasets), csvValues) =>
-                  IndexDatasets(row + 1, updateDatasets(datasets, csvValues, row + 1))
-              }
+              .foldLeft(IndexDatasets(1, new Datasets))(_ += _)
               .map(_.datasets)
           })
           .onError(Observable.error)

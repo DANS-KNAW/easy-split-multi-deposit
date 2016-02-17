@@ -58,6 +58,7 @@ class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(
       else
         Right(()))
       .getOrElse(Left("Could not parse parameter multi-deposit-dir")))
+
   val springfieldInbox = opt[File]("springfield-inbox",
     descr = "Inbox of the Springfield Streaming Media Platform",
     default = Some(new File(conf.getString("springfield-inbox"))))

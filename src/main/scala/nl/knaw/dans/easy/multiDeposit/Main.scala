@@ -48,16 +48,20 @@ object Main {
     val tryActions = dss.flatMap(getDatasetActions).toList :+
       Success(CreateSpringfieldAction(-1, dss)) // SpringfieldAction runs on multiple rows, so -1 here
 
-    case class TryAndFailure(total: List[Try[Action]] = Nil, result: List[Try[Action]] = Nil)
+    case class TryAndFailure(total: List[Try[Action]] = Nil, fails: List[Try[Action]] = Nil) {
+      def +=(action: Try[Action]) = {
+        TryAndFailure(total :+ action, if (action.isFailure) fails :+ action else fails)
+      }
+      def toObservable = {
+        if (fails.isEmpty) total.toObservable.map(_.get)
+        else Observable.error(new Exception(
+          generateErrorReport("Errors in Multi-Deposit Instructions file:", fails)))
+      }
+    }
 
     tryActions.toObservable
-      .foldLeft(TryAndFailure()) {
-        case (TryAndFailure(total, fails), t) => TryAndFailure(total :+ t, if (t.isFailure) fails :+ t else fails)
-      }
-      .flatMap {
-        case TryAndFailure(total, Nil) => total.toObservable.map(_.get)
-        case TryAndFailure(_, fails) => Observable.error(new Exception(generateErrorReport("Errors in Multi-Deposit Instructions file:", fails)))
-      }
+      .foldLeft(TryAndFailure())(_ += _)
+      .flatMap(_.toObservable)
   }
 
   def getDatasetActions(entry: (DatasetID, Dataset))(implicit s: Settings): List[Try[Action]] = {
@@ -112,21 +116,24 @@ object Main {
     *         of the preconditions fails.
     */
   def checkActionPreconditions(actions: Observable[Action]): Observable[Action] = {
-    case class ActionAndResult(actions: List[Action] = Nil, result: List[Try[Unit]] = Nil)
-
-    actions
-      .doOnNext(action => log.info(s"Checking preconditions of ${action.getClass.getSimpleName} ..."))
-      .foldLeft(ActionAndResult()) {
-        case (ActionAndResult(total, fails), t) => ActionAndResult(total :+ t, {
-          val check = t.checkPreconditions
+    case class ActionAndResult(actions: List[Action] = Nil, fails: List[Try[Unit]] = Nil) {
+      def +=(action: Action) = {
+        ActionAndResult(actions :+ action, {
+          val check = action.checkPreconditions
 
           if (check.isFailure) fails :+ check else fails
         })
       }
-      .flatMap {
-        case ActionAndResult(total, Nil) => total.toObservable
-        case ActionAndResult(_, fails) => Observable.error(new Exception(generateErrorReport("Precondition failures:", fails)))
+      def toObservable = {
+        if (fails.isEmpty) actions.toObservable
+        else Observable.error(new Exception(generateErrorReport("Precondition failures:", fails)))
       }
+    }
+
+    actions
+      .doOnNext(action => log.info(s"Checking preconditions of ${action.getClass.getSimpleName} ..."))
+      .foldLeft(ActionAndResult())(_ += _)
+      .flatMap(_.toObservable)
   }
 
   /**
