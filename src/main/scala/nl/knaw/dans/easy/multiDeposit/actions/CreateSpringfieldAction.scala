@@ -2,14 +2,12 @@ package nl.knaw.dans.easy.multiDeposit.actions
 
 import java.io.File
 
-import nl.knaw.dans.easy.multiDeposit.Dataset
-import nl.knaw.dans.easy.multiDeposit._
+import nl.knaw.dans.easy.multiDeposit.{Dataset, _}
+import nl.knaw.dans.easy.multiDeposit.actions.CreateSpringfieldAction._
 import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
 import scala.xml.PrettyPrinter
-
-import nl.knaw.dans.easy.multiDeposit.actions.CreateSpringfieldAction._
 
 case class Video(name: String, fileSip: Option[String], subtitles: Option[String])
 

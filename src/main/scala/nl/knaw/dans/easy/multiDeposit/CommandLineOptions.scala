@@ -3,7 +3,6 @@ package nl.knaw.dans.easy.multiDeposit
 import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.commons.io.FileUtils
 import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
 
@@ -36,7 +35,7 @@ object CommandLineOptions {
 }
 
 class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(args) {
-  import nl.knaw.dans.easy.multiDeposit.{ CommandLineOptions => cmd }
+  import nl.knaw.dans.easy.multiDeposit.{CommandLineOptions => cmd}
 
   printedName = "process-multi-deposit"
   version(s"$printedName ${Version()}")

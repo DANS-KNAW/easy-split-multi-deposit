@@ -5,8 +5,7 @@ import java.io.File
 import nl.knaw.dans.easy.multiDeposit.actions.{CopyToSpringfieldInbox, CreateSpringfieldAction}
 import nl.knaw.dans.easy.multiDeposit.{CommandLineOptions => cmd, MultiDepositParser => parser}
 import org.slf4j.LoggerFactory
-import rx.lang.scala.Observable
-import rx.lang.scala.ObservableExtensions
+import rx.lang.scala.{Observable, ObservableExtensions}
 import rx.schedulers.Schedulers
 
 import scala.collection.mutable
@@ -162,7 +161,7 @@ object Main {
       .doOnNext(stack.push(_))
       .doOnError(_ => {
         log.error("An error occurred. Rolling back actions ...")
-        stack.foreach(_.rollback)
+        stack.foreach(_.rollback())
       })
   }
 }

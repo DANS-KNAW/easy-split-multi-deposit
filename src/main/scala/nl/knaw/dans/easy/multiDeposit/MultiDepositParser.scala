@@ -5,8 +5,8 @@ import java.io.File
 import org.apache.commons.csv.{CSVFormat, CSVParser}
 import org.slf4j.LoggerFactory
 import rx.lang.scala.Observable
-import scala.collection.JavaConversions.{ asScalaBuffer, iterableAsScalaIterable }
 
+import scala.collection.JavaConversions.{asScalaBuffer, iterableAsScalaIterable}
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
 

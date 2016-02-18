@@ -1,6 +1,6 @@
 package nl.knaw.dans.easy
 
-import java.io.File
+import java.io.{File, IOException}
 import java.util.Properties
 
 import org.apache.commons.io.FileUtils
@@ -8,7 +8,6 @@ import org.apache.commons.lang.StringUtils
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 import scala.util.{Failure, Success, Try}
 
 package object multiDeposit {
@@ -88,15 +87,73 @@ package object multiDeposit {
   }
 
   implicit class FileExtensions(val file: File) extends AnyVal {
-    def write(string: String) = FileUtils.write(file, string)
-    def directoryContains(file2: File) = FileUtils.directoryContains(file, file2)
+    /**
+      * Writes a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
+      *
+      * @param data the content to write to the file
+      * @throws IOException in case of an I/O error
+      */
+    def write(data: String) = FileUtils.write(file, data)
+
+    /**
+      * Determines whether the {@code parent} directory contains the {@code child} element (a file or directory).
+      * <p>
+      * Files are normalized before comparison.
+      * </p>
+      *
+      * Edge cases:
+      * <ul>
+      * <li>A {@code directory} must not be null: if null, throw IllegalArgumentException</li>
+      * <li>A {@code directory} must be a directory: if not a directory, throw IllegalArgumentException</li>
+      * <li>A directory does not contain itself: return false</li>
+      * <li>A null child file is not contained in any parent: return false</li>
+      * </ul>
+      *
+      * @param child the file to consider as the child.
+      * @return true is the candidate leaf is under by the specified composite. False otherwise.
+      * @throws IOException if an IO error occurs while checking the files.
+      */
+    def directoryContains(child: File) = FileUtils.directoryContains(file, child)
+
+    /**
+      * Copies a whole directory to a new location preserving the file dates.
+      * <p>
+      * This method copies the specified directory and all its child
+      * directories and files to the specified destination.
+      * The destination is the new location and name of the directory.
+      * <p>
+      * The destination directory is created if it does not exist.
+      * If the destination directory did exist, then this method merges
+      * the source with the destination, with the source taking precedence.
+      * <p>
+      * <strong>Note:</strong> This method tries to preserve the files' last
+      * modified date/times using {@link File#setLastModified(long)}, however
+      * it is not guaranteed that those operations will succeed.
+      * If the modification operation fails, no indication is provided.
+      *
+      * @param destDir the new directory, must not be ``null``
+      * @throws NullPointerException if source or destination is ``null``
+      * @throws IOException if source or destination is invalid
+      * @throws IOException if an IO error occurs during copying
+      */
+    def copyFile(destDir: File) = FileUtils.copyDirectory(file, destDir)
   }
 
   implicit class DatasetExtensions(val dataset: Dataset) extends AnyVal {
-    def getValue(key: String)(i: Int) = {
+    /**
+      * Retrieves the value of a certain parameter from the dataset on a certain row.
+      * If either the key is not present, the specified row does not exist or the value `blank`
+      * (according to [[org.apache.commons.lang.StringUtils.isBlank]]), then [[Option.empty]]
+      * is returned.
+      *
+      * @param key the key under which the value is stored in the dataset
+      * @param row the row on which the value occurs
+      * @return the value belonging to the (key, row) pair if present, else [[Option.empty]]
+      */
+    def getValue(key: String)(row: Int) = {
       for {
         values <- dataset.get(key)
-        value <- Try(values(i)).toOption
+        value <- Try(values(row)).toOption
         value2 <- value.toOption
       } yield value2
     }
