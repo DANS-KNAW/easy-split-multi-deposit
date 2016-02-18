@@ -97,7 +97,7 @@ object Main {
     fpss.flatMap(fps => {
       Try {
         getActions(fps).map(Success(_))
-      }.onError {
+      } onError {
         case e: ActionException => List(Failure(e))
       }
     }) :::

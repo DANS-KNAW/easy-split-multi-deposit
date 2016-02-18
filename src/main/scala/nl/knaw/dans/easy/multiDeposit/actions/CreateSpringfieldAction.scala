@@ -28,8 +28,10 @@ object CreateSpringfieldAction {
   def writeSpringfieldXml(row: Int, datasets: Datasets)(implicit settings: Settings): Try[Unit] = {
     Try {
       val file = new File(settings.springfieldInbox, "springfield-actions.xml")
-      Success(file.write(toXML(datasets)))
-    }.onError(e => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e")))
+      file.write(toXML(datasets))
+    } recoverWith {
+      case e => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e"))
+    }
   }
 
   def toXML(datasets: Datasets) = {
