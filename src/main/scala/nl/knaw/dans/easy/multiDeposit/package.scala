@@ -96,15 +96,15 @@ package object multiDeposit {
     def write(data: String) = FileUtils.write(file, data)
 
     /**
-      * Determines whether the {@code parent} directory contains the {@code child} element (a file or directory).
+      * Determines whether the ``parent`` directory contains the ``child`` element (a file or directory).
       * <p>
       * Files are normalized before comparison.
       * </p>
       *
       * Edge cases:
       * <ul>
-      * <li>A {@code directory} must not be null: if null, throw IllegalArgumentException</li>
-      * <li>A {@code directory} must be a directory: if not a directory, throw IllegalArgumentException</li>
+      * <li>A ``directory`` must not be null: if null, throw IllegalArgumentException</li>
+      * <li>A ``directory`` must be a directory: if not a directory, throw IllegalArgumentException</li>
       * <li>A directory does not contain itself: return false</li>
       * <li>A null child file is not contained in any parent: return false</li>
       * </ul>
@@ -127,7 +127,7 @@ package object multiDeposit {
       * the source with the destination, with the source taking precedence.
       * <p>
       * <strong>Note:</strong> This method tries to preserve the files' last
-      * modified date/times using {@link File#setLastModified(long)}, however
+      * modified date/times using [[File#setLastModified(long)]], however
       * it is not guaranteed that those operations will succeed.
       * If the modification operation fails, no indication is provided.
       *
@@ -150,7 +150,7 @@ package object multiDeposit {
       * @param row the row on which the value occurs
       * @return the value belonging to the (key, row) pair if present, else [[Option.empty]]
       */
-    def getValue(key: String)(row: Int) = {
+    def getValue(key: MultiDepositKey)(row: Int) = {
       for {
         values <- dataset.get(key)
         value <- Try(values(row)).toOption
@@ -198,7 +198,6 @@ package object multiDeposit {
     *
     * @param heading a piece of text before the list of errors
     * @param trys the failures to be reported
-    * @tparam T
     * @return the error report
     */
   def generateErrorReport[T](heading: String, trys: Seq[Try[T]]): String = {
