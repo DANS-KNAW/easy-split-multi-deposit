@@ -48,11 +48,11 @@ class MultiDepositSpec extends UnitSpec with BeforeAndAfter {
   }
 
   "TryExceptionHandling.onError" should "return the value when provided with a Success" in {
-    Try("abc").onError(_ => "foobar") shouldBe "abc"
+    Try("abc") getOrElse "foobar" shouldBe "abc"
   }
 
   it should "return the onError value when provided with a failure" in {
-    Try[String](throw new Exception).onError(_ => "foobar") shouldBe "foobar"
+    Try[String](throw new Exception) getOrElse "foobar" shouldBe "foobar"
   }
 
   "extractFileParametersList" should "succeed with correct dataset1" in {

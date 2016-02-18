@@ -1,11 +1,13 @@
 package nl.knaw.dans.easy.multiDeposit.actions
 
-import java.io.File
+import java.io.{IOException, File}
 
-import nl.knaw.dans.easy.multiDeposit.{Action, ActionException, Settings, _}
+import nl.knaw.dans.easy.multiDeposit._
+import nl.knaw.dans.easy.multiDeposit.{ActionException, Settings, Action}
+import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Try, Failure, Success}
 
 case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action(row) {
   val log = LoggerFactory.getLogger(getClass)

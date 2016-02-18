@@ -60,7 +60,7 @@ package object multiDeposit {
       Try {
         if (s.isBlank) Option.empty
         else Option(s.toInt)
-      } onError (_ => Option.empty)
+      } getOrElse Option.empty
     }
   }
 
@@ -136,7 +136,7 @@ package object multiDeposit {
       * @throws IOException if source or destination is invalid
       * @throws IOException if an IO error occurs during copying
       */
-    def copyFile(destDir: File) = FileUtils.copyDirectory(file, destDir)
+    def copyFile(destDir: File) = FileUtils.copyFile(file, destDir)
   }
 
   implicit class DatasetExtensions(val dataset: Dataset) extends AnyVal {
