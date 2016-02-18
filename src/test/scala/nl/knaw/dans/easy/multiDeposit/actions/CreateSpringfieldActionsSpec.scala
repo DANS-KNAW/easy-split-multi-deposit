@@ -139,10 +139,48 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
     extractVideos(testDataset += ("FILE_AUDIO_VIDEO" -> List("nope!"))) shouldBe Map[String, List[Video]]()
   }
 
-  it should "return a filled map when given the correct input" in {
+  it should "return a filled map when given the correct input with a single row in the dataset" in {
     extractVideos(testDataset) shouldBe
       Map("/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test" ->
-        List(Video("0", Some("videos/some.mpg"),Some("videos/some.txt"))))
+        List(Video("0", Some("videos/some.mpg"), Some("videos/some.txt"))))
+  }
+
+  it should "return a filled map when given the correct input with multiple rows in the dataset" +
+    "and only the first row filled" in {
+    def testDataset2 = {
+      val dataset = new Dataset
+      dataset += "SF_DOMAIN" -> List("dans", "")
+      dataset += "SF_USER" -> List("someDeveloper", "")
+      dataset += "SF_COLLECTION" -> List("scala", "")
+      dataset += "SF_PRESENTATION" -> List("unit-test", "")
+      dataset += "FILE_AUDIO_VIDEO" -> List("yes", "")
+      dataset += "FILE_SIP" -> List("videos/some.mpg", "")
+      dataset += "FILE_SUBTITLES" -> List("videos/some.txt", "")
+      dataset += "FILE_DATASET" -> List("footage/some.mpg", "")
+    }
+
+    extractVideos(testDataset2) shouldBe
+      Map("/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test" ->
+        List(Video("0", Some("videos/some.mpg"), Some("videos/some.txt"))))
+  }
+
+  it should "return a filled map when given the correct input with multiple rows in the dataset" in {
+    def testDataset3 = {
+      val dataset = new Dataset
+      dataset += "SF_DOMAIN" -> List("dans", "")
+      dataset += "SF_USER" -> List("someDeveloper", "")
+      dataset += "SF_COLLECTION" -> List("scala", "")
+      dataset += "SF_PRESENTATION" -> List("unit-test", "")
+      dataset += "FILE_AUDIO_VIDEO" -> List("yes", "yes")
+      dataset += "FILE_SIP" -> List("videos/some.mpg", "audio/herrie.mp3")
+      dataset += "FILE_SUBTITLES" -> List("videos/some.txt", "")
+      dataset += "FILE_DATASET" -> List("footage/some.mpg", "")
+    }
+
+    extractVideos(testDataset3) shouldBe
+      Map("/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test" ->
+        List(Video("0", Some("videos/some.mpg"), Some("videos/some.txt")),
+          Video("1", Some("audio/herrie.mp3"), None)))
   }
 
   "getSpringfieldPath" should "not yield a path when given an empty dataset" in {
