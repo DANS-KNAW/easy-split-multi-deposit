@@ -68,7 +68,9 @@ object CreateMetadataAction {
 
   def createComposedAuthors(dataset: Dataset, isPartOfAuthor: (MultiDepositKey => Boolean), createAuthor: (Dictionary, Iterable[(MultiDepositKey, String)]) => Elem) = {
     val authorsData = dataset.filter(x => isPartOfAuthor(x._1))
-    if(authorsData.nonEmpty)
+    if(authorsData.isEmpty)
+      Seq.empty
+    else
       authorsData.values.head.indices
         .map(i => authorsData.map { case (key, values) => (key, values(i)) })
         .filter(_.values.exists(x => x != null && x.length > 0))

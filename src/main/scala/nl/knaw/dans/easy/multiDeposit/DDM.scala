@@ -42,7 +42,23 @@ object DDM {
       "DCX_CONTRIBUTOR_DAI" -> "dcx-dai:DAI",
       "DCX_CONTRIBUTOR_ORGANIZATION" -> "dcx-dai:name xml:lang=\"en\"")
 
+  // TODO not sure about the values of this Dictionary
+  val composedSpacialFields: Dictionary =
+    Map("DCX_SPATIAL_SCHEME" -> "",
+      "DCX_SPATIAL_X" -> "",
+      "DCX_SPATIAL_Y" -> "",
+      "DCX_SPATIAL_NORTH" -> "",
+      "DCX_SPATIAL_SOUTH" -> "",
+      "DCX_SPATIAL_EAST" -> "",
+      "DCX_SPATIAL_WEST" -> "")
+
+  // TODO not sure about the values of this Dictionary
+  val composedRelationFields: Dictionary =
+    Map("DCX_RELATION_QUALIFIER" -> "",
+      "DCX_RELATION_TITLE" -> "",
+      "DCX_RELATION_LINK" -> "")
+
   val allFields = "ROW" :: "DATASET_ID" ::
-    List(profileFields, metadataFields, composedCreatorFields, composedContributorFields)
+    List(profileFields, metadataFields, composedCreatorFields, composedContributorFields, composedSpacialFields, composedRelationFields)
       .flatMap(_.keySet)
 }
