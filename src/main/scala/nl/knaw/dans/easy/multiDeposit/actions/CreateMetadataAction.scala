@@ -5,7 +5,7 @@ import nl.knaw.dans.easy.multiDeposit.{Action, _}
 
 import scala.xml.{Elem, PrettyPrinter}
 
-class CreateMetadataAction(row: Int) extends Action(row) {
+case class CreateMetadataAction(row: Int) extends Action(row) {
 
   def checkPreconditions = ???
 
