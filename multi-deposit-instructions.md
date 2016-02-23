@@ -13,8 +13,7 @@ General overview
 ----------------
 
 * It is a UTF-8 encoded Comma Separated Values (CSV) file that conforms to
-  [RFC4180]. If you are exporting an Excel spreadsheet to CSV, follow the
-  instructions in the blog post [Excel to UTF-8 CSV]. However, it may be easier to
+  [RFC4180]. If you are exporting an Excel spreadsheet to CSV, it is best to
   install [LibreOffice] and use its Calc application, which supports the required
   export without any extra steps. LibreOffice can also open Excel files.
 * The first row of the file contains column headers.
@@ -180,7 +179,6 @@ storage, which is managed by Fedora. It is possible to specify an alternative AI
 <!-- TO DO re-specify this -->
 
 
-[Excel to UTF-8 CSV]: https://www.ablebits.com/office-addins-blog/2014/04/24/convert-excel-csv/#export-csv-utf8
 [LibreOffice]: https://www.libreoffice.org/
 [Dublin Core elements]: http://www.dublincore.org/documents/dces/
 [Dublin Core Term elements]: http://dublincore.org/documents/dcmi-terms/
