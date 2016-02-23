@@ -36,18 +36,6 @@ class MultiDepositParserSpec extends UnitSpec {
     (the [ActionException] thrownBy validate.get).row shouldBe 0
   }
 
-//  it should "throw an exception with text \"unknown header: <name>\" when the input contains invalid headers" in {
-//    val headers = List("FILE_SIP", "dataset")
-//
-//    (the [ActionException] thrownBy validateDatasetHeaders(headers).get).message should
-//      include ("unknown headers: dataset")
-//  }
-//
-//  it should "throw an exception on row 0 when the input contains invalid headers" in {
-//    val headers = List("FILE_SIP", "dataset")
-//    (the [ActionException] thrownBy validateDatasetHeaders(headers).get).row shouldBe 0
-//  }
-
   "parse" should "fail with empty instruction file" in {
     val csv = new File(testDir, "md/instructions.csv")
     write(csv, "")
