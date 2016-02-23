@@ -85,7 +85,7 @@ Steps:
         mvn install
 
 
-[Multi-Deposit Instructions]: multi-deposit-instructions.html
+[Multi-Deposit Instructions]: multi-deposit-instructions.md
 [easy-ingest-flow]: https://github.com/DANS-KNAW/easy-ingest-flow
 
   
