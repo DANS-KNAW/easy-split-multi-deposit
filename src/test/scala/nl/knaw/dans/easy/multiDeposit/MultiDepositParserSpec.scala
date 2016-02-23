@@ -20,28 +20,33 @@ class MultiDepositParserSpec extends UnitSpec {
   }
 
   it should "succeed when given a subset of the valid headers" in {
-    val headers = List("DATASET_ID", "FILE_STORAGE_PATH")
+    val headers = List("DATASET", "FILE_STORAGE_PATH")
 
     validateDatasetHeaders(headers).isSuccess shouldBe true
   }
 
   it should "fail when the input contains invalid headers" in {
-    val headers = List("FILE_SIP", "dataset_id")
+    val headers = List("FILE_SIP", "dataset")
 
-    validateDatasetHeaders(headers).isFailure shouldBe true
+    val validate = validateDatasetHeaders(headers)
+
+    validate.isFailure shouldBe true
+    (the [ActionException] thrownBy validate.get).message should
+      include ("unknown headers: dataset")
+    (the [ActionException] thrownBy validate.get).row shouldBe 0
   }
 
-  it should "throw an exception with text \"unknown header: <name>\" when the input contains invalid headers" in {
-    val headers = List("FILE_SIP", "dataset_id")
-
-    (the [ActionException] thrownBy validateDatasetHeaders(headers).get).message should
-      include ("unknown headers: dataset_id")
-  }
-
-  it should "throw an exception on row 0 when the input contains invalid headers" in {
-    val headers = List("FILE_SIP", "dataset_id")
-    (the [ActionException] thrownBy validateDatasetHeaders(headers).get).row shouldBe 0
-  }
+//  it should "throw an exception with text \"unknown header: <name>\" when the input contains invalid headers" in {
+//    val headers = List("FILE_SIP", "dataset")
+//
+//    (the [ActionException] thrownBy validateDatasetHeaders(headers).get).message should
+//      include ("unknown headers: dataset")
+//  }
+//
+//  it should "throw an exception on row 0 when the input contains invalid headers" in {
+//    val headers = List("FILE_SIP", "dataset")
+//    (the [ActionException] thrownBy validateDatasetHeaders(headers).get).row shouldBe 0
+//  }
 
   "parse" should "fail with empty instruction file" in {
     val csv = new File(testDir, "md/instructions.csv")
@@ -56,7 +61,7 @@ class MultiDepositParserSpec extends UnitSpec {
     testSubscriber.assertUnsubscribed
   }
 
-  it should "fail without DATASET_ID in instructions file?" in {
+  it should "fail without DATASET in instructions file?" in {
     val csv = new File(testDir, "instructions.csv")
     write(csv, "SF_PRESENTATION,FILE_AUDIO_VIDEO\nx,y")
 
@@ -71,14 +76,14 @@ class MultiDepositParserSpec extends UnitSpec {
 
   it should "not complain about an invalid combination in instructions file?" in {
     val csv = new File(testDir, "instructions.csv")
-    write(csv, "DATASET_ID,FILE_SIP\ndataset1,x")
+    write(csv, "DATASET,FILE_SIP\ndataset1,x")
 
     val testSubscriber = TestSubscriber[Datasets]
     parse(csv).subscribe(testSubscriber)
 
     val dataset = mutable.HashMap(
       "ROW" -> List("2"),
-      "DATASET_ID" -> List("dataset1"),
+      "DATASET" -> List("dataset1"),
       "FILE_SIP" -> List("x"))
     val expected = ListBuffer(("dataset1", dataset))
     testSubscriber.assertValue(expected)
@@ -88,7 +93,7 @@ class MultiDepositParserSpec extends UnitSpec {
   }
 
   it should "succeed with Roundtrip/sip-demo-2015-02-24" in {
-    val csv = new File("src/test/resources/Roundtrip/sip-demo-2015-02-24/instructions.csv")
+    val csv = new File("src/test/resources/Roundtrip_MD/sip-demo-2015-02-24/instructions.csv")
 
     val testSubscriber = TestSubscriber[String]
     parse(csv).flatMap(_.map(_._1).toObservable).subscribe(testSubscriber)

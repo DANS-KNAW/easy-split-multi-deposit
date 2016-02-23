@@ -14,7 +14,7 @@ OptionValues with Inside with Inspectors with OneInstancePerTest {
   def testDataset1: Dataset = {
     val dataset = new Dataset
     dataset += "ROW" -> List("2", "3", "4")
-    dataset += "DATASET_ID" -> List("ruimtereis01", "ruimtereis01", "ruimtereis01")
+    dataset += "DATASET" -> List("ruimtereis01", "ruimtereis01", "ruimtereis01")
     dataset += "DDM_CREATED" -> List("2015-05-19", "", "")
     dataset += "DC_TITLE" -> List("Reis naar Centaur-planetoïde", "Trip to Centaur asteroid", "")
     dataset += "DC_DESCRIPTION" -> List("Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.", "A two day mission to boldly go where no man has gone before", "")
@@ -43,7 +43,7 @@ OptionValues with Inside with Inspectors with OneInstancePerTest {
     val dataset = new Dataset
 
     dataset += "ROW" -> List("2", "3", "4", "5", "6")
-    dataset += "DATASET_ID" -> List("dataset-1", "dataset-1", "dataset-1", "dataset-1", "dataset-1")
+    dataset += "DATASET" -> List("dataset-1", "dataset-1", "dataset-1", "dataset-1", "dataset-1")
     dataset += "DC_TITLE" -> List("Title 1 of dataset 1", "Title 2 of dataset 1", "", "", "")
     dataset += "DC_DESCRIPTION" -> List("A sample dataset with a not very long description", "", "", "", "")
     dataset += "DC_CREATOR" -> List("Creator A", "", "", "", "")

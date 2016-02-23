@@ -44,7 +44,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
 
   it should "fail with too little instructions" in {
     val datasets = new Datasets() += ("dataset-1" -> (testDataset -= "FILE_SIP"))
-    val run = CreateSpringfieldAction(1, datasets).run
+    val run = CreateSpringfieldAction(1, datasets).run()
     run shouldBe a[Failure[_]]
 
     (the [ActionException] thrownBy run.get).row shouldBe 1
@@ -77,13 +77,13 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
       FileUtils.readFileToString(xmlFile)
     }
 
-    generated contains "subtitles=\"videos/some.txt\""
-    generated contains "src=\"videos/some.mpg\""
-    generated contains "target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test\""
+    generated should include ("subtitles=\"videos/some.txt\"")
+    generated should include ("src=\"videos/some.mpg\"")
+    generated should include ("target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test\"")
   }
 
   "toXML" should "return an empty xml when given empty datasets" in {
-    Utility.trim((XML.loadString(toXML(new Datasets)))) shouldBe
+    Utility.trim(XML.loadString(toXML(new Datasets))) shouldBe
       Utility.trim(<actions></actions>)
   }
 

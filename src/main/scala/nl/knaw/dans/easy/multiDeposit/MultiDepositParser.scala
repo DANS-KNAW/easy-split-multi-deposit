@@ -57,7 +57,7 @@ object MultiDepositParser {
     * @return `Success` if the `headers` are valid, `Failure` if the `headers` are invalid
     */
   def validateDatasetHeaders(headers: List[String]): Try[Unit] = {
-    val validHeaders = List("DATASET_ID", "FILE_SIP", "FILE_DATASET", "FILE_AUDIO_VIDEO",
+    val validHeaders = List("DATASET", "FILE_SIP", "FILE_DATASET", "FILE_AUDIO_VIDEO",
       "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_SUBTITLES",
       "SF_DOMAIN", "SF_USER", "SF_COLLECTION", "SF_PRESENTATION", "SF_SUBTITLES") ++ DDM.allFields
     if (headers.forall(validHeaders.contains)) Success(Unit)
@@ -75,7 +75,7 @@ object MultiDepositParser {
     * @return the same `datasets`
     */
   def updateDatasets(datasets: Datasets, values: CsvValues, row: Int): Datasets = {
-    val id = values.find(_._1 equals "DATASET_ID")
+    val id = values.find(_._1 equals "DATASET")
       .map(_._2)
       .getOrElse {
         throw new Exception("No dataset ID found")
