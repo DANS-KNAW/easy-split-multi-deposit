@@ -2,7 +2,7 @@ package nl.knaw.dans.easy.multiDeposit
 
 import java.io.File
 
-import nl.knaw.dans.easy.multiDeposit.actions.{CopyToSpringfieldInbox, CreateSpringfieldAction}
+import nl.knaw.dans.easy.multiDeposit.actions.{CopyToSpringfieldInbox, CreateMetadataAction, CreateSpringfieldAction}
 import nl.knaw.dans.easy.multiDeposit.{CommandLineOptions => cmd, MultiDepositParser => parser}
 import org.slf4j.LoggerFactory
 import rx.lang.scala.{Observable, ObservableExtensions}
@@ -23,7 +23,7 @@ object Main {
       .doOnCompleted { log.info("Finished successfully!") }
       .subscribe
 
-    Schedulers.shutdown
+    Schedulers.shutdown()
   }
 
   def getActionsStream(implicit settings: Settings): Observable[Action] = {
@@ -69,21 +69,22 @@ object Main {
   def getDatasetActions(entry: (DatasetID, Dataset))(implicit s: Settings): List[Try[Action]] = {
     val datasetID = entry._1
     val dataset = entry._2
-    val row = dataset("ROW").head // first occurence of dataset
+    val row = dataset("ROW").head.toInt // first occurence of dataset, assuming it is not empty
 
     log.debug("Getting actions for dataset {} ...", datasetID)
 
     val fpss = extractFileParametersList(dataset)
 
     // TODO add prior actions here using ::
-    getFileActions(dataset, fpss)
+    Success(CreateMetadataAction(row)) ::
+      getFileActions(dataset, fpss)
   }
 
   def getFileActions(d: Dataset, fpss: List[FileParameters])(implicit s: Settings): List[Try[Action]] = {
 
     def getActions(fps: FileParameters): List[Action] = {
 //      fps match {
-//        // TODO add actions here
+//        // TODO add actions here if needed
 //        case FileParameters(Some(row), p1, p2, p3, p4, p5) => throw ActionException(row,
 //          s"Invalid combination of file parameters: FILE_SIP = $p1, FILE_DATASET = $p2, " +
 //            s"FILE_STORAGE_SERVICE = $p3, FILE_STORAGE_PATH = $p4, FILE_AUDIO_VIDEO = $p5")
