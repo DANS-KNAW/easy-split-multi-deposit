@@ -17,7 +17,7 @@ package nl.knaw.dans.easy.multiDeposit
 
 import java.io.File
 
-import nl.knaw.dans.easy.multiDeposit.actions.{CopyToSpringfieldInbox, CreateMetadataAction, CreateSpringfieldAction}
+import nl.knaw.dans.easy.multiDeposit.actions._
 import nl.knaw.dans.easy.multiDeposit.{CommandLineOptions => cmd, MultiDepositParser => parser}
 import org.slf4j.LoggerFactory
 import rx.lang.scala.{Observable, ObservableExtensions}
@@ -90,7 +90,9 @@ object Main {
 
     val fpss = extractFileParametersList(dataset)
 
-    // TODO add prior actions here using ::
+    Success(CreateOutputDepositDir(row, datasetID)) ::
+    Success(AddBagToDepositAction(row, datasetID)) ::
+    // TODO add more here: AddMetadataToDepositAction and AddPropertiesToDepositAction
     Success(CreateMetadataAction(row)) ::
       getFileActions(dataset, fpss)
   }

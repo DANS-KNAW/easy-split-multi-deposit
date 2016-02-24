@@ -153,6 +153,13 @@ package object multiDeposit {
       * @throws IOException if an IO error occurs during copying
       */
     def copyFile(destDir: File) = FileUtils.copyFile(file, destDir)
+
+    /**
+      * Deletes a directory recursively.
+      *
+      * @throws IOException in case deletion is unsuccessful
+      */
+    def deleteDirectory() = FileUtils.deleteDirectory(file)
   }
 
   implicit class DatasetExtensions(val dataset: Dataset) extends AnyVal {
@@ -175,11 +182,17 @@ package object multiDeposit {
     }
   }
 
+  def multiDepositDir(settings: Settings, datasetID: DatasetID) = {
+    new File(settings.multidepositDir, datasetID)
+  }
   def depositDir(settings: Settings, datasetID: DatasetID) = {
     new File(settings.depositDir, s"${settings.multidepositDir.getName}-$datasetID")
   }
-  def depositDirBag(settings: Settings, datasetID: DatasetID) = {
+  def depositBagDir(settings: Settings, datasetID: DatasetID) = {
     new File(depositDir(settings, datasetID), "bag")
+  }
+  def depositBagMetadataDir(settings: Settings, datasetID: DatasetID) = {
+    new File(depositBagDir(settings, datasetID), "metadata")
   }
 
   /** Extract the ''file'' parameters from a dataset and return these in a list of fileparameters.
