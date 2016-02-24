@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
 
+@Deprecated
 case class CopyFileToDatasetIngestDir(row: String, datasetId: String, fileSip: String, fileDataset: String)(implicit s: Settings) extends Action(row) {
   val log = LoggerFactory.getLogger(getClass)
   val fileSource = file(s.sipDir, fileSip)

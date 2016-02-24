@@ -22,6 +22,7 @@ import com.github.sardine.impl.SardineException
 
 import scala.util.{Failure, Success, Try}
 
+@Deprecated
 trait StorageConnector {
 
   def exists(url: String): Try[Boolean]

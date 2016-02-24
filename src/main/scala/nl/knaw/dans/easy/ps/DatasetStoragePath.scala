@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.ps
 
 import org.apache.commons.lang.StringUtils.isBlank
 
+@Deprecated
 case class DatasetStoragePath(dataset: Dataset) {
   private val path: Option[String] = calculatedDatasetStoragePath
   

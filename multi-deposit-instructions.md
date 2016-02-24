@@ -13,13 +13,13 @@ General overview
 ----------------
 
 * It is a UTF-8 encoded Comma Separated Values (CSV) file that conforms to
-  [RFC4180]. If you are exporting an Excel spreadsheet to CSV, follow the
-  instructions in the blog post [Excel to UTF-8 CSV]. However, it may be easier to
+  [RFC4180]. If you are exporting an Excel spreadsheet to CSV, it is best to
   install [LibreOffice] and use its Calc application, which supports the required
   export without any extra steps. LibreOffice can also open Excel files.
 * The first row of the file contains column headers.
 * Subsequent rows contain values for only one target Dataset. Multiple rows may 
-  together specify the values for one target Dataset.
+  together specify the values for one target Dataset. However, rows that specify
+  one dataset must be grouped together.
 * There are three types of values, which will be explained below:
     1. the `DATASET` column
     2. metadata element
@@ -101,6 +101,9 @@ hyperlink if it is displayed on a web page and `DCX_RELATION_LINK` the URL to th
 related resource.
 
 #### Springfield
+[Springfield Web TV] is the platform that DANS uses to host the streaming surrogates (versions)
+of audiovisual data.
+
 The metadata elements starting with `SF_` are used to create a Streaming Surrogate of
 a audio or video presentation contained in the dataset:
 
@@ -121,15 +124,17 @@ a audio or video presentation contained in the dataset:
 -------------------------------
 
 ### Default Processing
-By default, files in the SIP Directory are only processed if they are located in
-a sub-directory that has a matching `DATASET`-value in the SIP Instructions file.
+By default, files in the Multi-Deposit Directory are only processed if they are located in
+a sub-directory that has a matching `DATASET`-value in the MDI file.
 
-For example, let us assume that there is a SIP at the directory
-`/uploads/customer-1/sip-2015-01-01` and that the deposits is located at
-`/data/csv-deposits`. Let us further suppose that the lay-out of the SIP
+For example, let us assume that there is a Multi-Deposit at the directory
+`/uploads/customer-1/multi-deposit-2016-01-01` and that the output deposits directory 
+is located at `/data/csv-deposits`. Let us further suppose that the lay-out of the Multi-Deposit
 Directory is as follows:
 
-    /uploads/customer-1/sip-2015-01-01
+    /uploads/customer-1/deposit-2016-01-01
+                             |
+                             +- instructions.csv
                              |
                              +- dataset-1
                              |      |
@@ -147,14 +152,46 @@ Directory is as follows:
                                    |
                                    +- video02.mpeg
 
-If the SIP Instructions file contains rows with the value (in the `DATASET` column) with
-the provisional identifiers "dataset-1" and "dataset-2" then the files in the
-corresponding SIP sub-directories will *by default* be copied to
-`/home/jdoe/batch/ingest/dataset-1/filedata` and
-`/home/jdoe/batch/ingest/dataset-2/filedata` respectively. The relative path is
-maintained. Specifically `/home/jdoe/batch/ingest/dataset-1/data/subdir-x/file-y`
-and `/home/jdoe/batch/ingest/dataset-1/filedata/subdir-x/file-z` will be created.
+* The Multi-Deposit Directory is `/uploads/customer-1/deposit-2016-01-01`
+* The Output Deposits Directory is `/data/csv-deposits`
+* The MDI file is `/uploads/customer-1/deposit-2016-01-01/instructions.csv`
 
+Now if the MDI file contains "dataset-1" as a value for the `DATASET` field
+for one of the described datasets then the program will look and find a matching
+data files directory at `/uploads/customer-1/deposit-2016-01-01/dataset-1`. The
+*default* behavior now is to use the files in this directory as the payload for
+the target deposit. The relative paths in "dataset-1" will be preserved.
+
+The resulting deposit will have the following location and lay-out:
+
+     /data/csv-deposits/deposit-2016-01-01-dataset-1/
+                                      |
+                                      +- deposit.properties
+                                      |
+                                      +- bag
+                                          |
+                                          +- bagit.txt
+                                          | 
+                                          +- baginfo.txt
+                                          |
+                                          +- <manifest-files>* (multiple manifist files, not elaborated here)
+                                          |
+                                          +- data
+                                          |    |
+                                          |    +- subdir-x
+                                          |         |
+                                          |         +- file-y
+                                          |         |
+                                          |         +- file-z
+                                          |
+                                          +- metadata
+                                               |
+                                               +- datasets.xml
+                                               |
+                                               +- files.xml
+                               
+Note that to create a unique deposit-directory the Multi-Deposit Directory name is 
+combined with the `DATASET` value.
 
 ### Non-default Processing
 
@@ -180,10 +217,10 @@ storage, which is managed by Fedora. It is possible to specify an alternative AI
 <!-- TO DO re-specify this -->
 
 
-[Excel to UTF-8 CSV]: https://www.ablebits.com/office-addins-blog/2014/04/24/convert-excel-csv/#export-csv-utf8
 [LibreOffice]: https://www.libreoffice.org/
 [Dublin Core elements]: http://www.dublincore.org/documents/dces/
 [Dublin Core Term elements]: http://dublincore.org/documents/dcmi-terms/
 [RFC4180]: http://tools.ietf.org/html/rfc4180
 [Rijksdriehoekscoördinaten]: https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten
 [refinements of the relation element]: http://dublincore.org/documents/usageguide/qualifiers.shtml#isVersionOf
+[Springfield Web TV]: http://noterik.github.io/
