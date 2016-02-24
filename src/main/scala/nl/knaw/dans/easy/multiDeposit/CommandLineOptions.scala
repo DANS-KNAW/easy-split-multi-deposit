@@ -34,14 +34,12 @@ object CommandLineOptions {
     log.debug("Parsing command line ...")
     val opts = new ScallopCommandLine(conf, args)
 
-    val dir = opts.multiDepositDir.apply()
-
     val settings = Settings(
       appHomeDir = new File(Option(System.getProperty("app.home"))
         .getOrElse(Properties.propOrNull("process.sip.home"))),
-      mdDir = opts.multiDepositDir(),
-      springfieldInbox = opts.springfieldInbox()
-    )
+      multidepositDir = opts.multiDepositDir(),
+      springfieldInbox = opts.springfieldInbox(),
+      depositDir = opts.depositDir())
 
     log.debug("Using the following settings: {}", settings)
 
@@ -56,11 +54,11 @@ class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(
   version(s"$printedName ${Version()}")
   banner("""Utility to process a Submission Information Package prior to ingestion into the DANS EASY Archive
            |
-           |Usage: process-sip.sh [{--springfield-inbox|-s} <dir>] <sip-dir>
+           |Usage: process-sip.sh [{--output-deposits-dir|-d} <dir>][{--springfield-inbox|-s} <dir>] <multi-deposit-dir>
            |Options:
            |""".stripMargin)
 
-  val multiDepositDir = trailArg[File](name = "multi-deposit-dir", required = true,
+  lazy val multiDepositDir = trailArg[File](name = "multi-deposit-dir", required = true,
     descr = "Directory containing the Submission Information Package to process. "
       + s"This must be a valid path to a directory containing a file named '${cmd.mdInstructionsFileName}' in "
       + "RFC4180 format.")
@@ -73,15 +71,26 @@ class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(
         Right(()))
       .getOrElse(Left("Could not parse parameter multi-deposit-dir")))
 
-  val springfieldInbox = opt[File]("springfield-inbox",
-    descr = "Inbox of the Springfield Streaming Media Platform",
+  lazy val springfieldInbox = opt[File]("springfield-inbox",
+    descr = "The inbox directory of a Springfield Streaming Media Platform installation. " +
+      "If not specified the value of springfield-inbox in application.properties is used.",
     default = Some(new File(conf.getString("springfield-inbox"))))
   validateOpt(springfieldInbox)(_.map(file =>
     if (!file.isDirectory)
       Left(s"Not a directory '$file'")
     else
       Right(()))
-    .getOrElse(Left("Could not parse parameter springfield-inbox")))
+    .getOrElse(Left("Could not parse parameter 'springfield-inbox'")))
 
-  // TODO extend this command line parser
+  lazy val depositDir = opt[File]("deposit-dir",
+    descr = "A directory in which the deposit directories must be created. " +
+      "The deposit directory layout is described in the easy-deposit documenation",
+    default = None // TODO see https://github.com/rvanheest/easy-split-multi-deposit/pull/1/files#r53905378
+    )
+  validateOpt(depositDir)(_.map(file =>
+    if (!file.isDirectory)
+      Left(s"Not a directory '$file'")
+    else
+      Right(()))
+    .getOrElse(Left("Could not parse parameter 'deposit-dir'")))
 }

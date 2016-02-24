@@ -37,12 +37,13 @@ package object multiDeposit {
                             storageService: Option[String], storagePath: Option[String],
                             audioVideo: Option[String])
   case class Settings(appHomeDir: File = null,
-                      mdDir: File = null,
+                      multidepositDir: File = null,
                       springfieldInbox: File = null,
-                      springfieldStreamingBaseUrl: String = null) {
+                      depositDir: File = null) {
     override def toString: String =
-      s"Settings(home=$appHomeDir, md-dir=$mdDir, springfield-inbox=$springfieldInbox, " +
-        s"springfield-streaming-baseurl=$springfieldStreamingBaseUrl)"
+      s"Settings(home=$appHomeDir, multideposit-dir=$multidepositDir, " +
+        s"springfield-inbox=$springfieldInbox, " +
+        s"deposit-dir=$depositDir)"
   }
 
   case class ActionException(row: Int, message: String) extends RuntimeException(message)

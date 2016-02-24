@@ -42,7 +42,7 @@ object Main {
   }
 
   def getActionsStream(implicit settings: Settings): Observable[Action] = {
-    parser.parse(new File(settings.mdDir, cmd.mdInstructionsFileName))
+    parser.parse(new File(settings.multidepositDir, cmd.mdInstructionsFileName))
       .getActions
       .checkActionPreconditions
       .runActions

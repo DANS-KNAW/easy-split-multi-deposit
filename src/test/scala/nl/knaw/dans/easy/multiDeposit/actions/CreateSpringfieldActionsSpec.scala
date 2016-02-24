@@ -27,7 +27,7 @@ import scala.xml.{XML, Utility}
 class CreateSpringfieldActionsSpec extends UnitSpec {
 
   implicit val settings = Settings(
-    mdDir = new File(testDir, "md"),
+    multidepositDir = new File(testDir, "md"),
     springfieldInbox = new File(testDir, "springFieldInbox")
   )
   def testDataset = {

@@ -26,12 +26,12 @@ import scala.util.Success
 class CopyToSpringfieldInboxSpec extends UnitSpec {
 
   implicit val settings = Settings(
-    mdDir = new File(testDir, "md"),
+    multidepositDir = new File(testDir, "md"),
     springfieldInbox = new File(testDir, "springFieldInbox")
   )
 
   def createFile(fileName: MdKey) = {
-    val file = new File(settings.mdDir, fileName)
+    val file = new File(settings.multidepositDir, fileName)
     file.getParentFile.mkdirs
     file.write("")
   }
