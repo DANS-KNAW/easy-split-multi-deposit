@@ -175,6 +175,13 @@ package object multiDeposit {
     }
   }
 
+  def depositDir(settings: Settings, datasetID: DatasetID) = {
+    new File(settings.depositDir, s"${settings.multidepositDir.getName}-$datasetID")
+  }
+  def depositDirBag(settings: Settings, datasetID: DatasetID) = {
+    new File(depositDir(settings, datasetID), "bag")
+  }
+
   /** Extract the ''file'' parameters from a dataset and return these in a list of fileparameters.
     * The following parameters are used for this: '''ROW''', '''FILE_SIP''', '''FILE_DATASET''',
     * '''FILE_STORAGE_SERVICE''', '''FILE_STORAGE_PATH''', '''FILE_AUDIO_VIDEO'''.
