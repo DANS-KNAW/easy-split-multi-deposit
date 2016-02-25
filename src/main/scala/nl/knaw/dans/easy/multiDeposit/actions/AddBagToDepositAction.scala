@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit.actions
+package nl.knaw.dans.easy.multideposit.actions
 
 import gov.loc.repository.bagit.BagFactory
 import gov.loc.repository.bagit.BagFactory.Version
 import gov.loc.repository.bagit.writer.impl.FileSystemWriter
-import nl.knaw.dans.easy.multiDeposit._
-import nl.knaw.dans.easy.multiDeposit.actions.AddBagToDepositAction._
+import nl.knaw.dans.easy.multideposit._
+import nl.knaw.dans.easy.multideposit.actions.AddBagToDepositAction._
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions.seqAsJavaList

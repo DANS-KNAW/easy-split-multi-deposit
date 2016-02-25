@@ -1,8 +1,8 @@
-package nl.knaw.dans.easy.multiDeposit.actions
+package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 
-import nl.knaw.dans.easy.multiDeposit.{Settings, UnitSpec, _}
+import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 
 import scala.util.Success

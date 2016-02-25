@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit
+package nl.knaw.dans.easy.multideposit
 
 import java.io.File
 
@@ -48,7 +48,7 @@ object CommandLineOptions {
 }
 
 class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(args) {
-  import nl.knaw.dans.easy.multiDeposit.{CommandLineOptions => cmd}
+  import nl.knaw.dans.easy.multideposit.{CommandLineOptions => cmd}
 
   printedName = "process-multi-deposit"
   version(s"$printedName ${Version()}")

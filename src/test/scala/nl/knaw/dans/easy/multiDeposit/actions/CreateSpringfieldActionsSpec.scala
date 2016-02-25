@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit.actions
+package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 
-import nl.knaw.dans.easy.multiDeposit._
-import nl.knaw.dans.easy.multiDeposit.actions.CreateSpringfieldAction._
+import nl.knaw.dans.easy.multideposit._
+import nl.knaw.dans.easy.multideposit.actions.CreateSpringfieldAction._
 import org.scalatest.BeforeAndAfterAll
 
 import scala.util.{Failure, Success}

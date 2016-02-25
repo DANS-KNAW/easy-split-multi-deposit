@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit
+package nl.knaw.dans.easy.multideposit
 
 import java.io.File
 
-import nl.knaw.dans.easy.multiDeposit.actions._
-import nl.knaw.dans.easy.multiDeposit.{CommandLineOptions => cmd, MultiDepositParser => parser}
+import nl.knaw.dans.easy.multideposit.actions._
+import nl.knaw.dans.easy.multideposit.{CommandLineOptions => cmd, MultiDepositParser => parser}
 import org.slf4j.LoggerFactory
 import rx.lang.scala.{Observable, ObservableExtensions}
 import rx.schedulers.Schedulers

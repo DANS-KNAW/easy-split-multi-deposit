@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit
+package nl.knaw.dans.easy.multideposit
 
 import java.io.File
 
-import nl.knaw.dans.easy.multiDeposit.MultiDepositParser._
+import nl.knaw.dans.easy.multideposit.MultiDepositParser._
 import org.scalatest.BeforeAndAfterAll
 import rx.lang.scala.ObservableExtensions
 import rx.lang.scala.observers.TestSubscriber

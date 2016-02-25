@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit.actions
+package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multiDeposit
-import nl.knaw.dans.easy.multiDeposit._
+import nl.knaw.dans.easy.multideposit
+import nl.knaw.dans.easy.multideposit._
 import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
@@ -28,7 +28,7 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
 
   def run(): Try[Unit] = {
     log.debug(s"Running $this")
-    val depositDir = multiDeposit.depositDir(settings, datasetID)
+    val depositDir = multideposit.depositDir(settings, datasetID)
     val bagDir = depositBagDir(settings, datasetID)
     val metadataDir = depositBagMetadataDir(settings, datasetID)
 
@@ -41,7 +41,7 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   }
 
   def rollback(): Try[Unit] = {
-    val depositDir = multiDeposit.depositDir(settings, datasetID)
+    val depositDir = multideposit.depositDir(settings, datasetID)
     log.debug(s"Deleting directory $depositDir")
 
     Try {

@@ -25,7 +25,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
-package object multiDeposit {
+package object multideposit {
 
   type DatasetID = String
   type MultiDepositKey = String
