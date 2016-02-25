@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multiDeposit
 
+import java.io.File
+
 import org.scalatest.BeforeAndAfter
 
 import scala.util.{Failure, Success, Try}
@@ -68,6 +70,22 @@ class MultiDepositSpec extends UnitSpec with BeforeAndAfter {
 
   it should "return the onError value when provided with a failure" in {
     Try[String](throw new Exception) getOrElse "foobar" shouldBe "foobar"
+  }
+
+  "DatasetExtensions.getValue" should "return the correct value when provided with the correct parameters" in {
+    dataset1.getValue("ROW")(0) shouldBe Some("2")
+  }
+
+  it should "return None when the key is not in the dataset" in {
+    dataset1.getValue("ROW!")(0) shouldBe None
+  }
+
+  it should "return None when the row is not in the dataset" in {
+    dataset1.getValue("ROW")(10) shouldBe None
+  }
+
+  it should "return None when value is blank" in {
+    dataset1.getValue("DDM_CREATED")(1) shouldBe None
   }
 
   "extractFileParametersList" should "succeed with correct dataset1" in {
