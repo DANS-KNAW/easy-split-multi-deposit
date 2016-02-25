@@ -20,16 +20,20 @@ import java.io.File
 import nl.knaw.dans.easy.multiDeposit._
 import nl.knaw.dans.easy.multiDeposit.actions.CreateSpringfieldAction._
 import org.apache.commons.io.FileUtils
+import org.scalatest.BeforeAndAfterAll
 
 import scala.util.{Failure, Success}
 import scala.xml.{XML, Utility}
 
-class CreateSpringfieldActionsSpec extends UnitSpec {
+class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     springfieldInbox = new File(testDir, "springFieldInbox")
   )
+
+  override def afterAll = testDir.getParentFile.deleteDirectory()
+
   def testDataset = {
     val dataset = new Dataset
     dataset += "SF_DOMAIN" -> List("dans")

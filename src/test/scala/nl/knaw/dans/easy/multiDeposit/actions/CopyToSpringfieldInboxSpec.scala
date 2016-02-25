@@ -20,15 +20,18 @@ import java.io.{FileNotFoundException, File}
 import nl.knaw.dans.easy.multiDeposit._
 import nl.knaw.dans.easy.multiDeposit.{ActionException, Settings, UnitSpec}
 import nl.knaw.dans.easy.ps.MdKey
+import org.scalatest.BeforeAndAfterAll
 
 import scala.util.Success
 
-class CopyToSpringfieldInboxSpec extends UnitSpec {
+class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     springfieldInbox = new File(testDir, "springFieldInbox")
   )
+
+  override def afterAll = testDir.getParentFile.deleteDirectory()
 
   def createFile(fileName: MdKey) = {
     val file = new File(settings.multidepositDir, fileName)
@@ -56,7 +59,7 @@ class CopyToSpringfieldInboxSpec extends UnitSpec {
   }
 
   it should "fail if file does not exist" in {
-    val run = CopyToSpringfieldInbox(1, "videos/some_error.mpg").run
+    val run = CopyToSpringfieldInbox(1, "videos/some_error.mpg").run()
     (the [FileNotFoundException] thrownBy run.get).getMessage should include ("videos/some_error.mpg")
   }
 

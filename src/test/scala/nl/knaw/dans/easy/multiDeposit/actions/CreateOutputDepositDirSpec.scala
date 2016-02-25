@@ -14,10 +14,7 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     depositDir = new File(testDir, "dd")
   )
 
-  override def beforeAll = {
-    testDir.mkdir
-    testDir.exists shouldBe true
-  }
+  override def beforeAll = testDir.mkdirs
 
   before {
     // create depositDir base directory
@@ -33,10 +30,7 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     baseDir.exists shouldBe false
   }
 
-  override def afterAll = {
-    testDir.deleteDirectory()
-    testDir.exists shouldBe false
-  }
+  override def afterAll = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "always succeed" in {
     CreateOutputDepositDir(1, "ds1").checkPreconditions shouldBe a[Success[_]]

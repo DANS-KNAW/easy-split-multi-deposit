@@ -15,9 +15,9 @@
  */
 package nl.knaw.dans.easy.multiDeposit
 
-import org.scalatest.{DoNotDiscover, BeforeAndAfter}
+import org.scalatest.BeforeAndAfter
 
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 class MultiDepositSpec extends UnitSpec with BeforeAndAfter {
 
