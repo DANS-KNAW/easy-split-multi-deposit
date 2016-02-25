@@ -57,6 +57,7 @@ class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(
            |Usage: process-sip.sh [{--output-deposits-dir|-d} <dir>][{--springfield-inbox|-s} <dir>] <multi-deposit-dir>
            |Options:
            |""".stripMargin)
+  // TODO adjust banner because of change in output-deposits-dir being a trailArg now?
 
   lazy val multiDepositDir = trailArg[File](name = "multi-deposit-dir", required = true,
     descr = "Directory containing the Submission Information Package to process. "
@@ -82,11 +83,9 @@ class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(
       Right(()))
     .getOrElse(Left("Could not parse parameter 'springfield-inbox'")))
 
-  lazy val depositDir = opt[File]("deposit-dir",
+  lazy val depositDir = trailArg[File](name = "deposit-dir", required = true,
     descr = "A directory in which the deposit directories must be created. " +
-      "The deposit directory layout is described in the easy-deposit documenation",
-    default = None // TODO see https://github.com/rvanheest/easy-split-multi-deposit/pull/1/files#r53905378
-    )
+      "The deposit directory layout is described in the easy-deposit documenation")
   validateOpt(depositDir)(_.map(file =>
     if (!file.isDirectory)
       Left(s"Not a directory '$file'")
