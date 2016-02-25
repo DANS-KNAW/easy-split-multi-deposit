@@ -33,7 +33,7 @@ case class AddBagToDepositAction(row: Int, datasetID: DatasetID)(implicit settin
 
     val inputDir = multiDepositDir(settings, datasetID)
     if (inputDir.exists) Success(Unit)
-    else Failure(ActionException(row, s"Dataset $datasetID: deposit directory does not exist"))
+    else Failure(ActionException(row, s"Dataset $datasetID: deposit directory $inputDir does not exist"))
   }
 
   def run() = {

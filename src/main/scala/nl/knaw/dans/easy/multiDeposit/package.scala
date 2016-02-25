@@ -111,6 +111,8 @@ package object multiDeposit {
       */
     def write(data: String) = FileUtils.write(file, data)
 
+    def read = FileUtils.readFileToString(file)
+
     /**
       * Determines whether the ``parent`` directory contains the ``child`` element (a file or directory).
       * <p>

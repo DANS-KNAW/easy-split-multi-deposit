@@ -19,7 +19,6 @@ import java.io.File
 
 import nl.knaw.dans.easy.multiDeposit._
 import nl.knaw.dans.easy.multiDeposit.actions.CreateSpringfieldAction._
-import org.apache.commons.io.FileUtils
 import org.scalatest.BeforeAndAfterAll
 
 import scala.util.{Failure, Success}
@@ -76,7 +75,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     val generated = {
       val xmlFile = new File(settings.springfieldInbox, "springfield-actions.xml")
       xmlFile should be a 'file
-      FileUtils.readFileToString(xmlFile)
+      xmlFile.read
     }
 
     generated should include ("subtitles=\"videos/some.txt\"")
@@ -93,7 +92,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     val generated = {
       val xmlFile = new File(settings.springfieldInbox, "springfield-actions.xml")
       xmlFile should be a 'file
-      FileUtils.readFileToString(xmlFile)
+      xmlFile.read
     }
 
     generated should include ("subtitles=\"videos/some.txt\"")
