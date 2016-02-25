@@ -43,22 +43,22 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
     val inputDir = multiDepositDir(settings, datasetID)
     inputDir.deleteDirectory()
 
-    val pre = AddBagToDepositAction(1, datasetID).checkPreconditions
+    val pre = AddBagToDeposit(1, datasetID).checkPreconditions
 
     (the [ActionException] thrownBy pre.get).row shouldBe 1
     (the [ActionException] thrownBy pre.get).message should include (s"does not exist")
   }
 
   it should "succeed if the md folder exists" in {
-    AddBagToDepositAction(1, datasetID).checkPreconditions shouldBe a[Success[_]]
+    AddBagToDeposit(1, datasetID).checkPreconditions shouldBe a[Success[_]]
   }
 
   "run" should "succeed given the current setup" in {
-    AddBagToDepositAction(1, datasetID).run() shouldBe a[Success[_]]
+    AddBagToDeposit(1, datasetID).run() shouldBe a[Success[_]]
   }
 
   it should "create a bag with the files from ds1 in it and some meta-files around" in {
-    AddBagToDepositAction(1, datasetID).run()
+    AddBagToDeposit(1, datasetID).run()
 
     val root = new File(testDir, "dd/md-ds1")
     new File(root, "bag").exists shouldBe true
@@ -76,7 +76,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   }
 
   it should "preserve the file content after making the bag" in {
-    AddBagToDepositAction(1, datasetID).run()
+    AddBagToDeposit(1, datasetID).run()
 
     val root = new File(testDir, "dd/md-ds1")
     new File(root, "bag/data/file1.txt").read shouldBe file1Text
@@ -86,6 +86,6 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   }
 
   "rollback" should "always succeed" in {
-    AddBagToDepositAction(1, datasetID).rollback() shouldBe a[Success[_]]
+    AddBagToDeposit(1, datasetID).rollback() shouldBe a[Success[_]]
   }
 }

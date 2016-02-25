@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit.actions
+package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multiDeposit.DDM._
-import nl.knaw.dans.easy.multiDeposit.{Action, _}
+import nl.knaw.dans.easy.multideposit.DDM._
+import nl.knaw.dans.easy.multideposit.{Action, _}
 
 import scala.xml.{Elem, PrettyPrinter}
 
-case class CreateMetadataAction(row: Int) extends Action(row) {
+case class CreateMetadata(row: Int) extends Action(row) {
 
   def checkPreconditions = ???
 
@@ -28,7 +28,7 @@ case class CreateMetadataAction(row: Int) extends Action(row) {
 
   def rollback() = ???
 }
-object CreateMetadataAction {
+object CreateMetadata {
 
   def isPartOfProfile(key: MultiDepositKey)             = profileFields.contains(key)
   def isPartOfMetadata(key: MultiDepositKey)            = metadataFields.contains(key)

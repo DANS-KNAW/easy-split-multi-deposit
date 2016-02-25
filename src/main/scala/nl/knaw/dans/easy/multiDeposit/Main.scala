@@ -63,7 +63,7 @@ object Main {
   def getActions(dss: Datasets)(implicit s: Settings): Observable[Action] = {
     log.info("Compiling list of actions to perform ...")
     val tryActions = dss.flatMap(getDatasetActions).toList :+
-      Success(CreateSpringfieldAction(-1, dss)) // SpringfieldAction runs on multiple rows, so -1 here
+      Success(CreateSpringfieldActions(-1, dss)) // SpringfieldAction runs on multiple rows, so -1 here
 
     case class TryAndFailure(total: List[Try[Action]] = Nil, fails: List[Try[Action]] = Nil) {
       def +=(action: Try[Action]) = {
@@ -91,9 +91,9 @@ object Main {
     val fpss = extractFileParametersList(dataset)
 
     Success(CreateOutputDepositDir(row, datasetID)) ::
-    Success(AddBagToDepositAction(row, datasetID)) ::
+    Success(AddBagToDeposit(row, datasetID)) ::
     // TODO add more here: AddMetadataToDepositAction and AddPropertiesToDepositAction
-    Success(CreateMetadataAction(row)) ::
+    Success(CreateMetadata(row)) ::
       getFileActions(dataset, fpss)
   }
 

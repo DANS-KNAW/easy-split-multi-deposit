@@ -19,13 +19,13 @@ import gov.loc.repository.bagit.BagFactory
 import gov.loc.repository.bagit.BagFactory.Version
 import gov.loc.repository.bagit.writer.impl.FileSystemWriter
 import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.easy.multideposit.actions.AddBagToDepositAction._
+import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions.seqAsJavaList
 import scala.util.{Failure, Success, Try}
 
-case class AddBagToDepositAction(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action(row) {
+case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action(row) {
   val log = LoggerFactory.getLogger(getClass)
 
   def checkPreconditions = {
@@ -44,7 +44,7 @@ case class AddBagToDepositAction(row: Int, datasetID: DatasetID)(implicit settin
 
   def rollback() = Success(Unit)
 }
-object AddBagToDepositAction {
+object AddBagToDeposit {
   // for examples see https://github.com/LibraryOfCongress/bagit-java/issues/18
   //              and http://www.mpcdf.mpg.de/services/data/annotate/downloads -> TacoHarvest
   def createBag(datasetID: DatasetID)(implicit settings: Settings): Try[Unit] = {

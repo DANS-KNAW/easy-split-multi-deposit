@@ -35,8 +35,9 @@ object CommandLineOptions {
     val opts = new ScallopCommandLine(conf, args)
 
     val settings = Settings(
-      appHomeDir = new File(Option(System.getProperty("app.home"))
-        .getOrElse(Properties.propOrNull("process.sip.home"))),
+      // TODO appHomeDir does a get on Option. Is there a default value for this or is failing hard
+      // a good thing here?
+      appHomeDir = Option(System.getProperty("app.home")).map(new File(_)).get,
       multidepositDir = opts.multiDepositDir(),
       springfieldInbox = opts.springfieldInbox(),
       depositDir = opts.depositDir())
@@ -50,11 +51,11 @@ object CommandLineOptions {
 class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(args) {
   import nl.knaw.dans.easy.multideposit.{CommandLineOptions => cmd}
 
-  printedName = "process-multi-deposit"
+  printedName = "easy-split-multi-deposit"
   version(s"$printedName ${Version()}")
-  banner("""Utility to process a Submission Information Package prior to ingestion into the DANS EASY Archive
+  banner(s"""Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
            |
-           |Usage: process-sip.sh [{--output-deposits-dir|-d} <dir>][{--springfield-inbox|-s} <dir>] <multi-deposit-dir>
+           |Usage: $printedName.sh [{--output-deposits-dir|-d} <dir>][{--springfield-inbox|-s} <dir>] <multi-deposit-dir>
            |Options:
            |""".stripMargin)
   // TODO adjust banner because of change in output-deposits-dir being a trailArg now?

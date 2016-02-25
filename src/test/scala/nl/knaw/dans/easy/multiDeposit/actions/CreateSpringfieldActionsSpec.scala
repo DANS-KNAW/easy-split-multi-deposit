@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 
 import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.easy.multideposit.actions.CreateSpringfieldAction._
+import nl.knaw.dans.easy.multideposit.actions.CreateSpringfieldActions._
 import org.scalatest.BeforeAndAfterAll
 
 import scala.util.{Failure, Success}
@@ -50,19 +50,19 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   "checkPreconditions" should "always succeed" in {
-    CreateSpringfieldAction(1, datasets()).checkPreconditions shouldBe a[Success[_]]
+    CreateSpringfieldActions(1, datasets()).checkPreconditions shouldBe a[Success[_]]
   }
 
   "run" should "create a file when an empty ListBuffer was passed on" in {
     val datasets = new Datasets
 
-    CreateSpringfieldAction(1, datasets).run shouldBe a[Success[_]]
+    CreateSpringfieldActions(1, datasets).run shouldBe a[Success[_]]
     new File(settings.springfieldInbox, "springfield-actions.xml") should be a 'file
   }
 
   it should "fail with too little instructions" in {
     val datasets = new Datasets() += ("dataset-1" -> (testDataset -= "FILE_SIP"))
-    val run = CreateSpringfieldAction(1, datasets).run()
+    val run = CreateSpringfieldActions(1, datasets).run()
     run shouldBe a[Failure[_]]
 
     (the [ActionException] thrownBy run.get).row shouldBe 1
@@ -71,7 +71,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "create the correct file with the correct input" in {
-    CreateSpringfieldAction(1, datasets()).run shouldBe a[Success[_]]
+    CreateSpringfieldActions(1, datasets()).run shouldBe a[Success[_]]
     val generated = {
       val xmlFile = new File(settings.springfieldInbox, "springfield-actions.xml")
       xmlFile should be a 'file
@@ -84,7 +84,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   "rollback" should "always succeed" in {
-    CreateSpringfieldAction(1, datasets()).rollback shouldBe a[Success[_]]
+    CreateSpringfieldActions(1, datasets()).rollback shouldBe a[Success[_]]
   }
 
   "writeSpringfieldXml" should "create the correct file with the correct input" in {

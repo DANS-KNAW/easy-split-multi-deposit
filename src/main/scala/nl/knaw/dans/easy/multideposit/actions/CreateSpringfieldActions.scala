@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 
 import nl.knaw.dans.easy.multideposit.{Dataset, _}
-import nl.knaw.dans.easy.multideposit.actions.CreateSpringfieldAction._
+import nl.knaw.dans.easy.multideposit.actions.CreateSpringfieldActions._
 import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
@@ -26,7 +26,7 @@ import scala.xml.PrettyPrinter
 
 case class Video(name: String, fileSip: Option[String], subtitles: Option[String])
 
-case class CreateSpringfieldAction(row: Int, datasets: Datasets)(implicit settings: Settings) extends Action(row) {
+case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit settings: Settings) extends Action(row) {
 
   val log = LoggerFactory.getLogger(getClass)
 
@@ -39,7 +39,7 @@ case class CreateSpringfieldAction(row: Int, datasets: Datasets)(implicit settin
 
   def rollback() = Success(Unit)
 }
-object CreateSpringfieldAction {
+object CreateSpringfieldActions {
   def writeSpringfieldXml(row: Int, datasets: Datasets)(implicit settings: Settings): Try[Unit] = {
     Try {
       val file = new File(settings.springfieldInbox, "springfield-actions.xml")
