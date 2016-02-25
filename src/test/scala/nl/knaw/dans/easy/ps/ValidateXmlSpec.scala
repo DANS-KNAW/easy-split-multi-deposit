@@ -19,11 +19,13 @@ import java.io.{File, FileNotFoundException}
 
 import nl.knaw.dans.easy.ps.CustomMatchers._
 import org.apache.commons.io.FileUtils
+import org.scalatest.Ignore
 import org.xml.sax.SAXParseException
 
 import scala.util.Success
 import scala.xml.{Node, PrettyPrinter}
 
+@Ignore
 class ValidateXmlSpec extends UnitSpec {
 
   def testFile(fileName: String, content: Node): File = {

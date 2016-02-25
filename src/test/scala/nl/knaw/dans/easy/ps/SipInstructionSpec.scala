@@ -16,7 +16,9 @@
 package nl.knaw.dans.easy.ps
 
 import org.apache.commons.io.FileUtils._
+import org.scalatest.Ignore
 
+@Ignore
 class SipInstructionSpec extends UnitSpec {
 
   "parse" should "complain about with garbage in the instructions file" in {

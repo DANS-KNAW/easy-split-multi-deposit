@@ -15,8 +15,11 @@
  */
 package nl.knaw.dans.easy.ps
 
+import org.scalatest.Ignore
+
 import scala.util.Failure
 
+@Ignore
 class CreateErrorReporterExceptionSpec extends UnitSpec {
 
   "createErrorReporterException" should "yield empty message if input is empty" in {
