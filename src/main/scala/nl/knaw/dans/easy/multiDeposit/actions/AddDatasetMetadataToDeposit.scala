@@ -18,13 +18,14 @@ case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(
 
   def run() = {
     log.debug(s"Running $this")
-    writeMetadataXml(row, dataset._1, dataset._2)
+
+    writeDatasetMetadataXml(row, dataset._1, dataset._2)
   }
 
   def rollback() = Success(Unit)
 }
 object AddDatasetMetadataToDeposit {
-  def writeMetadataXml(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
+  def writeDatasetMetadataXml(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     Try {
       val file = new File(depositBagMetadataDir(settings, datasetID), "dataset.xml")
       file.write(datasetToXml(dataset))
@@ -79,20 +80,21 @@ object AddDatasetMetadataToDeposit {
   }
 
   def createComposedCreators(dataset: Dataset) =
-    createComposedAuthors(dataset, isPartOfComposedCreator, createComposedCreator)
+    createComposedAuthors(dataset, isPartOfComposedCreator, createComposedCreator(composedCreatorFields, _))
 
   def createComposedContributors(dataset: Dataset) =
-    createComposedAuthors(dataset, isPartOfComposedContributor, createComposedContributor)
+    createComposedAuthors(dataset, isPartOfComposedContributor, createComposedContributor(composedContributorFields, _))
 
-  def createComposedAuthors(dataset: Dataset, isPartOfAuthor: (MultiDepositKey => Boolean), createAuthor: (Dictionary, Iterable[(MultiDepositKey, String)]) => Elem) = {
+  def createComposedAuthors(dataset: Dataset, isPartOfAuthor: (MultiDepositKey => Boolean), createAuthor: Iterable[(MultiDepositKey, String)] => Elem) = {
     val authorsData = dataset.filter(x => isPartOfAuthor(x._1))
+
     if(authorsData.isEmpty)
       Seq.empty
     else
       authorsData.values.head.indices
         .map(i => authorsData.map { case (key, values) => (key, values(i)) })
-        .filter(_.values.exists(x => x != null && x.length > 0))
-        .map(createComposedCreator(composedCreatorFields, _))
+        .filter(_.values.exists(x => x != null && !x.isBlank))
+        .map(createAuthor)
   }
 
   def createComposedCreator(dictionary: Dictionary, authorFields: Iterable[(MultiDepositKey, String)]) = {
@@ -101,7 +103,7 @@ object AddDatasetMetadataToDeposit {
       if (isOrganization(authorFields))
         <dcx-dai:organization>
           <dcx-dai:name xml:lang="en">
-            { authorFields.find(field => isOrganizationKey(field._1)).getOrElse(("",""))._2 }
+            { authorFields.find(field => isOrganizationKey(field._1)).map(_._2).getOrElse("") }
           </dcx-dai:name>
         </dcx-dai:organization>
       else
@@ -129,7 +131,7 @@ object AddDatasetMetadataToDeposit {
   def createComposedContributor(dictionary: Dictionary, authorFields: Iterable[(MultiDepositKey, String)]) = {
     <dcx-dai:contributorDetails>
       <dcx-dai:author>
-        {authorFields.map(composedEntry(dictionary))}
+        {authorFields.filter(x => x._2 != null && !x._2.isBlank).map(composedEntry(dictionary))}
       </dcx-dai:author>
     </dcx-dai:contributorDetails>
   }

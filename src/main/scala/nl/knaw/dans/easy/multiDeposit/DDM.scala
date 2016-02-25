@@ -73,7 +73,7 @@ object DDM {
       "DCX_RELATION_TITLE" -> "",
       "DCX_RELATION_LINK" -> "")
 
-  val allFields = "ROW" :: "DATASET_ID" ::
+  val allFields = "ROW" :: "DATASET" ::
     List(profileFields, metadataFields, composedCreatorFields, composedContributorFields, composedSpacialFields, composedRelationFields)
       .flatMap(_.keySet)
 }
