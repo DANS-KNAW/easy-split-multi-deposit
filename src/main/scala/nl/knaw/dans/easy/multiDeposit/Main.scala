@@ -34,7 +34,8 @@ object Main {
     log.debug("Starting application.")
     implicit val settings = cmd.parse(args)
     getActionsStream
-      .doOnError(e => log.error(e.getMessage, e))
+      .doOnError(e => log.error(e.getMessage))
+      .doOnError(e => log.debug(e.getMessage, e))
       .doOnCompleted { log.info("Finished successfully!") }
       .subscribe
 
