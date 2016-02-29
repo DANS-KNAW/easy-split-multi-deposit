@@ -50,17 +50,17 @@ object AddBagToDeposit {
   def createBag(datasetID: DatasetID)(implicit settings: Settings): Try[Unit] = {
     Try {
       val inputDir = multiDepositDir(settings, datasetID)
-      val depositDir = depositBagDir(settings, datasetID)
+      val outputBagDir = outputDepositBagDir(settings, datasetID)
 
       val bagFactory = new BagFactory
-      val preBag = bagFactory.createPreBag(depositDir)
-      val bag = bagFactory.createBag(depositDir)
+      val preBag = bagFactory.createPreBag(outputBagDir)
+      val bag = bagFactory.createBag(outputBagDir)
 
       bag.addFilesToPayload(inputDir.listFiles.toList)
       bag.makeComplete
 
       val fsw = new FileSystemWriter(bagFactory)
-      fsw.write(bag, depositDir)
+      fsw.write(bag, outputBagDir)
 
       preBag.makeBagInPlace(Version.V0_97, false)
     }

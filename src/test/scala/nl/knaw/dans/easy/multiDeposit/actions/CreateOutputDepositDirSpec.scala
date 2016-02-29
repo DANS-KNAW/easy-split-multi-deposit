@@ -26,21 +26,21 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
-    depositDir = new File(testDir, "dd")
+    outputDepositDir = new File(testDir, "dd")
   )
 
   override def beforeAll = testDir.mkdirs
 
   before {
     // create depositDir base directory
-    val baseDir = settings.depositDir
+    val baseDir = settings.outputDepositDir
     baseDir.mkdir
     baseDir.exists shouldBe true
   }
 
   after {
     // clean up stuff after the test is done
-    val baseDir = settings.depositDir
+    val baseDir = settings.outputDepositDir
     baseDir.deleteDirectory()
     baseDir.exists shouldBe false
   }

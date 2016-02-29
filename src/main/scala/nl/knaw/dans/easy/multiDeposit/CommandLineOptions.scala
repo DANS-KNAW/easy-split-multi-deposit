@@ -18,7 +18,8 @@ package nl.knaw.dans.easy.multideposit
 import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.rogach.scallop.ScallopConf
+import nl.knaw.dans.easy.multideposit.CommandLineOptions._
+import org.rogach.scallop.{ ScallopConf, singleArgConverter}
 import org.slf4j.LoggerFactory
 
 import scala.util.Properties
@@ -40,9 +41,9 @@ object CommandLineOptions {
       appHomeDir = Option(System.getProperty("app.home")).map(new File(_)).get,
       multidepositDir = opts.multiDepositDir(),
       springfieldInbox = opts.springfieldInbox(),
-      depositDir = opts.depositDir())
+      outputDepositDir = opts.outputDepositDir())
 
-    log.debug("Using the following settings: {}", settings)
+    log.debug(s"Using the following settings: $settings")
 
     settings
   }
@@ -51,24 +52,27 @@ object CommandLineOptions {
 class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(args) {
   import nl.knaw.dans.easy.multideposit.{CommandLineOptions => cmd}
 
+  val fileMayNotExist = singleArgConverter(new File(_))
+
   printedName = "easy-split-multi-deposit"
   version(s"$printedName ${Version()}")
   banner(s"""Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
            |
-           |Usage: $printedName.sh [{--output-deposits-dir|-d} <dir>][{--springfield-inbox|-s} <dir>] <multi-deposit-dir>
+           |Usage: $printedName.sh [{--springfield-inbox|-s} <dir>] <multi-deposit-dir> <output-deposits-dir>
            |Options:
            |""".stripMargin)
   // TODO adjust banner because of change in output-deposits-dir being a trailArg now?
 
   lazy val multiDepositDir = trailArg[File](name = "multi-deposit-dir", required = true,
     descr = "Directory containing the Submission Information Package to process. "
-      + s"This must be a valid path to a directory containing a file named '${cmd.mdInstructionsFileName}' in "
-      + "RFC4180 format.")
+      + "This must be a valid path to a directory containing a file named "
+      + s"'${cmd.mdInstructionsFileName}' in RFC4180 format.")
   validateOpt(multiDepositDir)(_.map(file =>
       if (!file.isDirectory)
         Left(s"Not a directory '$file'")
       else if (!file.directoryContains(new File(file, cmd.mdInstructionsFileName)))
-        Left(s"No instructions file found in this directory, expected: ${new File(file, cmd.mdInstructionsFileName)}")
+        Left("No instructions file found in this directory, expected: "
+          + s"${new File(file, cmd.mdInstructionsFileName)}")
       else
         Right(()))
       .getOrElse(Left("Could not parse parameter multi-deposit-dir")))
@@ -84,13 +88,7 @@ class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(
       Right(()))
     .getOrElse(Left("Could not parse parameter 'springfield-inbox'")))
 
-  lazy val depositDir = trailArg[File](name = "deposit-dir", required = true,
-    descr = "A directory in which the deposit directories must be created. " +
-      "The deposit directory layout is described in the easy-deposit documenation")
-  validateOpt(depositDir)(_.map(file =>
-    if (!file.isDirectory)
-      Left(s"Not a directory '$file'")
-    else
-      Right(()))
-    .getOrElse(Left("Could not parse parameter 'deposit-dir'")))
+  lazy val outputDepositDir = trailArg[File](name = "deposit-dir", required = true,
+    descr = "A directory in which the deposit directories must be created. "
+      + "The deposit directory layout is described in the easy-deposit documenation")(fileMayNotExist)
 }

@@ -42,7 +42,7 @@ case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(
 object AddDatasetMetadataToDeposit {
   def writeDatasetMetadataXml(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     Try {
-      val file = new File(depositBagMetadataDir(settings, datasetID), "dataset.xml")
+      val file = new File(outputDepositBagMetadataDir(settings, datasetID), "dataset.xml")
       file.write(datasetToXml(dataset))
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e"))

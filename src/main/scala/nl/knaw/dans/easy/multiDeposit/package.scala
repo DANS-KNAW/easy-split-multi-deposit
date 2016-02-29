@@ -39,11 +39,11 @@ package object multideposit {
   case class Settings(appHomeDir: File = null,
                       multidepositDir: File = null,
                       springfieldInbox: File = null,
-                      depositDir: File = null) {
+                      outputDepositDir: File = null) {
     override def toString: String =
       s"Settings(home=$appHomeDir, multideposit-dir=$multidepositDir, " +
         s"springfield-inbox=$springfieldInbox, " +
-        s"deposit-dir=$depositDir)"
+        s"deposit-dir=$outputDepositDir)"
   }
 
   case class ActionException(row: Int, message: String) extends RuntimeException(message)
@@ -187,14 +187,14 @@ package object multideposit {
   def multiDepositDir(settings: Settings, datasetID: DatasetID) = {
     new File(settings.multidepositDir, datasetID)
   }
-  def depositDir(settings: Settings, datasetID: DatasetID) = {
-    new File(settings.depositDir, s"${settings.multidepositDir.getName}-$datasetID")
+  def outputDepositDir(settings: Settings, datasetID: DatasetID) = {
+    new File(settings.outputDepositDir, s"${settings.multidepositDir.getName}-$datasetID")
   }
-  def depositBagDir(settings: Settings, datasetID: DatasetID) = {
-    new File(depositDir(settings, datasetID), "bag")
+  def outputDepositBagDir(settings: Settings, datasetID: DatasetID) = {
+    new File(outputDepositDir(settings, datasetID), "bag")
   }
-  def depositBagMetadataDir(settings: Settings, datasetID: DatasetID) = {
-    new File(depositBagDir(settings, datasetID), "metadata")
+  def outputDepositBagMetadataDir(settings: Settings, datasetID: DatasetID) = {
+    new File(outputDepositBagDir(settings, datasetID), "metadata")
   }
 
   /** Extract the ''file'' parameters from a dataset and return these in a list of fileparameters.

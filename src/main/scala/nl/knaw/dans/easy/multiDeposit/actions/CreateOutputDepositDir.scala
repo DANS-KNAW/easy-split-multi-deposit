@@ -28,20 +28,20 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
 
   def run(): Try[Unit] = {
     log.debug(s"Running $this")
-    val depositDir = multideposit.depositDir(settings, datasetID)
-    val bagDir = depositBagDir(settings, datasetID)
-    val metadataDir = depositBagMetadataDir(settings, datasetID)
+    val depositDir = multideposit.outputDepositDir(settings, datasetID)
+    val bagDir = outputDepositBagDir(settings, datasetID)
+    val metadataDir = outputDepositBagMetadataDir(settings, datasetID)
 
     log.debug(s"Creating Deposit Directory at $depositDir with bag directory = $bagDir and metadata directory = $metadataDir")
 
-    if (depositDir.mkdir && bagDir.mkdir && metadataDir.mkdir)
+    if (depositDir.mkdirs && bagDir.mkdir && metadataDir.mkdir)
       Success(Unit)
     else
       Failure(new ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
   }
 
   def rollback(): Try[Unit] = {
-    val depositDir = multideposit.depositDir(settings, datasetID)
+    val depositDir = multideposit.outputDepositDir(settings, datasetID)
     log.debug(s"Deleting directory $depositDir")
 
     Try {

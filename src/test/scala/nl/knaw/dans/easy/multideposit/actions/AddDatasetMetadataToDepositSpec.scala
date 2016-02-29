@@ -27,7 +27,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
-    depositDir = new File(testDir, "dd")
+    outputDepositDir = new File(testDir, "dd")
   )
 
   val datasetID = "ds1"
@@ -144,7 +144,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   "run" should "write the metadata to a file at the correct place" in {
-    val file = new File(depositBagMetadataDir(settings, datasetID), "dataset.xml")
+    val file = new File(outputDepositBagMetadataDir(settings, datasetID), "dataset.xml")
 
     file.exists shouldBe false
 

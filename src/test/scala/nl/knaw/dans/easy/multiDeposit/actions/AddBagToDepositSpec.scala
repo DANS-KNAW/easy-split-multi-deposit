@@ -28,7 +28,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
-    depositDir = new File(testDir, "dd")
+    outputDepositDir = new File(testDir, "dd")
   )
 
   val datasetID = "ds1"
@@ -45,11 +45,11 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
     new File(settings.multidepositDir, s"$datasetID/folder2/file4.txt").write(file4Text)
     new File(settings.multidepositDir, s"ds2/folder3/file5.txt").write("file5Text")
 
-    depositBagDir(settings, datasetID).mkdirs
+    outputDepositBagDir(settings, datasetID).mkdirs
   }
 
   after {
-    depositBagDir(settings, datasetID).deleteDirectory()
+    outputDepositBagDir(settings, datasetID).deleteDirectory()
   }
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
