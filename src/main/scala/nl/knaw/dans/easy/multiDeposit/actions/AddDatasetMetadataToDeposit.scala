@@ -22,7 +22,7 @@ import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
 import org.apache.commons.logging.LogFactory
 
-import scala.util.{Failure, Try, Success}
+import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, PrettyPrinter}
 
 case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action(row) {
@@ -45,7 +45,7 @@ object AddDatasetMetadataToDeposit {
       val file = new File(outputDepositBagMetadataDir(settings, datasetID), "dataset.xml")
       file.write(datasetToXml(dataset))
     } recoverWith {
-      case e => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e"))
+      case e => Failure(ActionException(row, s"Could not write dataset metadata: $e"))
     }
   }
 
