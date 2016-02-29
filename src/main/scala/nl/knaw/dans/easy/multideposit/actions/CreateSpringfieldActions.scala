@@ -50,7 +50,7 @@ object CreateSpringfieldActions {
   }
 
   def toXML(datasets: Datasets) = {
-    new PrettyPrinter(80, 2).format(
+    new PrettyPrinter(160, 2).format(
       <actions> {
         for {
           (id, dataset) <- datasets
