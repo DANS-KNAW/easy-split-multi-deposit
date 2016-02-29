@@ -19,14 +19,22 @@ import java.io.File
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
+import org.apache.commons.logging.LogFactory
 
 import scala.util.{Failure, Success, Try}
 import scala.xml.PrettyPrinter
 
 case class AddFileMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action(row) {
+
+  val log = LogFactory.getLog(getClass)
+
   def checkPreconditions = Success(())
 
-  def run() = writeFileMetadataXml(row, dataset)
+  def run() = {
+    log.debug(s"Running $this")
+
+    writeFileMetadataXml(row, dataset)
+  }
 
   def rollback() = Success(())
 }
