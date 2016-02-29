@@ -24,20 +24,24 @@ object AddFileMetadataToDeposit {
       val file = new File(outputDepositBagMetadataDir(settings, dataset._1), "files.xml")
       file.write(new PrettyPrinter(160, 2).format(datasetToFileXml(dataset)))
     } recoverWith {
-      case e => Failure(ActionException(row, s"Could not write file meta data: $e"))
+      case e =>
+        e.printStackTrace()
+        Failure(ActionException(row, s"Could not write file meta data: $e"))
     }
   }
 
   def datasetToFileXml(dataset: (DatasetID, Dataset))(implicit settings: Settings) = {
     val bagDir = outputDepositBagDir(settings, dataset._1)
-    val xml = new File(bagDir, DATA_FOLDER).listRecursively
-      .map(_.relativePath(DATA_FOLDER))
-      .map(xmlPerPath(dataset._2, _))
 
-    <files>{xml}</files>
+    <files>{
+      new File(bagDir, DATA_FOLDER)
+        .listRecursively
+        .map(_.relativePath(DATA_FOLDER))
+        .map(xmlPerPath(dataset._2))
+    }</files>
   }
 
-  def xmlPerPath(dataset: Dataset, relativePath: String) = {
+  def xmlPerPath(dataset: Dataset)(relativePath: String) = {
     <file filepath={relativePath}>{
       DDM.filesFields
         .map {

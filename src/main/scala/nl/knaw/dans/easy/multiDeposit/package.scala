@@ -165,6 +165,29 @@ package object multideposit {
     def copyFile(destDir: File) = FileUtils.copyFile(file, destDir)
 
     /**
+      * Copies a whole directory to a new location preserving the file dates.
+      * <p>
+      * This method copies the specified directory and all its child
+      * directories and files to the specified destination.
+      * The destination is the new location and name of the directory.
+      * <p>
+      * The destination directory is created if it does not exist.
+      * If the destination directory did exist, then this method merges
+      * the source with the destination, with the source taking precedence.
+      * <p>
+      * <strong>Note:</strong> This method tries to preserve the files' last
+      * modified date/times using ``File#setLastModified(long)``, however
+      * it is not guaranteed that those operations will succeed.
+      * If the modification operation fails, no indication is provided.
+      *
+      * @param destDir the new directory, must not be ``null``
+      * @throws NullPointerException if source or destination is ``null``
+      * @throws IOException if source or destination is invalid
+      * @throws IOException if an IO error occurs during copying
+      */
+    def copyDir(destDir: File) = FileUtils.copyDirectory(file, destDir)
+
+    /**
       * Deletes a directory recursively.
       *
       * @throws IOException in case deletion is unsuccessful
@@ -181,6 +204,11 @@ package object multideposit {
       startAt + file.getAbsolutePath.split(startAt).last
     }
 
+    /**
+      * Finds files within a given directory and its subdirectories.
+      *
+      * @return a ``List`` of ``java.io.File`` with the files
+      */
     def listRecursively = FileUtils.listFiles(file, null, true).toList
   }
 
