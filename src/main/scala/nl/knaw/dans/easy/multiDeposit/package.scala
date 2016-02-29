@@ -23,6 +23,7 @@ import org.apache.commons.lang.StringUtils
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.util.{Failure, Success, Try}
 
 package object multideposit {
@@ -111,6 +112,13 @@ package object multideposit {
       */
     def write(data: String) = FileUtils.write(file, data)
 
+    /**
+      * Reads the contents of a file into a String using the default encoding for the VM.
+      * The file is always closed.
+      *
+      * @return the file contents, never ``null``
+      * @throws IOException in case of an I/O error
+      */
     def read = FileUtils.readFileToString(file)
 
     /**
@@ -162,6 +170,18 @@ package object multideposit {
       * @throws IOException in case deletion is unsuccessful
       */
     def deleteDirectory() = FileUtils.deleteDirectory(file)
+
+    /**
+      * Returns the relative path, starting from the last occurence of `startAt`.
+      *
+      * @param startAt the token at which to start the relative path
+      * @return the relative path
+      */
+    def relativePath(startAt: String): String = {
+      startAt + file.getAbsolutePath.split(startAt).last
+    }
+
+    def listRecursively = FileUtils.listFiles(file, null, true).toList
   }
 
   implicit class DatasetExtensions(val dataset: Dataset) extends AnyVal {
