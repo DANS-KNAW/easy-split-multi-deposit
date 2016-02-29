@@ -77,16 +77,15 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
 
     val root = new File(testDir, "dd/md-ds1")
     new File(root, "bag").exists shouldBe true
-    FileUtils.listFiles(new File(root, "bag"), null, true)
-      .map(_.getName) shouldBe
-      List("bag-info.txt",
-        "bagit.txt",
-        "file1.txt",
-        "file2.txt",
-        "file3.txt",
-        "file4.txt",
-        "manifest-md5.txt",
-        "tagmanifest-md5.txt")
+    FileUtils.listFiles(new File(root, "bag"), null, true).map(_.getName) should contain only (
+      "bag-info.txt",
+      "bagit.txt",
+      "file1.txt",
+      "file2.txt",
+      "file3.txt",
+      "file4.txt",
+      "manifest-md5.txt",
+      "tagmanifest-md5.txt")
     new File(root, "bag/data").exists shouldBe true
   }
 
