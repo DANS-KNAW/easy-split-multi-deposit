@@ -61,7 +61,6 @@ class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(
            |Usage: $printedName.sh [{--springfield-inbox|-s} <dir>] <multi-deposit-dir> <output-deposits-dir>
            |Options:
            |""".stripMargin)
-  // TODO adjust banner because of change in output-deposits-dir being a trailArg now?
 
   lazy val multiDepositDir = trailArg[File](name = "multi-deposit-dir", required = true,
     descr = "Directory containing the Submission Information Package to process. "
