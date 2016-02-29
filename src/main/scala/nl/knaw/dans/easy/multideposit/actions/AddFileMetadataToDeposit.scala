@@ -8,7 +8,7 @@ import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
 import scala.util.{Failure, Success, Try}
 import scala.xml.PrettyPrinter
 
-class AddFileMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action(row) {
+case class AddFileMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action(row) {
   def checkPreconditions = Success(())
 
   def run() = writeFileMetadataXml(row, dataset)
