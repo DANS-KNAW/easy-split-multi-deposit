@@ -97,12 +97,24 @@ class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "succeed with Roundtrip/sip-demo-2015-02-24" in {
-    val csv = new File("src/test/resources/Roundtrip_MD/sip-demo-2015-02-24/instructions.csv")
+    val csv = new File(getClass.getResource("/Roundtrip_MD/sip-demo-2015-02-24/instructions.csv").toURI)
 
     val testSubscriber = TestSubscriber[String]
     parse(csv).flatMap(_.map(_._1).toObservable).subscribe(testSubscriber)
 
     testSubscriber.assertValues("ruimtereis01", "ruimtereis02")
+    testSubscriber.assertNoErrors
+    testSubscriber.assertCompleted
+    testSubscriber.assertUnsubscribed
+  }
+
+  it should "not include whitespace identifiers" in {
+    val csv = new File(getClass.getResource("/Roundtrip_MD/instructions_with_whitespace.csv").toURI)
+
+    val testSubscriber = TestSubscriber[String]
+    parse(csv).flatMap(_.map(_._1).toObservable).subscribe(testSubscriber)
+
+    testSubscriber.assertValues("ruimtereis01")
     testSubscriber.assertNoErrors
     testSubscriber.assertCompleted
     testSubscriber.assertUnsubscribed

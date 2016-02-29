@@ -43,7 +43,7 @@ object MultiDepositParser {
       Try {
         val rawContent = Source.fromFile(file).mkString
         val parser = CSVParser.parse(rawContent, CSVFormat.RFC4180)
-        val output = parser.getRecords.map(_.toList)
+        val output = parser.getRecords.filter(r => r.size() > 0 && !r.get(0).isBlank).map(_.toList)
         validateDatasetHeaders(output.head)
           .map(_ => {
             case class IndexDatasets(index: Int, datasets: Datasets) {
