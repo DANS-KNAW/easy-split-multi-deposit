@@ -93,6 +93,7 @@ object Main {
     Success(CreateOutputDepositDir(row, datasetID)) ::
     Success(AddBagToDeposit(row, datasetID)) ::
     Success(AddDatasetMetadataToDeposit(row, entry)) ::
+    Success(AddFileMetadataToDeposit(row, entry)) ::
     // TODO add more here: AddPropertiesToDeposit
       getFileActions(dataset, fpss)
   }
