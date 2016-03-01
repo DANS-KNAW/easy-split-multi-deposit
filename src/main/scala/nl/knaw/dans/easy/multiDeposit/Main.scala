@@ -111,8 +111,8 @@ object Main {
       CreateOutputDepositDir(row, datasetID),
       AddBagToDeposit(row, datasetID),
       AddDatasetMetadataToDeposit(row, entry),
-      AddFileMetadataToDeposit(row, entry)
-      // TODO add more here: AddPropertiesToDeposit
+      AddFileMetadataToDeposit(row, entry),
+      AddPropertiesToDeposit(row, datasetID)
     ).map(Success(_)) ++ getFileActions(dataset, fpss)
   }
 
