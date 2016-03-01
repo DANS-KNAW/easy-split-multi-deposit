@@ -18,24 +18,25 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.{File, FileOutputStream}
 import java.util.Properties
 
-import nl.knaw.dans.easy.multideposit.{Settings, Action, _}
+import nl.knaw.dans.easy.multideposit.actions.AddPropertiesToDeposit._
+import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
 import org.apache.commons.logging.LogFactory
 
-import scala.util.{Failure, Try}
+import scala.util.{Success, Failure, Try}
 
 case class AddPropertiesToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action(row) {
 
   val log = LogFactory.getLog(getClass)
 
-  def checkPreconditions = ???
+  def checkPreconditions = Success(())
 
   def run() = {
     log.debug(s"Running $this")
 
-    ???
+    writeProperties(row, datasetID)
   }
 
-  def rollback() = ???
+  def rollback() = Success(())
 }
 object AddPropertiesToDeposit {
 
@@ -48,5 +49,4 @@ object AddPropertiesToDeposit {
       case e => Failure(ActionException(row, s"Could not write properties to file: $e"))
     }
   }
-
 }
