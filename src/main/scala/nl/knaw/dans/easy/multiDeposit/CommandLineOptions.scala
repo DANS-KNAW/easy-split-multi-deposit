@@ -38,7 +38,9 @@ object CommandLineOptions {
     val settings = Settings(
       // TODO appHomeDir does a get on Option. Is there a default value for this or is failing hard
       // a good thing here?
-      appHomeDir = Option(System.getProperty("app.home")).map(new File(_)).get,
+      appHomeDir = Option(System.getProperty("app.home"))
+        .map(new File(_))
+        .getOrElse(throw new IllegalArgumentException("The property \"app.home\" needs to be set.")),
       multidepositDir = opts.multiDepositDir(),
       springfieldInbox = opts.springfieldInbox(),
       outputDepositDir = opts.outputDepositDir())
