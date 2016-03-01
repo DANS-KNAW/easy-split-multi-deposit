@@ -105,15 +105,13 @@ object Main {
 
     log.debug(s"Getting actions for dataset $datasetID ...")
 
-    val fpss = extractFileParametersList(dataset).toObservable // TODO remove toObservable and make function return Observable
-
     Observable.just(
       CreateOutputDepositDir(row, datasetID),
       AddBagToDeposit(row, datasetID),
       AddDatasetMetadataToDeposit(row, entry),
       AddFileMetadataToDeposit(row, entry),
       AddPropertiesToDeposit(row, datasetID)
-    ).map(Success(_)) ++ getFileActions(dataset, fpss)
+    ).map(Success(_)) ++ getFileActions(dataset, extractFileParameters(dataset))
   }
 
   def getFileActions(dataset: Dataset, fpss: Observable[FileParameters])(implicit settings: Settings): Observable[Try[Action]] = {

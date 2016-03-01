@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit
 import java.io.File
 
 import org.scalatest.BeforeAndAfter
+import rx.lang.scala.observers.TestSubscriber
 
 import scala.util.{Failure, Success, Try}
 
@@ -88,26 +89,58 @@ class MultiDepositSpec extends UnitSpec with BeforeAndAfter {
     dataset1.getValue("DDM_CREATED")(1) shouldBe None
   }
 
-  "extractFileParametersList" should "succeed with correct dataset1" in {
-    extractFileParametersList(dataset1) shouldBe testFileParameters1
+  "extractFileParameters" should "succeed with correct dataset1" in {
+    val testSubscriber = TestSubscriber[FileParameters]
+    extractFileParameters(dataset1).subscribe(testSubscriber)
+
+    testSubscriber.assertValues(testFileParameters1 :_*)
+    testSubscriber.assertNoErrors
+    testSubscriber.assertCompleted
+    testSubscriber.assertUnsubscribed
   }
 
   it should "succeed with correct dataset2" in {
-    extractFileParametersList(dataset2) shouldBe testFileParameters2
+    val testSubscriber = TestSubscriber[FileParameters]
+    extractFileParameters(dataset2).subscribe(testSubscriber)
+
+    testSubscriber.assertValues(testFileParameters2 :_*)
+    testSubscriber.assertNoErrors
+    testSubscriber.assertCompleted
+    testSubscriber.assertUnsubscribed
   }
 
   it should "return Nil when the dataset is empty" in {
-    extractFileParametersList(new Dataset) shouldBe Nil
+    val testSubscriber = TestSubscriber[FileParameters]
+    extractFileParameters(new Dataset).subscribe(testSubscriber)
+
+    testSubscriber.assertNoValues
+    testSubscriber.assertNoErrors
+    testSubscriber.assertCompleted
+    testSubscriber.assertUnsubscribed
   }
 
   it should "return the fileParameters without row number when these are not supplied" in {
     val res = FileParameters(None, Option("videos/centaur.mpg"), Option("footage/centaur.mpg"), Option("http://zandbak11.dans.knaw.nl/webdav"), None, Option("Yes"))
-    extractFileParametersList(dataset1 -= "ROW") shouldBe List(res)
+
+    val testSubscriber = TestSubscriber[FileParameters]
+    extractFileParameters(dataset1 -= "ROW").subscribe(testSubscriber)
+
+    testSubscriber.assertValues(res)
+    testSubscriber.assertNoErrors
+    testSubscriber.assertCompleted
+    testSubscriber.assertUnsubscribed
   }
 
   it should "return Nil when ALL extracted fields are removed from the dataset" in {
     dataset1 --= List("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
-    extractFileParametersList(dataset1) shouldBe Nil
+
+    val testSubscriber = TestSubscriber[FileParameters]
+    extractFileParameters(dataset1).subscribe(testSubscriber)
+
+    testSubscriber.assertNoValues
+    testSubscriber.assertNoErrors
+    testSubscriber.assertCompleted
+    testSubscriber.assertUnsubscribed
   }
 
   "generateErrorReport" should "return an empty String when no header nor failure is provided" in {

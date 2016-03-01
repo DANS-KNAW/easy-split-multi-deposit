@@ -20,6 +20,8 @@ import java.util.Properties
 
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
+import rx.lang.scala.Observable
+import rx.lang.scala.ObservableExtensions
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -101,6 +103,10 @@ package object multideposit {
         case Failure(throwable) => handle(throwable)
       }
     }
+  }
+
+  implicit class OptionExtensions[T](val option: Option[T]) extends AnyVal {
+    def toObservable = option.map(Observable.just(_)).getOrElse(Observable.empty)
   }
 
   implicit class FileExtensions(val file: File) extends AnyVal {
@@ -245,37 +251,34 @@ package object multideposit {
     new File(outputDepositBagDir(settings, datasetID), "metadata")
   }
 
-  /** Extract the ''file'' parameters from a dataset and return these in a list of fileparameters.
+  /** Extract the ''file parameters'' from a dataset and return these in an ``Observable``.
     * The following parameters are used for this: '''ROW''', '''FILE_SIP''', '''FILE_DATASET''',
     * '''FILE_STORAGE_SERVICE''', '''FILE_STORAGE_PATH''', '''FILE_AUDIO_VIDEO'''.
     *
-    * @param d the dataset from which the file parameters get extracted
-    * @return the list with fileparameters values extracted from the dataset
+    * @param dataset the dataset from which the file parameters get extracted
+    * @return the ``Observable`` with fileparameters values extracted from the dataset
     */
-  def extractFileParametersList(d: Dataset): List[FileParameters] = {
-    List("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
-      .map(d.get)
-      .find(_.isDefined)
-      .flatMap(_.map(_.size))
-      .map(rowCount => (0 until rowCount)
+  def extractFileParameters(dataset: Dataset) = {
+    Observable.just("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
+      .flatMap(dataset.get(_).toObservable)
+      .take(1)
+      .flatMap(xs => xs.indices.toObservable
         .map(index => {
           def valueAt(key: String): Option[String] = {
-            d.get(key).flatMap(_ (index).toOption)
+            dataset.get(key).flatMap(_(index).toOption)
           }
           def intAt(key: String): Option[Int] = {
-            d.get(key).flatMap(_ (index).toIntOption)
+            dataset.get(key).flatMap(_(index).toIntOption)
           }
 
           FileParameters(intAt("ROW"), valueAt("FILE_SIP"), valueAt("FILE_DATASET"),
             valueAt("FILE_STORAGE_SERVICE"), valueAt("FILE_STORAGE_PATH"),
             valueAt("FILE_AUDIO_VIDEO"))
         })
-        .toList
         .filter {
           case FileParameters(_, None, None, None, None, None) => false
           case _ => true
         })
-      .getOrElse(Nil)
   }
 
   /** Generates an error report with a `heading` and a list of `ActionException`s coming from a
