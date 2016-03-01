@@ -29,8 +29,8 @@ class MainSpec extends UnitSpec with MockFactory {
     val m1 = mock[MockedAction]
     val m2 = mock[MockedAction]
 
-    m1.checkPreconditions _ expects () once() returning Success()
-    m2.checkPreconditions _ expects () once() returning Success()
+    m1.checkPreconditions _ expects () once() returning Success(())
+    m2.checkPreconditions _ expects () once() returning Success(())
 
     m1.run _ expects () never()
     m1.rollback _ expects () never()
@@ -52,9 +52,9 @@ class MainSpec extends UnitSpec with MockFactory {
     val m3 = mock[MockedAction]
     val m4 = mock[MockedAction]
 
-    m1.checkPreconditions _ expects () once() returning Success()
+    m1.checkPreconditions _ expects () once() returning Success(())
     m2.checkPreconditions _ expects () once() returning Failure(new ActionException(6, "foo"))
-    m3.checkPreconditions _ expects () once() returning Success()
+    m3.checkPreconditions _ expects () once() returning Success(())
     m4.checkPreconditions _ expects () once() returning Failure(new ActionException(1, "bar"))
 
     m1.run _ expects () never()
@@ -82,9 +82,9 @@ class MainSpec extends UnitSpec with MockFactory {
     val m3 = mock[MockedAction]
     val m4 = mock[MockedAction]
 
-    m1.checkPreconditions _ expects () once() returning Success()
+    m1.checkPreconditions _ expects () once() returning Success(())
     m2.checkPreconditions _ expects () once() returning Failure(new ActionException(6, "foo"))
-    m3.checkPreconditions _ expects () once() returning Success()
+    m3.checkPreconditions _ expects () once() returning Success(())
     m4.checkPreconditions _ expects () once() returning Failure(new ActionException(1, "bar"))
 
     m1.run _ expects () never()
@@ -111,8 +111,8 @@ class MainSpec extends UnitSpec with MockFactory {
     val m1 = mock[MockedAction]
     val m2 = mock[MockedAction]
 
-    m1.run _ expects () once() returning Success()
-    m2.run _ expects () once() returning Success()
+    m1.run _ expects () once() returning Success(())
+    m2.run _ expects () once() returning Success(())
 
     m1.rollback _ expects () never()
     m2.rollback _ expects () never()
@@ -133,7 +133,7 @@ class MainSpec extends UnitSpec with MockFactory {
     val m2 = mock[MockedAction]
     val m3 = mock[MockedAction]
 
-    m1.run _ expects () once() returning Success()
+    m1.run _ expects () once() returning Success(())
     m2.run _ expects () once() returning Failure(exception)
     m3.run _ expects () never()
 
