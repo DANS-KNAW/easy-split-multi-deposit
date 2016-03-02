@@ -47,5 +47,11 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
     }
   }
 
-  def rollback() = Success(Unit)
+  def rollback() = {
+    Try {
+      log.debug(s"Rolling back $this")
+      
+      settings.springfieldInbox.listFiles.foreach(_.deleteDirectory())
+    }
+  }
 }

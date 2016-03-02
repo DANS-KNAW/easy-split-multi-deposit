@@ -63,7 +63,17 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
     (the [FileNotFoundException] thrownBy run.get).getMessage should include ("videos/some_error.mpg")
   }
 
-  "rollback" should "always succeed" in {
-    CopyToSpringfieldInbox(1, "videos/some_rollback.mpg").rollback shouldBe a[Success[_]]
+  "rollback" should "delete the files and directories that were added by action.run()" in {
+    createFile("videos/some_rollback.mpg")
+    val action = CopyToSpringfieldInbox(1, "videos/some_rollback.mpg")
+
+    action.run() shouldBe a[Success[_]]
+
+    new File(settings.springfieldInbox, "videos/some_rollback.mpg").exists() shouldBe true
+
+    action.rollback shouldBe a[Success[_]]
+
+    new File(settings.springfieldInbox, "videos/some_rollback.mpg").exists() shouldBe false
+    new File(settings.springfieldInbox, "videos").exists() shouldBe false
   }
 }
