@@ -236,6 +236,9 @@ package object multideposit {
     }
   }
 
+  val bagDirName = "bag"
+  val metadataDirName = "metadata"
+
   def multiDepositDir(settings: Settings, datasetID: DatasetID) = {
     new File(settings.multidepositDir, datasetID)
   }
@@ -243,10 +246,10 @@ package object multideposit {
     new File(settings.outputDepositDir, s"${settings.multidepositDir.getName}-$datasetID")
   }
   def outputDepositBagDir(settings: Settings, datasetID: DatasetID) = {
-    new File(outputDepositDir(settings, datasetID), "bag")
+    new File(outputDepositDir(settings, datasetID), bagDirName)
   }
   def outputDepositBagMetadataDir(settings: Settings, datasetID: DatasetID) = {
-    new File(outputDepositBagDir(settings, datasetID), "metadata")
+    new File(outputDepositBagDir(settings, datasetID), metadataDirName)
   }
 
   /** Extract the ''file parameters'' from a dataset and return these in an ``Observable``.

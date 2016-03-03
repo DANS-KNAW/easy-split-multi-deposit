@@ -40,8 +40,6 @@ case class AddFileMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(imp
 }
 object AddFileMetadataToDeposit {
 
-  val DATA_FOLDER = "data"
-
   def writeFileMetadataXml(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings): Try[Unit] = {
     Try {
       val file = new File(outputDepositBagMetadataDir(settings, dataset._1), "files.xml")

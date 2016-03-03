@@ -62,7 +62,7 @@ object AddBagToDeposit {
       if (!inputDirExists) fsw.setTagFilesOnly(true)
       fsw.write(bag, outputBagDir)
 
-      if (!inputDirExists) preBag.setIgnoreAdditionalDirectories(List("metadata"))
+      if (!inputDirExists) preBag.setIgnoreAdditionalDirectories(List(metadataDirName))
       preBag.makeBagInPlace(Version.V0_97, false)
 
       // TODO, this is temporary, waiting for response from the BagIt-Java developers.
