@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 
 import nl.knaw.dans.easy.multideposit._
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfter}
+import org.scalatest.BeforeAndAfterAll
 
 import scala.util.Success
 import scala.xml.PrettyPrinter
@@ -146,11 +146,11 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   "run" should "write the metadata to a file at the correct place" in {
     val file = new File(outputDepositBagMetadataDir(settings, datasetID), "dataset.xml")
 
-    file.exists shouldBe false
+    file should not (exist)
 
     AddDatasetMetadataToDeposit(1, ("ds1", dataset)).run() shouldBe a[Success[_]]
 
-    file.exists shouldBe true
+    file should exist
   }
 
   "rollback" should "always succeed" in {

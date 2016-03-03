@@ -69,11 +69,11 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
 
     action.run() shouldBe a[Success[_]]
 
-    new File(settings.springfieldInbox, "videos/some_rollback.mpg").exists() shouldBe true
+    new File(settings.springfieldInbox, "videos/some_rollback.mpg") should exist
 
     action.rollback shouldBe a[Success[_]]
 
-    new File(settings.springfieldInbox, "videos/some_rollback.mpg").exists() shouldBe false
-    new File(settings.springfieldInbox, "videos").exists() shouldBe false
+    new File(settings.springfieldInbox, "videos/some_rollback.mpg") should not (exist)
+    new File(settings.springfieldInbox, "videos") should not (exist)
   }
 }

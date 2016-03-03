@@ -35,14 +35,14 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     // create depositDir base directory
     val baseDir = settings.outputDepositDir
     baseDir.mkdir
-    baseDir.exists shouldBe true
+    baseDir should exist
   }
 
   after {
     // clean up stuff after the test is done
     val baseDir = settings.outputDepositDir
     baseDir.deleteDirectory()
-    baseDir.exists shouldBe false
+    baseDir should not (exist)
   }
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
@@ -65,24 +65,24 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     CreateOutputDepositDir(1, "ds1").rollback() shouldBe a[Success[_]]
 
     // test that the directories are really not there anymore
-    new File(testDir, "dd/md-ds1").exists shouldBe false
-    new File(testDir, "dd/md-ds1/bag").exists shouldBe false
-    new File(testDir, "dd/md-ds1/bag/metadata").exists shouldBe false
+    new File(testDir, "dd/md-ds1") should not (exist)
+    new File(testDir, "dd/md-ds1/bag") should not (exist)
+    new File(testDir, "dd/md-ds1/bag/metadata") should not (exist)
   }
 
   def runTest(): Unit = {
     // directories do not exist before
-    new File(testDir, "dd/md-ds1").exists shouldBe false
-    new File(testDir, "dd/md-ds1/bag").exists shouldBe false
-    new File(testDir, "dd/md-ds1/bag/metadata").exists shouldBe false
+    new File(testDir, "dd/md-ds1") should not (exist)
+    new File(testDir, "dd/md-ds1/bag") should not (exist)
+    new File(testDir, "dd/md-ds1/bag/metadata") should not (exist)
 
     // creation of directories
     CreateOutputDepositDir(1, "ds1").run() shouldBe a[Success[_]]
 
     // test existance after creation
-    new File(testDir, "dd/md-ds1").exists shouldBe true
-    new File(testDir, "dd/md-ds1/bag").exists shouldBe true
-    new File(testDir, "dd/md-ds1/bag/metadata").exists shouldBe true
+    new File(testDir, "dd/md-ds1") should exist
+    new File(testDir, "dd/md-ds1/bag") should exist
+    new File(testDir, "dd/md-ds1/bag/metadata") should exist
   }
 
 }

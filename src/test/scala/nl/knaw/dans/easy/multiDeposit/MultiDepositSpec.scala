@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.io.File
-
 import org.scalatest.BeforeAndAfter
 import rx.lang.scala.observers.TestSubscriber
 
