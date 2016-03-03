@@ -46,7 +46,7 @@ object AddPropertiesToDeposit {
       // set properties???
       props.store(new FileOutputStream(new File(outputDepositDir(settings, datasetID), "deposit.properties")), "")
     } recoverWith {
-      case e => Failure(ActionException(row, s"Could not write properties to file: $e"))
+      case e => Failure(ActionException(row, s"Could not write properties to file: $e", e))
     }
   }
 }

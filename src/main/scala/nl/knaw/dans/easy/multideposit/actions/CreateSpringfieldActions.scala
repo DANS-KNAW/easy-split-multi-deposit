@@ -45,7 +45,7 @@ object CreateSpringfieldActions {
       val file = new File(settings.springfieldInbox, "springfield-actions.xml")
       file.write(toXML(datasets))
     } recoverWith {
-      case e => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e"))
+      case e => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e", e))
     }
   }
 

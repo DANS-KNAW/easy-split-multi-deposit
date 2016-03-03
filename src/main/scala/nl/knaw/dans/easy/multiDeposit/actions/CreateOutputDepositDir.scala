@@ -47,7 +47,7 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
     Try {
       depositDir.deleteDirectory()
     } recoverWith {
-      case e: Exception => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e"))
+      case e: Exception => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e))
     }
   }
 }

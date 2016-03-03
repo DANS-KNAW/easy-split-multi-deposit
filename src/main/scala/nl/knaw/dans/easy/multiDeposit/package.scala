@@ -49,7 +49,7 @@ package object multideposit {
         s"deposit-dir=$outputDepositDir)"
   }
 
-  case class ActionException(row: Int, message: String) extends RuntimeException(message)
+  case class ActionException(row: Int, message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 
   implicit class StringExtensions(val s: String) extends AnyVal {
     /**
