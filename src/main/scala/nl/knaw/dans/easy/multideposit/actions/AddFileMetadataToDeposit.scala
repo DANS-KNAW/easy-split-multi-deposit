@@ -52,13 +52,13 @@ object AddFileMetadataToDeposit {
   }
 
   def datasetToFileXml(dataset: (DatasetID, Dataset))(implicit settings: Settings) = {
-    val bagDir = outputDepositBagDir(settings, dataset._1)
+    val inputDir = multiDepositDir(settings, dataset._1)
 
     <files>{
-      new File(bagDir, DATA_FOLDER)
-        .listRecursively
-        .map(_.relativePath(DATA_FOLDER))
-        .map(xmlPerPath(dataset._2))
+      if (inputDir.exists && inputDir.isDirectory)
+        inputDir.listRecursively
+          .map(file => s"data${file.getAbsolutePath.split(dataset._1).last}")
+          .map(xmlPerPath(dataset._2))
     }</files>
   }
 

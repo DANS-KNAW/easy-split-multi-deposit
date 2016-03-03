@@ -26,13 +26,13 @@ import scala.xml.PrettyPrinter
 class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
   implicit val settings = Settings(
-    multidepositDir = new File(testDir, "sip-demo-2015-02-24"),
+    multidepositDir = new File(testDir, "dd"),
     outputDepositDir = new File(testDir, "dd")
   )
   val datasetID = "ruimtereis01"
 
   before {
-    new File(getClass.getResource("/Roundtrip_BAG").toURI)
+    new File(getClass.getResource("/Roundtrip_MD/sip-demo-2015-02-24").toURI)
       .copyDir(settings.outputDepositDir)
   }
 

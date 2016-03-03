@@ -209,16 +209,6 @@ package object multideposit {
     def deleteDirectory() = FileUtils.deleteDirectory(file)
 
     /**
-      * Returns the relative path, starting from the last occurence of `startAt`.
-      *
-      * @param startAt the token at which to start the relative path
-      * @return the relative path
-      */
-    def relativePath(startAt: String): String = {
-      startAt + file.getAbsolutePath.split(startAt).last
-    }
-
-    /**
       * Finds files within a given directory and its subdirectories.
       *
       * @return a ``List`` of ``java.io.File`` with the files
