@@ -20,22 +20,18 @@ import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
 import org.apache.commons.logging.LogFactory
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Try}
 import scala.xml.{Elem, PrettyPrinter}
 
 case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val log = LogFactory.getLog(getClass)
 
-  def checkPreconditions = Success(Unit)
-
   def run() = {
     log.debug(s"Running $this")
 
     writeDatasetMetadataXml(row, dataset._1, dataset._2)
   }
-
-  def rollback() = Success(Unit)
 }
 object AddDatasetMetadataToDeposit {
   def writeDatasetMetadataXml(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {

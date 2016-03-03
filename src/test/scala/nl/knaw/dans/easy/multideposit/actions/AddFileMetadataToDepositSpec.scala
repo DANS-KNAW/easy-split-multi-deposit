@@ -42,11 +42,6 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
 
-  "checkPreconditions" should "always succeed" in {
-    val action = new AddFileMetadataToDeposit(1, ("ruimtereis01", testDataset1))
-    action.checkPreconditions shouldBe a[Success[_]]
-  }
-
   "run" should "write the file metadata to an xml file" in {
     val action = new AddFileMetadataToDeposit(1, (datasetID, testDataset1))
     val metadataDir = outputDepositBagMetadataDir(settings, datasetID)
@@ -55,11 +50,6 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
 
     metadataDir should exist
     outputFileMetadataFile(settings, datasetID) should exist
-  }
-
-  "rollback" should "always succeed" in {
-    val action = new AddFileMetadataToDeposit(1, ("ruimtereis01", testDataset1))
-    action.rollback() shouldBe a[Success[_]]
   }
 
   "datasetToFileXml" should "produce the xml for all the files" in {

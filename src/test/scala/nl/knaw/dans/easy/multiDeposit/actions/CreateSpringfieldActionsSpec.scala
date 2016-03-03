@@ -49,10 +49,6 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     datasets += ("dataset-1" -> dataset)
   }
 
-  "checkPreconditions" should "always succeed" in {
-    CreateSpringfieldActions(1, datasets()).checkPreconditions shouldBe a[Success[_]]
-  }
-
   "run" should "create a file when an empty ListBuffer was passed on" in {
     val datasets = new Datasets
 
@@ -81,10 +77,6 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     generated should include ("subtitles=\"videos/some.txt\"")
     generated should include ("src=\"videos/some.mpg\"")
     generated should include ("target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test\"")
-  }
-
-  "rollback" should "always succeed" in {
-    CreateSpringfieldActions(1, datasets()).rollback shouldBe a[Success[_]]
   }
 
   "writeSpringfieldXml" should "create the correct file with the correct input" in {

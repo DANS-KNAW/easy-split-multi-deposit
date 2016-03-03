@@ -139,10 +139,6 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
 
-  "checkPreconditions" should "always succeed" in {
-    AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
-  }
-
   "run" should "write the metadata to a file at the correct place" in {
     val file = outputDatasetMetadataFile(settings, datasetID)
 
@@ -151,10 +147,6 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     AddDatasetMetadataToDeposit(1, ("ds1", dataset)).run() shouldBe a[Success[_]]
 
     file should exist
-  }
-
-  "rollback" should "always succeed" in {
-    AddDatasetMetadataToDeposit(1, ("ds1", dataset)).rollback() shouldBe a[Success[_]]
   }
 
   "datasetToXml" should "return the expected xml" in {

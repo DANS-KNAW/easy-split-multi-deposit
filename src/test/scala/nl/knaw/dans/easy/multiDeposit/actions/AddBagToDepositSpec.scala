@@ -125,8 +125,4 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
     new File(root, "tagmanifest-md5.txt").read should include ("bagit.txt")
     new File(root, "tagmanifest-md5.txt").read should include ("manifest-md5.txt")
   }
-
-  "rollback" should "always succeed" in {
-    AddBagToDeposit(1, datasetID).rollback() shouldBe a[Success[_]]
-  }
 }

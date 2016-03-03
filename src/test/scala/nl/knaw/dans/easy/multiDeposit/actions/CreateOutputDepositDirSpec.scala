@@ -48,17 +48,13 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
 
-  "checkPreconditions" should "always succeed" in {
-    CreateOutputDepositDir(1, datasetID).checkPreconditions shouldBe a[Success[_]]
-  }
-
   "run" should "create the directories" in {
     // test is in seperate function,
     // since we want to reuse the code
     runTest()
   }
 
-  "rollback" should "" in {
+  "rollback" should "delete the directories that were created in run" in {
     // setup for this test
     runTest()
 

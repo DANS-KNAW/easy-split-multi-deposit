@@ -22,21 +22,17 @@ import nl.knaw.dans.easy.multideposit.actions.AddPropertiesToDeposit._
 import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
 import org.apache.commons.logging.LogFactory
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Try}
 
 case class AddPropertiesToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
 
   val log = LogFactory.getLog(getClass)
-
-  def checkPreconditions = Success(())
 
   def run() = {
     log.debug(s"Running $this")
 
     writeProperties(row, datasetID)
   }
-
-  def rollback() = Success(())
 }
 object AddPropertiesToDeposit {
 

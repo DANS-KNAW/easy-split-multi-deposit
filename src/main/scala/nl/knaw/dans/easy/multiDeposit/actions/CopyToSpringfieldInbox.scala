@@ -15,19 +15,15 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{IOException, File}
-
-import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.easy.multideposit.{ActionException, Settings, Action}
-import org.apache.commons.io.FileUtils
+import nl.knaw.dans.easy.multideposit.{Action, ActionException, Settings, _}
 import org.slf4j.LoggerFactory
 
-import scala.util.{Try, Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action {
   val log = LoggerFactory.getLogger(getClass)
 
-  def checkPreconditions = {
+  override def checkPreconditions = {
     log.debug(s"Checking preconditions for $this")
 
     val file = multiDepositDir(settings, fileMd)
@@ -47,7 +43,7 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
     }
   }
 
-  def rollback() = {
+  override def rollback() = {
     Try {
       log.debug(s"Rolling back $this")
       

@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{FileInputStream, File}
+import java.io.{File, FileInputStream}
 
 import gov.loc.repository.bagit.BagFactory
 import gov.loc.repository.bagit.BagFactory.Version
@@ -27,20 +27,16 @@ import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions.seqAsJavaList
-import scala.util.{Success, Try}
+import scala.util.Try
 
 case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
   val log = LoggerFactory.getLogger(getClass)
-
-  def checkPreconditions = Success(())
 
   def run() = {
     log.debug(s"Running $this")
 
     createBag(datasetID)
   }
-
-  def rollback() = Success(())
 }
 object AddBagToDeposit {
   // for examples see https://github.com/LibraryOfCongress/bagit-java/issues/18

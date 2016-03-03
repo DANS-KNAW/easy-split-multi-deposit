@@ -19,7 +19,7 @@ import nl.knaw.dans.easy.multideposit.actions.CreateSpringfieldActions._
 import nl.knaw.dans.easy.multideposit.{Dataset, _}
 import org.slf4j.LoggerFactory
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Try}
 import scala.xml.PrettyPrinter
 
 case class Video(name: String, fileSip: Option[String], subtitles: Option[String])
@@ -28,15 +28,11 @@ case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit setti
 
   val log = LoggerFactory.getLogger(getClass)
 
-  def checkPreconditions = Success(Unit)
-
   def run() = {
     log.debug(s"Running $this")
 
     writeSpringfieldXml(row, datasets)
   }
-
-  def rollback() = Success(Unit)
 }
 object CreateSpringfieldActions {
   def writeSpringfieldXml(row: Int, datasets: Datasets)(implicit settings: Settings): Try[Unit] = {

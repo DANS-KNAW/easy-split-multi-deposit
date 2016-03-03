@@ -24,8 +24,6 @@ import scala.util.{Failure, Success, Try}
 case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
   val log = LoggerFactory.getLogger(getClass)
 
-  def checkPreconditions: Try[Unit] = Success(Unit)
-
   def run(): Try[Unit] = {
     log.debug(s"Running $this")
     val depositDir = multideposit.outputDepositDir(settings, datasetID)
@@ -40,7 +38,7 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
       Failure(new ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
   }
 
-  def rollback(): Try[Unit] = {
+  override def rollback(): Try[Unit] = {
     val depositDir = multideposit.outputDepositDir(settings, datasetID)
     log.debug(s"Deleting directory $depositDir")
 
