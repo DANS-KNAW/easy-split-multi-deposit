@@ -84,9 +84,9 @@ object MultiDepositParser {
   /**
     * Updates the `datasets` with the given `values` and `row`.
     *
-    * @param datasets
-    * @param values
-    * @param row
+    * @param datasets the `datasets` to which values need to be added
+    * @param values   the `values` to be added
+    * @param row      the `row` number that will be added to the `dataset`
     * @return the same `datasets`
     */
   def updateDatasets(datasets: Datasets, values: CsvValues, row: Int): Datasets = {
