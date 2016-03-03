@@ -39,11 +39,11 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   val file5Text = "mnopqr"
 
   before {
-    new File(settings.multidepositDir, s"$datasetID/file1.txt").write(file1Text)
-    new File(settings.multidepositDir, s"$datasetID/folder1/file2.txt").write(file2Text)
-    new File(settings.multidepositDir, s"$datasetID/folder1/file3.txt").write(file3Text)
-    new File(settings.multidepositDir, s"$datasetID/folder2/file4.txt").write(file4Text)
-    new File(settings.multidepositDir, s"ds2/folder3/file5.txt").write("file5Text")
+    new File(multiDepositDir(settings, datasetID), "file1.txt").write(file1Text)
+    new File(multiDepositDir(settings, datasetID), "folder1/file2.txt").write(file2Text)
+    new File(multiDepositDir(settings, datasetID), "folder1/file3.txt").write(file3Text)
+    new File(multiDepositDir(settings, datasetID), "folder2/file4.txt").write(file4Text)
+    new File(multiDepositDir(settings, "ds2"), "folder3/file5.txt").write("file5Text")
 
     outputDepositBagDir(settings, datasetID).mkdirs
   }
@@ -72,9 +72,9 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   it should "create a bag with the files from ds1 in it and some meta-files around" in {
     AddBagToDeposit(1, datasetID).run() shouldBe a[Success[_]]
 
-    val root = new File(testDir, "dd/md-ds1")
-    new File(root, "bag") should exist
-    new File(root, "bag").listRecursively.map(_.getName) should contain theSameElementsAs
+    val root = outputDepositBagDir(settings, datasetID)
+    root should exist
+    root.listRecursively.map(_.getName) should contain theSameElementsAs
       List("bag-info.txt",
         "bagit.txt",
         "file1.txt",
@@ -83,17 +83,17 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
         "file4.txt",
         "manifest-md5.txt",
         "tagmanifest-md5.txt")
-    new File(root, "bag/data") should exist
+    outputDepositBagDataDir(settings, datasetID) should exist
   }
 
   it should "preserve the file content after making the bag" in {
     AddBagToDeposit(1, datasetID).run() shouldBe a[Success[_]]
 
-    val root = new File(testDir, "dd/md-ds1")
-    new File(root, "bag/data/file1.txt").read shouldBe file1Text
-    new File(root, "bag/data/folder1/file2.txt").read shouldBe file2Text
-    new File(root, "bag/data/folder1/file3.txt").read shouldBe file3Text
-    new File(root, "bag/data/folder2/file4.txt").read shouldBe file4Text
+    val root = outputDepositBagDataDir(settings, datasetID)
+    new File(root, "file1.txt").read shouldBe file1Text
+    new File(root, "folder1/file2.txt").read shouldBe file2Text
+    new File(root, "folder1/file3.txt").read shouldBe file3Text
+    new File(root, "folder2/file4.txt").read shouldBe file4Text
   }
 
   it should "create a bag with no files in data when the input directory does not exist" in {
@@ -110,20 +110,20 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
 
     AddBagToDeposit(1, datasetID)(settings).run() shouldBe a[Success[_]]
 
-    val root = new File(testDir, "dd/md-empty-ds1")
-    root should exist
-    new File(root, "bag/data/") should exist
-    new File(root, "bag/data/").listRecursively shouldBe empty
-    new File(root, "bag").listRecursively.map(_.getName) should contain theSameElementsAs
+    outputDepositDir(settings, datasetID) should exist
+    outputDepositBagDataDir(settings, datasetID) should exist
+    outputDepositBagDataDir(settings, datasetID).listRecursively shouldBe empty
+    outputDepositBagDir(settings, datasetID).listRecursively.map(_.getName) should contain theSameElementsAs
       List("bag-info.txt",
         "bagit.txt",
         "manifest-md5.txt",
         "tagmanifest-md5.txt")
 
-    new File(root, "bag/manifest-md5.txt").read shouldBe empty
-    new File(root, "bag/tagmanifest-md5.txt").read should include ("bag-info.txt")
-    new File(root, "bag/tagmanifest-md5.txt").read should include ("bagit.txt")
-    new File(root, "bag/tagmanifest-md5.txt").read should include ("manifest-md5.txt")
+    val root = outputDepositBagDir(settings, datasetID)
+    new File(root, "manifest-md5.txt").read shouldBe empty
+    new File(root, "tagmanifest-md5.txt").read should include ("bag-info.txt")
+    new File(root, "tagmanifest-md5.txt").read should include ("bagit.txt")
+    new File(root, "tagmanifest-md5.txt").read should include ("manifest-md5.txt")
   }
 
   "rollback" should "always succeed" in {

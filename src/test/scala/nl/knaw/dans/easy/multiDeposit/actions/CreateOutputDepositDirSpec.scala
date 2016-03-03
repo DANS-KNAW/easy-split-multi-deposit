@@ -28,6 +28,7 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     multidepositDir = new File(testDir, "md"),
     outputDepositDir = new File(testDir, "dd")
   )
+  val datasetID = "ds1"
 
   override def beforeAll = testDir.mkdirs
 
@@ -48,7 +49,7 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
   override def afterAll = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "always succeed" in {
-    CreateOutputDepositDir(1, "ds1").checkPreconditions shouldBe a[Success[_]]
+    CreateOutputDepositDir(1, datasetID).checkPreconditions shouldBe a[Success[_]]
   }
 
   "run" should "create the directories" in {
@@ -62,27 +63,26 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     runTest()
 
     // roll back the creation of the directories
-    CreateOutputDepositDir(1, "ds1").rollback() shouldBe a[Success[_]]
+    CreateOutputDepositDir(1, datasetID).rollback() shouldBe a[Success[_]]
 
     // test that the directories are really not there anymore
-    new File(testDir, "dd/md-ds1") should not (exist)
-    new File(testDir, "dd/md-ds1/bag") should not (exist)
-    new File(testDir, "dd/md-ds1/bag/metadata") should not (exist)
+    outputDepositDir(settings, datasetID) should not (exist)
+    outputDepositBagDir(settings, datasetID) should not (exist)
+    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
   }
 
   def runTest(): Unit = {
     // directories do not exist before
-    new File(testDir, "dd/md-ds1") should not (exist)
-    new File(testDir, "dd/md-ds1/bag") should not (exist)
-    new File(testDir, "dd/md-ds1/bag/metadata") should not (exist)
+    outputDepositDir(settings, datasetID) should not (exist)
+    outputDepositBagDir(settings, datasetID) should not (exist)
+    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
 
     // creation of directories
-    CreateOutputDepositDir(1, "ds1").run() shouldBe a[Success[_]]
+    CreateOutputDepositDir(1, datasetID).run() shouldBe a[Success[_]]
 
     // test existance after creation
-    new File(testDir, "dd/md-ds1") should exist
-    new File(testDir, "dd/md-ds1/bag") should exist
-    new File(testDir, "dd/md-ds1/bag/metadata") should exist
+    outputDepositDir(settings, datasetID) should exist
+    outputDepositBagDir(settings, datasetID) should exist
+    outputDepositBagMetadataDir(settings, datasetID) should exist
   }
-
 }

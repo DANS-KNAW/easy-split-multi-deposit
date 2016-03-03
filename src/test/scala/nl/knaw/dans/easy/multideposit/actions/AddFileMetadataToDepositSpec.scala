@@ -54,7 +54,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
     action.run() shouldBe a[Success[_]]
 
     metadataDir should exist
-    new File(metadataDir, "files.xml") should exist
+    outputFileMetadataFile(settings, datasetID) should exist
   }
 
   "rollback" should "always succeed" in {

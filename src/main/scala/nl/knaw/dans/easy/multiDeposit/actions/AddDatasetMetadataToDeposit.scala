@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
-
 import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
@@ -42,8 +40,7 @@ case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(
 object AddDatasetMetadataToDeposit {
   def writeDatasetMetadataXml(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     Try {
-      val file = new File(outputDepositBagMetadataDir(settings, datasetID), "dataset.xml")
-      file.write(datasetToXml(dataset))
+      outputDatasetMetadataFile(settings, datasetID).write(datasetToXml(dataset))
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write dataset metadata: $e"))
     }

@@ -15,14 +15,14 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{File, FileOutputStream}
+import java.io.FileOutputStream
 import java.util.Properties
 
 import nl.knaw.dans.easy.multideposit.actions.AddPropertiesToDeposit._
 import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
 import org.apache.commons.logging.LogFactory
 
-import scala.util.{Success, Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 case class AddPropertiesToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action(row) {
 
@@ -44,7 +44,7 @@ object AddPropertiesToDeposit {
     Try {
       val props = new Properties
       // set properties???
-      props.store(new FileOutputStream(new File(outputDepositDir(settings, datasetID), "deposit.properties")), "")
+      props.store(new FileOutputStream(outputPropertiesFile(settings, datasetID)), "")
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write properties to file: $e", e))
     }

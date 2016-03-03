@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory
 object CommandLineOptions {
 
   val log = LoggerFactory.getLogger(getClass)
-  val mdInstructionsFileName = "instructions.csv"
 
   def parse(args: Array[String]): Settings = {
     log.debug("Loading application.conf ...")
@@ -49,7 +48,6 @@ object CommandLineOptions {
 }
 
 class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(args) {
-  import nl.knaw.dans.easy.multideposit.{CommandLineOptions => cmd}
 
   val fileMayNotExist = singleArgConverter(new File(_))
   val fileShouldExist = singleArgConverter(filename => {
@@ -76,14 +74,14 @@ class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(
   lazy val multiDepositDir = trailArg[File](name = "multi-deposit-dir", required = true,
     descr = "Directory containing the Submission Information Package to process. "
       + "This must be a valid path to a directory containing a file named "
-      + s"'${cmd.mdInstructionsFileName}' in RFC4180 format.")(fileShouldExist)
+      + s"'$instructionsFileName' in RFC4180 format.")(fileShouldExist)
   validateOpt(multiDepositDir)(_.map(file =>
     if (!file.isDirectory) {
       Left(s"Not a directory '$file'")
     }
-    else if (!file.directoryContains(new File(file, cmd.mdInstructionsFileName)))
+    else if (!file.directoryContains(new File(file, instructionsFileName)))
       Left("No instructions file found in this directory, expected: "
-        + s"${new File(file, cmd.mdInstructionsFileName)}")
+        + s"${new File(file, instructionsFileName)}")
     else
       Right(()))
     .getOrElse(Left("Could not parse parameter multi-deposit-dir")))

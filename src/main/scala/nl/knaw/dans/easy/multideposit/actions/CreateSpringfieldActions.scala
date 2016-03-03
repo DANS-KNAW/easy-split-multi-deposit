@@ -15,10 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
-
-import nl.knaw.dans.easy.multideposit.{Dataset, _}
 import nl.knaw.dans.easy.multideposit.actions.CreateSpringfieldActions._
+import nl.knaw.dans.easy.multideposit.{Dataset, _}
 import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
@@ -34,6 +32,7 @@ case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit setti
 
   def run() = {
     log.debug(s"Running $this")
+
     writeSpringfieldXml(row, datasets)
   }
 
@@ -42,8 +41,7 @@ case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit setti
 object CreateSpringfieldActions {
   def writeSpringfieldXml(row: Int, datasets: Datasets)(implicit settings: Settings): Try[Unit] = {
     Try {
-      val file = new File(settings.springfieldInbox, "springfield-actions.xml")
-      file.write(toXML(datasets))
+      springfieldInboxActionsFile(settings).write(toXML(datasets))
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e", e))
     }

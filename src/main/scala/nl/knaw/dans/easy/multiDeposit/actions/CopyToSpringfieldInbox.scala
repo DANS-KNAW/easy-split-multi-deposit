@@ -30,7 +30,7 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
   def checkPreconditions = {
     log.debug(s"Checking preconditions for $this")
 
-    val file = new File(settings.multidepositDir, fileMd)
+    val file = multiDepositDir(settings, fileMd)
 
     if (file.exists) Success(Unit)
     else Failure(ActionException(row, s"Cannot find MD file: ${file.getPath}"))
@@ -40,8 +40,8 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
     Try {
       log.debug(s"Running $this")
 
-      val mdFile = new File(settings.multidepositDir, fileMd)
-      val sfFile = new File(settings.springfieldInbox, fileMd)
+      val mdFile = multiDepositDir(settings, fileMd)
+      val sfFile = springfieldInboxDir(settings, fileMd)
 
       mdFile.copyFile(sfFile)
     }

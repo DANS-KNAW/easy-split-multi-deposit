@@ -237,10 +237,19 @@ package object multideposit {
   }
 
   val bagDirName = "bag"
+  val dataDirName = "data"
   val metadataDirName = "metadata"
+  val instructionsFileName = "instructions.csv"
+  val datasetMetadataFileName = "dataset.xml"
+  val fileMetadataFileName = "files.xml"
+  val propsFileName = "deposit.properties"
+  val springfieldActionsFileName = "springfield-actions.xml"
 
   def multiDepositDir(settings: Settings, datasetID: DatasetID) = {
     new File(settings.multidepositDir, datasetID)
+  }
+  def multiDepositInstructionsFile(settings: Settings) = {
+    new File(settings.multidepositDir, instructionsFileName)
   }
   def outputDepositDir(settings: Settings, datasetID: DatasetID) = {
     new File(settings.outputDepositDir, s"${settings.multidepositDir.getName}-$datasetID")
@@ -248,8 +257,26 @@ package object multideposit {
   def outputDepositBagDir(settings: Settings, datasetID: DatasetID) = {
     new File(outputDepositDir(settings, datasetID), bagDirName)
   }
+  def outputDepositBagDataDir(settings: Settings, datasetID: DatasetID) = {
+    new File(outputDepositBagDir(settings, datasetID), dataDirName)
+  }
   def outputDepositBagMetadataDir(settings: Settings, datasetID: DatasetID) = {
     new File(outputDepositBagDir(settings, datasetID), metadataDirName)
+  }
+  def outputPropertiesFile(settings: Settings, datasetID: DatasetID) = {
+    new File(outputDepositDir(settings, datasetID), propsFileName)
+  }
+  def outputDatasetMetadataFile(settings: Settings, datasetID: DatasetID) = {
+    new File(outputDepositBagMetadataDir(settings, datasetID), datasetMetadataFileName)
+  }
+  def outputFileMetadataFile(settings: Settings, datasetID: DatasetID) = {
+    new File(outputDepositBagMetadataDir(settings, datasetID), fileMetadataFileName)
+  }
+  def springfieldInboxDir(settings: Settings, fileMd: String) = {
+    new File(settings.springfieldInbox, fileMd)
+  }
+  def springfieldInboxActionsFile(settings: Settings) = {
+    springfieldInboxDir(settings, springfieldActionsFileName)
   }
 
   /** Extract the ''file parameters'' from a dataset and return these in an ``Observable``.

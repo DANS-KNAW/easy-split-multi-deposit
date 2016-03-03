@@ -57,7 +57,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     val datasets = new Datasets
 
     CreateSpringfieldActions(1, datasets).run shouldBe a[Success[_]]
-    new File(settings.springfieldInbox, "springfield-actions.xml") should be a 'file
+    springfieldInboxActionsFile(settings) should be a 'file
   }
 
   it should "fail with too little instructions" in {
@@ -73,7 +73,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
   it should "create the correct file with the correct input" in {
     CreateSpringfieldActions(1, datasets()).run shouldBe a[Success[_]]
     val generated = {
-      val xmlFile = new File(settings.springfieldInbox, "springfield-actions.xml")
+      val xmlFile = springfieldInboxActionsFile(settings)
       xmlFile should be a 'file
       xmlFile.read
     }
@@ -90,7 +90,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
   "writeSpringfieldXml" should "create the correct file with the correct input" in {
     writeSpringfieldXml(1, datasets()) shouldBe a[Success[_]]
     val generated = {
-      val xmlFile = new File(settings.springfieldInbox, "springfield-actions.xml")
+      val xmlFile = springfieldInboxActionsFile(settings)
       xmlFile should be a 'file
       xmlFile.read
     }

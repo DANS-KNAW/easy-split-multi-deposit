@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.io.File
-
 import nl.knaw.dans.easy.multideposit.actions._
 import nl.knaw.dans.easy.multideposit.{CommandLineOptions => cmd, MultiDepositParser => parser}
 import org.slf4j.LoggerFactory
@@ -44,7 +42,7 @@ object Main {
   }
 
   def getActionsStream(implicit settings: Settings): Observable[Action] = {
-    parser.parse(new File(settings.multidepositDir, cmd.mdInstructionsFileName))
+    parser.parse(multiDepositInstructionsFile(settings))
       .flatMap(_.toObservable)
       .getActions
       .checkActionPreconditions

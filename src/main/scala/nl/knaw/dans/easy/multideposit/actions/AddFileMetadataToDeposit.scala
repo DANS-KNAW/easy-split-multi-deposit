@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
-
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
 import org.apache.commons.logging.LogFactory
@@ -42,8 +40,8 @@ object AddFileMetadataToDeposit {
 
   def writeFileMetadataXml(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings): Try[Unit] = {
     Try {
-      val file = new File(outputDepositBagMetadataDir(settings, dataset._1), "files.xml")
-      file.write(new PrettyPrinter(160, 2).format(datasetToFileXml(dataset)))
+      outputFileMetadataFile(settings, dataset._1)
+        .write(new PrettyPrinter(160, 2).format(datasetToFileXml(dataset)))
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write file meta data: $e"))
     }
