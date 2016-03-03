@@ -15,9 +15,40 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.UnitSpec
+import java.io.File
 
-class AddPropertiesToDepositSpec extends UnitSpec {
+import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfter}
 
-  
+import scala.util.Success
+
+class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
+
+  implicit val settings = Settings(
+    multidepositDir = new File(testDir, "md"),
+    outputDepositDir = new File(testDir, "dd")
+  )
+  val datasetID = "ds1"
+
+  before {
+    new File(settings.outputDepositDir, s"md-$datasetID").mkdirs
+  }
+
+  override def afterAll = testDir.getParentFile.deleteDirectory()
+
+  "run" should "generate the properties file" in {
+    AddPropertiesToDeposit(1, datasetID).run() shouldBe a[Success[_]]
+
+    new File(outputDepositDir(settings, datasetID), "deposit.properties") should exist
+  }
+
+  "writeProperties" should "generate the properties file and write the properties in it" in {
+    AddPropertiesToDeposit(1, datasetID).run() shouldBe a[Success[_]]
+
+    val props = outputPropertiesFile(settings, datasetID)
+    val content = props.read
+    content should include ("state.label")
+    content should include ("state.description")
+    content should include ("depositor.userId")
+  }
 }

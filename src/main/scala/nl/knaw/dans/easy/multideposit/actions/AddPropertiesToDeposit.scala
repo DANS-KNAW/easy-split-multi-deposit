@@ -39,10 +39,16 @@ object AddPropertiesToDeposit {
   def writeProperties(row: Int, datasetID: DatasetID)(implicit settings: Settings): Try[Unit] = {
     Try {
       val props = new Properties
-      // set properties???
+      addProperties(props)
       props.store(new FileOutputStream(outputPropertiesFile(settings, datasetID)), "")
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write properties to file: $e", e))
     }
+  }
+
+  def addProperties(properties: Properties): Unit = {
+    properties.setProperty("state.label", "SUBMITTED")
+    properties.setProperty("state.description", "Deposit is valid and ready for post-submission processing")
+    properties.setProperty("depositor.userId", "dposit")
   }
 }
