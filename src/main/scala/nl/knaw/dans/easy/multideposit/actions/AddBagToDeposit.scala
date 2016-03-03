@@ -15,26 +15,24 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.io.{FileInputStream, File}
+
 import gov.loc.repository.bagit.BagFactory
 import gov.loc.repository.bagit.BagFactory.Version
+import gov.loc.repository.bagit.Manifest.Algorithm
+import gov.loc.repository.bagit.utilities.MessageDigestHelper
 import gov.loc.repository.bagit.writer.impl.FileSystemWriter
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions.seqAsJavaList
-import scala.util.{Failure, Success, Try}
+import scala.util.{Success, Try}
 
 case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action(row) {
   val log = LoggerFactory.getLogger(getClass)
 
-  def checkPreconditions = {
-    log.debug(s"Checking preconditions for $this")
-
-    val inputDir = multiDepositDir(settings, datasetID)
-    if (inputDir.exists) Success(Unit)
-    else Failure(ActionException(row, s"Dataset $datasetID: deposit directory $inputDir does not exist"))
-  }
+  def checkPreconditions = Success(())
 
   def run() = {
     log.debug(s"Running $this")
@@ -42,7 +40,7 @@ case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Se
     createBag(datasetID)
   }
 
-  def rollback() = Success(Unit)
+  def rollback() = Success(())
 }
 object AddBagToDeposit {
   // for examples see https://github.com/LibraryOfCongress/bagit-java/issues/18
@@ -50,19 +48,29 @@ object AddBagToDeposit {
   def createBag(datasetID: DatasetID)(implicit settings: Settings): Try[Unit] = {
     Try {
       val inputDir = multiDepositDir(settings, datasetID)
+      val inputDirExists = inputDir.exists
       val outputBagDir = outputDepositBagDir(settings, datasetID)
 
       val bagFactory = new BagFactory
       val preBag = bagFactory.createPreBag(outputBagDir)
       val bag = bagFactory.createBag(outputBagDir)
 
-      bag.addFilesToPayload(inputDir.listFiles.toList)
+      if (inputDirExists) bag.addFilesToPayload(inputDir.listFiles.toList)
       bag.makeComplete
 
       val fsw = new FileSystemWriter(bagFactory)
+      if (!inputDirExists) fsw.setTagFilesOnly(true)
       fsw.write(bag, outputBagDir)
 
+      if (!inputDirExists) preBag.setIgnoreAdditionalDirectories(List("metadata"))
       preBag.makeBagInPlace(Version.V0_97, false)
+
+      // TODO, this is temporary, waiting for response from the BagIt-Java developers.
+      if (!inputDirExists) {
+        new File(outputBagDir, "data").mkdir()
+        new File(outputBagDir, "manifest-md5.txt").write("")
+        new File(outputBagDir, "tagmanifest-md5.txt").append(s"${MessageDigestHelper.generateFixity(new FileInputStream(new File(outputBagDir, "manifest-md5.txt")), Algorithm.MD5)}  manifest-md5.txt")
+      }
     }
   }
 }

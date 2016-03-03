@@ -54,14 +54,22 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
 
-  "checkPreconditions" should "fail if the md folder does not exist" in {
+  // TODO cleanup
+//  "checkPreconditions" should "fail if the md folder does not exist" in {
+////    val inputDir = multiDepositDir(settings, datasetID)
+////    inputDir.deleteDirectory()
+////
+////    val pre = AddBagToDeposit(1, datasetID).checkPreconditions
+////
+////    (the [ActionException] thrownBy pre.get).row shouldBe 1
+////    (the [ActionException] thrownBy pre.get).message should include (s"does not exist")
+//  }
+
+  "checkPreconditions" should "succeed if the md folder does not exist" in {
     val inputDir = multiDepositDir(settings, datasetID)
     inputDir.deleteDirectory()
 
-    val pre = AddBagToDeposit(1, datasetID).checkPreconditions
-
-    (the [ActionException] thrownBy pre.get).row shouldBe 1
-    (the [ActionException] thrownBy pre.get).message should include (s"does not exist")
+    AddBagToDeposit(1, datasetID).checkPreconditions shouldBe a[Success[_]]
   }
 
   it should "succeed if the md folder exists" in {
@@ -73,30 +81,60 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   }
 
   it should "create a bag with the files from ds1 in it and some meta-files around" in {
-    AddBagToDeposit(1, datasetID).run()
+    AddBagToDeposit(1, datasetID).run() shouldBe a[Success[_]]
 
     val root = new File(testDir, "dd/md-ds1")
-    new File(root, "bag").exists shouldBe true
-    FileUtils.listFiles(new File(root, "bag"), null, true).map(_.getName) should contain only (
-      "bag-info.txt",
-      "bagit.txt",
-      "file1.txt",
-      "file2.txt",
-      "file3.txt",
-      "file4.txt",
-      "manifest-md5.txt",
-      "tagmanifest-md5.txt")
-    new File(root, "bag/data").exists shouldBe true
+    new File(root, "bag") should exist
+    new File(root, "bag").listRecursively.map(_.getName) should contain theSameElementsAs
+      List("bag-info.txt",
+        "bagit.txt",
+        "file1.txt",
+        "file2.txt",
+        "file3.txt",
+        "file4.txt",
+        "manifest-md5.txt",
+        "tagmanifest-md5.txt")
+    new File(root, "bag/data") should exist
   }
 
   it should "preserve the file content after making the bag" in {
-    AddBagToDeposit(1, datasetID).run()
+    AddBagToDeposit(1, datasetID).run() shouldBe a[Success[_]]
 
     val root = new File(testDir, "dd/md-ds1")
     new File(root, "bag/data/file1.txt").read shouldBe file1Text
     new File(root, "bag/data/folder1/file2.txt").read shouldBe file2Text
     new File(root, "bag/data/folder1/file3.txt").read shouldBe file3Text
     new File(root, "bag/data/folder2/file4.txt").read shouldBe file4Text
+  }
+
+  it should "create a bag with no files in data when the input directory does not exist" in {
+    val settings = Settings(
+      multidepositDir = new File(testDir, "md-empty"),
+      outputDepositDir = new File(testDir, "dd")
+    )
+
+    val outputDir = outputDepositBagDir(settings, datasetID)
+    outputDir.mkdirs
+    outputDir should exist
+
+    multiDepositDir(settings, datasetID) should not (exist)
+
+    AddBagToDeposit(1, datasetID)(settings).run() shouldBe a[Success[_]]
+
+    val root = new File(testDir, "dd/md-empty-ds1")
+    root should exist
+    new File(root, "bag/data/") should exist
+    new File(root, "bag/data/").listRecursively shouldBe empty
+    new File(root, "bag").listRecursively.map(_.getName) should contain theSameElementsAs
+      List("bag-info.txt",
+        "bagit.txt",
+        "manifest-md5.txt",
+        "tagmanifest-md5.txt")
+
+    new File(root, "bag/manifest-md5.txt").read shouldBe empty
+    new File(root, "bag/tagmanifest-md5.txt").read should include ("bag-info.txt")
+    new File(root, "bag/tagmanifest-md5.txt").read should include ("bagit.txt")
+    new File(root, "bag/tagmanifest-md5.txt").read should include ("manifest-md5.txt")
   }
 
   "rollback" should "always succeed" in {

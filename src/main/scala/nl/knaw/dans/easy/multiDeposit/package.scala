@@ -119,6 +119,14 @@ package object multideposit {
     def write(data: String) = FileUtils.write(file, data)
 
     /**
+      * Appends a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
+      *
+      * @param data the content to write to the file
+      * @throws IOException in case of an I/O error
+      */
+    def append(data: String) = FileUtils.write(file, data, true)
+
+    /**
       * Reads the contents of a file into a String using the default encoding for the VM.
       * The file is always closed.
       *
