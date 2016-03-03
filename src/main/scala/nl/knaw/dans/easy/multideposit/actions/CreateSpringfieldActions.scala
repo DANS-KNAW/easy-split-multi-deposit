@@ -24,7 +24,7 @@ import scala.xml.PrettyPrinter
 
 case class Video(name: String, fileSip: Option[String], subtitles: Option[String])
 
-case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit settings: Settings) extends Action(row) {
+case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit settings: Settings) extends Action {
 
   val log = LoggerFactory.getLogger(getClass)
 

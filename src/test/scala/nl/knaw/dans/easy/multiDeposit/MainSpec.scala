@@ -23,11 +23,9 @@ import scala.util.{Failure, Success}
 
 class MainSpec extends UnitSpec with MockFactory {
 
-  abstract class MockedAction extends Action(42)
-
   "checkActionPreconditions" should "succeed if the preconditions of are met" in {
-    val m1 = mock[MockedAction]
-    val m2 = mock[MockedAction]
+    val m1 = mock[Action]
+    val m2 = mock[Action]
 
     m1.checkPreconditions _ expects () once() returning Success(())
     m2.checkPreconditions _ expects () once() returning Success(())
@@ -47,10 +45,10 @@ class MainSpec extends UnitSpec with MockFactory {
   }
 
   it should "return all actions and then fail when multiple preconditions fail" in {
-    val m1 = mock[MockedAction]
-    val m2 = mock[MockedAction]
-    val m3 = mock[MockedAction]
-    val m4 = mock[MockedAction]
+    val m1 = mock[Action]
+    val m2 = mock[Action]
+    val m3 = mock[Action]
+    val m4 = mock[Action]
 
     m1.checkPreconditions _ expects () once() returning Success(())
     m2.checkPreconditions _ expects () once() returning Failure(new ActionException(6, "foo"))
@@ -77,10 +75,10 @@ class MainSpec extends UnitSpec with MockFactory {
   }
 
   it should "generate an error report when multiple preconditions fail" in {
-    val m1 = mock[MockedAction]
-    val m2 = mock[MockedAction]
-    val m3 = mock[MockedAction]
-    val m4 = mock[MockedAction]
+    val m1 = mock[Action]
+    val m2 = mock[Action]
+    val m3 = mock[Action]
+    val m4 = mock[Action]
 
     m1.checkPreconditions _ expects () once() returning Success(())
     m2.checkPreconditions _ expects () once() returning Failure(new ActionException(6, "foo"))
@@ -108,8 +106,8 @@ class MainSpec extends UnitSpec with MockFactory {
   }
 
   "runActions" should "succeed if all actions are successfull in running" in {
-    val m1 = mock[MockedAction]
-    val m2 = mock[MockedAction]
+    val m1 = mock[Action]
+    val m2 = mock[Action]
 
     m1.run _ expects () once() returning Success(())
     m2.run _ expects () once() returning Success(())
@@ -129,9 +127,9 @@ class MainSpec extends UnitSpec with MockFactory {
   it should "rollback when it fails, return the action and return after that" in {
     val exception = new Exception("foo")
 
-    val m1 = mock[MockedAction]
-    val m2 = mock[MockedAction]
-    val m3 = mock[MockedAction]
+    val m1 = mock[Action]
+    val m2 = mock[Action]
+    val m3 = mock[Action]
 
     m1.run _ expects () once() returning Success(())
     m2.run _ expects () once() returning Failure(exception)

@@ -24,7 +24,7 @@ import org.apache.commons.logging.LogFactory
 
 import scala.util.{Failure, Success, Try}
 
-case class AddPropertiesToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action(row) {
+case class AddPropertiesToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
 
   val log = LogFactory.getLog(getClass)
 

@@ -20,10 +20,8 @@ import scala.util.Try
 /**
   * An action to be performed by Process SIP. It provides three methods that can be invoked to verify
   * the feasibility of the action, to perform the action and - if necessary - to roll back the action.
-  *
-  * @param row the row on which this action is executed
   */
-abstract class Action(row: Int) {
+abstract class Action {
 
   /**
     * Verifies whether all preconditions are met for this specific action.
@@ -44,5 +42,17 @@ abstract class Action(row: Int) {
     *
     * @return TODO
     */
+  def rollback(): Try[Unit]
+}
+
+trait Precondition {
+  def checkPreconditions: Try[Unit]
+}
+
+trait Runnable {
+  def run(): Try[Unit]
+}
+
+trait Revertable {
   def rollback(): Try[Unit]
 }

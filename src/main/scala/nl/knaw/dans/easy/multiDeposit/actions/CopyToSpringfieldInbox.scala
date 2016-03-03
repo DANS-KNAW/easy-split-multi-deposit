@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.{Try, Failure, Success}
 
-case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action(row) {
+case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action {
   val log = LoggerFactory.getLogger(getClass)
 
   def checkPreconditions = {

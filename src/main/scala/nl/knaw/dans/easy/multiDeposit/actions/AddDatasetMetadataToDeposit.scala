@@ -23,7 +23,7 @@ import org.apache.commons.logging.LogFactory
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, PrettyPrinter}
 
-case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action(row) {
+case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val log = LogFactory.getLog(getClass)
 

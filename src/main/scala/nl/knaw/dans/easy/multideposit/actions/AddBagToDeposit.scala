@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConversions.seqAsJavaList
 import scala.util.{Success, Try}
 
-case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action(row) {
+case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
   val log = LoggerFactory.getLogger(getClass)
 
   def checkPreconditions = Success(())
