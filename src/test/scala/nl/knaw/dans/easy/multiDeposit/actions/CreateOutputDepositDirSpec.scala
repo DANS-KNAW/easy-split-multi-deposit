@@ -20,7 +20,7 @@ import java.io.File
 import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
@@ -47,6 +47,28 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
   }
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
+
+  "checkPreconditions" should "succeed if the output directories do not yet exist" in {
+    // directories do not exist before
+    outputDepositDir(settings, datasetID) should not (exist)
+    outputDepositBagDir(settings, datasetID) should not (exist)
+    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
+
+    // creation of directories
+    CreateOutputDepositDir(1, datasetID).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail if either one of the output directories does already exist" in {
+    outputDepositBagDir(settings, datasetID).mkdirs()
+
+    // some directories do already exist before
+    outputDepositDir(settings, datasetID) should exist
+    outputDepositBagDir(settings, datasetID) should exist
+    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
+
+    // creation of directories
+    CreateOutputDepositDir(1, datasetID).checkPreconditions shouldBe a[Failure[_]]
+  }
 
   "run" should "create the directories" in {
     // test is in seperate function,

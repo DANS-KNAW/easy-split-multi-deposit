@@ -24,15 +24,28 @@ import scala.util.{Failure, Success, Try}
 case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
   val log = LoggerFactory.getLogger(getClass)
 
+  override def checkPreconditions: Try[Unit] = {
+    val dirs = List(multideposit.outputDepositDir(settings, datasetID),
+      outputDepositBagDir(settings, datasetID),
+      outputDepositBagMetadataDir(settings, datasetID))
+
+    if (dirs.exists(_.exists))
+      Failure(new ActionException(row, s"Either one of the directories ${dirs.mkString("[", ", ", "]")} already exist."))
+    else
+      Success(Unit)
+  }
+
   def run(): Try[Unit] = {
     log.debug(s"Running $this")
     val depositDir = multideposit.outputDepositDir(settings, datasetID)
     val bagDir = outputDepositBagDir(settings, datasetID)
     val metadataDir = outputDepositBagMetadataDir(settings, datasetID)
 
+    val dirs = List(depositDir, bagDir, metadataDir)
+
     log.debug(s"Creating Deposit Directory at $depositDir with bag directory = $bagDir and metadata directory = $metadataDir")
 
-    if (depositDir.mkdirs && bagDir.mkdir && metadataDir.mkdir)
+    if (dirs.forall(_.mkdirs))
       Success(Unit)
     else
       Failure(new ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
