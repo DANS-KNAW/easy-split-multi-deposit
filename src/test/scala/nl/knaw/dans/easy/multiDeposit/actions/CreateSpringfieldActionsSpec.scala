@@ -49,11 +49,11 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     datasets += ("dataset-1" -> dataset)
   }
 
-  "run" should "create a file when an empty ListBuffer was passed on" in {
+  "run" should "not create a file when an empty ListBuffer was passed on" in {
     val datasets = new Datasets
 
     CreateSpringfieldActions(1, datasets).run shouldBe a[Success[_]]
-    springfieldInboxActionsFile(settings) should be a 'file
+    springfieldInboxActionsFile(settings) should not (be a 'file)
   }
 
   it should "fail with too little instructions" in {
@@ -93,17 +93,16 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   "toXML" should "return an empty xml when given empty datasets" in {
-    Utility.trim(XML.loadString(toXML(new Datasets))) shouldBe
-      Utility.trim(<actions></actions>)
+    toXML(new Datasets).map(Utility.trim _ compose XML.loadString) shouldBe None
   }
 
   it should "return the xml" in {
-    Utility.trim(XML.loadString(toXML(datasets()))) shouldBe
-      Utility.trim(<actions>
+    toXML(datasets()).map(Utility.trim _ compose XML.loadString) shouldBe
+      Some(Utility.trim(<actions>
         <add target="/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test">
           <video src="videos/some.mpg" target="0" subtitles="videos/some.txt"/>
         </add>
-      </actions>)
+      </actions>))
   }
 
   "createAddElement" should "return an empy xml when given an empty list of videos" in {

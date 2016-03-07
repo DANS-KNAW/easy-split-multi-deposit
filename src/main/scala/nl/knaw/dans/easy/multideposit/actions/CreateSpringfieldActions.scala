@@ -37,20 +37,22 @@ case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit setti
 object CreateSpringfieldActions {
   def writeSpringfieldXml(row: Int, datasets: Datasets)(implicit settings: Settings): Try[Unit] = {
     Try {
-      springfieldInboxActionsFile(settings).write(toXML(datasets))
+      toXML(datasets).foreach(springfieldInboxActionsFile(settings).write)
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e", e))
     }
   }
 
-  def toXML(datasets: Datasets) = {
-    new PrettyPrinter(160, 2).format(
-      <actions> {
-        for {
-          (id, dataset) <- datasets
-          (target, videos) <- extractVideos(dataset)
-        } yield createAddElement(target, videos)
-      }</actions>)
+  def toXML(datasets: Datasets): Option[String] = {
+    val elems = for {
+      (_, dataset) <- datasets
+      (target, videos) <- extractVideos(dataset)
+    } yield createAddElement(target, videos)
+
+    if (elems.nonEmpty)
+      Some(new PrettyPrinter(160, 2).format(<actions>{elems}</actions>))
+    else
+      None
   }
 
   def createAddElement(target: String, videos: List[Video]) = {

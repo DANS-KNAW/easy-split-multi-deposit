@@ -106,6 +106,12 @@ package object multideposit {
   }
 
   implicit class OptionExtensions[T](val option: Option[T]) extends AnyVal {
+    /**
+      * Converts an `Option` to an `Observable`. `Some` is mapped to an `Observable` with 1 element,
+      * `None` is mapped to the empty `Observable`.
+      *
+      * @return an `Observable` with either zero or one elements
+      */
     def toObservable = option.map(Observable.just(_)).getOrElse(Observable.empty)
   }
 
