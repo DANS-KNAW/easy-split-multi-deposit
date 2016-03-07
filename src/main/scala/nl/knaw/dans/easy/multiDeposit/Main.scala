@@ -187,7 +187,10 @@ object Main {
         .onError(error => Observable.just(action) ++ Observable.error(error)))
       .doOnNext(stack.push(_))
       .doOnError(_ => {
-        log.error("An error occurred. Rolling back actions ...")
+        if (stack.isEmpty)
+          log.error("An error occurred ...")
+        else
+          log.error("An error occurred. Rolling back actions ...")
         stack.foreach(_.rollback())
       })
   }
