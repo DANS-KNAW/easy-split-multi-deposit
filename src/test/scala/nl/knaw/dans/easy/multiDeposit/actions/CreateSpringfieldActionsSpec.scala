@@ -96,7 +96,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     toXML(new Datasets).map(Utility.trim _ compose XML.loadString) shouldBe None
   }
 
-  it should "return the xml" in {
+  it should "return the xml when datasets are supplied with the proper fields set" in {
     toXML(datasets()).map(Utility.trim _ compose XML.loadString) shouldBe
       Some(Utility.trim(<actions>
         <add target="/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test">
@@ -121,7 +121,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
       include ("Invalid video object:")
   }
 
-  it should "return the xml" in {
+  it should "return the xml from a valid list of videos" in {
     val videos = List(
       Video("0", Some("videos/some0.mpg"), Some("videos/some0.txt")),
       Video("1", Some("videos/some1.mpg"), None),
