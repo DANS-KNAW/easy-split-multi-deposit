@@ -15,14 +15,13 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{FileNotFoundException, File}
+import java.io.{File, FileNotFoundException}
 
-import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.easy.multideposit.{ActionException, Settings, UnitSpec}
+import nl.knaw.dans.easy.multideposit.{ActionException, Settings, UnitSpec, _}
 import nl.knaw.dans.easy.ps.MdKey
 import org.scalatest.BeforeAndAfterAll
 
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
 
@@ -60,7 +59,10 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
 
   it should "fail if file does not exist" in {
     val run = CopyToSpringfieldInbox(1, "videos/some_error.mpg").run()
-    (the [FileNotFoundException] thrownBy run.get).getMessage should include ("videos/some_error.mpg")
+
+    run shouldBe a[Failure[_]]
+    (the [ActionException] thrownBy run.get).getMessage should include ("videos/some_error.mpg")
+    (the [ActionException] thrownBy run.get).getCause shouldBe a[FileNotFoundException]
   }
 
   "rollback" should "delete the files and directories that were added by action.run()" in {

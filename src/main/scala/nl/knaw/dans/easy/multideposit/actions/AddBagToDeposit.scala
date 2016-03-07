@@ -27,7 +27,7 @@ import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions.seqAsJavaList
-import scala.util.Try
+import scala.util.{Failure, Try}
 
 case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
   val log = LoggerFactory.getLogger(getClass)
@@ -35,7 +35,9 @@ case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Se
   def run() = {
     log.debug(s"Running $this")
 
-    createBag(datasetID)
+    createBag(datasetID) recoverWith {
+      case e => Failure(ActionException(row, s"Error occured in creating the bag for $datasetID: ${e.getMessage}", e))
+    }
   }
 }
 object AddBagToDeposit {

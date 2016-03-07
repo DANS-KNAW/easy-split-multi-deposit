@@ -39,7 +39,7 @@ object AddFileMetadataToDeposit {
       outputFileMetadataFile(settings, dataset._1)
         .write(new PrettyPrinter(160, 2).format(datasetToFileXml(dataset)))
     } recoverWith {
-      case e => Failure(ActionException(row, s"Could not write file meta data: $e"))
+      case e => Failure(ActionException(row, s"Could not write file meta data: $e", e))
     }
   }
 

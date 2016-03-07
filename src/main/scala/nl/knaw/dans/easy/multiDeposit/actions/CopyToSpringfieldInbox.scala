@@ -33,13 +33,14 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
   }
 
   def run() = {
+    log.debug(s"Running $this")
+
+    val mdFile = multiDepositDir(settings, fileMd)
+    val sfFile = springfieldInboxDir(settings, fileMd)
     Try {
-      log.debug(s"Running $this")
-
-      val mdFile = multiDepositDir(settings, fileMd)
-      val sfFile = springfieldInboxDir(settings, fileMd)
-
       mdFile.copyFile(sfFile)
+    } recoverWith {
+      case e => Failure(ActionException(row, s"Error in copying $mdFile to $sfFile: ${e.getMessage}", e))
     }
   }
 

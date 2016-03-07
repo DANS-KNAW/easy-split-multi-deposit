@@ -38,7 +38,7 @@ object AddDatasetMetadataToDeposit {
     Try {
       outputDatasetMetadataFile(settings, datasetID).write(datasetToXml(dataset))
     } recoverWith {
-      case e => Failure(ActionException(row, s"Could not write dataset metadata: $e"))
+      case e => Failure(ActionException(row, s"Could not write dataset metadata: $e", e))
     }
   }
 
