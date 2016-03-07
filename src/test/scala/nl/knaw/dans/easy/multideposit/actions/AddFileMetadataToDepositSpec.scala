@@ -54,7 +54,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
 
   "datasetToFileXml" should "produce the xml for all the files" in {
     val xml = AddFileMetadataToDeposit.datasetToFileXml(("ruimtereis01", testDataset1))
-    val res = <files>
+    val res = <files xmlns:dcterms="http://purl.org/dc/terms/">
       <file filepath="data/reisverslag/deel01.txt">
         <dcterms:subject>astronomie</dcterms:subject>
         <dcterms:subject>ruimtevaart</dcterms:subject>

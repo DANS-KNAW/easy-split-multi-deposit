@@ -46,7 +46,7 @@ object AddFileMetadataToDeposit {
   def datasetToFileXml(dataset: (DatasetID, Dataset))(implicit settings: Settings) = {
     val inputDir = multiDepositDir(settings, dataset._1)
 
-    <files>{
+    <files xmlns:dcterms="http://purl.org/dc/terms/">{
       if (inputDir.exists && inputDir.isDirectory)
         inputDir.listRecursively
           .map(file => s"data${file.getAbsolutePath.split(dataset._1).last}")
