@@ -25,14 +25,12 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   val log = LoggerFactory.getLogger(getClass)
 
   override def checkPreconditions: Try[Unit] = {
-    val dirs = List(multideposit.outputDepositDir(settings, datasetID),
-      outputDepositBagDir(settings, datasetID),
-      outputDepositBagMetadataDir(settings, datasetID))
-
-    if (dirs.exists(_.exists))
-      Failure(new ActionException(row, s"Either one of the directories ${dirs.mkString("[", ", ", "]")} already exist."))
-    else
-      Success(Unit)
+    List(multideposit.outputDepositDir(settings, datasetID),
+         outputDepositBagDir(settings, datasetID),
+         outputDepositBagMetadataDir(settings, datasetID))
+      .find(_.exists)
+      .map(file => Failure(new ActionException(row, s"The dataset $datasetID already exists in $file.")))
+      .getOrElse(Success(Unit))
   }
 
   def run(): Try[Unit] = {

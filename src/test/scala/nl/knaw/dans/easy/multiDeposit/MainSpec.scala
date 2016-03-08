@@ -99,7 +99,7 @@ class MainSpec extends UnitSpec with MockFactory {
       .onErrorResumeNext(e => Observable.just(e.getMessage))
       .subscribe(testSubscriber)
 
-    testSubscriber.assertValue("Precondition failures:\n - row 1: bar\n - row 6: foo")
+    testSubscriber.assertValue("Precondition failures:\n - row 1: bar\n - row 6: foo\nDue to these errors in the preconditions, nothing was done.")
     testSubscriber.assertNoErrors
     testSubscriber.assertCompleted
     testSubscriber.assertUnsubscribed
