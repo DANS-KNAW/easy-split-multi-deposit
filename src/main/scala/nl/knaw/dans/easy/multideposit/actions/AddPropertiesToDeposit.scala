@@ -28,6 +28,8 @@ case class AddPropertiesToDeposit(row: Int, datasetID: DatasetID)(implicit setti
 
   val log = LogFactory.getLog(getClass)
 
+  // TODO administratieve metadata, to be decided
+
   def run() = {
     log.debug(s"Running $this")
 

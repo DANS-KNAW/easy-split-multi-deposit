@@ -27,6 +27,8 @@ case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(
 
   val log = LogFactory.getLog(getClass)
 
+  // TODO preconditions for verifying the metadata from `dataset` in future release
+
   def run() = {
     log.debug(s"Running $this")
 

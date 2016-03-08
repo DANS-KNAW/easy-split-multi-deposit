@@ -26,6 +26,19 @@ case class AddFileMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(imp
 
   val log = LogFactory.getLog(getClass)
 
+  /*
+    TODO this is wrong right now.
+    we need file specific metadata here, rather than the metadata from the dataset.
+    use Aperture for mimetype detection
+    dctitle=filename
+    format=...(zie Aperture)
+    <others later, maybe>
+
+    ++
+
+    UTF-8 when writing (check everywhere!!!)
+   */
+
   def run() = {
     log.debug(s"Running $this")
 
