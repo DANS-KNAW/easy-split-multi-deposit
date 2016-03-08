@@ -29,7 +29,7 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
          outputDepositBagDir(settings, datasetID),
          outputDepositBagMetadataDir(settings, datasetID))
       .find(_.exists)
-      .map(file => Failure(new ActionException(row, s"The dataset $datasetID already exists in $file.")))
+      .map(file => Failure(new ActionException(row, s"The deposit for dataset $datasetID already exists in $file.")))
       .getOrElse(Success(Unit))
   }
 
