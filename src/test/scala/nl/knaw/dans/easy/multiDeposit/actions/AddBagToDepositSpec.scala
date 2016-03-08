@@ -90,10 +90,10 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
     AddBagToDeposit(1, datasetID).run() shouldBe a[Success[_]]
 
     val root = outputDepositBagDataDir(settings, datasetID)
-    new File(root, "file1.txt").read shouldBe file1Text
-    new File(root, "folder1/file2.txt").read shouldBe file2Text
-    new File(root, "folder1/file3.txt").read shouldBe file3Text
-    new File(root, "folder2/file4.txt").read shouldBe file4Text
+    new File(root, "file1.txt").read() shouldBe file1Text
+    new File(root, "folder1/file2.txt").read() shouldBe file2Text
+    new File(root, "folder1/file3.txt").read() shouldBe file3Text
+    new File(root, "folder2/file4.txt").read() shouldBe file4Text
   }
 
   it should "create a bag with no files in data when the input directory does not exist" in {
@@ -120,9 +120,9 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
         "tagmanifest-md5.txt")
 
     val root = outputDepositBagDir(settings, datasetID)
-    new File(root, "manifest-md5.txt").read shouldBe empty
-    new File(root, "tagmanifest-md5.txt").read should include ("bag-info.txt")
-    new File(root, "tagmanifest-md5.txt").read should include ("bagit.txt")
-    new File(root, "tagmanifest-md5.txt").read should include ("manifest-md5.txt")
+    new File(root, "manifest-md5.txt").read() shouldBe empty
+    new File(root, "tagmanifest-md5.txt").read() should include ("bag-info.txt")
+    new File(root, "tagmanifest-md5.txt").read() should include ("bagit.txt")
+    new File(root, "tagmanifest-md5.txt").read() should include ("manifest-md5.txt")
   }
 }

@@ -46,7 +46,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     AddPropertiesToDeposit(1, datasetID).run() shouldBe a[Success[_]]
 
     val props = outputPropertiesFile(settings, datasetID)
-    val content = props.read
+    val content = props.read()
     content should include ("state.label")
     content should include ("state.description")
     content should include ("depositor.userId")

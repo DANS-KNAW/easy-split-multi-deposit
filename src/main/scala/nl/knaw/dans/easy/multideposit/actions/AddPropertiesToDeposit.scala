@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.FileOutputStream
+import java.io.{FileOutputStream, OutputStreamWriter}
 import java.util.Properties
 
 import nl.knaw.dans.easy.multideposit.actions.AddPropertiesToDeposit._
@@ -42,7 +42,7 @@ object AddPropertiesToDeposit {
     Try {
       val props = new Properties
       addProperties(props)
-      props.store(new FileOutputStream(outputPropertiesFile(settings, datasetID)), "")
+      props.store(new OutputStreamWriter(new FileOutputStream(outputPropertiesFile(settings, datasetID)), encoding), "")
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write properties to file: $e", e))
     }

@@ -37,7 +37,7 @@ case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit setti
 object CreateSpringfieldActions {
   def writeSpringfieldXml(row: Int, datasets: Datasets)(implicit settings: Settings): Try[Unit] = {
     Try {
-      toXML(datasets).foreach(springfieldInboxActionsFile(settings).write)
+      toXML(datasets).foreach(springfieldInboxActionsFile(settings).write(_))
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e", e))
     }

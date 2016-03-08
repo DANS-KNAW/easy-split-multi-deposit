@@ -18,14 +18,15 @@ package nl.knaw.dans.easy
 import java.io.{File, IOException}
 import java.util.Properties
 
-import org.apache.commons.io.FileUtils
+import org.apache.commons.io.{Charsets, FileUtils}
 import org.apache.commons.lang.StringUtils
-import rx.lang.scala.Observable
-import rx.lang.scala.ObservableExtensions
+import rx.lang.scala.{Observable, ObservableExtensions}
 
+import java.nio.charset.Charset
+
+import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.util.{Failure, Success, Try}
 
 package object multideposit {
@@ -122,7 +123,7 @@ package object multideposit {
       * @param data the content to write to the file
       * @throws IOException in case of an I/O error
       */
-    def write(data: String) = FileUtils.write(file, data)
+    def write(data: String, encoding: Charset = encoding) = FileUtils.write(file, data, encoding)
 
     /**
       * Appends a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
@@ -139,7 +140,7 @@ package object multideposit {
       * @return the file contents, never ``null``
       * @throws IOException in case of an I/O error
       */
-    def read = FileUtils.readFileToString(file)
+    def read(encoding: Charset = encoding) = FileUtils.readFileToString(file, encoding)
 
     /**
       * Determines whether the ``parent`` directory contains the ``child`` element (a file or directory).
@@ -242,6 +243,7 @@ package object multideposit {
     }
   }
 
+  val encoding = Charsets.UTF_8
   val bagDirName = "bag"
   val dataDirName = "data"
   val metadataDirName = "metadata"

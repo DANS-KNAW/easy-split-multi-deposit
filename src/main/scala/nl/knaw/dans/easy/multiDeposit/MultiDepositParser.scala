@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory
 import rx.lang.scala.Observable
 
 import scala.collection.JavaConversions.{asScalaBuffer, iterableAsScalaIterable}
-import scala.io.Source
+import scala.io.{Codec, Source}
 import scala.util.{Failure, Success, Try}
 
 object MultiDepositParser {
@@ -41,7 +41,7 @@ object MultiDepositParser {
     Observable(subscriber => {
       log.debug("Start parsing SIP Instructions at {}", file)
       Try {
-        val rawContent = Source.fromFile(file).mkString
+        val rawContent = Source.fromFile(file)(Codec(encoding)).mkString
         val parser = CSVParser.parse(rawContent, CSVFormat.RFC4180)
         val output = parser.getRecords.filter(r => r.size() > 0 && !r.get(0).isBlank).map(_.toList)
         validateDatasetHeaders(output.head)

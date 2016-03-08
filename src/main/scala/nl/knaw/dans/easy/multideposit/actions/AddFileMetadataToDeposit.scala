@@ -33,10 +33,6 @@ case class AddFileMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(imp
     dctitle=filename
     format=...(zie Aperture)
     <others later, maybe>
-
-    ++
-
-    UTF-8 when writing (check everywhere!!!)
    */
 
   def run() = {

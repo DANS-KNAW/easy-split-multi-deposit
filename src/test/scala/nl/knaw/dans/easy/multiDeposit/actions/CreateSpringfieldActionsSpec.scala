@@ -71,7 +71,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     val generated = {
       val xmlFile = springfieldInboxActionsFile(settings)
       xmlFile should be a 'file
-      xmlFile.read
+      xmlFile.read()
     }
 
     generated should include ("subtitles=\"videos/some.txt\"")
@@ -84,7 +84,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     val generated = {
       val xmlFile = springfieldInboxActionsFile(settings)
       xmlFile should be a 'file
-      xmlFile.read
+      xmlFile.read()
     }
 
     generated should include ("subtitles=\"videos/some.txt\"")
