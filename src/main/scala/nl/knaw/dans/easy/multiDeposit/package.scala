@@ -323,8 +323,8 @@ package object multideposit {
     * @param trys the failures to be reported
     * @return the error report
     */
-  def generateErrorReport[T](heading: String, trys: Seq[Try[T]]): String = {
-    heading.toOption.map(s => s"$s\n").getOrElse("") +
+  def generateErrorReport[T](header: String = "", trys: Seq[Try[T]] = Nil, footer: String = ""): String = {
+    header.toOption.map(s => s"$s\n").getOrElse("") +
       trys.filter(_.isFailure)
         .map {
           case Failure(actionEx: ActionException) => actionEx
@@ -333,6 +333,7 @@ package object multideposit {
         }
         .sortBy(_.row)
         .map(actionEx => s" - row ${actionEx.row}: ${actionEx.message}")
-        .mkString("\n")
+        .mkString("\n") +
+      footer.toOption.map(s => if (trys.isEmpty) s else s"\n$s").getOrElse("")
   }
 }

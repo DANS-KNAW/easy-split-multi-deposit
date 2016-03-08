@@ -141,26 +141,41 @@ class MultiDepositSpec extends UnitSpec with BeforeAndAfter {
     testSubscriber.assertUnsubscribed
   }
 
-  "generateErrorReport" should "return an empty String when no header nor failure is provided" in {
-    generateErrorReport("", Nil) shouldBe ""
+  "generateErrorReport" should "return an empty String when no header, failure or footer is provided" in {
+    generateErrorReport() shouldBe ""
   }
 
   it should "return only the header when no failure is supplied" in {
-    generateErrorReport("foobar", Nil) shouldBe "foobar\n"
+    generateErrorReport(header = "foobar") shouldBe "foobar\n"
   }
 
-  it should "return a formatted list of failure reports when no header is supplied" in {
+  it should "return only the footer when no failure or header is supplied" in {
+    generateErrorReport(footer = "foobar") shouldBe "foobar"
+  }
+
+  it should "return the header and footer when no failure is supplied" in {
+    generateErrorReport(header = "foo", footer = "bar") shouldBe "foo\nbar"
+  }
+
+  it should "return a formatted list of failure reports when no header or footer is supplied" in {
     val f1 = Failure(ActionException(0, "foo"))
     val f2 = Failure(ActionException(1, "bar"))
 
     generateErrorReport("", List(f1, f2)) shouldBe " - row 0: foo\n - row 1: bar"
   }
 
-  it should "return a header and formatted list of failure reports when no header is supplied" in {
+  it should "return a header and formatted list of failure reports and no footer when a header is supplied but a footer is not" in {
     val f1 = Failure(ActionException(0, "foo"))
     val f2 = Failure(ActionException(1, "bar"))
 
     generateErrorReport("foobar", List(f1, f2)) shouldBe "foobar\n - row 0: foo\n - row 1: bar"
+  }
+
+  it should "return a header, formatted list of failure reports and a footer when all three are supplied" in {
+    val f1 = Failure(ActionException(0, "foo"))
+    val f2 = Failure(ActionException(1, "bar"))
+
+    generateErrorReport("foobar", List(f1, f2), "final foobar") shouldBe "foobar\n - row 0: foo\n - row 1: bar\nfinal foobar"
   }
 
   it should "fail if something else than a Failure[ActionException] is provided" in {

@@ -155,7 +155,8 @@ object Main {
       }
       def toObservable = {
         if (fails.isEmpty) actions.toObservable
-        else Observable.error(new Exception(generateErrorReport("Precondition failures:", fails)))
+        else Observable.error(new Exception(generateErrorReport("Precondition failures:", fails,
+          "Due to these errors in the preconditions, nothing was done.")))
       }
     }
 
