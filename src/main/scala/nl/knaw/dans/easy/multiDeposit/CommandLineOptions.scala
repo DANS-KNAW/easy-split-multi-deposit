@@ -28,7 +28,7 @@ object CommandLineOptions {
 
   def parse(args: Array[String]): Settings = {
     log.debug("Loading application.conf ...")
-    val conf = ConfigFactory.load
+    lazy val conf = ConfigFactory.load
     log.debug("Parsing command line ...")
     val opts = new ScallopCommandLine(conf, args)
 
@@ -47,7 +47,7 @@ object CommandLineOptions {
   }
 }
 
-class ScallopCommandLine(conf: Config, args: Array[String]) extends ScallopConf(args) {
+class ScallopCommandLine(conf: => Config, args: Array[String]) extends ScallopConf(args) {
 
   val fileMayNotExist = singleArgConverter(new File(_))
   val fileShouldExist = singleArgConverter(filename => {
