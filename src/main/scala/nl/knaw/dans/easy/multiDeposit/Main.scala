@@ -107,7 +107,7 @@ object Main {
       CreateOutputDepositDir(row, datasetID),
       AddBagToDeposit(row, datasetID),
       AddDatasetMetadataToDeposit(row, entry),
-      AddFileMetadataToDeposit(row, entry),
+      AddFileMetadataToDeposit(row, datasetID),
       AddPropertiesToDeposit(row, datasetID)
     ).map(Success(_)) ++ getFileActions(dataset, extractFileParameters(dataset))
   }

@@ -43,7 +43,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   override def afterAll = testDir.getParentFile.deleteDirectory()
 
   "run" should "write the file metadata to an xml file" in {
-    val action = new AddFileMetadataToDeposit(1, (datasetID, testDataset1))
+    val action = new AddFileMetadataToDeposit(1, datasetID)
     val metadataDir = outputDepositBagMetadataDir(settings, datasetID)
 
     action.run() shouldBe a[Success[_]]
@@ -53,46 +53,19 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   }
 
   "datasetToFileXml" should "produce the xml for all the files" in {
-    val xml = AddFileMetadataToDeposit.datasetToFileXml(("ruimtereis01", testDataset1))
+    val xml = AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01")
     val res = <files xmlns:dcterms="http://purl.org/dc/terms/">
       <file filepath="data/reisverslag/deel01.txt">
-        <dcterms:subject>astronomie</dcterms:subject>
-        <dcterms:subject>ruimtevaart</dcterms:subject>
-        <dcterms:subject>planetoïden</dcterms:subject>
-        <dcterms:format>video/mpeg</dcterms:format>
+        <dc:title>deel01.txt</dc:title>
         <dcterms:format>text/plain</dcterms:format>
-        <dcterms:language>NL</dcterms:language>
-        <dcterms:language>encoding=UTF-8</dcterms:language>
-        <dcterms:title>Reis naar Centaur-planetoïde</dcterms:title>
-        <dcterms:title>Trip to Centaur asteroid</dcterms:title>
-        <dcterms:description>Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.</dcterms:description>
-        <dcterms:description>A two day mission to boldly go where no man has gone before</dcterms:description>
       </file>
       <file filepath="data/reisverslag/deel02.txt">
-        <dcterms:subject>astronomie</dcterms:subject>
-        <dcterms:subject>ruimtevaart</dcterms:subject>
-        <dcterms:subject>planetoïden</dcterms:subject>
-        <dcterms:format>video/mpeg</dcterms:format>
+        <dc:title>deel02.txt</dc:title>
         <dcterms:format>text/plain</dcterms:format>
-        <dcterms:language>NL</dcterms:language>
-        <dcterms:language>encoding=UTF-8</dcterms:language>
-        <dcterms:title>Reis naar Centaur-planetoïde</dcterms:title>
-        <dcterms:title>Trip to Centaur asteroid</dcterms:title>
-        <dcterms:description>Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.</dcterms:description>
-        <dcterms:description>A two day mission to boldly go where no man has gone before</dcterms:description>
       </file>
       <file filepath="data/reisverslag/deel03.txt">
-        <dcterms:subject>astronomie</dcterms:subject>
-        <dcterms:subject>ruimtevaart</dcterms:subject>
-        <dcterms:subject>planetoïden</dcterms:subject>
-        <dcterms:format>video/mpeg</dcterms:format>
+        <dc:title>deel03.txt</dc:title>
         <dcterms:format>text/plain</dcterms:format>
-        <dcterms:language>NL</dcterms:language>
-        <dcterms:language>encoding=UTF-8</dcterms:language>
-        <dcterms:title>Reis naar Centaur-planetoïde</dcterms:title>
-        <dcterms:title>Trip to Centaur asteroid</dcterms:title>
-        <dcterms:description>Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.</dcterms:description>
-        <dcterms:description>A two day mission to boldly go where no man has gone before</dcterms:description>
       </file>
     </files>
 
@@ -100,19 +73,10 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   }
 
   "xmlPerPath" should "produce the xml for one file" in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(testDataset1)("data/reisverslag/deel01.txt")
+    val xml = AddFileMetadataToDeposit.xmlPerPath(datasetID)(new File(multiDepositDir(settings, datasetID), "reisverslag/deel01.txt"))
     val res = <file filepath="data/reisverslag/deel01.txt">
-      <dcterms:subject>astronomie</dcterms:subject>
-      <dcterms:subject>ruimtevaart</dcterms:subject>
-      <dcterms:subject>planetoïden</dcterms:subject>
-      <dcterms:format>video/mpeg</dcterms:format>
+      <dc:title>deel01.txt</dc:title>
       <dcterms:format>text/plain</dcterms:format>
-      <dcterms:language>NL</dcterms:language>
-      <dcterms:language>encoding=UTF-8</dcterms:language>
-      <dcterms:title>Reis naar Centaur-planetoïde</dcterms:title>
-      <dcterms:title>Trip to Centaur asteroid</dcterms:title>
-      <dcterms:description>Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.</dcterms:description>
-      <dcterms:description>A two day mission to boldly go where no man has gone before</dcterms:description>
     </file>
 
     new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)

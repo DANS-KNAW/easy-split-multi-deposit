@@ -73,24 +73,6 @@ object DDM {
       "DCX_RELATION_TITLE" -> "",
       "DCX_RELATION_LINK" -> "")
 
-  // TODO not sure about some of the fields, see inline:
-  val filesFields: Dictionary =
-    Map("DC_CONTRIBUTER" -> "dcterms:contributer",
-      // coverage
-      "DC_CREATOR" -> "dcterms:creator",
-      // date
-      "DC_DESCRIPTION" -> "dcterms:description",
-      "DC_FORMAT" -> "dcterms:format",
-      "DC_IDENTIFIER" -> "dcterms:identifier",
-      "DC_LANGUAGE" -> "dcterms:language",
-      "DC_PUBLISHER" -> "dcterms:publisher",
-      // relation
-      // rights
-      "DC_SOURCE" -> "dcterms:source",
-      "DC_SUBJECT" -> "dcterms:subject",
-      "DC_TITLE" -> "dcterms:title",
-      "DC_TYPE" -> "dcterms:type")
-
   val allFields = "ROW" :: "DATASET" ::
     List(profileFields, metadataFields, composedCreatorFields, composedContributorFields, composedSpacialFields, composedRelationFields)
       .flatMap(_.keySet)

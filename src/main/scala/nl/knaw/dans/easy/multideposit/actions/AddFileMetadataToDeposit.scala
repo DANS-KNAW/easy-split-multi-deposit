@@ -15,6 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.io.File
+import java.net.URLConnection
+
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
 import org.apache.commons.logging.LogFactory
@@ -22,55 +25,41 @@ import org.apache.commons.logging.LogFactory
 import scala.util.{Failure, Try}
 import scala.xml.PrettyPrinter
 
-case class AddFileMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
+case class AddFileMetadataToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
 
   val log = LogFactory.getLog(getClass)
-
-  /*
-    TODO this is wrong right now.
-    we need file specific metadata here, rather than the metadata from the dataset.
-    use Aperture for mimetype detection
-    dctitle=filename
-    format=...(zie Aperture)
-    <others later, maybe>
-   */
 
   def run() = {
     log.debug(s"Running $this")
 
-    writeFileMetadataXml(row, dataset)
+    writeFileMetadataXml(row, datasetID)
   }
 }
 object AddFileMetadataToDeposit {
 
-  def writeFileMetadataXml(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings): Try[Unit] = {
+  def writeFileMetadataXml(row: Int, datasetID: DatasetID)(implicit settings: Settings): Try[Unit] = {
     Try {
-      outputFileMetadataFile(settings, dataset._1)
-        .write(new PrettyPrinter(160, 2).format(datasetToFileXml(dataset)))
+      outputFileMetadataFile(settings, datasetID)
+        .write(new PrettyPrinter(160, 2).format(datasetToFileXml(datasetID)))
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write file meta data: $e", e))
     }
   }
 
-  def datasetToFileXml(dataset: (DatasetID, Dataset))(implicit settings: Settings) = {
-    val inputDir = multiDepositDir(settings, dataset._1)
+  def datasetToFileXml(datasetID: DatasetID)(implicit settings: Settings) = {
+    val inputDir = multiDepositDir(settings, datasetID)
 
     <files xmlns:dcterms="http://purl.org/dc/terms/">{
       if (inputDir.exists && inputDir.isDirectory)
-        inputDir.listRecursively
-          .map(file => s"data${file.getAbsolutePath.split(dataset._1).last}")
-          .map(xmlPerPath(dataset._2))
+        inputDir.listRecursively.map(xmlPerPath(datasetID))
     }</files>
   }
 
-  def xmlPerPath(dataset: Dataset)(relativePath: String) = {
-    <file filepath={relativePath}>{
-      DDM.filesFields
-        .map {
-          case (name, xmlTag) => dataset.getOrElse(name, Nil)
-            .filter(!_.isBlank)
-            .map(value => <label>{value}</label>.copy(label = xmlTag))
-        }
+  // TODO other fields need to be added here later
+  def xmlPerPath(datasetID: DatasetID)(file: File) = {
+    <file filepath={s"data${file.getAbsolutePath.split(datasetID).last}"}>{
+      <dc:title>{file.getName}</dc:title>
+      <dcterms:format>{URLConnection.getFileNameMap.getContentTypeFor(file.getPath)}</dcterms:format>
     }</file>
   }
 }
