@@ -23,7 +23,6 @@ import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
 import org.apache.commons.logging.LogFactory
 
 import scala.util.{Failure, Try}
-import scala.xml.PrettyPrinter
 
 case class AddFileMetadataToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
 
@@ -39,8 +38,7 @@ object AddFileMetadataToDeposit {
 
   def writeFileMetadataXml(row: Int, datasetID: DatasetID)(implicit settings: Settings): Try[Unit] = {
     Try {
-      outputFileMetadataFile(settings, datasetID)
-        .write(new PrettyPrinter(160, 2).format(datasetToFileXml(datasetID)))
+      outputFileMetadataFile(settings, datasetID).writeXml(datasetToFileXml(datasetID))
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write file meta data: $e", e))
     }

@@ -150,6 +150,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   "datasetToXml" should "return the expected xml" in {
-    AddDatasetMetadataToDeposit.datasetToXml(dataset) shouldBe new PrettyPrinter(160, 2).format(expectedXml)
+    new PrettyPrinter(160, 2).format(AddDatasetMetadataToDeposit.datasetToXml(dataset)) shouldBe
+      new PrettyPrinter(160, 2).format(expectedXml)
   }
 }

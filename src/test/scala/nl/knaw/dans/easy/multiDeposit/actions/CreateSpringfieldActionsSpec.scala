@@ -22,7 +22,7 @@ import nl.knaw.dans.easy.multideposit.actions.CreateSpringfieldActions._
 import org.scalatest.BeforeAndAfterAll
 
 import scala.util.{Failure, Success}
-import scala.xml.{XML, Utility}
+import scala.xml.Utility
 
 class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
 
@@ -93,11 +93,11 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   "toXML" should "return an empty xml when given empty datasets" in {
-    toXML(new Datasets).map(Utility.trim _ compose XML.loadString) shouldBe None
+    toXML(new Datasets).map(Utility.trim) shouldBe None
   }
 
   it should "return the xml when datasets are supplied with the proper fields set" in {
-    toXML(datasets()).map(Utility.trim _ compose XML.loadString) shouldBe
+    toXML(datasets()).map(Utility.trim) shouldBe
       Some(Utility.trim(<actions>
         <add target="/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test">
           <video src="videos/some.mpg" target="0" subtitles="videos/some.txt"/>

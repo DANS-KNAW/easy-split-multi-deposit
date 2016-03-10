@@ -38,7 +38,7 @@ case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(
 object AddDatasetMetadataToDeposit {
   def writeDatasetMetadataXml(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     Try {
-      outputDatasetMetadataFile(settings, datasetID).write(datasetToXml(dataset))
+      outputDatasetMetadataFile(settings, datasetID).writeXml(datasetToXml(dataset))
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write dataset metadata: $e", e))
     }
@@ -50,7 +50,6 @@ object AddDatasetMetadataToDeposit {
   def isPartOfComposedContributor(key: MultiDepositKey) = composedContributorFields.contains(key)
 
   def datasetToXml(dataset: Dataset) = {
-    new PrettyPrinter(160, 2).format(
       <ddm:DDM
       xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -66,7 +65,7 @@ object AddDatasetMetadataToDeposit {
       xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.knaw.nl/schemas/md/2012/11/ddm.xsd">
         {createProfile(dataset)}
         {createMetadata(dataset)}
-      </ddm:DDM>)
+      </ddm:DDM>
   }
 
   def createProfile(dataset: Dataset) = {

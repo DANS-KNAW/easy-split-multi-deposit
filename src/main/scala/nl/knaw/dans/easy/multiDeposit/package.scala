@@ -16,18 +16,18 @@
 package nl.knaw.dans.easy
 
 import java.io.{File, IOException}
+import java.nio.charset.Charset
 import java.util.Properties
 
 import org.apache.commons.io.{Charsets, FileUtils}
 import org.apache.commons.lang.StringUtils
 import rx.lang.scala.{Observable, ObservableExtensions}
 
-import java.nio.charset.Charset
-
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
+import scala.xml.{Elem, PrettyPrinter}
 
 package object multideposit {
 
@@ -124,6 +124,20 @@ package object multideposit {
       * @throws IOException in case of an I/O error
       */
     def write(data: String, encoding: Charset = encoding) = FileUtils.write(file, data, encoding)
+
+    /**
+      * Writes the xml to a `File` and prepends a simple xml header: `<?xml version="1.0" encoding="UTF-8"?>`
+      *
+      * @param elem the xml to be written
+      * @param encoding the encoding applied to this xml
+      * @throws IOException in case of an I/O error
+      */
+    def writeXml(elem: Elem, encoding: Charset = encoding) = {
+      val header = s"""<?xml version="1.0" encoding="$encoding"?>\n"""
+      val data = new PrettyPrinter(160, 2).format(elem)
+
+      file.write(header + data, encoding)
+    }
 
     /**
       * Appends a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
@@ -321,7 +335,7 @@ package object multideposit {
     * list of `Try`s, sorted by row number. Supplying other exceptions than `ActionException` will
     * cause an `AssertionError`. `Success` input in `trys` are ignored.
     *
-    * @param heading a piece of text before the list of errors
+    * @param header a piece of text before the list of errors
     * @param trys the failures to be reported
     * @return the error report
     */

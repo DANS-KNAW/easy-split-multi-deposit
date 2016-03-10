@@ -20,7 +20,7 @@ import nl.knaw.dans.easy.multideposit.{Dataset, _}
 import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Try}
-import scala.xml.PrettyPrinter
+import scala.xml.Elem
 
 case class Video(name: String, fileSip: Option[String], subtitles: Option[String])
 
@@ -37,20 +37,20 @@ case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit setti
 object CreateSpringfieldActions {
   def writeSpringfieldXml(row: Int, datasets: Datasets)(implicit settings: Settings): Try[Unit] = {
     Try {
-      toXML(datasets).foreach(springfieldInboxActionsFile(settings).write(_))
+      toXML(datasets).foreach(springfieldInboxActionsFile(settings).writeXml(_))
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e", e))
     }
   }
 
-  def toXML(datasets: Datasets): Option[String] = {
+  def toXML(datasets: Datasets): Option[Elem] = {
     val elems = for {
       (_, dataset) <- datasets
       (target, videos) <- extractVideos(dataset)
     } yield createAddElement(target, videos)
 
     if (elems.nonEmpty)
-      Some(new PrettyPrinter(160, 2).format(<actions>{elems}</actions>))
+      Some(<actions>{elems}</actions>)
     else
       None
   }
