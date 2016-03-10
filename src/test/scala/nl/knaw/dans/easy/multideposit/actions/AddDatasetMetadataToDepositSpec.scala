@@ -91,17 +91,17 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       <dcterms:description>omschr1</dcterms:description>
       <dcx-dai:creatorDetails>
         <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en"> wie dit leest is een aap </dcx-dai:name>
+          <dcx-dai:name xml:lang="en">wie dit leest is een aap</dcx-dai:name>
         </dcx-dai:organization>
       </dcx-dai:creatorDetails>
       <dcx-dai:creatorDetails>
         <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en"> let me know if you read this </dcx-dai:name>
+          <dcx-dai:name xml:lang="en">let me know if you read this</dcx-dai:name>
         </dcx-dai:organization>
       </dcx-dai:creatorDetails>
       <dcx-dai:creatorDetails>
         <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en"> then you did well on your code review! </dcx-dai:name>
+          <dcx-dai:name xml:lang="en">then you did well on your code review!</dcx-dai:name>
         </dcx-dai:organization>
       </dcx-dai:creatorDetails>
       <ddm:created>1992-07-30</ddm:created>
