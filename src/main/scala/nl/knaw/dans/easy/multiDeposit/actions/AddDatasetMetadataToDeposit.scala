@@ -110,20 +110,18 @@ object AddDatasetMetadataToDeposit {
   }
 
   def createComposedCreator(dictionary: Dictionary, authorFields: Iterable[(MultiDepositKey, String)]) = {
-    <dcx-dai:creatorDetails>
-      {
+    <dcx-dai:creatorDetails>{
       if (isOrganization(authorFields))
         <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">
-            { authorFields.find(field => isOrganizationKey(field._1)).map(_._2).getOrElse("") }
-          </dcx-dai:name>
+          <dcx-dai:name xml:lang="en">{
+            authorFields.find(field => isOrganizationKey(field._1)).map(_._2).getOrElse("")
+          }</dcx-dai:name>
         </dcx-dai:organization>
       else
-        <dcx-dai:author>
-          { authorFields.map(composedEntry(dictionary)) }
-        </dcx-dai:author>
-      }
-    </dcx-dai:creatorDetails>
+        <dcx-dai:author>{
+          authorFields.map(composedEntry(dictionary))
+        }</dcx-dai:author>
+    }</dcx-dai:creatorDetails>
   }
 
   def isOrganization(authorFields: Iterable[(MultiDepositKey, String)]): Boolean = {
@@ -142,9 +140,9 @@ object AddDatasetMetadataToDeposit {
 
   def createComposedContributor(dictionary: Dictionary, authorFields: Iterable[(MultiDepositKey, String)]) = {
     <dcx-dai:contributorDetails>
-      <dcx-dai:author>
-        {authorFields.filter(x => x._2 != null && !x._2.isBlank).map(composedEntry(dictionary))}
-      </dcx-dai:author>
+      <dcx-dai:author>{
+        authorFields.filter(x => x._2 != null && !x._2.isBlank).map(composedEntry(dictionary))
+      }</dcx-dai:author>
     </dcx-dai:contributorDetails>
   }
 
@@ -162,9 +160,12 @@ object AddDatasetMetadataToDeposit {
   }
 
   def createMetadata(dataset: Dataset) = {
+    def isMetadata(key: MultiDepositKey, values: MultiDepositValues): Boolean = {
+      isPartOfMetadata(key) && values.nonEmpty
+    }
+
     <ddm:dcmiMetadata>
-      {dataset.filter(kv => isPartOfMetadata(kv._1) && kv._2.nonEmpty)
-      .flatMap(simpleMetadataEntryToXML _ tupled)}
+      {dataset.filter(isMetadata _ tupled).flatMap(simpleMetadataEntryToXML _ tupled)}
       {createComposedContributors(dataset)}
     </ddm:dcmiMetadata>
   }
@@ -173,7 +174,5 @@ object AddDatasetMetadataToDeposit {
     values.filter(_.nonEmpty).map(elem(metadataFields.getOrElse(key, key)))
   }
 
-  def elem(key: String)(value: String) = {
-    <key>{value}</key>.copy(label=key)
-  }
+  def elem(key: String)(value: String) = <key>{value}</key>.copy(label=key)
 }
