@@ -56,15 +56,12 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
     val xml = AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01")
     val res = <files xmlns:dcterms="http://purl.org/dc/terms/">
       <file filepath="data/reisverslag/deel01.txt">
-        <dc:title>deel01.txt</dc:title>
         <dcterms:format>text/plain</dcterms:format>
       </file>
       <file filepath="data/reisverslag/deel02.txt">
-        <dc:title>deel02.txt</dc:title>
         <dcterms:format>text/plain</dcterms:format>
       </file>
       <file filepath="data/reisverslag/deel03.txt">
-        <dc:title>deel03.txt</dc:title>
         <dcterms:format>text/plain</dcterms:format>
       </file>
     </files>
@@ -75,7 +72,6 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   "xmlPerPath" should "produce the xml for one file" in {
     val xml = AddFileMetadataToDeposit.xmlPerPath(datasetID)(new File(multiDepositDir(settings, datasetID), "reisverslag/deel01.txt"))
     val res = <file filepath="data/reisverslag/deel01.txt">
-      <dc:title>deel01.txt</dc:title>
       <dcterms:format>text/plain</dcterms:format>
     </file>
 

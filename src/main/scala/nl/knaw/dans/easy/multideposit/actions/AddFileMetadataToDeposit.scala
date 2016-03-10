@@ -58,7 +58,6 @@ object AddFileMetadataToDeposit {
   // TODO other fields need to be added here later
   def xmlPerPath(datasetID: DatasetID)(file: File) = {
     <file filepath={s"data${file.getAbsolutePath.split(datasetID).last}"}>{
-      <dc:title>{file.getName}</dc:title>
       <dcterms:format>{URLConnection.getFileNameMap.getContentTypeFor(file.getPath)}</dcterms:format>
     }</file>
   }
