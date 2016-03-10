@@ -20,8 +20,9 @@ import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
 import org.apache.commons.logging.LogFactory
 
+import scala.language.postfixOps
 import scala.util.{Failure, Try}
-import scala.xml.{Elem, PrettyPrinter}
+import scala.xml.Elem
 
 case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
@@ -85,14 +86,16 @@ object AddDatasetMetadataToDeposit {
 
   def elemsFromKeyValues(key: MultiDepositKey, values: MultiDepositValues) = {
     values.filter(_.nonEmpty)
-      .map(value => <key>{value}</key>.copy(label=profileFields.getOrElse(key, key)))
+      .map(elem(profileFields.getOrElse(key, key)))
   }
 
-  def createComposedCreators(dataset: Dataset) =
+  def createComposedCreators(dataset: Dataset) = {
     createComposedAuthors(dataset, isPartOfComposedCreator, createComposedCreator(composedCreatorFields, _))
+  }
 
-  def createComposedContributors(dataset: Dataset) =
+  def createComposedContributors(dataset: Dataset) = {
     createComposedAuthors(dataset, isPartOfComposedContributor, createComposedContributor(composedContributorFields, _))
+  }
 
   def createComposedAuthors(dataset: Dataset, isPartOfAuthor: (MultiDepositKey => Boolean), createAuthor: Iterable[(MultiDepositKey, String)] => Elem) = {
     val authorsData = dataset.filter(x => isPartOfAuthor(x._1))
@@ -146,25 +149,31 @@ object AddDatasetMetadataToDeposit {
   }
 
   def composedEntry(dictionary: Dictionary)(entry: (MultiDepositKey, String)) = {
-    if (entry._1.endsWith("_ORGANIZATION")) {
+    val key = entry._1
+    val value = entry._2
+    if (key.endsWith("_ORGANIZATION")) {
       <dcx-dai:organization>
-        <dcx-dai:name xml:lang="en">{entry._2}</dcx-dai:name>
+        <dcx-dai:name xml:lang="en">{value}</dcx-dai:name>
       </dcx-dai:organization>
-    } else {
-      <key>{entry._2}</key>.copy(label=dictionary.getOrElse(entry._1, entry._1))
+    }
+    else {
+      elem(dictionary.getOrElse(key, key))(value)
     }
   }
 
   def createMetadata(dataset: Dataset) = {
     <ddm:dcmiMetadata>
       {dataset.filter(kv => isPartOfMetadata(kv._1) && kv._2.nonEmpty)
-      .flatMap { case (key, values) => simpleMetadataEntryToXML(key, values) }}
+      .flatMap(simpleMetadataEntryToXML _ tupled)}
       {createComposedContributors(dataset)}
     </ddm:dcmiMetadata>
   }
 
-  def simpleMetadataEntryToXML(key: MultiDepositKey, values: MultiDepositValues) = {
-    values.filter(_.nonEmpty)
-      .map(value => <key>{value}</key>.copy(label=metadataFields.getOrElse(key, key)))
+  def simpleMetadataEntryToXML(key: MultiDepositKey, values: MultiDepositValues): List[Elem] = {
+    values.filter(_.nonEmpty).map(elem(metadataFields.getOrElse(key, key)))
+  }
+
+  def elem(key: String)(value: String) = {
+    <key>{value}</key>.copy(label=key)
   }
 }
