@@ -24,6 +24,13 @@ import scala.xml.Elem
 
 case class Video(name: String, fileSip: Option[String], subtitles: Option[String])
 
+/*
+TODO For this Action all datasets need to be in memory at the same time. However, only the SF fields
+     from each dataset are used (if any). This can be optimized to where we only provide the useful
+     fields to this Action. We can collect these fields in a case class in Main (or anywhere else).
+     With this, we can eventually make the whole application reactive by also parsing the csv lazily
+     and reactive.
+ */
 case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit settings: Settings) extends Action {
 
   val log = LoggerFactory.getLogger(getClass)
