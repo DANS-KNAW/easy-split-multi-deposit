@@ -35,6 +35,9 @@ case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit setti
   }
 }
 object CreateSpringfieldActions {
+
+  type SpringfieldPath = String
+
   def writeSpringfieldXml(row: Int, datasets: Datasets)(implicit settings: Settings): Try[Unit] = {
     Try {
       toXML(datasets).foreach(springfieldInboxActionsFile(settings).writeXml(_))
@@ -55,18 +58,8 @@ object CreateSpringfieldActions {
       None
   }
 
-  def createAddElement(target: String, videos: List[Video]) = {
-    <add target={ target }>{
-      videos.map {
-        case Video(name, Some(src), Some(subtitles)) => <video src={src} target={name} subtitles={subtitles}/>
-        case Video(name, Some(src), None) => <video src={src} target={name}/>
-        case v => throw new RuntimeException(s"Invalid video object: $v")
-      }
-    }</add>
-  }
-
-  def extractVideos(dataset: Dataset): Map[String, List[Video]] = {
-    def emptyMap = Map[String, List[Video]]()
+  def extractVideos(dataset: Dataset): Map[SpringfieldPath, List[Video]] = {
+    def emptyMap = Map[SpringfieldPath, List[Video]]()
 
     getSpringfieldPath(dataset, 0)
       .map(target => (emptyMap /: dataset.values.head.indices) {
@@ -83,12 +76,22 @@ object CreateSpringfieldActions {
       .getOrElse(emptyMap)
   }
 
-  def getSpringfieldPath(dataset: Dataset, i: Int): Option[String] = {
+  def getSpringfieldPath(dataset: Dataset, i: Int): Option[SpringfieldPath] = {
     for {
       domain <- dataset.getValue("SF_DOMAIN")(i)
       user <- dataset.getValue("SF_USER")(i)
       collection <- dataset.getValue("SF_COLLECTION")(i)
       presentation <- dataset.getValue("SF_PRESENTATION")(i)
     } yield s"/domain/$domain/user/$user/collection/$collection/presentation/$presentation"
+  }
+
+  def createAddElement(target: SpringfieldPath, videos: List[Video]) = {
+    <add target={ target }>{
+      videos.map {
+        case Video(name, Some(src), Some(subtitles)) => <video src={src} target={name} subtitles={subtitles}/>
+        case Video(name, Some(src), None) => <video src={src} target={name}/>
+        case v => throw new RuntimeException(s"Invalid video object: $v")
+      }
+    }</add>
   }
 }
