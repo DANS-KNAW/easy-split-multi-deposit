@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit.actions
+package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{FileNotFoundException, File}
+import java.io.{File, FileNotFoundException}
 
-import nl.knaw.dans.easy.multiDeposit._
-import nl.knaw.dans.easy.multiDeposit.{ActionException, Settings, UnitSpec}
+import nl.knaw.dans.easy.multideposit.{ActionException, Settings, UnitSpec, _}
 import nl.knaw.dans.easy.ps.MdKey
+import org.scalatest.BeforeAndAfterAll
 
-import scala.util.Success
+import scala.util.{Failure, Success}
 
-class CopyToSpringfieldInboxSpec extends UnitSpec {
+class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     springfieldInbox = new File(testDir, "springFieldInbox")
   )
 
+  override def afterAll = testDir.getParentFile.deleteDirectory()
+
   def createFile(fileName: MdKey) = {
-    val file = new File(settings.multidepositDir, fileName)
+    val file = multiDepositDir(settings, fileName)
     file.getParentFile.mkdirs
     file.write("")
   }
@@ -56,11 +58,24 @@ class CopyToSpringfieldInboxSpec extends UnitSpec {
   }
 
   it should "fail if file does not exist" in {
-    val run = CopyToSpringfieldInbox(1, "videos/some_error.mpg").run
-    (the [FileNotFoundException] thrownBy run.get).getMessage should include ("videos/some_error.mpg")
+    val run = CopyToSpringfieldInbox(1, "videos/some_error.mpg").run()
+
+    run shouldBe a[Failure[_]]
+    (the [ActionException] thrownBy run.get).getMessage should include ("videos/some_error.mpg")
+    (the [ActionException] thrownBy run.get).getCause shouldBe a[FileNotFoundException]
   }
 
-  "rollback" should "always succeed" in {
-    CopyToSpringfieldInbox(1, "videos/some_rollback.mpg").rollback shouldBe a[Success[_]]
+  "rollback" should "delete the files and directories that were added by action.run()" in {
+    createFile("videos/some_rollback.mpg")
+    val action = CopyToSpringfieldInbox(1, "videos/some_rollback.mpg")
+
+    action.run() shouldBe a[Success[_]]
+
+    springfieldInboxDir(settings, "videos/some_rollback.mpg") should exist
+
+    action.rollback shouldBe a[Success[_]]
+
+    springfieldInboxDir(settings, "videos/some_rollback.mpg") should not (exist)
+    springfieldInboxDir(settings, "videos") should not (exist)
   }
 }

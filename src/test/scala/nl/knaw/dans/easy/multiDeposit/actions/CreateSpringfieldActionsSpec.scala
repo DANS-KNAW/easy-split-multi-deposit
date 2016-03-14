@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit.actions
+package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 
-import nl.knaw.dans.easy.multiDeposit._
-import nl.knaw.dans.easy.multiDeposit.actions.CreateSpringfieldAction._
-import org.apache.commons.io.FileUtils
+import nl.knaw.dans.easy.multideposit._
+import nl.knaw.dans.easy.multideposit.actions.CreateSpringfieldActions._
+import org.scalatest.BeforeAndAfterAll
 
 import scala.util.{Failure, Success}
-import scala.xml.{XML, Utility}
+import scala.xml.Utility
 
-class CreateSpringfieldActionsSpec extends UnitSpec {
+class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     springfieldInbox = new File(testDir, "springFieldInbox")
   )
+
+  override def afterAll = testDir.getParentFile.deleteDirectory()
+
   def testDataset = {
     val dataset = new Dataset
     dataset += "SF_DOMAIN" -> List("dans")
@@ -46,20 +49,16 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
     datasets += ("dataset-1" -> dataset)
   }
 
-  "checkPreconditions" should "always succeed" in {
-    CreateSpringfieldAction(1, datasets()).checkPreconditions shouldBe a[Success[_]]
-  }
-
-  "run" should "create a file when an empty ListBuffer was passed on" in {
+  "run" should "not create a file when an empty ListBuffer was passed on" in {
     val datasets = new Datasets
 
-    CreateSpringfieldAction(1, datasets).run shouldBe a[Success[_]]
-    new File(settings.springfieldInbox, "springfield-actions.xml") should be a 'file
+    CreateSpringfieldActions(1, datasets).run shouldBe a[Success[_]]
+    springfieldInboxActionsFile(settings) should not (be a 'file)
   }
 
   it should "fail with too little instructions" in {
     val datasets = new Datasets() += ("dataset-1" -> (testDataset -= "FILE_SIP"))
-    val run = CreateSpringfieldAction(1, datasets).run()
+    val run = CreateSpringfieldActions(1, datasets).run()
     run shouldBe a[Failure[_]]
 
     (the [ActionException] thrownBy run.get).row shouldBe 1
@@ -68,11 +67,11 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
   }
 
   it should "create the correct file with the correct input" in {
-    CreateSpringfieldAction(1, datasets()).run shouldBe a[Success[_]]
+    CreateSpringfieldActions(1, datasets()).run shouldBe a[Success[_]]
     val generated = {
-      val xmlFile = new File(settings.springfieldInbox, "springfield-actions.xml")
+      val xmlFile = springfieldInboxActionsFile(settings)
       xmlFile should be a 'file
-      FileUtils.readFileToString(xmlFile)
+      xmlFile.read()
     }
 
     generated should include ("subtitles=\"videos/some.txt\"")
@@ -80,16 +79,12 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
     generated should include ("target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test\"")
   }
 
-  "rollback" should "always succeed" in {
-    CreateSpringfieldAction(1, datasets()).rollback shouldBe a[Success[_]]
-  }
-
   "writeSpringfieldXml" should "create the correct file with the correct input" in {
     writeSpringfieldXml(1, datasets()) shouldBe a[Success[_]]
     val generated = {
-      val xmlFile = new File(settings.springfieldInbox, "springfield-actions.xml")
+      val xmlFile = springfieldInboxActionsFile(settings)
       xmlFile should be a 'file
-      FileUtils.readFileToString(xmlFile)
+      xmlFile.read()
     }
 
     generated should include ("subtitles=\"videos/some.txt\"")
@@ -98,17 +93,16 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
   }
 
   "toXML" should "return an empty xml when given empty datasets" in {
-    Utility.trim(XML.loadString(toXML(new Datasets))) shouldBe
-      Utility.trim(<actions></actions>)
+    toXML(new Datasets).map(Utility.trim) shouldBe None
   }
 
-  it should "return the xml" in {
-    Utility.trim(XML.loadString(toXML(datasets()))) shouldBe
-      Utility.trim(<actions>
+  it should "return the xml when datasets are supplied with the proper fields set" in {
+    toXML(datasets()).map(Utility.trim) shouldBe
+      Some(Utility.trim(<actions>
         <add target="/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test">
           <video src="videos/some.mpg" target="0" subtitles="videos/some.txt"/>
         </add>
-      </actions>)
+      </actions>))
   }
 
   "createAddElement" should "return an empy xml when given an empty list of videos" in {
@@ -127,7 +121,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
       include ("Invalid video object:")
   }
 
-  it should "return the xml" in {
+  it should "return the xml from a valid list of videos" in {
     val videos = List(
       Video("0", Some("videos/some0.mpg"), Some("videos/some0.txt")),
       Video("1", Some("videos/some1.mpg"), None),

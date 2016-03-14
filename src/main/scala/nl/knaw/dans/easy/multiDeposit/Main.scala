@@ -13,17 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit
+package nl.knaw.dans.easy.multideposit
 
-import java.io.File
-
-import nl.knaw.dans.easy.multiDeposit.actions._
-import nl.knaw.dans.easy.multiDeposit.{CommandLineOptions => cmd, MultiDepositParser => parser}
+import nl.knaw.dans.easy.multideposit.actions._
+import nl.knaw.dans.easy.multideposit.{CommandLineOptions => cmd, MultiDepositParser => parser}
 import org.slf4j.LoggerFactory
 import rx.lang.scala.{Observable, ObservableExtensions}
 import rx.schedulers.Schedulers
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
 object Main {
@@ -34,7 +33,8 @@ object Main {
     log.debug("Starting application.")
     implicit val settings = cmd.parse(args)
     getActionsStream
-      .doOnError(e => log.error(e.getMessage, e))
+      .doOnError(e => log.error(e.getMessage))
+      .doOnError(e => log.debug(e.getMessage, e))
       .doOnCompleted { log.info("Finished successfully!") }
       .subscribe
 
@@ -42,7 +42,8 @@ object Main {
   }
 
   def getActionsStream(implicit settings: Settings): Observable[Action] = {
-    parser.parse(new File(settings.multidepositDir, cmd.mdInstructionsFileName))
+    parser.parse(multiDepositInstructionsFile(settings))
+      .flatMap(_.toObservable)
       .getActions
       .checkActionPreconditions
       .runActions
@@ -56,15 +57,14 @@ object Main {
     def runActions = Main.runActions(actions)
   }
 
-  implicit class DatasetsExtensionMethods(val datasets: Observable[Datasets]) extends AnyVal {
-    def getActions(implicit s: Settings) = datasets.flatMap(Main.getActions)
+  implicit class DatasetsExtensionMethods(val datasets: Observable[(DatasetID, Dataset)]) extends AnyVal {
+    def getActions(implicit s: Settings) = Main.getActions(datasets)
   }
 
-  def getActions(dss: Datasets)(implicit s: Settings): Observable[Action] = {
+  def getActions(dss: Observable[(DatasetID, Dataset)])(implicit settings: Settings): Observable[Action] = {
     log.info("Compiling list of actions to perform ...")
-    val tryActions = dss.flatMap(getDatasetActions).toList :+
-      Success(CreateSpringfieldAction(-1, dss)) // SpringfieldAction runs on multiple rows, so -1 here
 
+    // object for grouping the actions and looking for failures
     case class TryAndFailure(total: List[Try[Action]] = Nil, fails: List[Try[Action]] = Nil) {
       def +=(action: Try[Action]) = {
         TryAndFailure(total :+ action, if (action.isFailure) fails :+ action else fails)
@@ -76,53 +76,62 @@ object Main {
       }
     }
 
-    tryActions.toObservable
-      .foldLeft(TryAndFailure())(_ += _)
-      .flatMap(_.toObservable)
+    // object for collecting both the datasets and the actions
+    case class Result(dss: List[(DatasetID, Dataset)] = Nil, actions: Observable[Action] = Observable.empty) {
+      def +=(ds: (DatasetID, Dataset), action: Observable[Action]) = Result(dss :+ ds, actions ++ action)
+    }
+
+    def getActionsPerEntry(entry: (DatasetID, Dataset)) = (entry, getDatasetActions(entry))
+
+    def addToResult(res: Result, daa: ((DatasetID, Dataset), Observable[Try[Action]])): Result = {
+      res += (daa._1, daa._2.foldLeft(TryAndFailure())(_ += _).flatMap(_.toObservable))
+    }
+
+    def addCreateSpringfieldActions(result: Result): Observable[Action] = {
+      result.actions :+ CreateSpringfieldActions(-1, result.dss.to[ListBuffer])
+    }
+
+    dss.map(getActionsPerEntry)
+      .foldLeft(Result())(addToResult)
+      .flatMap(addCreateSpringfieldActions) // because of foldLeft above, this function is only executed once
   }
 
-  def getDatasetActions(entry: (DatasetID, Dataset))(implicit s: Settings): List[Try[Action]] = {
+  def getDatasetActions(entry: (DatasetID, Dataset))(implicit settings: Settings): Observable[Try[Action]] = {
     val datasetID = entry._1
     val dataset = entry._2
     val row = dataset("ROW").head.toInt // first occurence of dataset, assuming it is not empty
 
-    log.debug("Getting actions for dataset {} ...", datasetID)
+    log.debug(s"Getting actions for dataset $datasetID ...")
 
-    val fpss = extractFileParametersList(dataset)
-
-    Success(CreateOutputDepositDir(row, datasetID)) ::
-    Success(AddBagToDepositAction(row, datasetID)) ::
-    // TODO add more here: AddMetadataToDepositAction and AddPropertiesToDepositAction
-    Success(CreateMetadataAction(row)) ::
-      getFileActions(dataset, fpss)
+    Observable.just(
+      CreateOutputDepositDir(row, datasetID),
+      AddBagToDeposit(row, datasetID),
+      AddDatasetMetadataToDeposit(row, entry),
+      AddFileMetadataToDeposit(row, datasetID),
+      AddPropertiesToDeposit(row, datasetID)
+    ).map(Success(_)) ++ getFileActions(dataset, extractFileParameters(dataset))
   }
 
-  def getFileActions(d: Dataset, fpss: List[FileParameters])(implicit s: Settings): List[Try[Action]] = {
-
-    def getActions(fps: FileParameters): List[Action] = {
+  def getFileActions(dataset: Dataset, fpss: Observable[FileParameters])(implicit settings: Settings): Observable[Try[Action]] = {
+    def getActions(fps: FileParameters): Try[Observable[Action]] = {
 //      fps match {
-//        // TODO add actions here if needed
-//        case FileParameters(Some(row), p1, p2, p3, p4, p5) => throw ActionException(row,
+//        // TODO add actions here if needed, remove this function otherwise
+//        case FileParameters(Some(row), p1, p2, p3, p4, p5) => Failure(ActionException(row,
 //          s"Invalid combination of file parameters: FILE_SIP = $p1, FILE_DATASET = $p2, " +
-//            s"FILE_STORAGE_SERVICE = $p3, FILE_STORAGE_PATH = $p4, FILE_AUDIO_VIDEO = $p5")
+//            s"FILE_STORAGE_SERVICE = $p3, FILE_STORAGE_PATH = $p4, FILE_AUDIO_VIDEO = $p5"))
+//        case _ => Failure(new RuntimeException("*** Programming error: row without row number ***"))
 //      }
-
-      Nil // TODO remove later
+      Success(Observable.empty)
     }
 
-    log.debug("Looking for file instructions ...")
+    // TODO in case getActions(FileParameters): Try[Observable[Action]] gets removed,
+    // a lot of other complexity can be removed as well!
 
-    fpss.flatMap(fps => {
-      Try {
-        getActions(fps).map(Success(_))
-      } onError {
-        case e: ActionException => List(Failure(e))
-      }
-    }) :::
-      fpss.collect {
-        case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo)) if isThisAudioVideo matches "(?i)yes" =>
-          Success(CopyToSpringfieldInbox(row, fileMd))
-      }
+    fpss.flatMap(getActions(_).map(as => as.map(Success(_))).onError(exc => Observable.just(Failure(exc))))
+      .merge(fpss.collect[Try[Action]] {
+        case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo))
+          if isThisAudioVideo matches "(?i)yes" => Success(CopyToSpringfieldInbox(row, fileMd))
+      })
   }
 
   /**
@@ -146,7 +155,8 @@ object Main {
       }
       def toObservable = {
         if (fails.isEmpty) actions.toObservable
-        else Observable.error(new Exception(generateErrorReport("Precondition failures:", fails)))
+        else Observable.error(new Exception(generateErrorReport("Precondition failures:", fails,
+          "Due to these errors in the preconditions, nothing was done.")))
       }
     }
 
@@ -178,7 +188,10 @@ object Main {
         .onError(error => Observable.just(action) ++ Observable.error(error)))
       .doOnNext(stack.push(_))
       .doOnError(_ => {
-        log.error("An error occurred. Rolling back actions ...")
+        if (stack.isEmpty)
+          log.error("An error occurred ...")
+        else
+          log.error("An error occurred. Rolling back actions ...")
         stack.foreach(_.rollback())
       })
   }

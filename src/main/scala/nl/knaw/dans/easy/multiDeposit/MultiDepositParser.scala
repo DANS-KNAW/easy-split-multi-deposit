@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit
+package nl.knaw.dans.easy.multideposit
 
 import java.io.File
 
@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory
 import rx.lang.scala.Observable
 
 import scala.collection.JavaConversions.{asScalaBuffer, iterableAsScalaIterable}
-import scala.io.Source
+import scala.io.{Codec, Source}
 import scala.util.{Failure, Success, Try}
 
 object MultiDepositParser {
@@ -41,9 +41,9 @@ object MultiDepositParser {
     Observable(subscriber => {
       log.debug("Start parsing SIP Instructions at {}", file)
       Try {
-        val rawContent = Source.fromFile(file).mkString
+        val rawContent = Source.fromFile(file)(Codec(encoding)).mkString
         val parser = CSVParser.parse(rawContent, CSVFormat.RFC4180)
-        val output = parser.getRecords.map(_.toList)
+        val output = parser.getRecords.filter(r => r.size() > 0 && !r.get(0).isBlank).map(_.toList)
         validateDatasetHeaders(output.head)
           .map(_ => {
             case class IndexDatasets(index: Int, datasets: Datasets) {
@@ -84,9 +84,9 @@ object MultiDepositParser {
   /**
     * Updates the `datasets` with the given `values` and `row`.
     *
-    * @param datasets
-    * @param values
-    * @param row
+    * @param datasets the `datasets` to which values need to be added
+    * @param values   the `values` to be added
+    * @param row      the `row` number that will be added to the `dataset`
     * @return the same `datasets`
     */
   def updateDatasets(datasets: Datasets, values: CsvValues, row: Int): Datasets = {

@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit
+package nl.knaw.dans.easy.multideposit
 
-import scala.util.Try
+import scala.util.{Success, Try}
 
 /**
   * An action to be performed by Process SIP. It provides three methods that can be invoked to verify
   * the feasibility of the action, to perform the action and - if necessary - to roll back the action.
-  *
-  * @param row the row on which this action is executed
   */
-abstract class Action(row: Int) {
+trait Action {
 
   /**
     * Verifies whether all preconditions are met for this specific action.
     *
     * @return `Success` when all preconditions are met, `Failure` otherwise
     */
-  def checkPreconditions: Try[Unit]
+  def checkPreconditions: Try[Unit] = Success(())
 
   /**
     * Exectue the action.
@@ -44,5 +42,5 @@ abstract class Action(row: Int) {
     *
     * @return TODO
     */
-  def rollback(): Try[Unit]
+  def rollback(): Try[Unit] = Success(())
 }

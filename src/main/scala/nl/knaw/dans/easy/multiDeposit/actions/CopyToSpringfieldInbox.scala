@@ -13,39 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit.actions
+package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{IOException, File}
-
-import nl.knaw.dans.easy.multiDeposit._
-import nl.knaw.dans.easy.multiDeposit.{ActionException, Settings, Action}
-import org.apache.commons.io.FileUtils
+import nl.knaw.dans.easy.multideposit.{Action, ActionException, Settings, _}
 import org.slf4j.LoggerFactory
 
-import scala.util.{Try, Failure, Success}
+import scala.util.{Failure, Success, Try}
 
-case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action(row) {
+case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action {
   val log = LoggerFactory.getLogger(getClass)
 
-  def checkPreconditions = {
+  override def checkPreconditions = {
     log.debug(s"Checking preconditions for $this")
 
-    val file = new File(settings.multidepositDir, fileMd)
+    val file = multiDepositDir(settings, fileMd)
 
     if (file.exists) Success(Unit)
     else Failure(ActionException(row, s"Cannot find MD file: ${file.getPath}"))
   }
 
   def run() = {
+    log.debug(s"Running $this")
+
+    val mdFile = multiDepositDir(settings, fileMd)
+    val sfFile = springfieldInboxDir(settings, fileMd)
     Try {
-      log.debug(s"Running $this")
-
-      val mdFile = new File(settings.multidepositDir, fileMd)
-      val sfFile = new File(settings.springfieldInbox, fileMd)
-
       mdFile.copyFile(sfFile)
+    } recoverWith {
+      case e => Failure(ActionException(row, s"Error in copying $mdFile to $sfFile: ${e.getMessage}", e))
     }
   }
 
-  def rollback() = Success(Unit)
+  override def rollback() = {
+    Try {
+      log.debug(s"Rolling back $this")
+      
+      settings.springfieldInbox.listFiles.foreach(_.deleteDirectory())
+    }
+  }
 }

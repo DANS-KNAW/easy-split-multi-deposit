@@ -19,7 +19,9 @@ import java.io.File
 
 import com.typesafe.config.{ConfigException, ConfigValue}
 import org.apache.commons.io.FileUtils._
+import org.scalatest.Ignore
 
+@Ignore
 class CommandLineOptionsSpec extends UnitSpec {
 
   { // prepare environment

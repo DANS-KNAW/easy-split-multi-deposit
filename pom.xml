@@ -30,7 +30,7 @@
     <name>EASY Split Multi-Deposit</name>
     <description>Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive</description>
     <properties>
-        <main-class>nl.knaw.dans.easy.multiDeposit.Main</main-class>
+        <main-class>nl.knaw.dans.easy.multideposit.Main</main-class>
     </properties>
     <scm>
         <developerConnection>scm:git:https://github.com/DANS-KNAW/${project.artifactId}</developerConnection>
@@ -101,6 +101,7 @@
         <dependency>
             <groupId>gov.loc</groupId>
             <artifactId>bagit</artifactId>
+            <version>4.11.0</version>
         </dependency>
     </dependencies>
     <repositories>

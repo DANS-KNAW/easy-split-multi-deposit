@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit
+package nl.knaw.dans.easy.multideposit
 
 import java.io.File
 
-import nl.knaw.dans.easy.multiDeposit.MultiDepositParser._
-
-import org.apache.commons.io.FileUtils._
-import rx.lang.scala.observers.TestSubscriber
+import nl.knaw.dans.easy.multideposit.MultiDepositParser._
+import org.scalatest.BeforeAndAfterAll
 import rx.lang.scala.ObservableExtensions
+import rx.lang.scala.observers.TestSubscriber
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class MultiDepositParserSpec extends UnitSpec {
+class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
+
+  override def afterAll = testDir.getParentFile.deleteDirectory()
 
   "validateDatasetHeaders" should "succeed when given an empty list" in {
     val headers = Nil
@@ -52,8 +53,8 @@ class MultiDepositParserSpec extends UnitSpec {
   }
 
   "parse" should "fail with empty instruction file" in {
-    val csv = new File(testDir, "md/instructions.csv")
-    write(csv, "")
+    val csv = new File(testDir, "instructions.csv")
+    csv.write("")
 
     val testSubscriber = TestSubscriber[Datasets]
     parse(csv).subscribe(testSubscriber)
@@ -66,7 +67,7 @@ class MultiDepositParserSpec extends UnitSpec {
 
   it should "fail without DATASET in instructions file?" in {
     val csv = new File(testDir, "instructions.csv")
-    write(csv, "SF_PRESENTATION,FILE_AUDIO_VIDEO\nx,y")
+    csv.write("SF_PRESENTATION,FILE_AUDIO_VIDEO\nx,y")
 
     val testSubscriber = TestSubscriber[Datasets]
     parse(csv).subscribe(testSubscriber)
@@ -79,7 +80,7 @@ class MultiDepositParserSpec extends UnitSpec {
 
   it should "not complain about an invalid combination in instructions file?" in {
     val csv = new File(testDir, "instructions.csv")
-    write(csv, "DATASET,FILE_SIP\ndataset1,x")
+    csv.write("DATASET,FILE_SIP\ndataset1,x")
 
     val testSubscriber = TestSubscriber[Datasets]
     parse(csv).subscribe(testSubscriber)
@@ -96,12 +97,24 @@ class MultiDepositParserSpec extends UnitSpec {
   }
 
   it should "succeed with Roundtrip/sip-demo-2015-02-24" in {
-    val csv = new File("src/test/resources/Roundtrip_MD/sip-demo-2015-02-24/instructions.csv")
+    val csv = new File(getClass.getResource("/Roundtrip_MD/sip-demo-2015-02-24/instructions.csv").toURI)
 
     val testSubscriber = TestSubscriber[String]
     parse(csv).flatMap(_.map(_._1).toObservable).subscribe(testSubscriber)
 
     testSubscriber.assertValues("ruimtereis01", "ruimtereis02")
+    testSubscriber.assertNoErrors
+    testSubscriber.assertCompleted
+    testSubscriber.assertUnsubscribed
+  }
+
+  it should "not include whitespace identifiers" in {
+    val csv = new File(getClass.getResource("/Roundtrip_MD/instructions_with_whitespace.csv").toURI)
+
+    val testSubscriber = TestSubscriber[String]
+    parse(csv).flatMap(_.map(_._1).toObservable).subscribe(testSubscriber)
+
+    testSubscriber.assertValues("ruimtereis01")
     testSubscriber.assertNoErrors
     testSubscriber.assertCompleted
     testSubscriber.assertUnsubscribed

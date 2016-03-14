@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multiDeposit
+package nl.knaw.dans.easy.multideposit
 
 import org.scalamock.scalatest.MockFactory
 import rx.lang.scala.Observable
@@ -23,14 +23,12 @@ import scala.util.{Failure, Success}
 
 class MainSpec extends UnitSpec with MockFactory {
 
-  abstract class MockedAction extends Action(42)
-
   "checkActionPreconditions" should "succeed if the preconditions of are met" in {
-    val m1 = mock[MockedAction]
-    val m2 = mock[MockedAction]
+    val m1 = mock[Action]
+    val m2 = mock[Action]
 
-    m1.checkPreconditions _ expects () once() returning Success()
-    m2.checkPreconditions _ expects () once() returning Success()
+    m1.checkPreconditions _ expects () once() returning Success(())
+    m2.checkPreconditions _ expects () once() returning Success(())
 
     m1.run _ expects () never()
     m1.rollback _ expects () never()
@@ -47,14 +45,14 @@ class MainSpec extends UnitSpec with MockFactory {
   }
 
   it should "return all actions and then fail when multiple preconditions fail" in {
-    val m1 = mock[MockedAction]
-    val m2 = mock[MockedAction]
-    val m3 = mock[MockedAction]
-    val m4 = mock[MockedAction]
+    val m1 = mock[Action]
+    val m2 = mock[Action]
+    val m3 = mock[Action]
+    val m4 = mock[Action]
 
-    m1.checkPreconditions _ expects () once() returning Success()
+    m1.checkPreconditions _ expects () once() returning Success(())
     m2.checkPreconditions _ expects () once() returning Failure(new ActionException(6, "foo"))
-    m3.checkPreconditions _ expects () once() returning Success()
+    m3.checkPreconditions _ expects () once() returning Success(())
     m4.checkPreconditions _ expects () once() returning Failure(new ActionException(1, "bar"))
 
     m1.run _ expects () never()
@@ -77,14 +75,14 @@ class MainSpec extends UnitSpec with MockFactory {
   }
 
   it should "generate an error report when multiple preconditions fail" in {
-    val m1 = mock[MockedAction]
-    val m2 = mock[MockedAction]
-    val m3 = mock[MockedAction]
-    val m4 = mock[MockedAction]
+    val m1 = mock[Action]
+    val m2 = mock[Action]
+    val m3 = mock[Action]
+    val m4 = mock[Action]
 
-    m1.checkPreconditions _ expects () once() returning Success()
+    m1.checkPreconditions _ expects () once() returning Success(())
     m2.checkPreconditions _ expects () once() returning Failure(new ActionException(6, "foo"))
-    m3.checkPreconditions _ expects () once() returning Success()
+    m3.checkPreconditions _ expects () once() returning Success(())
     m4.checkPreconditions _ expects () once() returning Failure(new ActionException(1, "bar"))
 
     m1.run _ expects () never()
@@ -101,18 +99,18 @@ class MainSpec extends UnitSpec with MockFactory {
       .onErrorResumeNext(e => Observable.just(e.getMessage))
       .subscribe(testSubscriber)
 
-    testSubscriber.assertValue("Precondition failures:\n - row 1: bar\n - row 6: foo")
+    testSubscriber.assertValue("Precondition failures:\n - row 1: bar\n - row 6: foo\nDue to these errors in the preconditions, nothing was done.")
     testSubscriber.assertNoErrors
     testSubscriber.assertCompleted
     testSubscriber.assertUnsubscribed
   }
 
   "runActions" should "succeed if all actions are successfull in running" in {
-    val m1 = mock[MockedAction]
-    val m2 = mock[MockedAction]
+    val m1 = mock[Action]
+    val m2 = mock[Action]
 
-    m1.run _ expects () once() returning Success()
-    m2.run _ expects () once() returning Success()
+    m1.run _ expects () once() returning Success(())
+    m2.run _ expects () once() returning Success(())
 
     m1.rollback _ expects () never()
     m2.rollback _ expects () never()
@@ -129,11 +127,11 @@ class MainSpec extends UnitSpec with MockFactory {
   it should "rollback when it fails, return the action and return after that" in {
     val exception = new Exception("foo")
 
-    val m1 = mock[MockedAction]
-    val m2 = mock[MockedAction]
-    val m3 = mock[MockedAction]
+    val m1 = mock[Action]
+    val m2 = mock[Action]
+    val m3 = mock[Action]
 
-    m1.run _ expects () once() returning Success()
+    m1.run _ expects () once() returning Success(())
     m2.run _ expects () once() returning Failure(exception)
     m3.run _ expects () never()
 
