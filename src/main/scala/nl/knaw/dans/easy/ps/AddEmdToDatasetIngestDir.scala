@@ -26,6 +26,7 @@ import org.xml.sax.{ErrorHandler, SAXParseException}
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
 
+@Deprecated
 case class AddEmdToDatasetIngestDir(row: String, dataset: Dataset)(implicit s: Settings) extends Action(row) {
   val log = LoggerFactory.getLogger(getClass)
 

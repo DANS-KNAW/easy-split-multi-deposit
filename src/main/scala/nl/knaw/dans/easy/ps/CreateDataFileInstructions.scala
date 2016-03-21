@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
 
+@Deprecated
 case class CreateDataFileInstructions(
   row: String,
   fileSip: Option[String],

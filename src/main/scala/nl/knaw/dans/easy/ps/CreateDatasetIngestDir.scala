@@ -21,6 +21,7 @@ import org.apache.commons.io.FileUtils.{ copyDirectory, deleteDirectory }
 import org.apache.commons.io.filefilter.AbstractFileFilter
 import org.slf4j.LoggerFactory
 
+@Deprecated
 case class CreateDatasetIngestDir(row: String, dataset: Dataset, fpss: List[FileParameters])(implicit s: Settings) extends Action(row) {
   val log = LoggerFactory.getLogger(getClass)
   val METADATA_DIR_NAME = "metadata"

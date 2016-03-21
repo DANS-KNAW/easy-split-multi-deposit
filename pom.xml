@@ -21,7 +21,7 @@
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
         <artifactId>dans-scala-prototype</artifactId>
-        <version>1.21</version>
+        <version>1.23</version>
     </parent>
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-split-multi-deposit</artifactId>
@@ -30,7 +30,7 @@
     <name>EASY Split Multi-Deposit</name>
     <description>Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive</description>
     <properties>
-        <main-class>nl.knaw.dans.easy.ps.Main</main-class>
+        <main-class>nl.knaw.dans.easy.multideposit.Main</main-class>
     </properties>
     <scm>
         <developerConnection>scm:git:https://github.com/DANS-KNAW/${project.artifactId}</developerConnection>
@@ -66,6 +66,7 @@
         <dependency>
             <groupId>io.reactivex</groupId>
             <artifactId>rxscala_2.11</artifactId>
+            <version>0.26.0</version>
         </dependency>
         <dependency>
             <groupId>org.scala-lang.modules</groupId>
@@ -96,6 +97,11 @@
             <!-- Necessary to get rid of joda warnings about missing FromString -->
             <groupId>org.joda</groupId>
             <artifactId>joda-convert</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.loc</groupId>
+            <artifactId>bagit</artifactId>
+            <version>4.11.0</version>
         </dependency>
     </dependencies>
     <repositories>

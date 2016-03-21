@@ -17,12 +17,14 @@ package nl.knaw.dans.easy.ps
 
 import nl.knaw.dans.easy.ps.CustomMatchers._
 import org.apache.commons.io.FileUtils.readFileToString
+import org.scalatest.Ignore
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.language.postfixOps
 import scala.util.Success
 
+@Ignore
 class CreateSpringfieldActionsSpec extends UnitSpec {
 
   implicit val s = Settings(

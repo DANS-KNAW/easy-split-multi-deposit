@@ -26,6 +26,7 @@ import scala.util.Failure
 import scala.util.Try
 import scala.collection.mutable.ListBuffer
 
+// sip == multi deposit
 object SipInstructions {
   type CsvValues = List[(String, String)]
 

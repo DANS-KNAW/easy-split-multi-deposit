@@ -7,7 +7,7 @@ Convert a Multi-Deposit splitting it into several Dataset Deposits.
 SYNOPSIS
 --------
 
-    easy-split-multi-deposit [{--deposits-dir|-d} <dir>][{--springfield-inbox|-s} <dir>] <multi-deposit-dir>
+    easy-split-multi-deposit [{--output-deposits-dir|-d} <dir>][{--springfield-inbox|-s} <dir>] <multi-deposit-dir>
 
 
 DESCRIPTION
@@ -19,7 +19,7 @@ Multi-Deposit into separate Dataset Deposit directories that can be ingested int
 [easy-ingest-flow].
 
 The Multi-Deposit may also contain audio/visual data files that are to be sent to a Springfield TV
-installationg to be converted to a streamable surrogate.
+installation to be converted to a streamable surrogate.
 
 `easy-split-multi-deposit` is controlled by the Multi-Deposit Instructions (MDI) file. This is a CSV file,
 that must be located at `<multi-deposit-dir>/instructions.csv`. It should contain the metadata for the
@@ -40,18 +40,27 @@ If the MDI file is found and is correct the following actions are taken:
   
 ARGUMENTS
 ---------
-<!-- TODO replace this with output from command line --help -->
+```
+Usage: easy-split-multi-deposit.sh [{--springfield-inbox|-s} <dir>] <multi-deposit-dir> <output-deposits-dir>
+Options:
 
---deposits-dir | -d (optional)
-:   A directory in which the deposit directories must be created. The deposit directory 
-    layout is described in the easy-deposit documenation
-    
---springfield-inbox | -s (optional)
-:   The inbox directory of a Springfield Streaming Media Platform installation. If not 
-    specified the value of `springfield-inbox` in `application.properties` is used.
+  -s, --springfield-inbox  <arg>   The inbox directory of a Springfield Streaming
+                                   Media Platform installation. If not specified
+                                   the value of springfield-inbox in
+                                   application.properties is used.
+                                   (default = /vagrant/shared/springfield-inbox)
+      --help                       Show help message
+      --version                    Show version of this program
 
-sip-dir (required)
-:   A directory containing the Submission Information Package (SIP)
+ trailing arguments:
+  multi-deposit-dir (required)   Directory containing the Submission Information
+                                 Package to process. This must be a valid path to
+                                 a directory containing a file named
+                                 'instructions.csv' in RFC4180 format.
+  deposit-dir (required)         A directory in which the deposit directories must
+                                 be created. The deposit directory layout is
+                                 described in the easy-deposit documenation
+```
 
 
 ### Installation steps:
@@ -85,7 +94,7 @@ Steps:
         mvn install
 
 
-[Multi-Deposit Instructions]: multi-deposit-instructions.html
+[Multi-Deposit Instructions]: multi-deposit-instructions.md
 [easy-ingest-flow]: https://github.com/DANS-KNAW/easy-ingest-flow
 
   

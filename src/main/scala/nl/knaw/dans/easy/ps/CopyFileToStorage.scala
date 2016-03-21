@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
 
+@Deprecated
 case class CopyFileToStorage(
   row: String,
   storageService: String,

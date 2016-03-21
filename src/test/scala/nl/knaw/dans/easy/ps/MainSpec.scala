@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.ps
 import nl.knaw.dans.easy.ps.CustomMatchers._
 
 import org.apache.commons.io.FileUtils._
+import org.scalatest.Ignore
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 import java.util
@@ -26,6 +27,7 @@ import scala.collection.mutable.ListBuffer
 import org.apache.commons.io.FileUtils._
 import collection.JavaConversions._
 
+@Ignore
 class MainSpec extends UnitSpec {
 
   private val minimalInstructionsHeader =
