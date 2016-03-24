@@ -46,17 +46,12 @@ object MultiDepositParser {
         val output = parser.getRecords.filter(r => r.size() > 0 && !r.get(0).isBlank).map(_.toList)
         validateDatasetHeaders(output.head)
           .map(_ => {
-            case class IndexDatasets(index: Int, datasets: Datasets) {
-              def +=(csvValues: CsvValues) = {
-                IndexDatasets(index + 1, updateDatasets(datasets, csvValues, index + 1))
-              }
-            }
-
             val csvData = output.tail.map(output.head zip _)
             log.debug("Successfully loaded CSV file")
             Observable.from(csvData)
-              .foldLeft(IndexDatasets(1, new Datasets))(_ += _)
-              .map(_.datasets)
+              .zipWithIndex
+              .map { case (xs, i) => (xs, i + 2) } // +2 because we want the second line (element 0) to have index 2
+              .foldLeft(new Datasets)((dss, tuple) => updateDatasets(dss, tuple))
           })
           .onError(Observable.error)
           .subscribe(subscriber)
@@ -79,6 +74,10 @@ object MultiDepositParser {
     else Failure(new ActionException(0, "SIP Instructions file contains unknown headers: "
       + headers.filter(!validHeaders.contains(_)).mkString(", ") + ". "
       + "Please, check for spelling errors and consult the documentation for the list of valid headers."))
+  }
+
+  private def updateDatasets(dss: Datasets, tuple: (CsvValues, Int)): Datasets = {
+    updateDatasets(dss, tuple._1, tuple._2)
   }
 
   /**
