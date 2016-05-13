@@ -17,8 +17,8 @@ package nl.knaw.dans.easy.multideposit
 
 import java.io.File
 
-import com.typesafe.config.{Config, ConfigFactory}
 import nl.knaw.dans.easy.multideposit.CommandLineOptions._
+import org.apache.commons.configuration.PropertiesConfiguration
 import org.rogach.scallop.{ScallopConf, singleArgConverter}
 import org.slf4j.LoggerFactory
 
@@ -27,10 +27,16 @@ object CommandLineOptions {
   val log = LoggerFactory.getLogger(getClass)
 
   def parse(args: Array[String]): Settings = {
-    log.debug("Loading application.conf ...")
-    lazy val conf = ConfigFactory.load
+    log.debug("Loading application.properties ...")
+    val homeDir = new File(System.getProperty("app.home"))
+    val props = {
+      val ps = new PropertiesConfiguration()
+      ps.setDelimiterParsingDisabled(true)
+      ps.load(new File(homeDir, "cfg/application.properties"))
+      ps
+    }
     log.debug("Parsing command line ...")
-    val opts = new ScallopCommandLine(conf, args)
+    val opts = new ScallopCommandLine(props, args)
 
     val settings = Settings(
       appHomeDir = Option(System.getProperty("app.home"))
@@ -47,7 +53,7 @@ object CommandLineOptions {
   }
 }
 
-class ScallopCommandLine(conf: => Config, args: Array[String]) extends ScallopConf(args) {
+class ScallopCommandLine(props: => PropertiesConfiguration, args: Array[String]) extends ScallopConf(args) {
 
   val fileMayNotExist = singleArgConverter(new File(_))
   val fileShouldExist = singleArgConverter(filename => {
@@ -89,7 +95,7 @@ class ScallopCommandLine(conf: => Config, args: Array[String]) extends ScallopCo
   lazy val springfieldInbox = opt[File]("springfield-inbox",
     descr = "The inbox directory of a Springfield Streaming Media Platform installation. " +
       "If not specified the value of springfield-inbox in application.properties is used.",
-    default = Some(new File(conf.getString("springfield-inbox"))))(fileShouldExist)
+    default = Some(new File(props.getString("springfield-inbox"))))(fileShouldExist)
   validateOpt(springfieldInbox)(_.map(file =>
     if (!file.isDirectory)
       Left(s"Not a directory '$file'")
