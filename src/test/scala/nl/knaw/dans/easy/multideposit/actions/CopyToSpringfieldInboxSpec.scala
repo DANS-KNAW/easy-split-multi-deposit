@@ -18,7 +18,6 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.{File, FileNotFoundException}
 
 import nl.knaw.dans.easy.multideposit.{ActionException, Settings, UnitSpec, _}
-import nl.knaw.dans.easy.ps.MdKey
 import org.scalatest.BeforeAndAfterAll
 
 import scala.util.{Failure, Success}
@@ -32,7 +31,7 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
 
-  def createFile(fileName: MdKey) = {
+  def createFile(fileName: MultiDepositKey) = {
     val file = multiDepositDir(settings, fileName)
     file.getParentFile.mkdirs
     file.write("")

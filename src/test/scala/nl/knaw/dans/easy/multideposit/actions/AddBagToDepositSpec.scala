@@ -18,11 +18,9 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 
 import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
-import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 
 import scala.util.Success
-import scala.collection.JavaConversions.collectionAsScalaIterable
 
 class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
