@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit
 
 object DDM {
-  type Dictionary = Map[String, String]
+  type Dictionary = Map[MultiDepositKey, String]
 
   val profileFields: Dictionary =
     Map("DC_TITLE" -> "dc:title",
@@ -57,11 +57,13 @@ object DDM {
       "DCX_CONTRIBUTOR_DAI" -> "dcx-dai:DAI",
       "DCX_CONTRIBUTOR_ORGANIZATION" -> "dcx-dai:name xml:lang=\"en\"")
 
-  // TODO not sure about the values of this Dictionary
-  val composedSpacialFields: Dictionary =
+  val composedSpatialPointFields: Dictionary =
     Map("DCX_SPATIAL_SCHEME" -> "",
       "DCX_SPATIAL_X" -> "",
-      "DCX_SPATIAL_Y" -> "",
+      "DCX_SPATIAL_Y" -> "")
+
+  val composedSpatialBoxFields: Dictionary =
+    Map("DCX_SPATIAL_SCHEME" -> "",
       "DCX_SPATIAL_NORTH" -> "",
       "DCX_SPATIAL_SOUTH" -> "",
       "DCX_SPATIAL_EAST" -> "",
@@ -73,7 +75,9 @@ object DDM {
       "DCX_RELATION_TITLE" -> "",
       "DCX_RELATION_LINK" -> "")
 
+  val organizationKeys = Set("DCX_CREATOR_ORGANIZATION", "DCX_CONTRIBUTOR_ORGANIZATION")
+
   val allFields = "ROW" :: "DATASET" ::
-    List(profileFields, metadataFields, composedCreatorFields, composedContributorFields, composedSpacialFields, composedRelationFields)
+    List(profileFields, metadataFields, composedCreatorFields, composedContributorFields, composedSpatialPointFields, composedSpatialBoxFields, composedRelationFields)
       .flatMap(_.keySet)
 }

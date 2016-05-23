@@ -54,13 +54,13 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     "DC_SUBJECT" -> List("me", "you", "him", "her") +=
     "DCT_TEMPORAL" -> List("1992-2016", "2005", "", "") +=
     "DCT_SPATIAL" -> List("here", "there", "", "") +=
-    "DCX_SPATIAL_SCHEME" -> List("", "", "", "") +=
-    "DCX_SPATIAL_X" -> List("", "", "", "") +=
-    "DCX_SPATIAL_Y" -> List("", "", "", "") +=
-    "DCX_SPATIAL_NORTH" -> List("", "", "", "") +=
-    "DCX_SPATIAL_SOUTH" -> List("", "", "", "") +=
-    "DCX_SPATIAL_EAST" -> List("", "", "", "") +=
-    "DCX_SPATIAL_WEST" -> List("", "", "", "") +=
+    "DCX_SPATIAL_SCHEME" -> List("degrees", "degrees", "", "") +=
+    "DCX_SPATIAL_X" -> List("83575.4", "", "", "") +=
+    "DCX_SPATIAL_Y" -> List("455271.2", "", "", "") +=
+    "DCX_SPATIAL_NORTH" -> List("", "1", "", "") +=
+    "DCX_SPATIAL_SOUTH" -> List("", "2", "", "") +=
+    "DCX_SPATIAL_EAST" -> List("", "3", "", "") +=
+    "DCX_SPATIAL_WEST" -> List("", "4", "", "") +=
     "DC_IDENTIFIER" -> List("ds1", "", "", "") +=
     "DCX_RELATION_QUALIFIER" -> List("", "", "", "") +=
     "DCX_RELATION_TITLE" -> List("", "", "", "") +=
@@ -134,6 +134,19 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
           <dcx-dai:surname>Kito</dcx-dai:surname>
         </dcx-dai:author>
       </dcx-dai:contributorDetails>
+      <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+        <Point xmlns="http://www.opengis.net/gml">
+          <pos>455271.2 83575.4</pos>
+        </Point>
+      </dcx-gml:spatial>
+      <dcx-gml:spatial>
+        <boundedBy xmlns="http://www.opengis.net/gml">
+          <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+            <lowerCorner>1 3</lowerCorner>
+            <upperCorner>2 4</upperCorner>
+          </Envelope>
+        </boundedBy>
+      </dcx-gml:spatial>
     </ddm:dcmiMetadata>
   </ddm:DDM>
 

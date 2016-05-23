@@ -255,6 +255,20 @@ package object multideposit {
         value2 <- value.toOption
       } yield value2
     }
+
+    def rowsWithValuesFor(dictionary: DDM.Dictionary) =
+      dataset.getColumnsIn(dictionary).toRows.filter(_.nonEmpty)
+
+    def rowsWithValuesForAllOf(dictionary: DDM.Dictionary) =
+      dataset.getColumnsIn(dictionary).toRows.filter(_.size == dictionary.size)
+
+    def getColumnsIn(dictionary: DDM.Dictionary): Dataset =
+      dataset.filter(kvs => dictionary.contains(kvs._1))
+
+    /** @return  per row only those key-value pairs that do have a value */
+    def toRows = dataset.values.head.indices
+        .map(i => dataset.map { case (key, values) => (key, values(i)) })
+        .map(_.filter(kv => kv._2 != null && !kv._2.isBlank))
   }
 
   val encoding = Charsets.UTF_8
