@@ -256,19 +256,48 @@ package object multideposit {
       } yield value2
     }
 
-    def rowsWithValuesFor(dictionary: DDM.Dictionary) =
-      dataset.getColumnsIn(dictionary).toRows.filter(_.nonEmpty)
+    /** Turns a map of key-column pairs into a filtered sequence of maps:
+      * a map of key-value pairs per row, only those rows with a value for at least one of the desired columns.
+      *
+      * @param desiredColumns the keys of these key-value pairs specify the desired column keys
+      *                       (the values specifying the DDM equivalent are ignored)
+      * @return A sequence of maps, each map containing key-value pairs of a row.
+      *         Values are neither null nor blank, rows are not empty.
+      *         The keyset of each map is a non-empty subset of the keyset of dictionary.
+      */
+    def rowsWithValuesFor(desiredColumns: DDM.Dictionary) =
+      dataset.getColumnsIn(desiredColumns).toRows.filter(_.nonEmpty)
 
-    def rowsWithValuesForAllOf(dictionary: DDM.Dictionary) =
-      dataset.getColumnsIn(dictionary).toRows.filter(_.size == dictionary.size)
+    /** Turns a map of key-column pairs into a filtered sequence of maps:
+      * a map of key-value pairs per row and, those rows with a value for each desired column.
+      * Rows with values for some but not all desired columns are ignored.
+      *
+      * @param desiredColumns the keys of these key-value pairs specify the desired column keys
+      *                       (the values specifying the DDM equivalent are ignored)
+      * @return A sequence of maps, each map containing key-value pairs of a row.
+      *         Values are neither null nor blank, rows are not empty,
+      *         The keyset of each map equals the keyset of dictionary.
+      */
+    def rowsWithValuesForAllOf(desiredColumns: DDM.Dictionary) =
+      dataset.getColumnsIn(desiredColumns).toRows.filter(_.size == desiredColumns.size)
 
-    def getColumnsIn(dictionary: DDM.Dictionary): Dataset =
-      dataset.filter(kvs => dictionary.contains(kvs._1))
+    /** Filters a map of key-column pairs.
+      *
+      * @param desiredColumns the keys of these key-value pairs specify the desired column keys
+      *                       (the values specifying the DDM equivalent are ignored)
+      * @return A map with those key-column pairs for which the key is in keyset of the dictionary.
+      */
+    def getColumnsIn(desiredColumns: DDM.Dictionary): Dataset =
+      dataset.filter(kvs => desiredColumns.contains(kvs._1))
 
-    /** @return  per row only those key-value pairs that do have a value */
+    /** Turns a map of key-column pairs into a sequence of maps: one map of key-value pairs per row.
+      *
+      * @return A sequence of maps, each map containing key-value pairs of a row.
+      *         Values are neither null nor blank, a row may be empty.
+      */
     def toRows = dataset.values.head.indices
-        .map(i => dataset.map { case (key, values) => (key, values(i)) })
-        .map(_.filter(kv => kv._2 != null && !kv._2.isBlank))
+      .map(i => dataset.map { case (key, values) => (key, values(i)) })
+      .map(_.filter(kv => kv._2 != null && !kv._2.isBlank))
   }
 
   val encoding = Charsets.UTF_8
