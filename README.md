@@ -14,7 +14,7 @@ DESCRIPTION
 -----------
 
 A command line tool to process a Multi-Deposit into several Dataset Deposit. A Multi-Deposit
-is a deposit containing data files and metadata for several datasets. The tools splits the
+is a deposit containing data files and metadata for several datasets. The tool splits the
 Multi-Deposit into separate Dataset Deposit directories that can be ingested into the archive by 
 [easy-ingest-flow].
 

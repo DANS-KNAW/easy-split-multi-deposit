@@ -24,6 +24,7 @@ import org.apache.commons.lang.StringUtils
 import rx.lang.scala.{Observable, ObservableExtensions}
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
+import scala.collection.immutable.IndexedSeq
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
@@ -265,7 +266,7 @@ package object multideposit {
       *         Values are neither null nor blank, rows are not empty.
       *         The keyset of each map is a non-empty subset of the keyset of dictionary.
       */
-    def rowsWithValuesFor(desiredColumns: DDM.Dictionary) =
+    def rowsWithValuesFor(desiredColumns: DDM.Dictionary): IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
       dataset.getColumnsIn(desiredColumns).toRows.filter(_.nonEmpty)
 
     /** Turns a map of key-column pairs into a filtered sequence of maps:
@@ -278,7 +279,7 @@ package object multideposit {
       *         Values are neither null nor blank, rows are not empty,
       *         The keyset of each map equals the keyset of dictionary.
       */
-    def rowsWithValuesForAllOf(desiredColumns: DDM.Dictionary) =
+    def rowsWithValuesForAllOf(desiredColumns: DDM.Dictionary): IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
       dataset.getColumnsIn(desiredColumns).toRows.filter(_.size == desiredColumns.size)
 
     /** Filters a map of key-column pairs.
@@ -295,9 +296,12 @@ package object multideposit {
       * @return A sequence of maps, each map containing key-value pairs of a row.
       *         Values are neither null nor blank, a row may be empty.
       */
-    def toRows = dataset.values.head.indices
-      .map(i => dataset.map { case (key, values) => (key, values(i)) })
-      .map(_.filter(kv => kv._2 != null && !kv._2.isBlank))
+    def toRows: IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
+      dataset.values.headOption
+        .map(_.indices
+          .map(i => dataset.map { case (key, values) => (key, values(i)) })
+          .map(_.filter(kv => kv._2 != null && !kv._2.isBlank)))
+        .getOrElse(IndexedSeq())
   }
 
   val encoding = Charsets.UTF_8

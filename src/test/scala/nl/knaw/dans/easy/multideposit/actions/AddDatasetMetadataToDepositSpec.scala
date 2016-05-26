@@ -18,10 +18,15 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 
 import nl.knaw.dans.easy.multideposit._
+import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.datasetToXml
+import org.apache.commons.csv.{CSVFormat, CSVParser}
+import org.apache.commons.io.FileUtils.readFileToString
 import org.scalatest.BeforeAndAfterAll
+import rx.lang.scala.observers.TestSubscriber
+import rx.lang.scala.{Observable, ObservableExtensions}
 
 import scala.util.Success
-import scala.xml.PrettyPrinter
+import scala.xml.{Elem, PrettyPrinter}
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
@@ -163,7 +168,35 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   "datasetToXml" should "return the expected xml" in {
-    new PrettyPrinter(160, 2).format(AddDatasetMetadataToDeposit.datasetToXml(dataset)) shouldBe
+    new PrettyPrinter(160, 2).format(datasetToXml(dataset)) shouldBe
       new PrettyPrinter(160, 2).format(expectedXml)
+  }
+
+  it should "return xml on reading from the sip-demo csv" in {
+    val subscriber = toXmlSubscriber("/Roundtrip_MD/sip-demo-2015-02-24/instructions.csv")
+
+    subscriber.assertNoErrors()
+    subscriber.assertValueCount(2)
+    subscriber.assertCompleted()
+    subscriber.assertUnsubscribed()
+  }
+
+  it should "return xml on reading from the sip001 csv" in {
+    val subscriber = toXmlSubscriber("/Roundtrip_MD/sip001/instructions.csv")
+
+    subscriber.assertNoErrors()
+    subscriber.assertValueCount(2)
+    subscriber.assertCompleted()
+    subscriber.assertUnsubscribed()
+  }
+
+  def toXmlSubscriber(file: String): TestSubscriber[Elem] = {
+    val csv = new File(getClass.getResource(file).toURI)
+    val subscriber = TestSubscriber[Elem]
+    MultiDepositParser.parse(csv)
+      .flatMap(_.toObservable)
+      .map(tuple => AddDatasetMetadataToDeposit.datasetToXml(tuple._2))
+      .subscribe(subscriber)
+    subscriber
   }
 }
