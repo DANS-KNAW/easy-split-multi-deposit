@@ -46,7 +46,7 @@ object AddDatasetMetadataToDeposit {
     }
   }
 
-  def datasetToXml(dataset: Dataset) = {
+  def datasetToXml(dataset: Dataset): Elem = {
       <ddm:DDM
       xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -160,6 +160,17 @@ object AddDatasetMetadataToDeposit {
     )
   }
 
+  def createRelations(dataset: Dataset) = {
+    dataset.rowsWithValuesFor(composedRelationFields).map { row =>
+      (row.get("DCX_RELATION_QUALIFIER"), row.get("DCX_RELATION_LINK"), row.get("DCX_RELATION_TITLE")) match {
+        case (Some(q), Some(l),_      ) => elem(s"dcterms:$q")(l)
+        case (Some(q), None,   Some(t)) => elem(s"dcterms:$q")(t)
+        case (None,    Some(l),_      ) => elem(s"dc:relation")(l)
+        case (None,    None,   Some(t)) => elem(s"dc:relation")(t)
+      }
+    }
+  }
+
   def createMetadata(dataset: Dataset) = {
     def isMetaData(key: MultiDepositKey, values: MultiDepositValues): Boolean = {
       metadataFields.contains(key) && values.nonEmpty
@@ -167,6 +178,7 @@ object AddDatasetMetadataToDeposit {
 
     <ddm:dcmiMetadata>
       {dataset.filter(isMetaData _ tupled).flatMap(simpleMetadataEntryToXML _ tupled)}
+      {createRelations(dataset)}
       {createContributors(dataset)}
       {createSpatialPoints(dataset)}
       {createSpatialBoxes(dataset)}
