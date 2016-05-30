@@ -167,6 +167,7 @@ object AddDatasetMetadataToDeposit {
         case (Some(q), None,   Some(t)) => elem(s"dcterms:$q")(t)
         case (None,    Some(l),_      ) => elem(s"dc:relation")(l)
         case (None,    None,   Some(t)) => elem(s"dc:relation")(t)
+        case _                          => // TODO do nothing; this needs to be checked in the preconditions
       }
     }
   }
