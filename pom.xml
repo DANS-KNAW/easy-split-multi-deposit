@@ -25,7 +25,7 @@
     </parent>
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-split-multi-deposit</artifactId>
-    <version>1.x-SNAPSHOT</version>
+    <version>1.0-beta-3</version>
     <inceptionYear>2015-2016</inceptionYear>
     <name>EASY Split Multi-Deposit</name>
     <description>Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive</description>
@@ -34,7 +34,7 @@
     </properties>
     <scm>
         <developerConnection>scm:git:https://github.com/DANS-KNAW/${project.artifactId}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v1.0-beta-3</tag>
     </scm>
     <dependencies>
         <dependency>
