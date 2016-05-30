@@ -20,6 +20,7 @@ import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
 import org.apache.commons.logging.LogFactory
 
+import scala.collection.mutable
 import scala.language.postfixOps
 import scala.util.{Failure, Try}
 import scala.xml.Elem
@@ -45,12 +46,7 @@ object AddDatasetMetadataToDeposit {
     }
   }
 
-  def isPartOfProfile(key: MultiDepositKey)             = profileFields.contains(key)
-  def isPartOfMetadata(key: MultiDepositKey)            = metadataFields.contains(key)
-  def isPartOfComposedCreator(key: MultiDepositKey)     = composedCreatorFields.contains(key)
-  def isPartOfComposedContributor(key: MultiDepositKey) = composedContributorFields.contains(key)
-
-  def datasetToXml(dataset: Dataset) = {
+  def datasetToXml(dataset: Dataset): Elem = {
       <ddm:DDM
       xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -73,7 +69,7 @@ object AddDatasetMetadataToDeposit {
     <ddm:profile>
       {profileElems(dataset, "DC_TITLE")}
       {profileElems(dataset, "DC_DESCRIPTION")}
-      {createComposedCreators(dataset)}
+      {createCreators(dataset)}
       {profileElems(dataset, "DDM_CREATED")}
       {profileElems(dataset, "DDM_AUDIENCE")}
       {profileElems(dataset, "DDM_ACCESSRIGHTS")}
@@ -89,67 +85,44 @@ object AddDatasetMetadataToDeposit {
       .map(elem(profileFields.getOrElse(key, key)))
   }
 
-  def createComposedCreators(dataset: Dataset) = {
-    createComposedAuthors(dataset, isPartOfComposedCreator, createComposedCreator(composedCreatorFields, _))
-  }
-
-  def createComposedContributors(dataset: Dataset) = {
-    createComposedAuthors(dataset, isPartOfComposedContributor, createComposedContributor(composedContributorFields, _))
-  }
-
-  def createComposedAuthors(dataset: Dataset, isPartOfAuthor: (MultiDepositKey => Boolean), createAuthor: Iterable[(MultiDepositKey, String)] => Elem) = {
-    val authorsData = dataset.filter(x => isPartOfAuthor(x._1))
-
-    if(authorsData.isEmpty)
-      Seq.empty
-    else
-      authorsData.values.head.indices
-        .map(i => authorsData.map { case (key, values) => (key, values(i)) })
-        .filter(_.values.exists(x => x != null && !x.isBlank))
-        .map(createAuthor)
-  }
-
-  def createComposedCreator(dictionary: Dictionary, authorFields: Iterable[(MultiDepositKey, String)]) = {
-    <dcx-dai:creatorDetails>{
-      if (isOrganization(authorFields))
-        <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">{
-            authorFields.find(field => isOrganizationKey(field._1)).map(_._2).getOrElse("")
-          }</dcx-dai:name>
-        </dcx-dai:organization>
-      else
-        <dcx-dai:author>{
-          authorFields.map(composedEntry(dictionary))
-        }</dcx-dai:author>
-    }</dcx-dai:creatorDetails>
+  def createCreators(dataset: Dataset) = {
+    dataset.rowsWithValuesFor(composedCreatorFields).map(mdKeyValues =>
+      <dcx-dai:creatorDetails>{
+        if (isOrganization(mdKeyValues))
+          <dcx-dai:organization>
+            <dcx-dai:name xml:lang="en">{
+              mdKeyValues.find(field => organizationKeys.contains(field._1)).map(_._2).getOrElse("")
+            }</dcx-dai:name>
+          </dcx-dai:organization>
+        else
+          <dcx-dai:author>{
+            mdKeyValues.map(composedEntry(composedCreatorFields))
+          }</dcx-dai:author>
+      }</dcx-dai:creatorDetails>
+    )
   }
 
   def isOrganization(authorFields: Iterable[(MultiDepositKey, String)]): Boolean = {
     val othersEmpty = authorFields
-      .filterNot(field => isOrganizationKey(field._1))
+      .filterNot(field => organizationKeys.contains(field._1))
       .forall(_._2 == "")
-    val hasOrganization = authorFields.toList.exists(field => isOrganizationKey(field._1))
+    val hasOrganization = authorFields.toList.exists(field => organizationKeys.contains(field._1))
     othersEmpty && hasOrganization
   }
 
-  def isOrganizationKey(key: MultiDepositKey) = key match {
-    case "DCX_CREATOR_ORGANIZATION" => true
-    case "DCX_CONTRIBUTOR_ORGANIZATION" => true
-    case _ => false
-  }
-
-  def createComposedContributor(dictionary: Dictionary, authorFields: Iterable[(MultiDepositKey, String)]) = {
-    <dcx-dai:contributorDetails>
-      <dcx-dai:author>{
-        authorFields.filter(x => x._2 != null && !x._2.isBlank).map(composedEntry(dictionary))
-      }</dcx-dai:author>
-    </dcx-dai:contributorDetails>
+  def createContributors(dataset: Dataset) = {
+    dataset.rowsWithValuesFor(composedContributorFields).map(mdKeyValues =>
+      <dcx-dai:contributorDetails>
+        <dcx-dai:author>
+          {mdKeyValues.map(composedEntry(composedContributorFields))}
+        </dcx-dai:author>
+      </dcx-dai:contributorDetails>
+    )
   }
 
   def composedEntry(dictionary: Dictionary)(entry: (MultiDepositKey, String)) = {
-    val key = entry._1
-    val value = entry._2
-    if (key.endsWith("_ORGANIZATION")) {
+    val (key, value) = entry
+    if (organizationKeys.contains(key)) {
       <dcx-dai:organization>
         <dcx-dai:name xml:lang="en">{value}</dcx-dai:name>
       </dcx-dai:organization>
@@ -159,14 +132,56 @@ object AddDatasetMetadataToDeposit {
     }
   }
 
+  def createSrsName(fields: mutable.HashMap[MultiDepositKey, String]) = Map(
+    "degrees" -> "http://www.opengis.net/def/crs/EPSG/0/4326",
+    "RD" -> "http://www.opengis.net/def/crs/EPSG/0/28992"
+  ).getOrElse(fields.getOrElse("DCX_SPATIAL_SCHEME", ""),"")
+
+  def createSpatialPoints(dataset: Dataset) = {
+    dataset.rowsWithValuesForAllOf(composedSpatialPointFields).map(mdKeyValues =>
+      <dcx-gml:spatial srsName={createSrsName(mdKeyValues)}>
+        <Point xmlns="http://www.opengis.net/gml">
+          <pos>{mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")} {mdKeyValues.getOrElse("DCX_SPATIAL_X", "")}</pos>
+        </Point>
+      </dcx-gml:spatial>
+    )
+  }
+
+  def createSpatialBoxes(dataset: Dataset) = {
+    dataset.rowsWithValuesForAllOf(composedSpatialBoxFields).map(mdKeyValues =>
+      <dcx-gml:spatial>
+        <boundedBy xmlns="http://www.opengis.net/gml">
+          <Envelope srsName={createSrsName(mdKeyValues)}>
+            <lowerCorner>{mdKeyValues.getOrElse("DCX_SPATIAL_NORTH", "")} {mdKeyValues.getOrElse("DCX_SPATIAL_EAST", "")}</lowerCorner>
+            <upperCorner>{mdKeyValues.getOrElse("DCX_SPATIAL_SOUTH", "")} {mdKeyValues.getOrElse("DCX_SPATIAL_WEST", "")}</upperCorner>
+          </Envelope>
+        </boundedBy>
+      </dcx-gml:spatial>
+    )
+  }
+
+  def createRelations(dataset: Dataset) = {
+    dataset.rowsWithValuesFor(composedRelationFields).map { row =>
+      (row.get("DCX_RELATION_QUALIFIER"), row.get("DCX_RELATION_LINK"), row.get("DCX_RELATION_TITLE")) match {
+        case (Some(q), Some(l),_      ) => elem(s"dcterms:$q")(l)
+        case (Some(q), None,   Some(t)) => elem(s"dcterms:$q")(t)
+        case (None,    Some(l),_      ) => elem(s"dc:relation")(l)
+        case (None,    None,   Some(t)) => elem(s"dc:relation")(t)
+      }
+    }
+  }
+
   def createMetadata(dataset: Dataset) = {
-    def isMetadata(key: MultiDepositKey, values: MultiDepositValues): Boolean = {
-      isPartOfMetadata(key) && values.nonEmpty
+    def isMetaData(key: MultiDepositKey, values: MultiDepositValues): Boolean = {
+      metadataFields.contains(key) && values.nonEmpty
     }
 
     <ddm:dcmiMetadata>
-      {dataset.filter(isMetadata _ tupled).flatMap(simpleMetadataEntryToXML _ tupled)}
-      {createComposedContributors(dataset)}
+      {dataset.filter(isMetaData _ tupled).flatMap(simpleMetadataEntryToXML _ tupled)}
+      {createRelations(dataset)}
+      {createContributors(dataset)}
+      {createSpatialPoints(dataset)}
+      {createSpatialBoxes(dataset)}
     </ddm:dcmiMetadata>
   }
 
