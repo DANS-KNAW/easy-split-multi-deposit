@@ -18,10 +18,15 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 
 import nl.knaw.dans.easy.multideposit._
+import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.datasetToXml
+import org.apache.commons.csv.{CSVFormat, CSVParser}
+import org.apache.commons.io.FileUtils.readFileToString
 import org.scalatest.BeforeAndAfterAll
+import rx.lang.scala.observers.TestSubscriber
+import rx.lang.scala.{Observable, ObservableExtensions}
 
 import scala.util.Success
-import scala.xml.PrettyPrinter
+import scala.xml.{Elem, PrettyPrinter}
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
@@ -41,33 +46,12 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     "DCX_CREATOR_SURNAME" -> List("", "", "", "") +=
     "DCX_CREATOR_DAI" -> List("", "", "", "") +=
     "DCX_CREATOR_ORGANIZATION" -> List("wie dit leest is een aap", "let me know if you read this", "then you did well on your code review!", "") +=
-    "DCX_CONTRIBUTOR_TITLES" -> List("", "", "", "") +=
-    "DCX_CONTRIBUTOR_INITIALS" -> List("B.O.", "", "", "") +=
-    "DCX_CONTRIBUTOR_INSERTIONS" -> List("", "", "", "") +=
-    "DCX_CONTRIBUTOR_SURNAME" -> List("Kito", "", "", "") +=
-    "DCX_CONTRIBUTOR_DAI" -> List("", "", "", "") +=
-    "DCX_CONTRIBUTOR_ORGANIZATION" -> List("", "", "", "") +=
     "DDM_CREATED" -> List("1992-07-30", "", "", "") +=
-    "DCT_RIGHTSHOLDER" -> List("rh1", "", "", "") +=
-    "DC_PUBLISHER" -> List("pub1", "", "", "") +=
     "DC_DESCRIPTION" -> List("omschr1", "", "", "") +=
-    "DC_SUBJECT" -> List("me", "you", "him", "her") +=
-    "DCT_TEMPORAL" -> List("1992-2016", "2005", "", "") +=
-    "DCT_SPATIAL" -> List("here", "there", "", "") +=
-    "DCX_SPATIAL_SCHEME" -> List("", "", "", "") +=
-    "DCX_SPATIAL_X" -> List("", "", "", "") +=
-    "DCX_SPATIAL_Y" -> List("", "", "", "") +=
-    "DCX_SPATIAL_NORTH" -> List("", "", "", "") +=
-    "DCX_SPATIAL_SOUTH" -> List("", "", "", "") +=
-    "DCX_SPATIAL_EAST" -> List("", "", "", "") +=
-    "DCX_SPATIAL_WEST" -> List("", "", "", "") +=
-    "DC_IDENTIFIER" -> List("ds1", "", "", "") +=
     "DCX_RELATION_QUALIFIER" -> List("", "", "", "") +=
     "DCX_RELATION_TITLE" -> List("", "", "", "") +=
     "DCX_RELATION_LINK" -> List("", "", "", "") +=
     "DC_TYPE" -> List("random test data", "", "", "") +=
-    "DC_FORMAT" -> List("text", "", "", "") +=
-    "DC_LANGUAGE" -> List("Scala", "", "", "") +=
     "DC_SOURCE" -> List("", "", "", "") +=
     "DDM_ACCESSRIGHTS" -> List("NONE", "", "", "") +=
     "DDM_AVAILABLE" -> List("nope", "", "", "") +=
@@ -112,28 +96,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       <ddm:accessRights>NONE</ddm:accessRights>
     </ddm:profile>
     <ddm:dcmiMetadata>
-      <dcterms:publisher>pub1</dcterms:publisher>
-      <dc:identifier>ds1</dc:identifier>
-      <dc:language>Scala</dc:language>
-      <dcterms:rightsHolder>rh1</dcterms:rightsHolder>
       <ddm:available>nope</ddm:available>
-      <dc:format>text</dc:format>
-      <dc:subject>me</dc:subject>
-      <dc:subject>you</dc:subject>
-      <dc:subject>him</dc:subject>
-      <dc:subject>her</dc:subject>
-      <dcterms:spatial>here</dcterms:spatial>
-      <dcterms:spatial>there</dcterms:spatial>
       <dcterms:alternative>foobar</dcterms:alternative>
-      <dcterms:temporal>1992-2016</dcterms:temporal>
-      <dcterms:temporal>2005</dcterms:temporal>
       <dcterms:type>random test data</dcterms:type>
-      <dcx-dai:contributorDetails>
-        <dcx-dai:author>
-          <dcx-dai:initials>B.O.</dcx-dai:initials>
-          <dcx-dai:surname>Kito</dcx-dai:surname>
-        </dcx-dai:author>
-      </dcx-dai:contributorDetails>
     </ddm:dcmiMetadata>
   </ddm:DDM>
 
@@ -150,7 +115,137 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   "datasetToXml" should "return the expected xml" in {
-    new PrettyPrinter(160, 2).format(AddDatasetMetadataToDeposit.datasetToXml(dataset)) shouldBe
+    new PrettyPrinter(160, 2).format(datasetToXml(dataset)) shouldBe
+      new PrettyPrinter(160, 2).format(expectedXml)
+  }
+
+  it should "return xml on reading from the sip-demo csv" in {
+    val subscriber = toXmlSubscriber("/Roundtrip_MD/sip-demo-2015-02-24/instructions.csv")
+
+    subscriber.assertNoErrors()
+    subscriber.assertValueCount(2)
+    subscriber.assertCompleted()
+    subscriber.assertUnsubscribed()
+  }
+
+  it should "return xml on reading from the sip001 csv" in {
+    val subscriber = toXmlSubscriber("/Roundtrip_MD/sip001/instructions.csv")
+
+    subscriber.assertNoErrors()
+    subscriber.assertValueCount(2)
+    subscriber.assertCompleted()
+    subscriber.assertUnsubscribed()
+  }
+
+  def toXmlSubscriber(file: String): TestSubscriber[Elem] = {
+    val csv = new File(getClass.getResource(file).toURI)
+    val subscriber = TestSubscriber[Elem]
+    MultiDepositParser.parse(csv)
+      .flatMap(_.toObservable)
+      .map(tuple => AddDatasetMetadataToDeposit.datasetToXml(tuple._2))
+      .subscribe(subscriber)
+    subscriber
+  }
+
+  "createDcmiMetadata" should "return the expected spatial elements" in {
+    val dataset = new Dataset() +=
+      "DCT_SPATIAL" -> List("here", "there", "", "") +=
+      "DCX_SPATIAL_SCHEME" -> List("degrees", "degrees", "", "") +=
+      "DCX_SPATIAL_X" -> List("83575.4", "", "", "") +=
+      "DCX_SPATIAL_Y" -> List("455271.2", "", "", "") +=
+      "DCX_SPATIAL_NORTH" -> List("", "1", "", "") +=
+      "DCX_SPATIAL_SOUTH" -> List("", "2", "", "") +=
+      "DCX_SPATIAL_EAST" -> List("", "3", "", "") +=
+      "DCX_SPATIAL_WEST" -> List("", "4", "", "")
+    val expectedXml = <ddm>
+      <ddm:dcmiMetadata>
+        <dcterms:spatial>here</dcterms:spatial>
+        <dcterms:spatial>there</dcterms:spatial>
+        <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+          <Point xmlns="http://www.opengis.net/gml">
+            <pos>455271.2 83575.4</pos>
+          </Point>
+        </dcx-gml:spatial>
+        <dcx-gml:spatial>
+          <boundedBy xmlns="http://www.opengis.net/gml">
+            <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+              <lowerCorner>1 3</lowerCorner>
+              <upperCorner>2 4</upperCorner>
+            </Envelope>
+          </boundedBy>
+        </dcx-gml:spatial>
+      </ddm:dcmiMetadata>
+    </ddm>
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)
+  }
+
+  it should "return the expected contributor" in {
+    val dataset = new Dataset() +=
+      "DCX_CONTRIBUTOR_TITLES" -> List("", "", "", "") +=
+      "DCX_CONTRIBUTOR_INITIALS" -> List("B.O.", "", "", "") +=
+      "DCX_CONTRIBUTOR_INSERTIONS" -> List("", "", "", "") +=
+      "DCX_CONTRIBUTOR_SURNAME" -> List("Kito", "", "", "") +=
+      "DCX_CONTRIBUTOR_DAI" -> List("", "", "", "") +=
+      "DCX_CONTRIBUTOR_ORGANIZATION" -> List("", "", "", "")
+    val expectedXml = <ddm>
+      <ddm:dcmiMetadata>
+        <dcx-dai:contributorDetails>
+          <dcx-dai:author>
+            <dcx-dai:initials>B.O.</dcx-dai:initials>
+            <dcx-dai:surname>Kito</dcx-dai:surname>
+          </dcx-dai:author>
+        </dcx-dai:contributorDetails>
+      </ddm:dcmiMetadata>
+    </ddm>
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)
+  }
+
+  it should "return the expected relations" in {
+    val dataset = new Dataset() +=
+      "DCX_RELATION_QUALIFIER" -> List("replaces", "isRequiredBy", "", "") +=
+      "DCX_RELATION_LINK" -> List("http://x", "", "http://y", "") +=
+      "DCX_RELATION_TITLE" -> List("dummy", "blabla", "", "barbapappa")
+    val expectedXml = <ddm>
+      <ddm:dcmiMetadata>
+        <dcterms:replaces>http://x</dcterms:replaces>
+        <dcterms:isRequiredBy>blabla</dcterms:isRequiredBy>
+        <dc:relation>http://y</dc:relation>
+        <dc:relation>barbapappa</dc:relation>
+      </ddm:dcmiMetadata>
+    </ddm>
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)
+  }
+
+  it should "return the expected dcmidata" in {
+    val dataset = new Dataset() +=
+      "DCT_RIGHTSHOLDER" -> List("rh1", "", "", "") +=
+      "DCT_TEMPORAL" -> List("1992-2016", "2005", "", "") +=
+      "DC_PUBLISHER" -> List("pub1", "", "", "") +=
+      "DC_FORMAT" -> List("text", "", "", "") +=
+      "DC_SUBJECT" -> List("me", "you", "him", "her") +=
+      "DC_IDENTIFIER" -> List("ds1", "", "", "") +=
+      "DC_FORMAT" -> List("text", "", "", "") +=
+      "DC_LANGUAGE" -> List("Scala", "", "", "")
+    val expectedXml = <ddm>
+      <ddm:dcmiMetadata>
+        <dcterms:publisher>pub1</dcterms:publisher>
+        <dc:identifier>ds1</dc:identifier>
+        <dcterms:rightsHolder>rh1</dcterms:rightsHolder>
+        <dc:language>Scala</dc:language>
+        <dc:format>text</dc:format>
+        <dc:subject>me</dc:subject>
+        <dc:subject>you</dc:subject>
+        <dc:subject>him</dc:subject>
+        <dc:subject>her</dc:subject>
+        <dcterms:temporal>1992-2016</dcterms:temporal>
+        <dcterms:temporal>2005</dcterms:temporal>
+      </ddm:dcmiMetadata>
+    </ddm>
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)
+  }
+
+  def verify(actualXml: Elem, expectedXml: Elem): Unit = {
+    new PrettyPrinter(160, 2).format(actualXml) shouldBe
       new PrettyPrinter(160, 2).format(expectedXml)
   }
 }
