@@ -167,7 +167,9 @@ object AddDatasetMetadataToDeposit {
         case (Some(q), None,   Some(t)) => elem(s"dcterms:$q")(t)
         case (None,    Some(l),_      ) => elem(s"dc:relation")(l)
         case (None,    None,   Some(t)) => elem(s"dc:relation")(t)
-        case _                          => // TODO do nothing; this needs to be checked in the preconditions
+        case _                          =>
+          // TODO this case needs to be checked to not occur in the preconditions (see also line 32)
+          throw new IllegalArgumentException("preconditions should have reported this as an error")
       }
     }
   }
