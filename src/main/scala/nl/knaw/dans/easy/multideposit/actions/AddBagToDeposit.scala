@@ -22,6 +22,7 @@ import gov.loc.repository.bagit.BagFactory.Version
 import gov.loc.repository.bagit.Manifest.Algorithm
 import gov.loc.repository.bagit.utilities.MessageDigestHelper
 import gov.loc.repository.bagit.writer.impl.FileSystemWriter
+import gov.loc.repository.bagit.transformer.impl.DefaultCompleter
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
 import org.slf4j.LoggerFactory
@@ -60,14 +61,19 @@ object AddBagToDeposit {
       if (!inputDirExists) fsw.setTagFilesOnly(true)
       fsw.write(bag, outputBagDir)
 
+      val algorithm = Algorithm.SHA1
+      val completer = new DefaultCompleter(bagFactory)
+      completer.setTagManifestAlgorithm(algorithm)
+      completer.setPayloadManifestAlgorithm(algorithm)
+
       if (!inputDirExists) preBag.setIgnoreAdditionalDirectories(List(metadataDirName))
-      preBag.makeBagInPlace(Version.V0_97, false)
+      preBag.makeBagInPlace(Version.V0_97, false, completer)
 
       // TODO, this is temporary, waiting for response from the BagIt-Java developers.
       if (!inputDirExists) {
         new File(outputBagDir, "data").mkdir()
-        new File(outputBagDir, "manifest-md5.txt").write("")
-        new File(outputBagDir, "tagmanifest-md5.txt").append(s"${MessageDigestHelper.generateFixity(new FileInputStream(new File(outputBagDir, "manifest-md5.txt")), Algorithm.MD5)}  manifest-md5.txt")
+        new File(outputBagDir, "manifest-sha1.txt").write("")
+        new File(outputBagDir, "tagmanifest-sha1.txt").append(s"${MessageDigestHelper.generateFixity(new FileInputStream(new File(outputBagDir, "manifest-sha1.txt")), Algorithm.SHA1)}  manifest-sha1.txt")
       }
     }
   }
