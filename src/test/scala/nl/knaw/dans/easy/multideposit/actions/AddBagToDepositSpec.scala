@@ -79,8 +79,8 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
         "file2.txt",
         "file3.txt",
         "file4.txt",
-        "manifest-md5.txt",
-        "tagmanifest-md5.txt")
+        "manifest-sha1.txt",
+        "tagmanifest-sha1.txt")
     outputDepositBagDataDir(settings, datasetID) should exist
   }
 
@@ -114,13 +114,13 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
     outputDepositBagDir(settings, datasetID).listRecursively.map(_.getName) should contain theSameElementsAs
       List("bag-info.txt",
         "bagit.txt",
-        "manifest-md5.txt",
-        "tagmanifest-md5.txt")
+        "manifest-sha1.txt",
+        "tagmanifest-sha1.txt")
 
     val root = outputDepositBagDir(settings, datasetID)
-    new File(root, "manifest-md5.txt").read() shouldBe empty
-    new File(root, "tagmanifest-md5.txt").read() should include ("bag-info.txt")
-    new File(root, "tagmanifest-md5.txt").read() should include ("bagit.txt")
-    new File(root, "tagmanifest-md5.txt").read() should include ("manifest-md5.txt")
+    new File(root, "manifest-sha1.txt").read() shouldBe empty
+    new File(root, "tagmanifest-sha1.txt").read() should include ("bag-info.txt")
+    new File(root, "tagmanifest-sha1.txt").read() should include ("bagit.txt")
+    new File(root, "tagmanifest-sha1.txt").read() should include ("manifest-sha1.txt")
   }
 }
