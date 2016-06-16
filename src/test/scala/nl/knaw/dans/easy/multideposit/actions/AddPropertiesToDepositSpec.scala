@@ -18,9 +18,10 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 
 import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfter}
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 
-import scala.util.Success
+import scala.collection.mutable
+import scala.util.{Failure, Success}
 
 class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
@@ -29,6 +30,9 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     outputDepositDir = new File(testDir, "dd")
   )
   val datasetID = "ds1"
+  val dataset = mutable.HashMap(
+    "DEPOSITOR_ID" -> List("dp1", "", "", "")
+  )
 
   before {
     new File(settings.outputDepositDir, s"md-$datasetID").mkdirs
@@ -36,19 +40,54 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
 
+  "checkPreconditions" should "succeed if the depositorID is in the dataset and has one value" in {
+    AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "succeed if the depositorID column contains multiple but equal values" in {
+    val dataset = mutable.HashMap(
+      "DEPOSITOR_ID" -> List("dp1", "dp1", "dp1", "dp1")
+    )
+    AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail when the depositorID column is not in the dataset" in {
+    val dataset = mutable.HashMap(
+      "TEST_COLUMN" -> List("abc", "def")
+    )
+
+    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
+
+    result shouldBe a[Failure[_]]
+    (the[ActionException] thrownBy result.get).row shouldBe 1
+    (the[ActionException] thrownBy result.get).message contains "is not present"
+  }
+
+  it should "fail when the depositorID column contains multiple different values" in {
+    val dataset = mutable.HashMap(
+      "DEPOSITOR_ID" -> List("dp1", "dp1", "dp2", "dp1")
+    )
+
+    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
+
+    result shouldBe a[Failure[_]]
+    (the[ActionException] thrownBy result.get).row shouldBe 1
+    (the[ActionException] thrownBy result.get).message contains "multiple distinct"
+  }
+
   "run" should "generate the properties file" in {
-    AddPropertiesToDeposit(1, datasetID).run() shouldBe a[Success[_]]
+    AddPropertiesToDeposit(1, (datasetID, dataset)).run() shouldBe a[Success[_]]
 
     new File(outputDepositDir(settings, datasetID), "deposit.properties") should exist
   }
 
   "writeProperties" should "generate the properties file and write the properties in it" in {
-    AddPropertiesToDeposit(1, datasetID).run() shouldBe a[Success[_]]
+    AddPropertiesToDeposit(1, (datasetID, dataset)).run() shouldBe a[Success[_]]
 
     val props = outputPropertiesFile(settings, datasetID)
     val content = props.read()
     content should include ("state.label")
     content should include ("state.description")
-    content should include ("depositor.userId")
+    content should include ("depositor.userId=dp1")
   }
 }
