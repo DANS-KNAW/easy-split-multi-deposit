@@ -168,7 +168,8 @@ object AddDatasetMetadataToDeposit {
         case (None,    Some(l),_      ) => elem(s"dc:relation")(l)
         case (None,    None,   Some(t)) => elem(s"dc:relation")(t)
         case _                          =>
-          // TODO this case needs to be checked to not occur in the preconditions (see also line 32)
+          // TODO this case needs to be checked to not occur in the preconditions
+          // (see also comment in https://github.com/DANS-KNAW/easy-split-multi-deposit/blob/master/src/main/scala/nl/knaw/dans/easy/multideposit/actions/AddDatasetMetadataToDeposit.scala#L32)
           throw new IllegalArgumentException("preconditions should have reported this as an error")
       }
     }
