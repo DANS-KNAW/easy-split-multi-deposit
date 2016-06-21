@@ -22,6 +22,7 @@ import nl.knaw.dans.easy.multideposit.actions.AddPropertiesToDeposit._
 import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
 import org.apache.commons.logging.LogFactory
 
+import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
 case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
@@ -37,14 +38,37 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
     *             Checks whether there is only one unique DEPOSITOR_ID set in the `Dataset` (there can be multiple values but the must all be equal!).
     * @return `Success` when all preconditions are met, `Failure` otherwise
     */
-  override def checkPreconditions: Try[Unit] = Try {
+  override def checkPreconditions: Try[Unit] = {
     log.debug(s"Checking preconditions for $this")
 
-    val depositorIDs = dataset.getOrElse("DEPOSITOR_ID", throw ActionException(row, """The column "DEPOSITOR_ID" is not present"""))
-    val nonBlankDepositorIDs = depositorIDs.filterNot(_.isBlank).toSet
-
-    if (nonBlankDepositorIDs.size > 1)
-      throw ActionException(row, s"""There are multiple distinct depositorIDs in dataset "$datasetID": $nonBlankDepositorIDs""".stripMargin)
+    // TODO a for-comprehension over monad-transformers would be nice here...
+    // see https://github.com/rvanheest/Experiments/tree/master/src/main/scala/experiments/transformers
+    dataset.get("DEPOSITOR_ID")
+      .map(_.filterNot(_.isBlank).toSet)
+      .map(uniqueIDs => {
+        if (uniqueIDs.size > 1)
+          Failure(ActionException(row, s"""There are multiple distinct depositorIDs in dataset "$datasetID": $uniqueIDs""".stripMargin))
+        else if (uniqueIDs.size < 1)
+          Failure(ActionException(row, "No depositorID found"))
+        else
+          Success(uniqueIDs.head)
+      })
+      .map(_.flatMap(id => {
+        Try {
+          settings.ldap
+            .query(id)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
+            .single // can throw an IllegalArgumentException or NoSuchElementException
+            .toBlocking // not ideal, but we keep the Try interface for now
+            .head // safe due to the `single` above
+        } recoverWith {
+          case e: IllegalArgumentException => Failure(ActionException(row, s"""There appear to be multiple users with id "$id"""", e))
+          case e: NoSuchElementException => Failure(ActionException(row, s"""DepositorID "$id" is unknown""", e))
+        } flatMap {
+          case true => Success(())
+          case false => Failure(ActionException(row, s"""The depositor "$id" is not an active user"""))
+        }
+      }))
+      .getOrElse(Failure(ActionException(row, """The column "DEPOSITOR_ID" is not present""")))
   }
 
   def run() = {

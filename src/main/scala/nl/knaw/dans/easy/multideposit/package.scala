@@ -18,6 +18,7 @@ package nl.knaw.dans.easy
 import java.io.{File, IOException}
 import java.nio.charset.Charset
 import java.util.Properties
+import javax.naming.NamingEnumeration
 
 import org.apache.commons.io.{Charsets, FileUtils}
 import org.apache.commons.lang.StringUtils
@@ -44,7 +45,8 @@ package object multideposit {
   case class Settings(appHomeDir: File = null,
                       multidepositDir: File = null,
                       springfieldInbox: File = null,
-                      outputDepositDir: File = null) {
+                      outputDepositDir: File = null,
+                      ldap: Ldap = null) {
     override def toString: String =
       s"Settings(home=$appHomeDir, multideposit-dir=$multidepositDir, " +
         s"springfield-inbox=$springfieldInbox, " +
@@ -52,6 +54,14 @@ package object multideposit {
   }
 
   case class ActionException(row: Int, message: String, cause: Throwable = null) extends RuntimeException(message, cause)
+
+  object Version {
+    def apply(): String = {
+      val properties = new Properties()
+      properties.load(getClass.getResourceAsStream("/Version.properties"))
+      properties.getProperty("process-sip.version")
+    }
+  }
 
   implicit class StringExtensions(val s: String) extends AnyVal {
     /**
@@ -82,14 +92,6 @@ package object multideposit {
         if (s.isBlank) Option.empty
         else Option(s.toInt)
       } getOrElse Option.empty
-    }
-  }
-
-  object Version {
-    def apply(): String = {
-      val properties = new Properties()
-      properties.load(getClass.getResourceAsStream("/Version.properties"))
-      properties.getProperty("process-sip.version")
     }
   }
 
@@ -302,6 +304,16 @@ package object multideposit {
           .map(i => dataset.map { case (key, values) => (key, values(i)) })
           .map(_.filter(kv => kv._2 != null && !kv._2.isBlank)))
         .getOrElse(IndexedSeq())
+  }
+
+  implicit class NamingEnumerationToObservable[T](val enum: NamingEnumeration[T]) extends AnyVal {
+    def toObservable = Observable.from(new Iterable[T] {
+      def iterator = new Iterator[T] {
+        def hasNext = enum.hasMore
+
+        def next() = enum.next()
+      }
+    })
   }
 
   val encoding = Charsets.UTF_8
