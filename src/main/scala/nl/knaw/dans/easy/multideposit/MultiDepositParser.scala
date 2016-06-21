@@ -46,17 +46,12 @@ object MultiDepositParser {
         val output = parser.getRecords.filter(r => r.size() > 0 && !r.get(0).isBlank).map(_.toList)
         validateDatasetHeaders(output.head)
           .map(_ => {
-            case class IndexDatasets(index: Int, datasets: Datasets) {
-              def +=(csvValues: CsvValues) = {
-                IndexDatasets(index + 1, updateDatasets(datasets, csvValues, index + 1))
-              }
-            }
-
             val csvData = output.tail.map(output.head zip _)
             log.debug("Successfully loaded CSV file")
             Observable.from(csvData)
-              .foldLeft(IndexDatasets(1, new Datasets))(_ += _)
-              .map(_.datasets)
+              .zipWithIndex
+              .map { case (xs, i) => (xs, i + 2) } // +2 because we want the second line (element 0) to have index 2
+              .foldLeft(new Datasets)((dss, tuple) => updateDatasets(dss, tuple))
           })
           .onError(Observable.error)
           .subscribe(subscriber)
@@ -72,13 +67,19 @@ object MultiDepositParser {
     * @return `Success` if the `headers` are valid, `Failure` if the `headers` are invalid
     */
   def validateDatasetHeaders(headers: List[String]): Try[Unit] = {
-    val validHeaders = List("DATASET", "FILE_SIP", "FILE_DATASET", "FILE_AUDIO_VIDEO",
-      "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_SUBTITLES",
-      "SF_DOMAIN", "SF_USER", "SF_COLLECTION", "SF_PRESENTATION", "SF_SUBTITLES") ++ DDM.allFields
+    val fileHeaders = List("FILE_SIP", "FILE_DATASET", "FILE_AUDIO_VIDEO", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_SUBTITLES")
+    val springfieldHeaders = List("SF_DOMAIN", "SF_USER", "SF_COLLECTION", "SF_PRESENTATION", "SF_SUBTITLES")
+    val administrativeHeaders = List("DEPOSITOR_ID")
+
+    val validHeaders = "DATASET" :: fileHeaders ++ springfieldHeaders ++ administrativeHeaders ++ DDM.allFields
     if (headers.forall(validHeaders.contains)) Success(Unit)
     else Failure(new ActionException(0, "SIP Instructions file contains unknown headers: "
       + headers.filter(!validHeaders.contains(_)).mkString(", ") + ". "
       + "Please, check for spelling errors and consult the documentation for the list of valid headers."))
+  }
+
+  private def updateDatasets(dss: Datasets, tuple: (CsvValues, Int)): Datasets = {
+    updateDatasets(dss, tuple._1, tuple._2)
   }
 
   /**

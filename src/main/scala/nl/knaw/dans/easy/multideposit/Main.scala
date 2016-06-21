@@ -36,6 +36,11 @@ object Main {
       .doOnError(e => log.error(e.getMessage))
       .doOnError(e => log.debug(e.getMessage, e))
       .doOnCompleted { log.info("Finished successfully!") }
+      .doOnTerminate {
+        // close LDAP at the end of the main
+        log.debug("closing ldap")
+        settings.ldap.close()
+      }
       .subscribe
 
     Schedulers.shutdown()
@@ -108,7 +113,7 @@ object Main {
       AddBagToDeposit(row, datasetID),
       AddDatasetMetadataToDeposit(row, entry),
       AddFileMetadataToDeposit(row, datasetID),
-      AddPropertiesToDeposit(row, datasetID)
+      AddPropertiesToDeposit(row, entry)
     ).map(Success(_)) ++ getFileActions(dataset, extractFileParameters(dataset))
   }
 

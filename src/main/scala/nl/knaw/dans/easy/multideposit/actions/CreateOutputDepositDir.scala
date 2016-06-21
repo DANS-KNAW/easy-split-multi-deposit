@@ -25,6 +25,8 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   val log = LoggerFactory.getLogger(getClass)
 
   override def checkPreconditions: Try[Unit] = {
+    log.debug(s"Checking preconditions for $this")
+
     List(multideposit.outputDepositDir(settings, datasetID),
          outputDepositBagDir(settings, datasetID),
          outputDepositBagMetadataDir(settings, datasetID))

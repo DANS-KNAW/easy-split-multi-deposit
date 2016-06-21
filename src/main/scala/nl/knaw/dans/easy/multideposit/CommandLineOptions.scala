@@ -16,6 +16,8 @@
 package nl.knaw.dans.easy.multideposit
 
 import java.io.File
+import javax.naming.Context
+import javax.naming.ldap.InitialLdapContext
 
 import nl.knaw.dans.easy.multideposit.CommandLineOptions._
 import org.apache.commons.configuration.PropertiesConfiguration
@@ -45,7 +47,19 @@ object CommandLineOptions {
           "in the system properties.")),
       multidepositDir = opts.multiDepositDir(),
       springfieldInbox = opts.springfieldInbox(),
-      outputDepositDir = opts.outputDepositDir())
+      outputDepositDir = opts.outputDepositDir(),
+      ldap = {
+        import java.{util => ju}
+
+        val env = new ju.Hashtable[String, String]
+        env.put(Context.PROVIDER_URL, props.getString("auth.ldap.url"))
+        env.put(Context.SECURITY_AUTHENTICATION, "simple")
+        env.put(Context.SECURITY_PRINCIPAL, props.getString("auth.ldap.user"))
+        env.put(Context.SECURITY_CREDENTIALS, props.getString("auth.ldap.password"))
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
+
+        LdapImpl(new InitialLdapContext(env, null))
+      })
 
     log.debug(s"Using the following settings: $settings")
 
