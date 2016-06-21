@@ -167,6 +167,10 @@ object AddDatasetMetadataToDeposit {
         case (Some(q), None,   Some(t)) => elem(s"dcterms:$q")(t)
         case (None,    Some(l),_      ) => elem(s"dc:relation")(l)
         case (None,    None,   Some(t)) => elem(s"dc:relation")(t)
+        case _                          =>
+          // TODO this case needs to be checked to not occur in the preconditions
+          // (see also comment in https://github.com/DANS-KNAW/easy-split-multi-deposit/commit/dbda6cc2b78f93196be62b323a988e3781cb6926#diff-efd2dc8d9655ba9c6b577f13dd66627bR32)
+          throw new IllegalArgumentException("preconditions should have reported this as an error")
       }
     }
   }
