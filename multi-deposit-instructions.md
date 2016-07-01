@@ -68,7 +68,7 @@ The supported metadata elements are subdivided into the following groups:
 
 The following elements are required: `DC_TITLE`, `DC_DESCRIPTION`, `DCX_CREATOR_*`
 (at least both the subfields `DCX_CREATOR_INITIALS` and `DCX_CREATOR_SURNAME` *or*
-the subfield `DCX_CREATOR_ORGANIZATION`), `DDM_*`.
+the subfield `DCX_CREATOR_ORGANIZATION`), `DDM_CREATED`, `DDM_AUDIENCE`, `DDM_ACCESSRIGHTS`.
 
 ### Semantics of the columns
 
