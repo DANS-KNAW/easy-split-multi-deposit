@@ -16,7 +16,7 @@ DESCRIPTION
 A command line tool to process a Multi-Deposit into several Dataset Deposit. A Multi-Deposit
 is a deposit containing data files and metadata for several datasets. The tool splits the
 Multi-Deposit into separate Dataset Deposit directories that can be ingested into the archive by 
-[easy-ingest-flow].
+[Easy-Ingest-Flow].
 
 The Multi-Deposit may also contain audio/visual data files that are to be sent to a Springfield TV
 installation to be converted to a streamable surrogate.
@@ -59,7 +59,7 @@ Options:
                                  'instructions.csv' in RFC4180 format.
   deposit-dir (required)         A directory in which the deposit directories must
                                  be created. The deposit directory layout is
-                                 described in the easy-deposit documenation
+                                 described in the Easy-Sword2 documentation
 ```
 
 
@@ -95,7 +95,7 @@ Steps:
 
 
 [Multi-Deposit Instructions]: multi-deposit-instructions.md
-[easy-ingest-flow]: https://github.com/DANS-KNAW/easy-ingest-flow
+[Easy-Ingest-Flow]: https://github.com/DANS-KNAW/easy-ingest-flow
 
   
 
