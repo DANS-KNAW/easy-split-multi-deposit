@@ -59,7 +59,7 @@ Options:
                                  'instructions.csv' in RFC4180 format.
   deposit-dir (required)         A directory in which the deposit directories must
                                  be created. The deposit directory layout is
-                                 described in the easy-deposit documenation
+                                 described in the easy-sword2 documentation
 ```
 
 
