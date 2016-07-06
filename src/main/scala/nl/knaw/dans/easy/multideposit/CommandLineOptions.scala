@@ -119,5 +119,5 @@ class ScallopCommandLine(props: => PropertiesConfiguration, args: Array[String])
 
   lazy val outputDepositDir = trailArg[File](name = "deposit-dir", required = true,
     descr = "A directory in which the deposit directories must be created. "
-      + "The deposit directory layout is described in the Easy-Sword2 documentation")(fileMayNotExist)
+      + "The deposit directory layout is described in the easy-sword2 documentation")(fileMayNotExist)
 }
