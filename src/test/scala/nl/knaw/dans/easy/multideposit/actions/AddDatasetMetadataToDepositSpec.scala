@@ -191,7 +191,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       <ddm:dcmiMetadata>
         <dcx-dai:contributorDetails>
           <dcx-dai:organization>
-            <dcx-dai:name xml:lang="en"> some org </dcx-dai:name>
+            <dcx-dai:name xml:lang="en">some org</dcx-dai:name>
           </dcx-dai:organization>
         </dcx-dai:contributorDetails>
       </ddm:dcmiMetadata>
