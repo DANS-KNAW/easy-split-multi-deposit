@@ -69,6 +69,15 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
     new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)
   }
 
+  "xmlPerPath" should "produce the correct docx mimetype " in {
+    val xml = AddFileMetadataToDeposit.xmlPerPath(datasetID)(new File(multiDepositDir(settings, datasetID), "reisverslag/deel01.docx"))
+    val res = <file filepath="data/reisverslag/deel01.docx">
+      <dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format>
+    </file>
+
+    new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)
+  }
+
   "xmlPerPath" should "produce the xml for one file" in {
     val xml = AddFileMetadataToDeposit.xmlPerPath(datasetID)(new File(multiDepositDir(settings, datasetID), "reisverslag/deel01.txt"))
     val res = <file filepath="data/reisverslag/deel01.txt">
