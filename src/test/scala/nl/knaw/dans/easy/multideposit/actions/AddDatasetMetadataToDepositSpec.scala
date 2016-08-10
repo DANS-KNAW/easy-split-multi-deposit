@@ -179,6 +179,25 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)
   }
 
+  it should "have a organization-contributor when no other author-details are given" in {
+    val dataset = new Dataset() +=
+      "DCX_CONTRIBUTOR_TITLES" -> List("", "", "", "") +=
+      "DCX_CONTRIBUTOR_INITIALS" -> List("", "", "", "") +=
+      "DCX_CONTRIBUTOR_INSERTIONS" -> List("", "", "", "") +=
+      "DCX_CONTRIBUTOR_SURNAME" -> List("", "", "", "") +=
+      "DCX_CONTRIBUTOR_DAI" -> List("", "", "", "") +=
+      "DCX_CONTRIBUTOR_ORGANIZATION" -> List("some org", "", "", "")
+    val expectedXml = <ddm>
+      <ddm:dcmiMetadata>
+        <dcx-dai:contributorDetails>
+          <dcx-dai:organization>
+            <dcx-dai:name xml:lang="en"> some org </dcx-dai:name>
+          </dcx-dai:organization>
+        </dcx-dai:contributorDetails>
+      </ddm:dcmiMetadata>
+    </ddm>
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)
+  }
   it should "return the expected contributor" in {
     val dataset = new Dataset() +=
       "DCX_CONTRIBUTOR_TITLES" -> List("", "", "", "") +=

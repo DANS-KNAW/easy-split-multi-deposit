@@ -112,11 +112,18 @@ object AddDatasetMetadataToDeposit {
 
   def createContributors(dataset: Dataset) = {
     dataset.rowsWithValuesFor(composedContributorFields).map(mdKeyValues =>
-      <dcx-dai:contributorDetails>
+      <dcx-dai:contributorDetails>{
+        if (isOrganization(mdKeyValues))
+        <dcx-dai:organization>
+          <dcx-dai:name xml:lang="en">
+            {mdKeyValues.find(field => organizationKeys.contains(field._1)).map(_._2).getOrElse("")}
+          </dcx-dai:name>
+        </dcx-dai:organization>
+      else
         <dcx-dai:author>
           {mdKeyValues.map(composedEntry(composedContributorFields))}
         </dcx-dai:author>
-      </dcx-dai:contributorDetails>
+      }</dcx-dai:contributorDetails>
     )
   }
 
