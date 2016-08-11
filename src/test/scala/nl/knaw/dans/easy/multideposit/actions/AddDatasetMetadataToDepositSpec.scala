@@ -120,7 +120,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "return xml on reading from the sip-demo csv" in {
-    val subscriber = toXmlSubscriber("/Roundtrip_MD/sip-demo-2015-02-24/instructions.csv")
+    val subscriber = toXmlSubscriber("/spacetravel/instructions.csv")
 
     subscriber.assertNoErrors()
     subscriber.assertValueCount(2)
@@ -129,7 +129,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "return xml on reading from the sip001 csv" in {
-    val subscriber = toXmlSubscriber("/Roundtrip_MD/sip001/instructions.csv")
+    val subscriber = toXmlSubscriber("/sip001/instructions.csv")
 
     subscriber.assertNoErrors()
     subscriber.assertValueCount(2)

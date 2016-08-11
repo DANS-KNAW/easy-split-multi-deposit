@@ -32,7 +32,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   val datasetID = "ruimtereis01"
 
   before {
-    new File(getClass.getResource("/Roundtrip_MD/sip-demo-2015-02-24").toURI)
+    new File(getClass.getResource("/spacetravel").toURI)
       .copyDir(settings.outputDepositDir)
   }
 
