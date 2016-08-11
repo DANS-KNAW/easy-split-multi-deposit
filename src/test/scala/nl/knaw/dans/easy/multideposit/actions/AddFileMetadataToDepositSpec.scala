@@ -54,22 +54,12 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
 
   "datasetToFileXml" should "produce the xml for all the files" in {
     val xml = AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01")
-    val res = <files xmlns:dcterms="http://purl.org/dc/terms/">
-      <file filepath="data/reisverslag/deel01.docx">
-        <dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format>
-      </file>
-      <file filepath="data/reisverslag/deel01.txt">
-        <dcterms:format>text/plain</dcterms:format>
-      </file>
-      <file filepath="data/reisverslag/deel02.txt">
-        <dcterms:format>text/plain</dcterms:format>
-      </file>
-      <file filepath="data/reisverslag/deel03.txt">
-        <dcterms:format>text/plain</dcterms:format>
-      </file>
-    </files>
+    xml.child.length shouldBe 4
 
-    new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)
+    xml.child should contain(<file filepath="data/reisverslag/deel01.docx"><dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format></file>)
+    xml.child should contain(<file filepath="data/reisverslag/deel01.txt"><dcterms:format>text/plain</dcterms:format></file>)
+    xml.child should contain(<file filepath="data/reisverslag/deel02.txt"><dcterms:format>text/plain</dcterms:format></file>)
+    xml.child should contain(<file filepath="data/reisverslag/deel03.txt"><dcterms:format>text/plain</dcterms:format></file>)
   }
 
   //file does not need to exist for the mimetype to be established. it is based solely on filename.
