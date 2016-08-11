@@ -45,7 +45,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     "DCX_CREATOR_INSERTIONS" -> List("", "", "", "") +=
     "DCX_CREATOR_SURNAME" -> List("", "", "", "") +=
     "DCX_CREATOR_DAI" -> List("", "", "", "") +=
-    "DCX_CREATOR_ORGANIZATION" -> List("wie dit leest is een aap", "let me know if you read this", "then you did well on your code review!", "") +=
+    "DCX_CREATOR_ORGANIZATION" -> List("Lorem ipsum dolor sit amet", "consectetur adipiscing elit", "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua", "") +=
     "DDM_CREATED" -> List("1992-07-30", "", "", "") +=
     "DC_DESCRIPTION" -> List("omschr1", "", "", "") +=
     "DCX_RELATION_QUALIFIER" -> List("", "", "", "") +=
@@ -75,17 +75,17 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       <dcterms:description>omschr1</dcterms:description>
       <dcx-dai:creatorDetails>
         <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">wie dit leest is een aap</dcx-dai:name>
+          <dcx-dai:name xml:lang="en">Lorem ipsum dolor sit amet</dcx-dai:name>
         </dcx-dai:organization>
       </dcx-dai:creatorDetails>
       <dcx-dai:creatorDetails>
         <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">let me know if you read this</dcx-dai:name>
+          <dcx-dai:name xml:lang="en">consectetur adipiscing elit</dcx-dai:name>
         </dcx-dai:organization>
       </dcx-dai:creatorDetails>
       <dcx-dai:creatorDetails>
         <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">then you did well on your code review!</dcx-dai:name>
+          <dcx-dai:name xml:lang="en">sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</dcx-dai:name>
         </dcx-dai:organization>
       </dcx-dai:creatorDetails>
       <ddm:created>1992-07-30</ddm:created>
