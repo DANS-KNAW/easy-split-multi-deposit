@@ -21,7 +21,7 @@
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
         <artifactId>dans-scala-prototype</artifactId>
-        <version>1.29</version>
+        <version>1.31</version>
     </parent>
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-split-multi-deposit</artifactId>
@@ -40,7 +40,7 @@
         <dependency>
             <groupId>nl.knaw.dans.easy</groupId>
             <artifactId>ddm</artifactId>
-            <version>2.13</version>
+            <version>2.15.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
