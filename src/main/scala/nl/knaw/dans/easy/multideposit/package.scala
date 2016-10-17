@@ -66,14 +66,14 @@ package object multideposit {
   implicit class StringExtensions(val s: String) extends AnyVal {
     /**
       * Checks whether the `String` is blank
-      * (according to [[org.apache.commons.lang.StringUtils.isBlank]])
+      * (according to org.apache.commons.lang.StringUtils.isBlank)
       *
       * @return
       */
     def isBlank = StringUtils.isBlank(s)
 
     /** Converts a `String` to an `Option[String]`. If the `String` is blank
-      * (according to [[org.apache.commons.lang.StringUtils.isBlank]])
+      * (according to org.apache.commons.lang.StringUtils.isBlank)
       * the empty `Option` is returned, otherwise the `String` is returned
       * wrapped in an `Option`.
       *
@@ -82,7 +82,7 @@ package object multideposit {
     def toOption = if (s.isBlank) Option.empty else Option(s)
 
     /** Converts a `String` into an `Option[Int]` if it is not blank
-      * (according to [[org.apache.commons.lang.StringUtils.isBlank]]).
+      * (according to org.apache.commons.lang.StringUtils.isBlank).
       * Strings that do not represent a number will yield an empty `Option`.
       *
       * @return an `Option` of the input string, converted as a number if it is not blank
@@ -124,8 +124,8 @@ package object multideposit {
       * Writes a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
       *
       * @param data the content to write to the file
-      * @throws IOException in case of an I/O error
       */
+    @throws(classOf[IOException])
     def write(data: String, encoding: Charset = encoding) = FileUtils.write(file, data, encoding)
 
     /**
@@ -133,7 +133,6 @@ package object multideposit {
       *
       * @param elem the xml to be written
       * @param encoding the encoding applied to this xml
-      * @throws IOException in case of an I/O error
       */
     def writeXml(elem: Elem, encoding: Charset = encoding) = {
       val header = s"""<?xml version="1.0" encoding="$encoding"?>\n"""
@@ -146,8 +145,8 @@ package object multideposit {
       * Appends a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
       *
       * @param data the content to write to the file
-      * @throws IOException in case of an I/O error
       */
+    @throws(classOf[IOException])
     def append(data: String) = FileUtils.write(file, data, true)
 
     /**
@@ -155,8 +154,8 @@ package object multideposit {
       * The file is always closed.
       *
       * @return the file contents, never ``null``
-      * @throws IOException in case of an I/O error
       */
+    @throws(classOf[IOException])
     def read(encoding: Charset = encoding) = FileUtils.readFileToString(file, encoding)
 
     /**
@@ -175,8 +174,8 @@ package object multideposit {
       *
       * @param child the file to consider as the child.
       * @return true is the candidate leaf is under by the specified composite. False otherwise.
-      * @throws IOException if an IO error occurs while checking the files.
       */
+    @throws(classOf[IOException])
     def directoryContains(child: File) = FileUtils.directoryContains(file, child)
 
     /**
@@ -191,15 +190,14 @@ package object multideposit {
       * the source with the destination, with the source taking precedence.
       * <p>
       * <strong>Note:</strong> This method tries to preserve the files' last
-      * modified date/times using [[File#setLastModified(long)]], however
+      * modified date/times using File.setLastModified(long), however
       * it is not guaranteed that those operations will succeed.
       * If the modification operation fails, no indication is provided.
       *
       * @param destDir the new directory, must not be ``null``
-      * @throws NullPointerException if source or destination is ``null``
-      * @throws IOException if source or destination is invalid
-      * @throws IOException if an IO error occurs during copying
       */
+    @throws(classOf[NullPointerException])
+    @throws(classOf[IOException])
     def copyFile(destDir: File) = FileUtils.copyFile(file, destDir)
 
     /**
@@ -219,16 +217,11 @@ package object multideposit {
       * If the modification operation fails, no indication is provided.
       *
       * @param destDir the new directory, must not be ``null``
-      * @throws NullPointerException if source or destination is ``null``
-      * @throws IOException if source or destination is invalid
-      * @throws IOException if an IO error occurs during copying
       */
     def copyDir(destDir: File) = FileUtils.copyDirectory(file, destDir)
 
     /**
       * Deletes a directory recursively.
-      *
-      * @throws IOException in case deletion is unsuccessful
       */
     def deleteDirectory() = FileUtils.deleteDirectory(file)
 
@@ -244,12 +237,12 @@ package object multideposit {
     /**
       * Retrieves the value of a certain parameter from the dataset on a certain row.
       * If either the key is not present, the specified row does not exist or the value `blank`
-      * (according to [[org.apache.commons.lang.StringUtils.isBlank]]), then [[Option.empty]]
+      * (according to org.apache.commons.lang.StringUtils.isBlank), then Option.empty
       * is returned.
       *
       * @param key the key under which the value is stored in the dataset
       * @param row the row on which the value occurs
-      * @return the value belonging to the (key, row) pair if present, else [[Option.empty]]
+      * @return the value belonging to the (key, row) pair if present, else Option.empty
       */
     def getValue(key: MultiDepositKey)(row: Int) = {
       for {
