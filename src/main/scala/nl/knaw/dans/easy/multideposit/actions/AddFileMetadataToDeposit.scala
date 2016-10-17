@@ -49,13 +49,13 @@ object AddFileMetadataToDeposit {
 
     <files xmlns:dcterms="http://purl.org/dc/terms/">{
       if (inputDir.exists && inputDir.isDirectory)
-        inputDir.listRecursively.map(xmlPerPath(datasetID))
+        inputDir.listRecursively.map(xmlPerPath(inputDir))
     }</files>
   }
 
   // TODO other fields need to be added here later
-  def xmlPerPath(datasetID: DatasetID)(file: File) = {
-    <file filepath={s"data${file.getAbsolutePath.split(datasetID).last}"}>{
+  def xmlPerPath(inputDir: File)(file: File) = {
+    <file filepath={s"data/${inputDir.toPath.relativize(file.toPath)}"}>{
       <dcterms:format>{getMimeType(file.getPath)}</dcterms:format>
     }</file>
   }
