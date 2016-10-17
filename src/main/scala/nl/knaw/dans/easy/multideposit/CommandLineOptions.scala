@@ -69,19 +69,8 @@ object CommandLineOptions {
 
 class ScallopCommandLine(props: => PropertiesConfiguration, args: Array[String]) extends ScallopConf(args) {
 
-  val fileMayNotExist = singleArgConverter(new File(_))
-  val fileShouldExist = singleArgConverter(filename => {
-    val file = new File(filename)
-    if (!file.exists) {
-      log.error(s"The directory '$filename' does not exist")
-      throw new IllegalArgumentException(s"The directory '$filename' does not exist")
-    }
-    if (!file.isDirectory) {
-      log.error(s"'$filename' is not a directory")
-      throw new IllegalArgumentException(s"'$filename' is not a directory")
-    }
-    else file
-  })
+  appendDefaultToDescription = true
+  editBuilder(_.setHelpWidth(110))
 
   printedName = "easy-split-multi-deposit"
   version(s"$printedName ${Version()}")
@@ -91,10 +80,13 @@ class ScallopCommandLine(props: => PropertiesConfiguration, args: Array[String])
            |Options:
            |""".stripMargin)
 
-  lazy val multiDepositDir = trailArg[File](name = "multi-deposit-dir", required = true,
+  val multiDepositDir = trailArg[File](name = "multi-deposit-dir", required = true,
     descr = "Directory containing the Submission Information Package to process. "
       + "This must be a valid path to a directory containing a file named "
-      + s"'$instructionsFileName' in RFC4180 format.")(fileShouldExist)
+      + s"'$instructionsFileName' in RFC4180 format.")
+
+  validateFileExists(multiDepositDir)
+
   validateOpt(multiDepositDir)(_.map(file =>
     if (!file.isDirectory) {
       Left(s"Not a directory '$file'")
@@ -106,10 +98,13 @@ class ScallopCommandLine(props: => PropertiesConfiguration, args: Array[String])
       Right(()))
     .getOrElse(Left("Could not parse parameter multi-deposit-dir")))
 
-  lazy val springfieldInbox = opt[File]("springfield-inbox",
+  val springfieldInbox = opt[File]("springfield-inbox",
     descr = "The inbox directory of a Springfield Streaming Media Platform installation. " +
       "If not specified the value of springfield-inbox in application.properties is used.",
-    default = Some(new File(props.getString("springfield-inbox"))))(fileShouldExist)
+    default = Some(new File(props.getString("springfield-inbox"))))
+
+  validateFileExists(springfieldInbox)
+
   validateOpt(springfieldInbox)(_.map(file =>
     if (!file.isDirectory)
       Left(s"Not a directory '$file'")
@@ -117,7 +112,9 @@ class ScallopCommandLine(props: => PropertiesConfiguration, args: Array[String])
       Right(()))
     .getOrElse(Left("Could not parse parameter 'springfield-inbox'")))
 
-  lazy val outputDepositDir = trailArg[File](name = "deposit-dir", required = true,
+  val outputDepositDir = trailArg[File](name = "deposit-dir", required = true,
     descr = "A directory in which the deposit directories must be created. "
-      + "The deposit directory layout is described in the easy-sword2 documentation")(fileMayNotExist)
+      + "The deposit directory layout is described in the easy-sword2 documentation")
+
+  verify()
 }
