@@ -125,6 +125,7 @@ package object multideposit {
       *
       * @param data the content to write to the file
       */
+    @throws(classOf[IOException])
     def write(data: String, encoding: Charset = encoding) = FileUtils.write(file, data, encoding)
 
     /**
@@ -145,6 +146,7 @@ package object multideposit {
       *
       * @param data the content to write to the file
       */
+    @throws(classOf[IOException])
     def append(data: String) = FileUtils.write(file, data, true)
 
     /**
@@ -153,6 +155,7 @@ package object multideposit {
       *
       * @return the file contents, never ``null``
       */
+    @throws(classOf[IOException])
     def read(encoding: Charset = encoding) = FileUtils.readFileToString(file, encoding)
 
     /**
@@ -172,6 +175,7 @@ package object multideposit {
       * @param child the file to consider as the child.
       * @return true is the candidate leaf is under by the specified composite. False otherwise.
       */
+    @throws(classOf[IOException])
     def directoryContains(child: File) = FileUtils.directoryContains(file, child)
 
     /**
@@ -192,7 +196,9 @@ package object multideposit {
       *
       * @param destDir the new directory, must not be ``null``
       */
-    def copyFile(destDir: File): Unit = FileUtils.copyFile(file, destDir)
+    @throws(classOf[NullPointerException])
+    @throws(classOf[IOException])
+    def copyFile(destDir: File) = FileUtils.copyFile(file, destDir)
 
     /**
       * Copies a whole directory to a new location preserving the file dates.
