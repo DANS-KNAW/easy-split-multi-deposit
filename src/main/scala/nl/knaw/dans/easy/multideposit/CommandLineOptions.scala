@@ -19,9 +19,8 @@ import java.io.File
 import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
 
-import nl.knaw.dans.easy.multideposit.CommandLineOptions._
 import org.apache.commons.configuration.PropertiesConfiguration
-import org.rogach.scallop.{ScallopConf, singleArgConverter}
+import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
 
 object CommandLineOptions {
@@ -85,36 +84,27 @@ class ScallopCommandLine(props: => PropertiesConfiguration, args: Array[String])
       + "This must be a valid path to a directory containing a file named "
       + s"'$instructionsFileName' in RFC4180 format.")
 
-  validateFileExists(multiDepositDir)
-
-  validateOpt(multiDepositDir)(_.map(file =>
-    if (!file.isDirectory) {
-      Left(s"Not a directory '$file'")
-    }
-    else if (!file.directoryContains(new File(file, instructionsFileName)))
-      Left("No instructions file found in this directory, expected: "
-        + s"${new File(file, instructionsFileName)}")
-    else
-      Right(()))
-    .getOrElse(Left("Could not parse parameter multi-deposit-dir")))
-
   val springfieldInbox = opt[File]("springfield-inbox",
     descr = "The inbox directory of a Springfield Streaming Media Platform installation. " +
       "If not specified the value of springfield-inbox in application.properties is used.",
     default = Some(new File(props.getString("springfield-inbox"))))
 
-  validateFileExists(springfieldInbox)
-
-  validateOpt(springfieldInbox)(_.map(file =>
-    if (!file.isDirectory)
-      Left(s"Not a directory '$file'")
-    else
-      Right(()))
-    .getOrElse(Left("Could not parse parameter 'springfield-inbox'")))
-
   val outputDepositDir = trailArg[File](name = "deposit-dir", required = true,
     descr = "A directory in which the deposit directories must be created. "
       + "The deposit directory layout is described in the easy-sword2 documentation")
+
+  validateFileExists(multiDepositDir)
+  validateFileIsDirectory(multiDepositDir)
+  validate(multiDepositDir)(dir => {
+    val instructionFile: File = new File(dir, instructionsFileName)
+    if (!dir.directoryContains(instructionFile))
+      Left(s"No instructions file found in this directory, expected: $instructionFile")
+    else
+      Right(())
+  })
+
+  validateFileExists(springfieldInbox)
+  validateFileIsDirectory(springfieldInbox)
 
   verify()
 }
