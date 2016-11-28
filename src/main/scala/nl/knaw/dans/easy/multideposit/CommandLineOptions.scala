@@ -66,7 +66,7 @@ object CommandLineOptions {
   }
 }
 
-class ScallopCommandLine(props: => PropertiesConfiguration, args: Array[String]) extends ScallopConf(args) {
+class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) extends ScallopConf(args) {
 
   appendDefaultToDescription = true
   editBuilder(_.setHelpWidth(110))

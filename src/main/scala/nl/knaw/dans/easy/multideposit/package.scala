@@ -319,36 +319,47 @@ package object multideposit {
   val propsFileName = "deposit.properties"
   val springfieldActionsFileName = "springfield-actions.xml"
 
+  // mdDir/datasetID/
   def multiDepositDir(settings: Settings, datasetID: DatasetID) = {
     new File(settings.multidepositDir, datasetID)
   }
+  // mdDir/instructions.csv
   def multiDepositInstructionsFile(settings: Settings) = {
     new File(settings.multidepositDir, instructionsFileName)
   }
+  // outDir/mdDir-datasetID/
   def outputDepositDir(settings: Settings, datasetID: DatasetID) = {
     new File(settings.outputDepositDir, s"${settings.multidepositDir.getName}-$datasetID")
   }
+  // outDir/mdDir-datasetID/bag/
   def outputDepositBagDir(settings: Settings, datasetID: DatasetID) = {
     new File(outputDepositDir(settings, datasetID), bagDirName)
   }
+  // outDir/mdDir-datasetID/bag/data/
   def outputDepositBagDataDir(settings: Settings, datasetID: DatasetID) = {
     new File(outputDepositBagDir(settings, datasetID), dataDirName)
   }
+  // outDir/mdDir-datasetID/bag/metadata/
   def outputDepositBagMetadataDir(settings: Settings, datasetID: DatasetID) = {
     new File(outputDepositBagDir(settings, datasetID), metadataDirName)
   }
+  // outDir/mdDir-datasetID/deposit.properties
   def outputPropertiesFile(settings: Settings, datasetID: DatasetID) = {
     new File(outputDepositDir(settings, datasetID), propsFileName)
   }
+  // outDir/mdDir-datasetID/bag/metadata/dataset.xml
   def outputDatasetMetadataFile(settings: Settings, datasetID: DatasetID) = {
     new File(outputDepositBagMetadataDir(settings, datasetID), datasetMetadataFileName)
   }
+  // outDir/mdDir-datasetID/bag/metadata/files.xml
   def outputFileMetadataFile(settings: Settings, datasetID: DatasetID) = {
     new File(outputDepositBagMetadataDir(settings, datasetID), fileMetadataFileName)
   }
+  // sfiDir/<fileMd>
   def springfieldInboxDir(settings: Settings, fileMd: String) = {
     new File(settings.springfieldInbox, fileMd)
   }
+  // sfiDir/springfield-actions.xml
   def springfieldInboxActionsFile(settings: Settings) = {
     springfieldInboxDir(settings, springfieldActionsFileName)
   }
