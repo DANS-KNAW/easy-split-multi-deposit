@@ -165,6 +165,19 @@ object AddDatasetMetadataToDeposit {
     )
   }
 
+  def createTemporal(dataset: Dataset) = {
+    val temporalKey = "DCT_TEMPORAL"
+    val temporalXmlKey = composedTemporalFields.getOrElse(temporalKey, temporalKey)
+    val temporalSchemeKey = "DCT_TEMPORAL_SCHEME"
+
+    dataset.rowsWithValuesFor(composedTemporalFields).map(mdKeyValues => {
+      val temporal = mdKeyValues.getOrElse(temporalKey, "")
+      mdKeyValues.get(temporalSchemeKey)
+        .map(scheme => <key xsi:type={scheme}>{temporal}</key>.copy(label=temporalXmlKey))
+        .getOrElse(elem(temporalXmlKey)(temporal))
+    })
+  }
+
   def createRelations(dataset: Dataset) = {
     dataset.rowsWithValuesFor(composedRelationFields).map { row =>
       (row.get("DCX_RELATION_QUALIFIER"), row.get("DCX_RELATION_LINK"), row.get("DCX_RELATION_TITLE")) match {
@@ -191,6 +204,7 @@ object AddDatasetMetadataToDeposit {
       {createContributors(dataset)}
       {createSpatialPoints(dataset)}
       {createSpatialBoxes(dataset)}
+      {createTemporal(dataset)}
     </ddm:dcmiMetadata>
   }
 

@@ -21,14 +21,14 @@ object DDM {
   val profileFields: Dictionary =
     Map("DC_TITLE" -> "dc:title",
       "DC_DESCRIPTION" -> "dcterms:description",
-      "DC_CREATOR" -> "dc:creator",
+      "DC_CREATOR" -> "dc:creator", // TODO verwijder
       "DDM_CREATED" -> "ddm:created",
       "DDM_AUDIENCE" -> "ddm:audience",
       "DDM_ACCESSRIGHTS" -> "ddm:accessRights")
 
   val metadataFields: Dictionary =
     Map("DDM_AVAILABLE" -> "ddm:available",
-      "DC_CONTRIBUTOR" -> "dc:contributor",
+      "DC_CONTRIBUTOR" -> "dc:contributor", // TODO verwijder
       "DCT_ALTERNATIVE" -> "dcterms:alternative",
       "DC_SUBJECT" -> "dc:subject",
       "DC_PUBLISHER" -> "dcterms:publisher",
@@ -38,7 +38,6 @@ object DDM {
       "DC_SOURCE" -> "dc:source",
       "DC_LANGUAGE" -> "dc:language",
       "DCT_SPATIAL" -> "dcterms:spatial",
-      "DCT_TEMPORAL" -> "dcterms:temporal",
       "DCT_RIGHTSHOLDER" -> "dcterms:rightsHolder")
 
   val composedCreatorFields: Dictionary =
@@ -75,9 +74,13 @@ object DDM {
       "DCX_RELATION_TITLE" -> "",
       "DCX_RELATION_LINK" -> "")
 
+  val composedTemporalFields: Dictionary =
+    Map("DCT_TEMPORAL" -> "dcterms:temporal",
+      "DCT_TEMPORAL_SCHEME" -> "")
+
   val organizationKeys = Set("DCX_CREATOR_ORGANIZATION", "DCX_CONTRIBUTOR_ORGANIZATION")
 
   val allFields = "ROW" :: "DATASET" ::
-    List(profileFields, metadataFields, composedCreatorFields, composedContributorFields, composedSpatialPointFields, composedSpatialBoxFields, composedRelationFields)
+    List(profileFields, metadataFields, composedCreatorFields, composedContributorFields, composedSpatialPointFields, composedSpatialBoxFields, composedRelationFields, composedTemporalFields)
       .flatMap(_.keySet)
 }
