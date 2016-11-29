@@ -178,6 +178,19 @@ object AddDatasetMetadataToDeposit {
     })
   }
 
+  def createSubject(dataset: Dataset) = {
+    val subjectKey = "DC_SUBJECT"
+    val subjectXmlKey = composedSubjectFields.getOrElse(subjectKey, subjectKey)
+    val subjectSchemeKey = "DC_SUBJECT_SCHEME"
+
+    dataset.rowsWithValuesFor(composedSubjectFields).map(mdKeyValues => {
+      val subject = mdKeyValues.getOrElse(subjectKey, "")
+      mdKeyValues.get(subjectSchemeKey)
+        .map(scheme => <key xsi:type={scheme}>{subject}</key>.copy(label=subjectXmlKey))
+        .getOrElse(elem(subjectXmlKey)(subject))
+    })
+  }
+
   def createRelations(dataset: Dataset) = {
     dataset.rowsWithValuesFor(composedRelationFields).map { row =>
       (row.get("DCX_RELATION_QUALIFIER"), row.get("DCX_RELATION_LINK"), row.get("DCX_RELATION_TITLE")) match {
@@ -202,6 +215,7 @@ object AddDatasetMetadataToDeposit {
       {dataset.filter(isMetaData _ tupled).flatMap(simpleMetadataEntryToXML _ tupled)}
       {createRelations(dataset)}
       {createContributors(dataset)}
+      {createSubject(dataset)}
       {createSpatialPoints(dataset)}
       {createSpatialBoxes(dataset)}
       {createTemporal(dataset)}

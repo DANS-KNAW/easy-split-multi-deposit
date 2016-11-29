@@ -240,7 +240,8 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "DCT_TEMPORAL_SCHEME" -> List("", "abr:ABRperiode", "", "") +=
       "DC_PUBLISHER" -> List("pub1", "", "", "") +=
       "DC_FORMAT" -> List("text", "", "", "") +=
-      "DC_SUBJECT" -> List("me", "you", "him", "her") +=
+      "DC_SUBJECT" -> List("me", "you", "him", "GX") +=
+      "DC_SUBJECT_SCHEME" -> List("", "", "", "abr:ABRcomplex") +=
       "DC_IDENTIFIER" -> List("ds1", "", "", "") +=
       "DC_FORMAT" -> List("text", "", "", "") +=
       "DC_LANGUAGE" -> List("Scala", "", "", "")
@@ -254,7 +255,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         <dc:subject>me</dc:subject>
         <dc:subject>you</dc:subject>
         <dc:subject>him</dc:subject>
-        <dc:subject>her</dc:subject>
+        <dc:subject xsi:type="abr:ABRcomplex">GX</dc:subject>
         <dcterms:temporal>1992-2016</dcterms:temporal>
         <dcterms:temporal xsi:type="abr:ABRperiode">PALEOV</dcterms:temporal>
         <dcterms:temporal>2005</dcterms:temporal>

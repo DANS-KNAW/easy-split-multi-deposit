@@ -30,7 +30,7 @@ object DDM {
     Map("DDM_AVAILABLE" -> "ddm:available",
       "DC_CONTRIBUTOR" -> "dc:contributor", // TODO verwijder
       "DCT_ALTERNATIVE" -> "dcterms:alternative",
-      "DC_SUBJECT" -> "dc:subject",
+//      "DC_SUBJECT" -> "dc:subject",
       "DC_PUBLISHER" -> "dcterms:publisher",
       "DC_TYPE" -> "dcterms:type",
       "DC_FORMAT" -> "dc:format",
@@ -78,9 +78,13 @@ object DDM {
     Map("DCT_TEMPORAL" -> "dcterms:temporal",
       "DCT_TEMPORAL_SCHEME" -> "")
 
+  val composedSubjectFields: Dictionary =
+    Map("DC_SUBJECT" -> "dc:subject",
+      "DC_SUBJECT_SCHEME" -> "")
+
   val organizationKeys = Set("DCX_CREATOR_ORGANIZATION", "DCX_CONTRIBUTOR_ORGANIZATION")
 
   val allFields = "ROW" :: "DATASET" ::
-    List(profileFields, metadataFields, composedCreatorFields, composedContributorFields, composedSpatialPointFields, composedSpatialBoxFields, composedRelationFields, composedTemporalFields)
+    List(profileFields, metadataFields, composedCreatorFields, composedContributorFields, composedSpatialPointFields, composedSpatialBoxFields, composedRelationFields, composedTemporalFields, composedSubjectFields)
       .flatMap(_.keySet)
 }
