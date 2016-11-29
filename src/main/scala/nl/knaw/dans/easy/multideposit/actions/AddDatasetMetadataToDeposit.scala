@@ -165,30 +165,22 @@ object AddDatasetMetadataToDeposit {
     )
   }
 
-  def createTemporal(dataset: Dataset) = {
-    val temporalKey = "DCT_TEMPORAL"
-    val temporalXmlKey = composedTemporalFields.getOrElse(temporalKey, temporalKey)
-    val temporalSchemeKey = "DCT_TEMPORAL_SCHEME"
-
-    dataset.rowsWithValuesFor(composedTemporalFields).map(mdKeyValues => {
-      val temporal = mdKeyValues.getOrElse(temporalKey, "")
-      mdKeyValues.get(temporalSchemeKey)
-        .map(scheme => <key xsi:type={scheme}>{temporal}</key>.copy(label=temporalXmlKey))
-        .getOrElse(elem(temporalXmlKey)(temporal))
+  def createSchemedMetadata(dataset: Dataset, fields: Dictionary, key: MultiDepositKey, schemeKey: MultiDepositKey) = {
+    val xmlKey = fields.getOrElse(key, key)
+    dataset.rowsWithValuesFor(fields).map(mdKeyValues => {
+      val value = mdKeyValues.getOrElse(key, "")
+      mdKeyValues.get(schemeKey)
+        .map(scheme => <key xsi:type={scheme}>{value}</key>.copy(label=xmlKey))
+        .getOrElse(elem(xmlKey)(value))
     })
   }
 
-  def createSubject(dataset: Dataset) = {
-    val subjectKey = "DC_SUBJECT"
-    val subjectXmlKey = composedSubjectFields.getOrElse(subjectKey, subjectKey)
-    val subjectSchemeKey = "DC_SUBJECT_SCHEME"
+  def createTemporal(dataset: Dataset) = {
+    createSchemedMetadata(dataset, composedTemporalFields, "DCT_TEMPORAL", "DCT_TEMPORAL_SCHEME")
+  }
 
-    dataset.rowsWithValuesFor(composedSubjectFields).map(mdKeyValues => {
-      val subject = mdKeyValues.getOrElse(subjectKey, "")
-      mdKeyValues.get(subjectSchemeKey)
-        .map(scheme => <key xsi:type={scheme}>{subject}</key>.copy(label=subjectXmlKey))
-        .getOrElse(elem(subjectXmlKey)(subject))
-    })
+  def createSubject(dataset: Dataset) = {
+    createSchemedMetadata(dataset, composedSubjectFields, "DC_SUBJECT", "DC_SUBJECT_SCHEME")
   }
 
   def createRelations(dataset: Dataset) = {
