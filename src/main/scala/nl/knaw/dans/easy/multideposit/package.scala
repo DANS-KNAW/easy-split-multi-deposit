@@ -42,13 +42,12 @@ package object multideposit {
   case class FileParameters(row: Option[Int], sip: Option[String], dataset: Option[String],
                             storageService: Option[String], storagePath: Option[String],
                             audioVideo: Option[String])
-  case class Settings(appHomeDir: File = null,
-                      multidepositDir: File = null,
+  case class Settings(multidepositDir: File = null,
                       springfieldInbox: File = null,
                       outputDepositDir: File = null,
                       ldap: Ldap = null) {
     override def toString: String =
-      s"Settings(home=$appHomeDir, multideposit-dir=$multidepositDir, " +
+      s"Settings(multideposit-dir=$multidepositDir, " +
         s"springfield-inbox=$springfieldInbox, " +
         s"deposit-dir=$outputDepositDir)"
   }

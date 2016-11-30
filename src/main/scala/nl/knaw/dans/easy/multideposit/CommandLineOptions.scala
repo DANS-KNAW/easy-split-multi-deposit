@@ -40,10 +40,6 @@ object CommandLineOptions {
     val opts = new ScallopCommandLine(props, args)
 
     val settings = Settings(
-      appHomeDir = Option(System.getProperty("app.home"))
-        .map(new File(_))
-        .getOrElse(throw new IllegalArgumentException("The property 'app.home' is not available " +
-          "in the system properties.")),
       multidepositDir = opts.multiDepositDir(),
       springfieldInbox = opts.springfieldInbox(),
       outputDepositDir = opts.outputDepositDir(),
