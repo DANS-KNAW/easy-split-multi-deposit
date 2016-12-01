@@ -21,14 +21,14 @@ object DDM {
   val profileFields: Dictionary =
     Map("DC_TITLE" -> "dc:title",
       "DC_DESCRIPTION" -> "dcterms:description",
-      "DC_CREATOR" -> "dc:creator", // TODO verwijder
+      "DC_CREATOR" -> "dc:creator",
       "DDM_CREATED" -> "ddm:created",
       "DDM_AUDIENCE" -> "ddm:audience",
       "DDM_ACCESSRIGHTS" -> "ddm:accessRights")
 
   val metadataFields: Dictionary =
     Map("DDM_AVAILABLE" -> "ddm:available",
-      "DC_CONTRIBUTOR" -> "dc:contributor", // TODO verwijder
+      "DC_CONTRIBUTOR" -> "dc:contributor",
       "DCT_ALTERNATIVE" -> "dcterms:alternative",
       "DC_PUBLISHER" -> "dcterms:publisher",
       "DC_TYPE" -> "dcterms:type",
