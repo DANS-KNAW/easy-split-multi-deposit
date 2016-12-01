@@ -143,6 +143,7 @@ object AddDatasetMetadataToDeposit {
   ).getOrElse(fields.getOrElse("DCX_SPATIAL_SCHEME", ""),"")
 
   def createSpatialPoints(dataset: Dataset) = {
+    // coordinate order latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
     dataset.rowsWithValuesForAllOf(composedSpatialPointFields).map(mdKeyValues =>
       <dcx-gml:spatial srsName={createSrsName(mdKeyValues)}>
         <Point xmlns="http://www.opengis.net/gml">
