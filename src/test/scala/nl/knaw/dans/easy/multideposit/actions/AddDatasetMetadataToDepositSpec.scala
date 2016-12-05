@@ -19,11 +19,9 @@ import java.io.File
 
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.datasetToXml
-import org.apache.commons.csv.{CSVFormat, CSVParser}
-import org.apache.commons.io.FileUtils.readFileToString
 import org.scalatest.BeforeAndAfterAll
+import rx.lang.scala.ObservableExtensions
 import rx.lang.scala.observers.TestSubscriber
-import rx.lang.scala.{Observable, ObservableExtensions}
 
 import scala.util.Success
 import scala.xml.{Elem, PrettyPrinter}
@@ -150,7 +148,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   "createDcmiMetadata" should "return the expected spatial elements" in {
     val dataset = new Dataset() +=
       "DCT_SPATIAL" -> List("here", "there", "", "") +=
-      "DCX_SPATIAL_SCHEME" -> List("degrees", "degrees", "", "") +=
+      "DCX_SPATIAL_SCHEME" -> List("degrees", "RD", "", "") +=
       "DCX_SPATIAL_X" -> List("83575.4", "", "", "") +=
       "DCX_SPATIAL_Y" -> List("455271.2", "", "", "") +=
       "DCX_SPATIAL_NORTH" -> List("", "1", "", "") +=
@@ -168,7 +166,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         </dcx-gml:spatial>
         <dcx-gml:spatial>
           <boundedBy xmlns="http://www.opengis.net/gml">
-            <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+            <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
               <lowerCorner>1 3</lowerCorner>
               <upperCorner>2 4</upperCorner>
             </Envelope>
@@ -238,10 +236,12 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "return the expected dcmidata" in {
     val dataset = new Dataset() +=
       "DCT_RIGHTSHOLDER" -> List("rh1", "", "", "") +=
-      "DCT_TEMPORAL" -> List("1992-2016", "2005", "", "") +=
+      "DCT_TEMPORAL" -> List("1992-2016", "PALEOV", "2005", "some arbitrary text") +=
+      "DCT_TEMPORAL_SCHEME" -> List("", "abr:ABRperiode", "", "") +=
       "DC_PUBLISHER" -> List("pub1", "", "", "") +=
       "DC_FORMAT" -> List("text", "", "", "") +=
-      "DC_SUBJECT" -> List("me", "you", "him", "her") +=
+      "DC_SUBJECT" -> List("me", "you", "him", "GX") +=
+      "DC_SUBJECT_SCHEME" -> List("", "", "", "abr:ABRcomplex") +=
       "DC_IDENTIFIER" -> List("ds1", "", "", "") +=
       "DC_FORMAT" -> List("text", "", "", "") +=
       "DC_LANGUAGE" -> List("Scala", "", "", "")
@@ -255,9 +255,11 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         <dc:subject>me</dc:subject>
         <dc:subject>you</dc:subject>
         <dc:subject>him</dc:subject>
-        <dc:subject>her</dc:subject>
+        <dc:subject xsi:type="abr:ABRcomplex">GX</dc:subject>
         <dcterms:temporal>1992-2016</dcterms:temporal>
+        <dcterms:temporal xsi:type="abr:ABRperiode">PALEOV</dcterms:temporal>
         <dcterms:temporal>2005</dcterms:temporal>
+        <dcterms:temporal>some arbitrary text</dcterms:temporal>
       </ddm:dcmiMetadata>
     </ddm>
     verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)

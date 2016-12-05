@@ -143,6 +143,7 @@ object AddDatasetMetadataToDeposit {
   ).getOrElse(fields.getOrElse("DCX_SPATIAL_SCHEME", ""),"")
 
   def createSpatialPoints(dataset: Dataset) = {
+    // coordinate order latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
     dataset.rowsWithValuesForAllOf(composedSpatialPointFields).map(mdKeyValues =>
       <dcx-gml:spatial srsName={createSrsName(mdKeyValues)}>
         <Point xmlns="http://www.opengis.net/gml">
@@ -163,6 +164,24 @@ object AddDatasetMetadataToDeposit {
         </boundedBy>
       </dcx-gml:spatial>
     )
+  }
+
+  def createSchemedMetadata(dataset: Dataset, fields: Dictionary, key: MultiDepositKey, schemeKey: MultiDepositKey) = {
+    val xmlKey = fields.getOrElse(key, key)
+    dataset.rowsWithValuesFor(fields).map(mdKeyValues => {
+      val value = mdKeyValues.getOrElse(key, "")
+      mdKeyValues.get(schemeKey)
+        .map(scheme => <key xsi:type={scheme}>{value}</key>.copy(label=xmlKey))
+        .getOrElse(elem(xmlKey)(value))
+    })
+  }
+
+  def createTemporal(dataset: Dataset) = {
+    createSchemedMetadata(dataset, composedTemporalFields, "DCT_TEMPORAL", "DCT_TEMPORAL_SCHEME")
+  }
+
+  def createSubject(dataset: Dataset) = {
+    createSchemedMetadata(dataset, composedSubjectFields, "DC_SUBJECT", "DC_SUBJECT_SCHEME")
   }
 
   def createRelations(dataset: Dataset) = {
@@ -189,8 +208,10 @@ object AddDatasetMetadataToDeposit {
       {dataset.filter(isMetaData _ tupled).flatMap(simpleMetadataEntryToXML _ tupled)}
       {createRelations(dataset)}
       {createContributors(dataset)}
+      {createSubject(dataset)}
       {createSpatialPoints(dataset)}
       {createSpatialBoxes(dataset)}
+      {createTemporal(dataset)}
     </ddm:dcmiMetadata>
   }
 
