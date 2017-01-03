@@ -21,7 +21,7 @@ import scala.util.{Success, Try}
   * An action to be performed by Process SIP. It provides three methods that can be invoked to verify
   * the feasibility of the action, to perform the action and - if necessary - to roll back the action.
   */
-trait Action {
+trait Action { self =>
 
   /**
     * Verifies whether all preconditions are met for this specific action.
@@ -43,4 +43,32 @@ trait Action {
     * @return TODO
     */
   def rollback(): Try[Unit] = Success(())
+
+  def execute: Try[Unit] = {
+    for {
+      _ <- checkPreconditions
+      _ <- run().recoverWith { case _ => rollback() }
+    } yield ()
+  }
+
+  def compose(other: Action): Action = new Action {
+    override def checkPreconditions: Try[Unit] =
+      for {
+        _ <- self.checkPreconditions
+        _ <- other.checkPreconditions
+      } yield ()
+
+    override def run(): Try[Unit] =
+      for {
+        _ <- self.run()
+        _ <- other.run()
+      } yield ()
+
+    override def rollback(): Try[Unit] = {
+      for {
+        _ <- other.rollback()
+        _ <- self.rollback()
+      } yield ()
+    }
+  }
 }

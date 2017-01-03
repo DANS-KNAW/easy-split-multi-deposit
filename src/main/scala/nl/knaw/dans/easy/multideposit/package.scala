@@ -393,6 +393,29 @@ package object multideposit {
         })
   }
 
+  def extractFileParameters2(dataset: Dataset): List[FileParameters] = {
+    List("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
+      .flatMap(dataset.get)
+      .take(1)
+      .flatMap(xs => xs.indices
+        .map(index => {
+          def valueAt(key: String): Option[String] = {
+            dataset.get(key).flatMap(_(index).toOption)
+          }
+          def intAt(key: String): Option[Int] = {
+            dataset.get(key).flatMap(_(index).toIntOption)
+          }
+
+          FileParameters(intAt("ROW"), valueAt("FILE_SIP"), valueAt("FILE_DATASET"),
+            valueAt("FILE_STORAGE_SERVICE"), valueAt("FILE_STORAGE_PATH"),
+            valueAt("FILE_AUDIO_VIDEO"))
+        })
+        .filter {
+          case FileParameters(_, None, None, None, None, None) => false
+          case _ => true
+        })
+  }
+
   /** Generates an error report with a `heading` and a list of `ActionException`s coming from a
     * list of `Try`s, sorted by row number. Supplying other exceptions than `ActionException` will
     * cause an `AssertionError`. `Success` input in `trys` are ignored.

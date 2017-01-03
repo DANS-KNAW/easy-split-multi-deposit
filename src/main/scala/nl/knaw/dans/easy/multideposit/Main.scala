@@ -24,6 +24,7 @@ import rx.schedulers.Schedulers
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
+import nl.knaw.dans.lib.error._
 
 object Main {
 
@@ -99,6 +100,44 @@ object Main {
     dss.map(getActionsPerEntry)
       .foldLeft(Result())(addToResult)
       .flatMap(addCreateSpringfieldActions) // because of foldLeft above, this function is only executed once
+  }
+
+  def getDatasetActions2(entry: (DatasetID, Dataset))(implicit settings: Settings): Try[Action] = {
+    val datasetID = entry._1
+    val dataset = entry._2
+    val row = dataset("ROW").head.toInt // first occurence of dataset, assuming it is not empty
+
+    log.debug(s"Getting actions for dataset $datasetID ...")
+
+    val res1 = CreateOutputDepositDir(row, datasetID)
+      .compose(AddBagToDeposit(row, datasetID))
+      .compose(AddDatasetMetadataToDeposit(row, entry))
+      .compose(AddFileMetadataToDeposit(row, datasetID))
+      .compose(AddPropertiesToDeposit(row, entry))
+
+    getFileActions2(dataset, extractFileParameters2(dataset))
+      .map(_.map(action2 => res1.compose(action2)).getOrElse(res1))
+  }
+
+  def getFileActions2(dataset: Dataset, fpss: Seq[FileParameters])(implicit settings: Settings): Try[Option[Action]] = {
+    def getActions(fps: FileParameters): Try[Option[Action]] = {
+//      fps match {
+//        // TODO add actions here if needed, remove this function otherwise
+//        case FileParameters(Some(row), p1, p2, p3, p4, p5) => Failure(ActionException(row,
+//          s"Invalid combination of file parameters: FILE_SIP = $p1, FILE_DATASET = $p2, " +
+//            s"FILE_STORAGE_SERVICE = $p3, FILE_STORAGE_PATH = $p4, FILE_AUDIO_VIDEO = $p5"))
+//        case _ => Failure(new RuntimeException("*** Programming error: row without row number ***"))
+//      }
+      Success(None)
+    }
+
+    val res1: Try[Option[Action]] = fpss.map(getActions).collectResults.map(_.collect { case Some(action) => action }.reduceOption(_ compose _))
+    val copyAction: Option[Action] = fpss.collect {
+      case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo))
+        if isThisAudioVideo matches "(?i)yes" => CopyToSpringfieldInbox(row, fileMd)
+    }.reduceOption(_ compose _)
+
+    res1.map(_.flatMap(action1 => copyAction.map(action1.compose)).orElse(copyAction))
   }
 
   def getDatasetActions(entry: (DatasetID, Dataset))(implicit settings: Settings): Observable[Try[Action]] = {
