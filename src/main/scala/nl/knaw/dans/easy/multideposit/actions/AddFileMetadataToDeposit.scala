@@ -24,9 +24,11 @@ import org.apache.commons.logging.LogFactory
 
 import scala.util.{Failure, Try}
 
-case class AddFileMetadataToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
+case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val log = LogFactory.getLog(getClass)
+
+  val (datasetID, dataset) = entry
 
   def run() = {
     log.debug(s"Running $this")

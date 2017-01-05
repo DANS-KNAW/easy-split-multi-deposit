@@ -20,6 +20,7 @@ import java.io.File
 import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 
+import scala.collection.mutable
 import scala.util.Success
 import scala.xml.PrettyPrinter
 
@@ -30,7 +31,10 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
     outputDepositDir = new File(testDir, "dd")
   )
   val datasetID = "ruimtereis01"
-
+  val dataset = mutable.HashMap(
+    "DATASET" -> List(datasetID, datasetID),
+    "FILE_SIP" -> List("reisverslag/deel01.txt", "")
+  )
   before {
     new File(getClass.getResource("/spacetravel").toURI)
       .copyDir(settings.outputDepositDir)
@@ -43,7 +47,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   override def afterAll = testDir.getParentFile.deleteDirectory()
 
   "run" should "write the file metadata to an xml file" in {
-    val action = new AddFileMetadataToDeposit(1, datasetID)
+    val action = new AddFileMetadataToDeposit(1, (datasetID, dataset))
     val metadataDir = outputDepositBagMetadataDir(settings, datasetID)
 
     action.run() shouldBe a[Success[_]]
