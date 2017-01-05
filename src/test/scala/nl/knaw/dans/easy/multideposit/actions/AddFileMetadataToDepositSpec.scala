@@ -21,7 +21,7 @@ import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 
 import scala.collection.mutable
-import scala.util.Success
+import scala.util.{Failure, Success}
 import scala.xml.PrettyPrinter
 
 class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
@@ -46,11 +46,21 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
 
-  "preconditions check" should "succeed" in {
+  "preconditions check with existing SIP files" should "succeed" in {
 
     val action = new AddFileMetadataToDeposit(1, (datasetID, dataset))
 
     action.checkPreconditions shouldBe a[Success[_]]
+  }
+
+  "preconditions check with non-existing SIP files" should "fail" in {
+    val invalidDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID, datasetID),
+      "FILE_SIP" -> List("reisverslag/deel01.txt", "", "non-existing-file-path")
+    )
+    val action = new AddFileMetadataToDeposit(1, (datasetID, invalidDataset))
+
+    action.checkPreconditions shouldBe a[Failure[_]]
   }
 
   "run" should "write the file metadata to an xml file" in {
