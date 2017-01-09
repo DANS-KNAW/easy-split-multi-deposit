@@ -45,7 +45,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
   override def checkPreconditions: Try[Unit] = {
     log.debug(s"Checking preconditions for $this")
 
-    val inputDir = multiDepositDir(settings, datasetID)
+    val inputDir = settings.multidepositDir;//multiDepositDir(settings, datasetID)
     val inputDirPath = Paths.get(inputDir.getAbsolutePath)
 
     // Note that the FILE_SIP paths are not really used in this action
@@ -58,7 +58,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
     if (nonExistingPaths.isEmpty)
       Success(Unit)
     else
-      Failure(ActionException(row, s"""The following SIP files are referenced in the instructions but not found in the deposit input dir for dataset "$datasetID": $nonExistingPaths""".stripMargin))
+      Failure(ActionException(row, s"""The following SIP files are referenced in the instructions but not found in the deposit input dir "$inputDirPath" for dataset "$datasetID": $nonExistingPaths""".stripMargin))
 
   }
 }

@@ -33,7 +33,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   val datasetID = "ruimtereis01"
   val dataset = mutable.HashMap(
     "DATASET" -> List(datasetID, datasetID),
-    "FILE_SIP" -> List("reisverslag/deel01.txt", "")
+    "FILE_SIP" -> List("ruimtereis01/reisverslag/deel01.txt", "")
   )
   before {
     new File(getClass.getResource("/spacetravel").toURI)
@@ -56,7 +56,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   "preconditions check with non-existing SIP files" should "fail" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID, datasetID),
-      "FILE_SIP" -> List("reisverslag/deel01.txt", "", "non-existing-file-path")
+      "FILE_SIP" -> List("ruimtereis01/reisverslag/deel01.txt", "", "non-existing-file-path")
     )
     val action = new AddFileMetadataToDeposit(1, (datasetID, invalidDataset))
 
