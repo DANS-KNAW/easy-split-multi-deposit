@@ -59,7 +59,7 @@ The supported metadata elements are subdivided into the following groups:
   `DCT_TEMPORAL_SCHEME`, `DC_SUBJECT_SCHEME`,
   `DCX_RELATION_QUALIFIER`, `DCX_RELATION_TITLE`, `DCX_RELATION_LINK`
 * Other DANS specific metadata elements: `DDM_CREATED`, `DDM_AVAILABLE`,
-  `DDM_AUDIENCE`, `DDM_ACCESSRIGHTS`
+  `DDM_AUDIENCE`, `DDM_ACCESSRIGHTS`, `DEPOSITOR_ID`
 * Fields that specify the relation to a streaming surrogate on the Springfield
   platform: `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, `SF_PRESENTATION`, 
   `SF_SUBTITLES`
