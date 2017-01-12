@@ -167,7 +167,7 @@ object Main {
 
     actions
       .doOnNext(action => log.info(s"Checking preconditions of ${action.getClass.getSimpleName} ..."))
-      .foldLeft(ActionAndResult())(_ += _)
+      .foldLeft(ActionAndResult())((acc, cur) => acc += cur)
       .flatMap(_.toObservable)
   }
 

@@ -22,19 +22,58 @@ import org.apache.commons.logging.LogFactory
 
 import scala.collection.mutable
 import scala.language.postfixOps
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 import scala.xml.Elem
+import scala.util.matching.Regex
+import nl.knaw.dans.lib.error.{CompositeException, TraversableTryExtensions}
 
 case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val log = LogFactory.getLog(getClass)
 
-  // TODO preconditions for verifying the metadata from `dataset` in future release
 
   def run() = {
     log.debug(s"Running $this")
 
     writeDatasetMetadataXml(row, dataset._1, dataset._2)
+  }
+
+  /**
+   * Verifies whether all preconditions are met for this specific action.
+   *
+   * @return `Success` when all preconditions are met, `Failure` otherwise
+   */
+  override def checkPreconditions: Try[Unit] = {
+     dataset._2.toRows.flatMap( rowVals => {
+      List(
+        // check required fields and field dependencies, so detect any missing values
+        // coordinates
+        // point
+        checkAllOrNone(row, rowVals,
+          List("DCX_SPATIAL_X", "DCX_SPATIAL_Y")),
+        // box
+        checkAllOrNone(row, rowVals,
+          List("DCX_SPATIAL_NORTH", "DCX_SPATIAL_SOUTH","DCX_SPATIAL_EAST", "DCX_SPATIAL_WEST")),
+
+        // persons
+        // note that the DCX_{}_ORGANISATION can have a value independent of the other fields
+        // creator
+        checkRequiredWithGroup(row, rowVals,
+          List("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME"),
+          List("DCX_CREATOR_TITLES", "DCX_CREATOR_INSERTIONS", "DCX_CREATOR_DAI")),
+        // contributor
+        checkRequiredWithGroup(row, rowVals,
+          List("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME"),
+          List("DCX_CONTRIBUTOR_TITLES", "DCX_CONTRIBUTOR_INSERTIONS", "DCX_CONTRIBUTOR_DAI")),
+
+        // check allowed value(s)
+        // scheme
+        checkValueIsOneOf(row, rowVals, "DCT_TEMPORAL_SCHEME", List("abr:ABRperiode")),
+        checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", List("abr:ABRcomplex"))
+
+        // TODO check DEPOSITOR_ID in LDAP
+      )
+    }).collectResults.map(_ => ())
   }
 }
 object AddDatasetMetadataToDeposit {
@@ -220,4 +259,46 @@ object AddDatasetMetadataToDeposit {
   }
 
   def elem(key: String)(value: String) = <key>{value}</key>.copy(label=key)
+
+  /**
+   * Check if either non of the keys have values or all of them have values
+   * If some are missing, mention them in the exception message
+   */
+  def checkAllOrNone(row: Int, map: mutable.HashMap[MultiDepositKey, String], keys: List[String]): Try[Unit] = {
+    val emptyVals = keys.filter(key => map.get(key).isEmpty)
+    if (emptyVals.nonEmpty && emptyVals.size < keys.size) {
+      Failure(ActionException(row, s"Missing value(s) for: $emptyVals"))
+    } else {
+      Success(Unit)
+    }
+  }
+
+  /**
+   * If any of the keys (optional and required) has a value all required keys should have a value
+   */
+  def checkRequiredWithGroup(row: Int, map: mutable.HashMap[MultiDepositKey, String], requiredKeys: List[String], optionalKeys: List[String]): Try[Unit] = {
+    val emptyOptionalVals = optionalKeys.filter(optionalKey => map.get(optionalKey).isEmpty)
+    val emptyRequiredVals = requiredKeys.filter(requiredKey => map.get(requiredKey).isEmpty)
+
+    // note that it has vals if not all are empty
+    val hasOptionalVals = emptyOptionalVals.size < optionalKeys.size
+    val hasRequiredVals = emptyRequiredVals.size < requiredKeys.size
+
+    if ((hasOptionalVals || hasRequiredVals) && emptyRequiredVals.nonEmpty) {
+      Failure(ActionException(row, s"Missing value(s) for: $emptyRequiredVals"))
+    } else {
+      Success(Unit)
+    }
+  }
+
+  /**
+   * When it contains something, this should be from a list af allowed values
+   */
+  def checkValueIsOneOf(row: Int, map: mutable.HashMap[MultiDepositKey, String], key: String, allowed: List[String]): Try[Unit] = {
+    val value = map.getOrElse(key, "")
+    if(value.isEmpty || allowed.contains(value))
+      Success(Unit)
+    else
+      Failure(ActionException(row, s"Wrong value: $value should be empty or one of: $allowed"))
+  }
 }

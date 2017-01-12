@@ -107,6 +107,10 @@
             <artifactId>bagit</artifactId>
             <version>4.11.0</version>
         </dependency>
+        <dependency>
+            <groupId>nl.knaw.dans.lib</groupId>
+            <artifactId>dans-scala-lib</artifactId>
+        </dependency>
     </dependencies>
     <repositories>
         <repository>
