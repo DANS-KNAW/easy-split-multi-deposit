@@ -24,13 +24,11 @@ import scala.collection.mutable
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 import scala.xml.Elem
-import scala.util.matching.Regex
-import nl.knaw.dans.lib.error.{CompositeException, TraversableTryExtensions}
+import nl.knaw.dans.lib.error.TraversableTryExtensions
 
 case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val log = LogFactory.getLog(getClass)
-
 
   def run() = {
     log.debug(s"Running $this")
@@ -47,6 +45,7 @@ case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(
      dataset._2.toRows.flatMap( rowVals => {
       List(
         // check required fields and field dependencies, so detect any missing values
+
         // coordinates
         // point
         checkAllOrNone(row, rowVals,
@@ -70,8 +69,6 @@ case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(
         // scheme
         checkValueIsOneOf(row, rowVals, "DCT_TEMPORAL_SCHEME", List("abr:ABRperiode")),
         checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", List("abr:ABRcomplex"))
-
-        // TODO check DEPOSITOR_ID in LDAP
       )
     }).collectResults.map(_ => ())
   }
