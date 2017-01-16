@@ -68,7 +68,9 @@ case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(
         // check allowed value(s)
         // scheme
         checkValueIsOneOf(row, rowVals, "DCT_TEMPORAL_SCHEME", List("abr:ABRperiode")),
-        checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", List("abr:ABRcomplex"))
+        checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", List("abr:ABRcomplex")),
+
+        checkAccessRights(row, rowVals)
       )
     }).collectResults.map(_ => ())
   }
@@ -297,5 +299,15 @@ object AddDatasetMetadataToDeposit {
       Success(Unit)
     else
       Failure(ActionException(row, s"Wrong value: $value should be empty or one of: $allowed"))
+  }
+
+  def checkAccessRights(row: Int, map: mutable.HashMap[MultiDepositKey, String]): Try[Unit] = {
+    val accessRights = map.get("DDM_ACCESSRIGHTS")
+    val audience = map.get("DDM_AUDIENCE")
+    (accessRights, audience) match {
+      case (Some("GROUP_ACCESS"), Some ("D37000")) => Success(Unit)
+      case (Some("GROUP_ACCESS"), _) => Failure(ActionException(row, s"When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is: $audience"))
+      case (_,_) => Success(Unit)
+    }
   }
 }

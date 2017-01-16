@@ -103,6 +103,28 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
 
+ "preconditions check with correctly corresponding access rights and audience" should "succeed" in {
+   val validDataset = mutable.HashMap(
+     "DATASET" -> List(datasetID, datasetID),
+     "DDM_ACCESSRIGHTS" -> List("GROUP_ACCESS", "OPEN_ACCESS"),
+     "DDM_AUDIENCE" -> List("D37000", "") // Archaeology
+   )
+   val action = new AddDatasetMetadataToDeposit(1, (datasetID, validDataset))
+
+   action.checkPreconditions shouldBe a[Success[_]]
+ }
+
+  "preconditions check with incorrectly corresponding access rights and audience" should "fail" in {
+    val invalidDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_ACCESSRIGHTS" -> List("GROUP_ACCESS", ""),
+      "DDM_AUDIENCE" -> List("D30000", "") // Humanities
+    )
+    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
+
+    action.checkPreconditions shouldBe a[Failure[_]]
+  }
+
   "preconditions check with required person information" should "succeed" in {
     val validDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
