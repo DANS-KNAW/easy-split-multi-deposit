@@ -38,14 +38,14 @@ case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(
 
   /**
    * Verifies whether all preconditions are met for this specific action.
+   * Required metadata fields and some allowed values are checked,
+   * field interdependencies are taken into consideration
    *
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
      dataset._2.toRows.flatMap( rowVals => {
       List(
-        // check required fields and field dependencies, so detect any missing values
-
         // coordinates
         // point
         checkAllOrNone(row, rowVals,
@@ -264,11 +264,12 @@ object AddDatasetMetadataToDeposit {
    * If some are missing, mention them in the exception message
    */
   def checkAllOrNone(row: Int, map: mutable.HashMap[MultiDepositKey, String], keys: List[String]): Try[Unit] = {
-    val emptyVals = keys.filter(key => map.get(key).isEmpty)
+    val emptyVals = keys.filter(key => map.get(key).forall(_.isBlank))
+
     if (emptyVals.nonEmpty && emptyVals.size < keys.size) {
       Failure(ActionException(row, s"Missing value(s) for: $emptyVals"))
     } else {
-      Success(Unit)
+      Success(())
     }
   }
 
@@ -276,8 +277,8 @@ object AddDatasetMetadataToDeposit {
    * If any of the keys (optional and required) has a value all required keys should have a value
    */
   def checkRequiredWithGroup(row: Int, map: mutable.HashMap[MultiDepositKey, String], requiredKeys: List[String], optionalKeys: List[String]): Try[Unit] = {
-    val emptyOptionalVals = optionalKeys.filter(optionalKey => map.get(optionalKey).isEmpty)
-    val emptyRequiredVals = requiredKeys.filter(requiredKey => map.get(requiredKey).isEmpty)
+    val emptyOptionalVals = optionalKeys.filter(optionalKey => map.get(optionalKey).forall(_.isBlank))
+    val emptyRequiredVals = requiredKeys.filter(requiredKey => map.get(requiredKey).forall(_.isBlank))
 
     // note that it has vals if not all are empty
     val hasOptionalVals = emptyOptionalVals.size < optionalKeys.size
@@ -286,7 +287,7 @@ object AddDatasetMetadataToDeposit {
     if ((hasOptionalVals || hasRequiredVals) && emptyRequiredVals.nonEmpty) {
       Failure(ActionException(row, s"Missing value(s) for: $emptyRequiredVals"))
     } else {
-      Success(Unit)
+      Success(())
     }
   }
 
@@ -307,7 +308,7 @@ object AddDatasetMetadataToDeposit {
     (accessRights, audience) match {
       case (Some("GROUP_ACCESS"), Some ("D37000")) => Success(Unit)
       case (Some("GROUP_ACCESS"), _) => Failure(ActionException(row, s"When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is: $audience"))
-      case (_,_) => Success(Unit)
+      case (_,_) => Success(())
     }
   }
 }
