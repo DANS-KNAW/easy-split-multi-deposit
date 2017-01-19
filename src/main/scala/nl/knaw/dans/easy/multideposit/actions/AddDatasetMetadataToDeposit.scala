@@ -26,14 +26,16 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.Elem
 import nl.knaw.dans.lib.error.TraversableTryExtensions
 
-case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
+case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val log = LogFactory.getLog(getClass)
+
+  val (datasetID, dataset) = entry
 
   def run() = {
     log.debug(s"Running $this")
 
-    writeDatasetMetadataXml(row, dataset._1, dataset._2)
+    writeDatasetMetadataXml(row, datasetID, dataset)
   }
 
   /**
@@ -44,7 +46,7 @@ case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-     dataset._2.toRows.flatMap( rowVals => {
+     dataset.toRows.flatMap( rowVals => {
       List(
         // coordinates
         // point
