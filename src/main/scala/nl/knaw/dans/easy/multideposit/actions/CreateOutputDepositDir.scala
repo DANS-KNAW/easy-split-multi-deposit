@@ -35,7 +35,7 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
       .getOrElse(Success(Unit))
   }
 
-  def run(): Try[Unit] = {
+  def execute(): Try[Unit] = {
     log.debug(s"Running $this")
     val depositDir = multideposit.outputDepositDir(settings, datasetID)
     val bagDir = outputDepositBagDir(settings, datasetID)

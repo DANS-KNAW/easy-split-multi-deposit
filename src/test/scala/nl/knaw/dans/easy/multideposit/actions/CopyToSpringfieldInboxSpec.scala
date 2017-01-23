@@ -29,9 +29,9 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
     springfieldInbox = new File(testDir, "springFieldInbox")
   )
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
-  def createFile(fileName: MultiDepositKey) = {
+  def createFile(fileName: MultiDepositKey): Unit = {
     val file = multiDepositDir(settings, fileName)
     file.getParentFile.mkdirs
     file.write("")
@@ -50,14 +50,14 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
     CopyToSpringfieldInbox(1, "videos/some_checkPreSuccess.mpg").checkPreconditions shouldBe a[Success[_]]
   }
 
-  "run" should "succeed if file exist" in {
+  "execute" should "succeed if file exist" in {
     createFile("videos/some.mpg")
 
-    CopyToSpringfieldInbox(1, "videos/some.mpg").run shouldBe a[Success[_]]
+    CopyToSpringfieldInbox(1, "videos/some.mpg").execute shouldBe a[Success[_]]
   }
 
   it should "fail if file does not exist" in {
-    val run = CopyToSpringfieldInbox(1, "videos/some_error.mpg").run()
+    val run = CopyToSpringfieldInbox(1, "videos/some_error.mpg").execute()
 
     run shouldBe a[Failure[_]]
     (the [ActionException] thrownBy run.get).getMessage should include ("videos/some_error.mpg")
@@ -68,7 +68,7 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
     createFile("videos/some_rollback.mpg")
     val action = CopyToSpringfieldInbox(1, "videos/some_rollback.mpg")
 
-    action.run() shouldBe a[Success[_]]
+    action.execute shouldBe a[Success[_]]
 
     springfieldInboxDir(settings, "videos/some_rollback.mpg") should exist
 

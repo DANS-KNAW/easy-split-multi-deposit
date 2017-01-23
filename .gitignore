@@ -21,3 +21,6 @@ out/
 /.settings
 /.classpath
 /.cache
+
+# Locks for CSV files by LibreOffice
+.~lock.*.csv#

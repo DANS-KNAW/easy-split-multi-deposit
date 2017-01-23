@@ -35,7 +35,7 @@ case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit setti
 
   val log = LoggerFactory.getLogger(getClass)
 
-  def run() = {
+  def execute() = {
     log.debug(s"Running $this")
 
     writeSpringfieldXml(row, datasets)

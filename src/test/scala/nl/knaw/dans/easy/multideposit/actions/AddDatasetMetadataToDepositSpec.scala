@@ -20,7 +20,7 @@ import java.io.File
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.datasetToXml
 import org.scalatest.BeforeAndAfterAll
-import rx.lang.scala.{ Observable, ObservableExtensions }
+import rx.lang.scala.Observable
 import rx.lang.scala.observers.TestSubscriber
 
 import scala.collection.mutable
@@ -35,7 +35,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   )
 
   val datasetID = "ds1"
-  val dataset = new Dataset() +=
+  val dataset: Dataset = new Dataset() +=
     "DATASET" -> List(datasetID, datasetID, datasetID, datasetID) +=
     "DC_TITLE" -> List("dataset title", "", "", "") +=
     "DCT_ALTERNATIVE" -> List("foobar", "", "", "") +=
@@ -56,7 +56,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     "DDM_AVAILABLE" -> List("nope", "", "", "") +=
     "DDM_AUDIENCE" -> List("everyone", "nobody", "some people", "people with yellow hear")
 
-  val expectedXml = <ddm:DDM
+  val expectedXml: Elem = <ddm:DDM
   xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -101,7 +101,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     </ddm:dcmiMetadata>
   </ddm:DDM>
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
  "preconditions check with correctly corresponding access rights and audience" should "succeed" in {
    val validDataset = mutable.HashMap(
@@ -230,12 +230,12 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     action.checkPreconditions shouldBe a[Failure[_]]
   }
 
-  "run" should "write the metadata to a file at the correct place" in {
+  "execute" should "write the metadata to a file at the correct place" in {
     val file = outputDatasetMetadataFile(settings, datasetID)
 
     file should not (exist)
 
-    AddDatasetMetadataToDeposit(1, ("ds1", dataset)).run() shouldBe a[Success[_]]
+    AddDatasetMetadataToDeposit(1, ("ds1", dataset)).execute shouldBe a[Success[_]]
 
     file should exist
   }

@@ -18,17 +18,17 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 import javax.naming.directory.Attributes
 
-import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
+import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import rx.lang.scala.Observable
 
 import scala.collection.mutable
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
 class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll with MockFactory {
 
-  val ldapMock = mock[Ldap]
+  val ldapMock: Ldap = mock[Ldap]
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     outputDepositDir = new File(testDir, "dd"),
@@ -43,7 +43,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     new File(settings.outputDepositDir, s"md-$datasetID").mkdirs
   }
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if the depositorID is in the dataset and has one value" in {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.just(true)
@@ -116,14 +116,14 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     (the [ActionException] thrownBy result.get).cause.getClass shouldBe classOf[IllegalArgumentException]
   }
 
-  "run" should "generate the properties file" in {
-    AddPropertiesToDeposit(1, (datasetID, dataset)).run() shouldBe a[Success[_]]
+  "execute" should "generate the properties file" in {
+    AddPropertiesToDeposit(1, (datasetID, dataset)).execute shouldBe a[Success[_]]
 
     new File(outputDepositDir(settings, datasetID), "deposit.properties") should exist
   }
 
   "writeProperties" should "generate the properties file and write the properties in it" in {
-    AddPropertiesToDeposit(1, (datasetID, dataset)).run() shouldBe a[Success[_]]
+    AddPropertiesToDeposit(1, (datasetID, dataset)).execute shouldBe a[Success[_]]
 
     val props = outputPropertiesFile(settings, datasetID)
     val content = props.read()

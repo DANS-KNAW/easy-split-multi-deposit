@@ -32,7 +32,7 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
     else Failure(ActionException(row, s"Cannot find MD file: ${file.getPath}"))
   }
 
-  def run() = {
+  def execute() = {
     log.debug(s"Running $this")
 
     val mdFile = multiDepositDir(settings, fileMd)

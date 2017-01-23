@@ -32,7 +32,7 @@ case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(im
 
   val (datasetID, dataset) = entry
 
-  def run() = {
+  def execute() = {
     log.debug(s"Running $this")
 
     writeDatasetMetadataXml(row, datasetID, dataset)

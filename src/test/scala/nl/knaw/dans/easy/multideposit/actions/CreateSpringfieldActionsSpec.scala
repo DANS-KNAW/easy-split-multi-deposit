@@ -31,34 +31,33 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     springfieldInbox = new File(testDir, "springFieldInbox")
   )
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
-  def testDataset = {
-    val dataset = new Dataset
-    dataset += "SF_DOMAIN" -> List("dans")
-    dataset += "SF_USER" -> List("someDeveloper")
-    dataset += "SF_COLLECTION" -> List("scala")
-    dataset += "SF_PRESENTATION" -> List("unit-test")
-    dataset += "FILE_AUDIO_VIDEO" -> List("yes")
-    dataset += "FILE_SIP" -> List("videos/some.mpg")
-    dataset += "FILE_SUBTITLES" -> List("videos/some.txt")
-    dataset += "FILE_DATASET" -> List("footage/some.mpg")
+  def testDataset: Dataset = {
+    new Dataset +=
+      "SF_DOMAIN" -> List("dans") +=
+      "SF_USER" -> List("someDeveloper") +=
+      "SF_COLLECTION" -> List("scala") +=
+      "SF_PRESENTATION" -> List("unit-test") +=
+      "FILE_AUDIO_VIDEO" -> List("yes") +=
+      "FILE_SIP" -> List("videos/some.mpg") +=
+      "FILE_SUBTITLES" -> List("videos/some.txt") +=
+      "FILE_DATASET" -> List("footage/some.mpg")
   }
-  def datasets(dataset: Dataset = testDataset) = {
-    val datasets = new Datasets
-    datasets += ("dataset-1" -> dataset)
+  def datasets(dataset: Dataset = testDataset): Datasets = {
+    new Datasets += ("dataset-1" -> dataset)
   }
 
-  "run" should "not create a file when an empty ListBuffer was passed on" in {
+  "execute" should "not create a file when an empty ListBuffer was passed on" in {
     val datasets = new Datasets
 
-    CreateSpringfieldActions(1, datasets).run shouldBe a[Success[_]]
+    CreateSpringfieldActions(1, datasets).execute shouldBe a[Success[_]]
     springfieldInboxActionsFile(settings) should not (be a 'file)
   }
 
   it should "fail with too little instructions" in {
     val datasets = new Datasets() += ("dataset-1" -> (testDataset -= "FILE_SIP"))
-    val run = CreateSpringfieldActions(1, datasets).run()
+    val run = CreateSpringfieldActions(1, datasets).execute()
     run shouldBe a[Failure[_]]
 
     (the [ActionException] thrownBy run.get).row shouldBe 1
@@ -67,7 +66,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "create the correct file with the correct input" in {
-    CreateSpringfieldActions(1, datasets()).run shouldBe a[Success[_]]
+    CreateSpringfieldActions(1, datasets()).execute shouldBe a[Success[_]]
     val generated = {
       val xmlFile = springfieldInboxActionsFile(settings)
       xmlFile should be a 'file

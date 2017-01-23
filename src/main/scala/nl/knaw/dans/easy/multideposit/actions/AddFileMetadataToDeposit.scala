@@ -31,7 +31,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
 
   val (datasetID, dataset) = entry
 
-  def run() = {
+  def execute() = {
     log.debug(s"Running $this")
 
     writeFileMetadataXml(row, datasetID)

@@ -30,7 +30,7 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
   )
   val datasetID = "ds1"
 
-  override def beforeAll = testDir.mkdirs
+  override def beforeAll: Unit = testDir.mkdirs
 
   before {
     // create depositDir base directory
@@ -46,7 +46,7 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     baseDir should not (exist)
   }
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if the output directories do not yet exist" in {
     // directories do not exist before
@@ -70,15 +70,15 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     CreateOutputDepositDir(1, datasetID).checkPreconditions shouldBe a[Failure[_]]
   }
 
-  "run" should "create the directories" in {
+  "execute" should "create the directories" in {
     // test is in seperate function,
     // since we want to reuse the code
-    runTest()
+    executeTest()
   }
 
-  "rollback" should "delete the directories that were created in run" in {
+  "rollback" should "delete the directories that were created in execute" in {
     // setup for this test
-    runTest()
+    executeTest()
 
     // roll back the creation of the directories
     CreateOutputDepositDir(1, datasetID).rollback() shouldBe a[Success[_]]
@@ -89,14 +89,14 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     outputDepositBagMetadataDir(settings, datasetID) should not (exist)
   }
 
-  def runTest(): Unit = {
+  def executeTest(): Unit = {
     // directories do not exist before
     outputDepositDir(settings, datasetID) should not (exist)
     outputDepositBagDir(settings, datasetID) should not (exist)
     outputDepositBagMetadataDir(settings, datasetID) should not (exist)
 
     // creation of directories
-    CreateOutputDepositDir(1, datasetID).run() shouldBe a[Success[_]]
+    CreateOutputDepositDir(1, datasetID).execute shouldBe a[Success[_]]
 
     // test existance after creation
     outputDepositDir(settings, datasetID) should exist

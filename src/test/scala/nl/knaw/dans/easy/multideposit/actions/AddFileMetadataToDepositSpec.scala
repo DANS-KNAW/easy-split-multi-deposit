@@ -17,11 +17,11 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 
-import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
+import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
 import scala.collection.mutable
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 import scala.xml.PrettyPrinter
 
 class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
@@ -44,7 +44,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
     settings.outputDepositDir.deleteDirectory()
   }
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "preconditions check with existing SIP files" should "succeed" in {
 
@@ -63,11 +63,11 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
     action.checkPreconditions shouldBe a[Failure[_]]
   }
 
-  "run" should "write the file metadata to an xml file" in {
+  "execute" should "write the file metadata to an xml file" in {
     val action = new AddFileMetadataToDeposit(1, (datasetID, dataset))
     val metadataDir = outputDepositBagMetadataDir(settings, datasetID)
 
-    action.run() shouldBe a[Success[_]]
+    action.execute() shouldBe a[Success[_]]
 
     metadataDir should exist
     outputFileMetadataFile(settings, datasetID) should exist

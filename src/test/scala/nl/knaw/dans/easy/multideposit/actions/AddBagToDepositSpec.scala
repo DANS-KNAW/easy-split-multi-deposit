@@ -17,8 +17,8 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 
-import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
+import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
 import scala.util.Success
 
@@ -50,7 +50,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
     outputDepositBagDir(settings, datasetID).deleteDirectory()
   }
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if the md folder does not exist" in {
     val inputDir = multiDepositDir(settings, datasetID)
@@ -63,12 +63,12 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
     AddBagToDeposit(1, datasetID).checkPreconditions shouldBe a[Success[_]]
   }
 
-  "run" should "succeed given the current setup" in {
-    AddBagToDeposit(1, datasetID).run() shouldBe a[Success[_]]
+  "execute" should "succeed given the current setup" in {
+    AddBagToDeposit(1, datasetID).execute shouldBe a[Success[_]]
   }
 
   it should "create a bag with the files from ds1 in it and some meta-files around" in {
-    AddBagToDeposit(1, datasetID).run() shouldBe a[Success[_]]
+    AddBagToDeposit(1, datasetID).execute shouldBe a[Success[_]]
 
     val root = outputDepositBagDir(settings, datasetID)
     root should exist
@@ -85,7 +85,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   }
 
   it should "preserve the file content after making the bag" in {
-    AddBagToDeposit(1, datasetID).run() shouldBe a[Success[_]]
+    AddBagToDeposit(1, datasetID).execute shouldBe a[Success[_]]
 
     val root = outputDepositBagDataDir(settings, datasetID)
     new File(root, "file1.txt").read() shouldBe file1Text
@@ -106,7 +106,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
 
     multiDepositDir(settings, datasetID) should not (exist)
 
-    AddBagToDeposit(1, datasetID)(settings).run() shouldBe a[Success[_]]
+    AddBagToDeposit(1, datasetID)(settings).execute shouldBe a[Success[_]]
 
     outputDepositDir(settings, datasetID) should exist
     outputDepositBagDataDir(settings, datasetID) should exist

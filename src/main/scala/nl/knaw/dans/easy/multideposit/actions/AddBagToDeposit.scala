@@ -33,7 +33,7 @@ import scala.util.{Failure, Try}
 case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
   val log = LoggerFactory.getLogger(getClass)
 
-  def run() = {
+  def execute() = {
     log.debug(s"Running $this")
 
     createBag(datasetID) recoverWith {

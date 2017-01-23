@@ -71,7 +71,7 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
       .getOrElse(Failure(ActionException(row, """The column "DEPOSITOR_ID" is not present""")))
   }
 
-  def run() = {
+  def execute() = {
     log.debug(s"Running $this")
 
     writeProperties(row, datasetID, dataset)
