@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.multideposit
 
 import nl.knaw.dans.easy.multideposit.actions._
-import nl.knaw.dans.easy.multideposit.{CommandLineOptions => cmd, MultiDepositParser => parser}
 import org.slf4j.LoggerFactory
 import rx.lang.scala.{Observable, ObservableExtensions}
 import rx.schedulers.Schedulers
@@ -32,7 +31,7 @@ object Main {
 
   def main(args: Array[String]) {
     log.debug("Starting application.")
-    implicit val settings = cmd.parse(args)
+    implicit val settings = CommandLineOptions.parse(args)
     getActionsStream
       .doOnError(e => log.error(e.getMessage))
       .doOnError(e => log.debug(e.getMessage, e))
@@ -48,8 +47,12 @@ object Main {
   }
 
   def getActionsStream(implicit settings: Settings): Observable[Action] = {
-    parser.parse(multiDepositInstructionsFile(settings))
-      .flatMap(_.toObservable)
+    Observable.defer {
+      MultiDepositParser.parse(multiDepositInstructionsFile(settings)) match {
+        case Success(dss) => Observable.from(dss)
+        case Failure(e) => Observable.error(e)
+      }
+    }
       .getActions
       .checkActionPreconditions
       .runActions
@@ -112,7 +115,7 @@ object Main {
     val res1 = CreateOutputDepositDir(row, datasetID)
       .compose(AddBagToDeposit(row, datasetID))
       .compose(AddDatasetMetadataToDeposit(row, entry))
-      .compose(AddFileMetadataToDeposit(row, datasetID))
+      .compose(AddFileMetadataToDeposit(row, entry))
       .compose(AddPropertiesToDeposit(row, entry))
 
     getFileActions2(dataset, extractFileParameters2(dataset))
@@ -134,7 +137,7 @@ object Main {
     val res1: Try[Option[Action]] = fpss.map(getActions).collectResults.map(_.collect { case Some(action) => action }.reduceOption(_ compose _))
     val copyAction: Option[Action] = fpss.collect {
       case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo))
-        if isThisAudioVideo matches "(?i)yes" => CopyToSpringfieldInbox(row, fileMd)
+        if isThisAudioVideo matches "(?i)yes" => CopyToSpringfieldInbox(row, fileMd): Action
     }.reduceOption(_ compose _)
 
     res1.map(_.flatMap(action1 => copyAction.map(action1.compose)).orElse(copyAction))

@@ -20,12 +20,12 @@ import java.io.File
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.datasetToXml
 import org.scalatest.BeforeAndAfterAll
-import rx.lang.scala.ObservableExtensions
+import rx.lang.scala.{ Observable, ObservableExtensions }
 import rx.lang.scala.observers.TestSubscriber
 
 import scala.collection.mutable
-import scala.util.{Failure, Success}
-import scala.xml.{Elem, PrettyPrinter}
+import scala.util.{ Failure, Success }
+import scala.xml.{ Elem, PrettyPrinter }
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
@@ -266,8 +266,12 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   def toXmlSubscriber(file: String): TestSubscriber[Elem] = {
     val csv = new File(getClass.getResource(file).toURI)
     val subscriber = TestSubscriber[Elem]
-    MultiDepositParser.parse(csv)
-      .flatMap(_.toObservable)
+    Observable.defer {
+      MultiDepositParser.parse(csv) match {
+        case Success(dss) => Observable.from(dss)
+        case Failure(e) => Observable.error(e)
+      }
+    }
       .map(tuple => AddDatasetMetadataToDeposit.datasetToXml(tuple._2))
       .subscribe(subscriber)
     subscriber

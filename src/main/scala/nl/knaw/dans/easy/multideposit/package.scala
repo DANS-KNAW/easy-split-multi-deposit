@@ -39,6 +39,7 @@ package object multideposit {
   type MultiDepositValues = List[String]
   type Dataset = mutable.HashMap[MultiDepositKey, MultiDepositValues]
   type Datasets = ListBuffer[(DatasetID, Dataset)]
+  def Datasets: Datasets = ListBuffer.empty
 
   case class FileParameters(row: Option[Int], sip: Option[String], dataset: Option[String],
                             storageService: Option[String], storagePath: Option[String],
