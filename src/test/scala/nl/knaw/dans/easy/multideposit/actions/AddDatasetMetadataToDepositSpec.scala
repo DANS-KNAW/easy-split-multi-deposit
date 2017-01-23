@@ -23,7 +23,8 @@ import org.scalatest.BeforeAndAfterAll
 import rx.lang.scala.ObservableExtensions
 import rx.lang.scala.observers.TestSubscriber
 
-import scala.util.Success
+import scala.collection.mutable
+import scala.util.{Failure, Success}
 import scala.xml.{Elem, PrettyPrinter}
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
@@ -101,6 +102,133 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   </ddm:DDM>
 
   override def afterAll = testDir.getParentFile.deleteDirectory()
+
+ "preconditions check with correctly corresponding access rights and audience" should "succeed" in {
+   val validDataset = mutable.HashMap(
+     "DATASET" -> List(datasetID, datasetID),
+     "DDM_ACCESSRIGHTS" -> List("GROUP_ACCESS", "OPEN_ACCESS"),
+     "DDM_AUDIENCE" -> List("D37000", "") // Archaeology
+   )
+   val action = new AddDatasetMetadataToDeposit(1, (datasetID, validDataset))
+
+   action.checkPreconditions shouldBe a[Success[_]]
+ }
+
+  "preconditions check with incorrectly corresponding access rights and audience" should "fail" in {
+    val invalidDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_ACCESSRIGHTS" -> List("GROUP_ACCESS", ""),
+      "DDM_AUDIENCE" -> List("D30000", "") // Humanities
+    )
+    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
+
+    action.checkPreconditions shouldBe a[Failure[_]]
+  }
+
+  "preconditions check with required person information" should "succeed" in {
+    val validDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DCX_CREATOR_TITLES" -> List("", ""),
+      "DCX_CREATOR_INITIALS" -> List("C.R.E.A.T.O.R.", ""),
+      "DCX_CREATOR_INSERTIONS" -> List("", ""),
+      "DCX_CREATOR_SURNAME" -> List("Creator", ""),
+      "DCX_CREATOR_DAI" -> List("", ""),
+      "DCX_CREATOR_ORGANIZATION" -> List("", "CreatorOrganisation"),
+      "DCX_CONTRIBUTOR_TITLES" -> List("", ""),
+      "DCX_CONTRIBUTOR_INITIALS" -> List("C.O.N.T.R.I.B.U.T.O.R.", ""),
+      "DCX_CONTRIBUTOR_INSERTIONS" -> List("", ""),
+      "DCX_CONTRIBUTOR_SURNAME" -> List("Contributor", ""),
+      "DCX_CONTRIBUTOR_DAI" -> List("", ""),
+      "DCX_CONTRIBUTOR_ORGANIZATION" -> List("", "ContributerOrganisation")
+    )
+    val action = new AddDatasetMetadataToDeposit(1, (datasetID, validDataset))
+
+    action.checkPreconditions shouldBe a[Success[_]]
+  }
+
+  "preconditions check with missing required person information" should "fail" in {
+    val invalidDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCX_CREATOR_TITLES" -> List("Prof"),
+      "DCX_CREATOR_INITIALS" -> List("F.A.I.L"),
+      "DCX_CREATOR_INSERTIONS" -> List(""),
+      "DCX_CREATOR_SURNAME" -> List(""),
+      "DCX_CREATOR_DAI" -> List("")
+    )
+    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
+
+    action.checkPreconditions shouldBe a[Failure[_]]
+  }
+
+  "preconditions check with missing required point coordinates" should "fail" in {
+    val invalidDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCX_SPATIAL_X" -> List("5"),
+      "DCX_SPATIAL_Y" -> List("")
+    )
+    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
+
+    action.checkPreconditions shouldBe a[Failure[_]]
+  }
+
+  "preconditions check with missing required box coordinates" should "fail" in {
+    val invalidDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCX_SPATIAL_NORTH" -> List("5"),
+      "DCX_SPATIAL_SOUTH" -> List(""),
+      "DCX_SPATIAL_EAST" -> List("5"),
+      "DCX_SPATIAL_WEST" -> List("5")
+    )
+    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
+
+    action.checkPreconditions shouldBe a[Failure[_]]
+  }
+
+  "preconditions check with required coordinates" should "succeed" in {
+    val validDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DCX_SPATIAL_X" -> List("5", ""),
+      "DCX_SPATIAL_Y" -> List("5", ""),
+      "DCX_SPATIAL_NORTH" -> List("5", ""),
+      "DCX_SPATIAL_SOUTH" -> List("5", ""),
+      "DCX_SPATIAL_EAST" -> List("5", ""),
+      "DCX_SPATIAL_WEST" -> List("5", "")
+    )
+    val action = new AddDatasetMetadataToDeposit(1, (datasetID, validDataset))
+
+    action.checkPreconditions shouldBe a[Success[_]]
+  }
+
+  "preconditions check with valid schemes" should "succeed" in {
+    val validDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DCT_TEMPORAL_SCHEME" -> List("abr:ABRperiode", ""),
+      "DC_SUBJECT_SCHEME" -> List("abr:ABRcomplex", "")
+    )
+    val action = new AddDatasetMetadataToDeposit(1, (datasetID, validDataset))
+
+    action.checkPreconditions shouldBe a[Success[_]]
+  }
+
+  "preconditions check with invalid temporal scheme" should "fail" in {
+    val invalidDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCT_TEMPORAL_SCHEME" -> List("invalidTemporalScheme")
+    )
+    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
+
+    action.checkPreconditions shouldBe a[Failure[_]]
+  }
+
+  "preconditions check with invalid subject scheme" should "fail" in {
+    val invalidDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DC_SUBJECT_SCHEME" -> List("invalidSubjectScheme")
+    )
+    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
+
+    action.checkPreconditions shouldBe a[Failure[_]]
+  }
 
   "run" should "write the metadata to a file at the correct place" in {
     val file = outputDatasetMetadataFile(settings, datasetID)
