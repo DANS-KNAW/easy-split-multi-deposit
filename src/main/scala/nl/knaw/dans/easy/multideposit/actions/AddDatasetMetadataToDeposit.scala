@@ -22,19 +22,59 @@ import org.apache.commons.logging.LogFactory
 
 import scala.collection.mutable
 import scala.language.postfixOps
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 import scala.xml.Elem
+import nl.knaw.dans.lib.error.TraversableTryExtensions
 
-case class AddDatasetMetadataToDeposit(row: Int, dataset: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
+case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val log = LogFactory.getLog(getClass)
 
-  // TODO preconditions for verifying the metadata from `dataset` in future release
+  val (datasetID, dataset) = entry
 
   def run() = {
     log.debug(s"Running $this")
 
-    writeDatasetMetadataXml(row, dataset._1, dataset._2)
+    writeDatasetMetadataXml(row, datasetID, dataset)
+  }
+
+  /**
+   * Verifies whether all preconditions are met for this specific action.
+   * Required metadata fields and some allowed values are checked,
+   * field interdependencies are taken into consideration
+   *
+   * @return `Success` when all preconditions are met, `Failure` otherwise
+   */
+  override def checkPreconditions: Try[Unit] = {
+     dataset.toRows.flatMap( rowVals => {
+      List(
+        // coordinates
+        // point
+        checkAllOrNone(row, rowVals,
+          List("DCX_SPATIAL_X", "DCX_SPATIAL_Y")),
+        // box
+        checkAllOrNone(row, rowVals,
+          List("DCX_SPATIAL_NORTH", "DCX_SPATIAL_SOUTH","DCX_SPATIAL_EAST", "DCX_SPATIAL_WEST")),
+
+        // persons
+        // note that the DCX_{}_ORGANISATION can have a value independent of the other fields
+        // creator
+        checkRequiredWithGroup(row, rowVals,
+          List("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME"),
+          List("DCX_CREATOR_TITLES", "DCX_CREATOR_INSERTIONS", "DCX_CREATOR_DAI")),
+        // contributor
+        checkRequiredWithGroup(row, rowVals,
+          List("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME"),
+          List("DCX_CONTRIBUTOR_TITLES", "DCX_CONTRIBUTOR_INSERTIONS", "DCX_CONTRIBUTOR_DAI")),
+
+        // check allowed value(s)
+        // scheme
+        checkValueIsOneOf(row, rowVals, "DCT_TEMPORAL_SCHEME", List("abr:ABRperiode")),
+        checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", List("abr:ABRcomplex")),
+
+        checkAccessRights(row, rowVals)
+      )
+    }).collectResults.map(_ => ())
   }
 }
 object AddDatasetMetadataToDeposit {
@@ -220,4 +260,57 @@ object AddDatasetMetadataToDeposit {
   }
 
   def elem(key: String)(value: String) = <key>{value}</key>.copy(label=key)
+
+  /**
+   * Check if either non of the keys have values or all of them have values
+   * If some are missing, mention them in the exception message
+   */
+  def checkAllOrNone(row: Int, map: mutable.HashMap[MultiDepositKey, String], keys: List[String]): Try[Unit] = {
+    val emptyVals = keys.filter(key => map.get(key).forall(_.isBlank))
+
+    if (emptyVals.nonEmpty && emptyVals.size < keys.size) {
+      Failure(ActionException(row, s"Missing value(s) for: $emptyVals"))
+    } else {
+      Success(())
+    }
+  }
+
+  /**
+   * If any of the keys (optional and required) has a value all required keys should have a value
+   */
+  def checkRequiredWithGroup(row: Int, map: mutable.HashMap[MultiDepositKey, String], requiredKeys: List[String], optionalKeys: List[String]): Try[Unit] = {
+    val emptyOptionalVals = optionalKeys.filter(optionalKey => map.get(optionalKey).forall(_.isBlank))
+    val emptyRequiredVals = requiredKeys.filter(requiredKey => map.get(requiredKey).forall(_.isBlank))
+
+    // note that it has vals if not all are empty
+    val hasOptionalVals = emptyOptionalVals.size < optionalKeys.size
+    val hasRequiredVals = emptyRequiredVals.size < requiredKeys.size
+
+    if ((hasOptionalVals || hasRequiredVals) && emptyRequiredVals.nonEmpty) {
+      Failure(ActionException(row, s"Missing value(s) for: $emptyRequiredVals"))
+    } else {
+      Success(())
+    }
+  }
+
+  /**
+   * When it contains something, this should be from a list af allowed values
+   */
+  def checkValueIsOneOf(row: Int, map: mutable.HashMap[MultiDepositKey, String], key: String, allowed: List[String]): Try[Unit] = {
+    val value = map.getOrElse(key, "")
+    if(value.isEmpty || allowed.contains(value))
+      Success(Unit)
+    else
+      Failure(ActionException(row, s"Wrong value: $value should be empty or one of: $allowed"))
+  }
+
+  def checkAccessRights(row: Int, map: mutable.HashMap[MultiDepositKey, String]): Try[Unit] = {
+    val accessRights = map.get("DDM_ACCESSRIGHTS")
+    val audience = map.get("DDM_AUDIENCE")
+    (accessRights, audience) match {
+      case (Some("GROUP_ACCESS"), Some ("D37000")) => Success(Unit)
+      case (Some("GROUP_ACCESS"), _) => Failure(ActionException(row, s"When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is: $audience"))
+      case (_,_) => Success(())
+    }
+  }
 }

@@ -17,21 +17,47 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 import java.net.URLConnection
+import java.nio.file.{Files, Paths}
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
 import org.apache.commons.logging.LogFactory
 
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
-case class AddFileMetadataToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
+case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val log = LogFactory.getLog(getClass)
+
+  val (datasetID, dataset) = entry
 
   def run() = {
     log.debug(s"Running $this")
 
     writeFileMetadataXml(row, datasetID)
+  }
+
+  /**
+   * Verifies whether all preconditions are met for this specific action.
+   * All files referenced in the instructions are checked for existence.
+   *
+   * @return `Success` when all preconditions are met, `Failure` otherwise
+   */
+  override def checkPreconditions: Try[Unit] = {
+    log.debug(s"Checking preconditions for $this")
+
+    val inputDir = settings.multidepositDir;
+    val inputDirPath = Paths.get(inputDir.getAbsolutePath)
+
+    // Note that the FILE_SIP paths are not really used in this action
+    val nonExistingPaths = dataset.get("FILE_SIP").getOrElse(List.empty)
+      .filterNot(_.isEmpty)
+      .filterNot(fp => Files.exists(inputDirPath.resolve(fp)))
+
+    if (nonExistingPaths.isEmpty)
+      Success(())
+    else
+      Failure(ActionException(row, s"""The following SIP files are referenced in the instructions but not found in the deposit input dir "$inputDirPath" for dataset "$datasetID": $nonExistingPaths""".stripMargin))
   }
 }
 object AddFileMetadataToDeposit {
@@ -119,10 +145,4 @@ object AddFileMetadataToDeposit {
     }
     return mimetype;
   }
-
-
-
-
-
-
 }

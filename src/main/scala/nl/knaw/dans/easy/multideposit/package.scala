@@ -20,6 +20,7 @@ import java.nio.charset.Charset
 import java.util.Properties
 import javax.naming.NamingEnumeration
 
+import nl.knaw.dans.lib.error.CompositeException
 import org.apache.commons.io.{Charsets, FileUtils}
 import org.apache.commons.lang.StringUtils
 import rx.lang.scala.{Observable, ObservableExtensions}
@@ -427,9 +428,14 @@ package object multideposit {
   def generateErrorReport[T](header: String = "", trys: Seq[Try[T]] = Nil, footer: String = ""): String = {
     header.toOption.map(s => s"$s\n").getOrElse("") +
       trys.filter(_.isFailure)
+        .flatMap {
+          case Failure(CompositeException(errors)) => errors.map(Failure(_))
+          case f@Failure(_) => List(f)
+          case _ => assert(assertion = false, "Should always get a Failure"); List.empty
+        }
         .map {
           case Failure(actionEx: ActionException) => actionEx
-          // TODO add other Failure(exceptions) cases if needed and adjust the error message below accordingly
+          // Add other Failure(exceptions) cases if needed and adjust the error message below accordingly
           case _ => throw new AssertionError("Only Failures of ActionException are expected here")
         }
         .sortBy(_.row)
