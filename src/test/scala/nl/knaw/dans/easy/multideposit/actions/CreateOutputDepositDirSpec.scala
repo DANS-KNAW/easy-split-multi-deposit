@@ -67,7 +67,11 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     outputDepositBagMetadataDir(settings, datasetID) should not (exist)
 
     // creation of directories
-    CreateOutputDepositDir(1, datasetID).checkPreconditions shouldBe a[Failure[_]]
+    inside(CreateOutputDepositDir(1, datasetID).checkPreconditions) {
+      case Failure(ActionException(row, msg, _)) =>
+        row shouldBe 1
+        msg should include s"The deposit for dataset $datasetID already exists"
+    }
   }
 
   "execute" should "create the directories" in {
