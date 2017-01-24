@@ -35,7 +35,7 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
       .getOrElse(Success(()))
   }
 
-  protected def execute(): Try[Unit] = {
+  def execute(): Try[Unit] = {
     debug(s"Running $this")
     debug(s"Creating Deposit Directory at $depositDir with bag directory = $bagDir and metadata directory = $metadataDir")
 

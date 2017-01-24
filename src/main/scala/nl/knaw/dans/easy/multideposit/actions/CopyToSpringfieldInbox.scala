@@ -15,27 +15,24 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.{Action, ActionException, Settings, _}
-import org.slf4j.LoggerFactory
+import nl.knaw.dans.easy.multideposit.{ Action, ActionException, Settings, _ }
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
-case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action {
-  val log = LoggerFactory.getLogger(getClass)
+case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action with DebugEnhancedLogging {
 
-  override def checkPreconditions = {
-    log.debug(s"Checking preconditions for $this")
+  private val mdFile = multiDepositDir(settings, fileMd)
 
-    val file = multiDepositDir(settings, fileMd)
+  override def checkPreconditions: Try[Unit] = {
+    debug(s"Checking preconditions for $this")
 
-    if (file.exists) Success(Unit)
-    else Failure(ActionException(row, s"Cannot find MD file: ${file.getPath}"))
+    if (mdFile.exists) Success(Unit)
+    else Failure(ActionException(row, s"Cannot find MD file: ${mdFile.getPath}"))
   }
 
-  def execute() = {
-    log.debug(s"Running $this")
-
-    val mdFile = multiDepositDir(settings, fileMd)
+  def execute(): Try[Unit] = {
+    debug(s"Running $this")
     val sfFile = springfieldInboxDir(settings, fileMd)
     Try {
       mdFile.copyFile(sfFile)
@@ -44,9 +41,9 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
     }
   }
 
-  override def rollback() = {
+  override def rollback(): Try[Unit] = {
     Try {
-      log.debug(s"Rolling back $this")
+      debug(s"Rolling back $this")
       
       settings.springfieldInbox.listFiles.foreach(_.deleteDirectory())
     }

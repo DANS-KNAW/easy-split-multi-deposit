@@ -38,10 +38,11 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   "checkPreconditions" should "fail if file does not exist" in {
-    val pre = CopyToSpringfieldInbox(1, "videos/some_checkPreFail.mpg").checkPreconditions
-
-    (the [ActionException] thrownBy pre.get).row shouldBe 1
-    (the [ActionException] thrownBy pre.get).message should include ("Cannot find MD file:")
+    inside(CopyToSpringfieldInbox(1, "videos/some_checkPreFail.mpg").checkPreconditions) {
+      case Failure(ActionException(row, message, _)) =>
+        row shouldBe 1
+        message should include ("Cannot find MD file")
+    }
   }
 
   it should "succeed if file exist" in {
@@ -57,11 +58,12 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "fail if file does not exist" in {
-    val run = CopyToSpringfieldInbox(1, "videos/some_error.mpg").execute()
-
-    run shouldBe a[Failure[_]]
-    (the [ActionException] thrownBy run.get).getMessage should include ("videos/some_error.mpg")
-    (the [ActionException] thrownBy run.get).getCause shouldBe a[FileNotFoundException]
+    inside(CopyToSpringfieldInbox(1, "videos/some_error.mpg").execute()) {
+      case Failure(ActionException(row, message, cause)) =>
+        row shouldBe 1
+        message should include ("videos/some_error.mpg")
+        cause shouldBe a[FileNotFoundException]
+    }
   }
 
   "rollback" should "delete the files and directories that were added by action.run()" in {
