@@ -230,7 +230,7 @@ object Main {
 
     actions
       .doOnNext(action => log.info(s"Executing action of ${action.getClass.getSimpleName} ..."))
-      .flatMap(action => action.run()
+      .flatMap(action => action.run
         .map(_ => Observable.just(action))
         .onError(error => Observable.just(action) ++ Observable.error(error)))
       .doOnNext(stack.push(_))

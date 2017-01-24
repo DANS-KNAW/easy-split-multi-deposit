@@ -24,6 +24,10 @@ import scala.collection.mutable
  * An action to be performed by Process SIP. It provides three methods that can be invoked to verify
  * the feasibility of the action, to perform the action and - if necessary - to roll back the action.
  */
+/*
+  To future developers: this class is a semigroup. It satisfies the associativity law as defined
+  in https://wiki.haskell.org/Typeclassopedia#Laws_4.
+ */
 trait Action {
   self =>
 
@@ -39,7 +43,7 @@ trait Action {
    *
    * @return `Success` if the execution was successful, `Failure` otherwise
    */
-  def execute(): Try[Unit]
+  protected def execute(): Try[Unit]
 
   /**
    * Cleans up results of a previous call to run so that a new call to run will not fail because of those results.
@@ -90,32 +94,45 @@ trait Action {
    * @param other the second action to be run
    * @return a composed action
    */
-  def compose(other: Action): Action = new Action {
-    private val stack = mutable.Stack[Action]()
+  def compose(other: Action): ComposedAction = {
+    other match {
+      case composedAction: Action#ComposedAction => ComposedAction(self :: composedAction.actions)
+      case action => ComposedAction(self :: action :: Nil)
+    }
+  }
+
+  case class ComposedAction(actions: List[Action]) extends Action {
+    private val executedActions = mutable.Stack[Action]()
 
     override def checkPreconditions: Try[Unit] = {
-      List(self, other)
-        .map(_.checkPreconditions)
-        .collectResults
-        .map(_ => ())
+      actions.map(_.checkPreconditions).collectResults.map(_ => ())
     }
 
-    override def execute(): Try[Unit] = {
-      stack.push(self)
-      for {
-        _ <- self.execute()
-        _ = stack.push(other)
-        _ <- other.execute()
-      } yield ()
+    override protected def execute(): Try[Unit] = {
+      actions.foldLeft(Try { () })((res, action) => res.flatMap(_ => { executedActions.push(action); action.execute() }))
     }
 
     override def rollback(): Try[Unit] = {
-      Stream.continually(stack.isEmpty)
+      Stream.continually(executedActions.isEmpty)
         .takeWhile(empty => !empty)
-        .map(_ => stack.pop().rollback())
+        .map(_ => executedActions.pop().rollback())
         .toList
         .collectResults
         .map(_ => ())
+    }
+
+    override def compose(other: Action): ComposedAction = {
+      other match {
+        case composedAction: Action#ComposedAction => ComposedAction(actions ++ composedAction.actions)
+        case action => ComposedAction(actions :+ action)
+      }
+    }
+
+    override def equals(obj: Any): Boolean = {
+      obj match {
+        case ca: Action#ComposedAction => this.actions == ca.actions
+        case _ => false
+      }
     }
   }
 }
