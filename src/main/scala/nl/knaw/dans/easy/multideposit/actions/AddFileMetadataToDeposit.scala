@@ -17,22 +17,21 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 import java.net.URLConnection
-import java.nio.file.{Files, Paths}
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
-import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
-import org.apache.commons.logging.LogFactory
+import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.util.{Failure, Success, Try}
+import scala.collection.immutable
+import scala.util.{ Failure, Success, Try }
+import scala.xml.Elem
 
-case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
-
-  val log = LogFactory.getLog(getClass)
+case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action with DebugEnhancedLogging {
 
   val (datasetID, dataset) = entry
 
-  def execute() = {
-    log.debug(s"Running $this")
+  def execute(): Try[Unit] = {
+    debug(s"Running $this")
 
     writeFileMetadataXml(row, datasetID)
   }
@@ -44,20 +43,19 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-    log.debug(s"Checking preconditions for $this")
+    debug(s"Checking preconditions for $this")
 
-    val inputDir = settings.multidepositDir;
-    val inputDirPath = Paths.get(inputDir.getAbsolutePath)
+    val inputDir = settings.multidepositDir
 
     // Note that the FILE_SIP paths are not really used in this action
-    val nonExistingPaths = dataset.get("FILE_SIP").getOrElse(List.empty)
+    val nonExistingFileSIPs = dataset.getOrElse("FILE_SIP", List.empty)
       .filterNot(_.isEmpty)
-      .filterNot(fp => Files.exists(inputDirPath.resolve(fp)))
+      .filterNot(fp => new File(inputDir, fp).exists())
 
-    if (nonExistingPaths.isEmpty)
+    if (nonExistingFileSIPs.isEmpty)
       Success(())
     else
-      Failure(ActionException(row, s"""The following SIP files are referenced in the instructions but not found in the deposit input dir "$inputDirPath" for dataset "$datasetID": $nonExistingPaths""".stripMargin))
+      Failure(ActionException(row, s"""The following SIP files are referenced in the instructions but not found in the deposit input dir "$inputDir" for dataset "$datasetID": ${nonExistingFileSIPs.mkString("[", ", ", "]")}""".stripMargin))
   }
 }
 object AddFileMetadataToDeposit {
@@ -70,7 +68,7 @@ object AddFileMetadataToDeposit {
     }
   }
 
-  def datasetToFileXml(datasetID: DatasetID)(implicit settings: Settings) = {
+  def datasetToFileXml(datasetID: DatasetID)(implicit settings: Settings): Elem = {
     val inputDir = multiDepositDir(settings, datasetID)
 
     <files xmlns:dcterms="http://purl.org/dc/terms/">{
@@ -80,14 +78,13 @@ object AddFileMetadataToDeposit {
   }
 
   // TODO other fields need to be added here later
-  def xmlPerPath(inputDir: File)(file: File) = {
+  def xmlPerPath(inputDir: File)(file: File): Elem = {
     <file filepath={s"data/${inputDir.toPath.relativize(file.toPath)}"}>{
       <dcterms:format>{getMimeType(file.getPath)}</dcterms:format>
     }</file>
   }
 
-
-  val fileExtensionMap = scala.collection.immutable.HashMap(
+  val fileExtensionMap = immutable.HashMap(
     // MS Office
     "doc" -> "application/msword",
     "dot" -> "application/msword",
@@ -136,13 +133,13 @@ object AddFileMetadataToDeposit {
     "rtf" -> "application/rtf",
     "pdf" -> "application/pdf"
 
-  );
-  def getMimeType(filename: String): String ={
-    var mimetype = URLConnection.getFileNameMap.getContentTypeFor(filename);
-    if (mimetype == null){
-      val extension = filename.substring(filename.lastIndexOf('.') + 1, filename.length());
-      mimetype = fileExtensionMap(extension);
-    }
-    return mimetype;
+  )
+
+  def getMimeType(filename: String): String = {
+    Option(URLConnection.getFileNameMap.getContentTypeFor(filename))
+      .getOrElse {
+        val extension = filename.substring(filename.lastIndexOf('.') + 1, filename.length())
+        fileExtensionMap(extension)
+      }
   }
 }

@@ -22,7 +22,7 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
 import scala.collection.mutable
 import scala.util.{ Failure, Success }
-import scala.xml.PrettyPrinter
+import scala.xml.Utility
 
 class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
@@ -47,10 +47,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "preconditions check with existing SIP files" should "succeed" in {
-
-    val action = new AddFileMetadataToDeposit(1, (datasetID, dataset))
-
-    action.checkPreconditions shouldBe a[Success[_]]
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
   "preconditions check with non-existing SIP files" should "fail" in {
@@ -58,9 +55,12 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
       "DATASET" -> List(datasetID, datasetID, datasetID),
       "FILE_SIP" -> List("ruimtereis01/reisverslag/deel01.txt", "", "non-existing-file-path")
     )
-    val action = new AddFileMetadataToDeposit(1, (datasetID, invalidDataset))
 
-    action.checkPreconditions shouldBe a[Failure[_]]
+    inside(new AddFileMetadataToDeposit(1, (datasetID, invalidDataset)).checkPreconditions) {
+      case Failure(ActionException(row, message, _)) =>
+        row shouldBe 1
+        message should include(s"""for dataset "$datasetID": [non-existing-file-path]""")
+    }
   }
 
   "execute" should "write the file metadata to an xml file" in {
@@ -74,14 +74,15 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   }
 
   "datasetToFileXml" should "produce the xml for all the files" in {
-    val xml = AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01")
-    xml.child.length shouldBe 5
-
-    xml.child should contain(<file filepath="data/ruimtereis01_verklaring.txt"><dcterms:format>text/plain</dcterms:format></file>)
-    xml.child should contain(<file filepath="data/reisverslag/deel01.docx"><dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format></file>)
-    xml.child should contain(<file filepath="data/reisverslag/deel01.txt"><dcterms:format>text/plain</dcterms:format></file>)
-    xml.child should contain(<file filepath="data/reisverslag/deel02.txt"><dcterms:format>text/plain</dcterms:format></file>)
-    xml.child should contain(<file filepath="data/reisverslag/deel03.txt"><dcterms:format>text/plain</dcterms:format></file>)
+    AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01").child should (
+      have length 5 and
+        contain allOf(
+      <file filepath="data/ruimtereis01_verklaring.txt"><dcterms:format>text/plain</dcterms:format></file>,
+      <file filepath="data/reisverslag/deel01.docx"><dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format></file>,
+      <file filepath="data/reisverslag/deel01.txt"><dcterms:format>text/plain</dcterms:format></file>,
+      <file filepath="data/reisverslag/deel02.txt"><dcterms:format>text/plain</dcterms:format></file>,
+      <file filepath="data/reisverslag/deel03.txt"><dcterms:format>text/plain</dcterms:format></file>
+    ))
   }
 
   //file does not need to exist for the mimetype to be established. it is based solely on filename.
@@ -91,7 +92,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
       <dcterms:format>text/plain</dcterms:format>
     </file>
 
-    new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)
+    Utility.trim(xml) shouldBe Utility.trim(res)
   }
 
   //file does not need to exist for the mimetype to be established. it is based solely on filename.
@@ -101,7 +102,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
       <dcterms:format>application/msword</dcterms:format>
     </file>
 
-    new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)
+    Utility.trim(xml) shouldBe Utility.trim(res)
   }
 
   //file does not need to exist for the mimetype to be established. it is based solely on filename.
@@ -111,7 +112,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
       <dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format>
     </file>
 
-    new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)
+    Utility.trim(xml) shouldBe Utility.trim(res)
   }
 
   it should "produce the xml for one file" in {
@@ -120,6 +121,6 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
       <dcterms:format>text/plain</dcterms:format>
     </file>
 
-    new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)
+    Utility.trim(xml) shouldBe Utility.trim(res)
   }
 }

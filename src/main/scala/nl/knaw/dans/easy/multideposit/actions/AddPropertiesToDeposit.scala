@@ -15,13 +15,12 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import resource._
-import java.io.{ FileOutputStream, OutputStreamWriter }
 import java.util.Properties
 
 import nl.knaw.dans.easy.multideposit.actions.AddPropertiesToDeposit._
 import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import resource._
 
 import scala.language.postfixOps
 import scala.util.{ Failure, Success, Try }
