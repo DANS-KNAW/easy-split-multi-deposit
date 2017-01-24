@@ -15,30 +15,28 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{File, FileInputStream}
+import java.io.{ File, FileInputStream }
 
 import gov.loc.repository.bagit.BagFactory
 import gov.loc.repository.bagit.BagFactory.Version
 import gov.loc.repository.bagit.Manifest.Algorithm
+import gov.loc.repository.bagit.transformer.impl.DefaultCompleter
 import gov.loc.repository.bagit.utilities.MessageDigestHelper
 import gov.loc.repository.bagit.writer.impl.FileSystemWriter
-import gov.loc.repository.bagit.transformer.impl.DefaultCompleter
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
-import org.slf4j.LoggerFactory
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.collection.JavaConversions.seqAsJavaList
-import scala.util.{Failure, Try}
+import scala.util.{ Failure, Try }
 
-case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
-  val log = LoggerFactory.getLogger(getClass)
+case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action with DebugEnhancedLogging {
 
-  def execute() = {
-    log.debug(s"Running $this")
+  def execute(): Try[Unit] = {
+    debug(s"Running $this")
 
-    createBag(datasetID) recoverWith {
-      case e => Failure(ActionException(row, s"Error occured in creating the bag for $datasetID: ${e.getMessage}", e))
-    }
+    createBag(datasetID)
+      .recoverWith { case e => Failure(ActionException(row, s"Error occured in creating the bag for $datasetID: ${ e.getMessage }", e)) }
   }
 }
 object AddBagToDeposit {
