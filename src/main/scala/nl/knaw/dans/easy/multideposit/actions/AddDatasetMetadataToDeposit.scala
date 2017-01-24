@@ -18,25 +18,17 @@ package nl.knaw.dans.easy.multideposit.actions
 import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
-import org.apache.commons.logging.LogFactory
+import nl.knaw.dans.lib.error.TraversableTryExtensions
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.collection.mutable
 import scala.language.postfixOps
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
-import nl.knaw.dans.lib.error.TraversableTryExtensions
 
-case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
-
-  val log = LogFactory.getLog(getClass)
+case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action with DebugEnhancedLogging {
 
   val (datasetID, dataset) = entry
-
-  def execute() = {
-    log.debug(s"Running $this")
-
-    writeDatasetMetadataXml(row, datasetID, dataset)
-  }
 
   /**
    * Verifies whether all preconditions are met for this specific action.
@@ -46,7 +38,7 @@ case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(im
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-     dataset.toRows.flatMap( rowVals => {
+    dataset.toRows.flatMap(rowVals => {
       List(
         // coordinates
         // point
@@ -54,7 +46,7 @@ case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(im
           List("DCX_SPATIAL_X", "DCX_SPATIAL_Y")),
         // box
         checkAllOrNone(row, rowVals,
-          List("DCX_SPATIAL_NORTH", "DCX_SPATIAL_SOUTH","DCX_SPATIAL_EAST", "DCX_SPATIAL_WEST")),
+          List("DCX_SPATIAL_NORTH", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_EAST", "DCX_SPATIAL_WEST")),
 
         // persons
         // note that the DCX_{}_ORGANISATION can have a value independent of the other fields
@@ -75,6 +67,12 @@ case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(im
         checkAccessRights(row, rowVals)
       )
     }).collectResults.map(_ => ())
+  }
+
+  def execute(): Try[Unit] = {
+    debug(s"Running $this")
+
+    writeDatasetMetadataXml(row, datasetID, dataset)
   }
 }
 object AddDatasetMetadataToDeposit {
@@ -105,7 +103,7 @@ object AddDatasetMetadataToDeposit {
       </ddm:DDM>
   }
 
-  def createProfile(dataset: Dataset) = {
+  def createProfile(dataset: Dataset): Elem = {
     <ddm:profile>
       {profileElems(dataset, "DC_TITLE")}
       {profileElems(dataset, "DC_DESCRIPTION")}
@@ -116,16 +114,16 @@ object AddDatasetMetadataToDeposit {
     </ddm:profile>
   }
 
-  def profileElems(dataset: Dataset, key: MultiDepositKey) = {
+  def profileElems(dataset: Dataset, key: MultiDepositKey): Seq[Elem] = {
     elemsFromKeyValues(key, dataset.getOrElse(key, List()))
   }
 
-  def elemsFromKeyValues(key: MultiDepositKey, values: MultiDepositValues) = {
+  def elemsFromKeyValues(key: MultiDepositKey, values: MultiDepositValues): Seq[Elem] = {
     values.filter(_.nonEmpty)
       .map(elem(profileFields.getOrElse(key, key)))
   }
 
-  def createCreators(dataset: Dataset) = {
+  def createCreators(dataset: Dataset): Seq[Elem] = {
     dataset.rowsWithValuesFor(composedCreatorFields).map(mdKeyValues =>
       <dcx-dai:creatorDetails>{
         if (isOrganization(mdKeyValues))
@@ -150,7 +148,7 @@ object AddDatasetMetadataToDeposit {
     othersEmpty && hasOrganization
   }
 
-  def createContributors(dataset: Dataset) = {
+  def createContributors(dataset: Dataset): Seq[Elem] = {
     dataset.rowsWithValuesFor(composedContributorFields).map(mdKeyValues =>
       <dcx-dai:contributorDetails>{
         if (isOrganization(mdKeyValues))
@@ -165,7 +163,7 @@ object AddDatasetMetadataToDeposit {
     )
   }
 
-  def composedEntry(dictionary: Dictionary)(entry: (MultiDepositKey, String)) = {
+  def composedEntry(dictionary: Dictionary)(entry: (MultiDepositKey, String)): Elem = {
     val (key, value) = entry
     if (organizationKeys.contains(key)) {
       <dcx-dai:organization>
@@ -177,12 +175,12 @@ object AddDatasetMetadataToDeposit {
     }
   }
 
-  def createSrsName(fields: mutable.HashMap[MultiDepositKey, String]) = Map(
+  def createSrsName(fields: mutable.HashMap[MultiDepositKey, String]): String = Map(
     "degrees" -> "http://www.opengis.net/def/crs/EPSG/0/4326",
     "RD" -> "http://www.opengis.net/def/crs/EPSG/0/28992"
   ).getOrElse(fields.getOrElse("DCX_SPATIAL_SCHEME", ""),"")
 
-  def createSpatialPoints(dataset: Dataset) = {
+  def createSpatialPoints(dataset: Dataset): Seq[Elem] = {
     // coordinate order latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
     dataset.rowsWithValuesForAllOf(composedSpatialPointFields).map(mdKeyValues =>
       <dcx-gml:spatial srsName={createSrsName(mdKeyValues)}>
@@ -193,7 +191,7 @@ object AddDatasetMetadataToDeposit {
     )
   }
 
-  def createSpatialBoxes(dataset: Dataset) = {
+  def createSpatialBoxes(dataset: Dataset): Seq[Elem] = {
     dataset.rowsWithValuesForAllOf(composedSpatialBoxFields).map(mdKeyValues =>
       <dcx-gml:spatial>
         <boundedBy xmlns="http://www.opengis.net/gml">
@@ -206,7 +204,7 @@ object AddDatasetMetadataToDeposit {
     )
   }
 
-  def createSchemedMetadata(dataset: Dataset, fields: Dictionary, key: MultiDepositKey, schemeKey: MultiDepositKey) = {
+  def createSchemedMetadata(dataset: Dataset, fields: Dictionary, key: MultiDepositKey, schemeKey: MultiDepositKey): Seq[Elem] = {
     val xmlKey = fields.getOrElse(key, key)
     dataset.rowsWithValuesFor(fields).map(mdKeyValues => {
       val value = mdKeyValues.getOrElse(key, "")
@@ -216,15 +214,15 @@ object AddDatasetMetadataToDeposit {
     })
   }
 
-  def createTemporal(dataset: Dataset) = {
+  def createTemporal(dataset: Dataset): Seq[Elem] = {
     createSchemedMetadata(dataset, composedTemporalFields, "DCT_TEMPORAL", "DCT_TEMPORAL_SCHEME")
   }
 
-  def createSubject(dataset: Dataset) = {
+  def createSubject(dataset: Dataset): Seq[Elem] = {
     createSchemedMetadata(dataset, composedSubjectFields, "DC_SUBJECT", "DC_SUBJECT_SCHEME")
   }
 
-  def createRelations(dataset: Dataset) = {
+  def createRelations(dataset: Dataset): Seq[Elem] = {
     dataset.rowsWithValuesFor(composedRelationFields).map { row =>
       (row.get("DCX_RELATION_QUALIFIER"), row.get("DCX_RELATION_LINK"), row.get("DCX_RELATION_TITLE")) match {
         case (Some(q), Some(l),_      ) => elem(s"dcterms:$q")(l)
@@ -239,7 +237,7 @@ object AddDatasetMetadataToDeposit {
     }
   }
 
-  def createMetadata(dataset: Dataset) = {
+  def createMetadata(dataset: Dataset): Elem = {
     def isMetaData(key: MultiDepositKey, values: MultiDepositValues): Boolean = {
       metadataFields.contains(key) && values.nonEmpty
     }
@@ -259,7 +257,7 @@ object AddDatasetMetadataToDeposit {
     values.filter(_.nonEmpty).map(elem(metadataFields.getOrElse(key, key)))
   }
 
-  def elem(key: String)(value: String) = <key>{value}</key>.copy(label=key)
+  def elem(key: String)(value: String): Elem = <key>{value}</key>.copy(label=key)
 
   /**
    * Check if either non of the keys have values or all of them have values
@@ -269,7 +267,7 @@ object AddDatasetMetadataToDeposit {
     val emptyVals = keys.filter(key => map.get(key).forall(_.isBlank))
 
     if (emptyVals.nonEmpty && emptyVals.size < keys.size) {
-      Failure(ActionException(row, s"Missing value(s) for: $emptyVals"))
+      Failure(ActionException(row, s"Missing value(s) for: ${emptyVals.mkString("[", ", ", "]")}"))
     } else {
       Success(())
     }
@@ -286,11 +284,10 @@ object AddDatasetMetadataToDeposit {
     val hasOptionalVals = emptyOptionalVals.size < optionalKeys.size
     val hasRequiredVals = emptyRequiredVals.size < requiredKeys.size
 
-    if ((hasOptionalVals || hasRequiredVals) && emptyRequiredVals.nonEmpty) {
-      Failure(ActionException(row, s"Missing value(s) for: $emptyRequiredVals"))
-    } else {
+    if ((hasOptionalVals || hasRequiredVals) && emptyRequiredVals.nonEmpty)
+      Failure(ActionException(row, s"Missing value(s) for: ${emptyRequiredVals.mkString("[", ", ", "]")}"))
+    else
       Success(())
-    }
   }
 
   /**
@@ -301,16 +298,15 @@ object AddDatasetMetadataToDeposit {
     if(value.isEmpty || allowed.contains(value))
       Success(Unit)
     else
-      Failure(ActionException(row, s"Wrong value: $value should be empty or one of: $allowed"))
+      Failure(ActionException(row, s"Wrong value: $value should be empty or one of: ${allowed.mkString("[", ", ", "]")}"))
   }
 
   def checkAccessRights(row: Int, map: mutable.HashMap[MultiDepositKey, String]): Try[Unit] = {
-    val accessRights = map.get("DDM_ACCESSRIGHTS")
-    val audience = map.get("DDM_AUDIENCE")
-    (accessRights, audience) match {
-      case (Some("GROUP_ACCESS"), Some ("D37000")) => Success(Unit)
-      case (Some("GROUP_ACCESS"), _) => Failure(ActionException(row, s"When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is: $audience"))
-      case (_,_) => Success(())
+    (map.get("DDM_ACCESSRIGHTS"), map.get("DDM_AUDIENCE")) match {
+      case (Some("GROUP_ACCESS"), Some("D37000")) => Success(Unit)
+      case (Some("GROUP_ACCESS"), Some(code)) => Failure(ActionException(row, s"When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is: $code"))
+      case (Some("GROUP_ACCESS"), None) => Failure(ActionException(row, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is not defined"))
+      case (_, _) => Success(())
     }
   }
 }

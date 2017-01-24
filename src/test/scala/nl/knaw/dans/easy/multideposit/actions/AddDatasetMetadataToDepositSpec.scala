@@ -19,13 +19,12 @@ import java.io.File
 
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.datasetToXml
+import nl.knaw.dans.lib.error.CompositeException
 import org.scalatest.BeforeAndAfterAll
-import rx.lang.scala.Observable
-import rx.lang.scala.observers.TestSubscriber
 
 import scala.collection.mutable
-import scala.util.{ Failure, Success }
-import scala.xml.{ Elem, PrettyPrinter }
+import scala.util.{ Failure, Success, Try }
+import scala.xml.{ Elem, Utility }
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
@@ -103,29 +102,43 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
- "preconditions check with correctly corresponding access rights and audience" should "succeed" in {
+ "checkPreconditions" should "succeed with correctly corresponding access rights and audience" in {
    val validDataset = mutable.HashMap(
      "DATASET" -> List(datasetID, datasetID),
      "DDM_ACCESSRIGHTS" -> List("GROUP_ACCESS", "OPEN_ACCESS"),
      "DDM_AUDIENCE" -> List("D37000", "") // Archaeology
    )
-   val action = new AddDatasetMetadataToDeposit(1, (datasetID, validDataset))
 
-   action.checkPreconditions shouldBe a[Success[_]]
+   new AddDatasetMetadataToDeposit(1, (datasetID, validDataset)).checkPreconditions shouldBe a[Success[_]]
  }
 
-  "preconditions check with incorrectly corresponding access rights and audience" should "fail" in {
+  it should "fail with incorrectly corresponding access rights and audience" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
       "DDM_ACCESSRIGHTS" -> List("GROUP_ACCESS", ""),
       "DDM_AUDIENCE" -> List("D30000", "") // Humanities
     )
-    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
-
-    action.checkPreconditions shouldBe a[Failure[_]]
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is: D30000"
+    }
   }
 
-  "preconditions check with required person information" should "succeed" in {
+  it should "fail with undefined audience" in {
+    val invalidDataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_ACCESSRIGHTS" -> List("GROUP_ACCESS", ""),
+      "DDM_AUDIENCE" -> List("", "") // Humanities
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is not defined"
+    }
+  }
+
+  it should "succeed with required person information" in {
     val validDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
       "DCX_CREATOR_TITLES" -> List("", ""),
@@ -141,12 +154,11 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "DCX_CONTRIBUTOR_DAI" -> List("", ""),
       "DCX_CONTRIBUTOR_ORGANIZATION" -> List("", "ContributerOrganisation")
     )
-    val action = new AddDatasetMetadataToDeposit(1, (datasetID, validDataset))
 
-    action.checkPreconditions shouldBe a[Success[_]]
+    new AddDatasetMetadataToDeposit(1, (datasetID, validDataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
-  "preconditions check with missing required person information" should "fail" in {
+  it should "fail with missing required person information" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
       "DCX_CREATOR_TITLES" -> List("Prof"),
@@ -155,23 +167,29 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "DCX_CREATOR_SURNAME" -> List(""),
       "DCX_CREATOR_DAI" -> List("")
     )
-    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
 
-    action.checkPreconditions shouldBe a[Failure[_]]
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Missing value(s) for: [DCX_CREATOR_SURNAME]"
+    }
   }
 
-  "preconditions check with missing required point coordinates" should "fail" in {
+  it should "fail with missing required point coordinates" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
       "DCX_SPATIAL_X" -> List("5"),
       "DCX_SPATIAL_Y" -> List("")
     )
-    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
 
-    action.checkPreconditions shouldBe a[Failure[_]]
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Missing value(s) for: [DCX_SPATIAL_Y]"
+    }
   }
 
-  "preconditions check with missing required box coordinates" should "fail" in {
+  it should "fail with missing required box coordinates" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
       "DCX_SPATIAL_NORTH" -> List("5"),
@@ -179,12 +197,15 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "DCX_SPATIAL_EAST" -> List("5"),
       "DCX_SPATIAL_WEST" -> List("5")
     )
-    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
 
-    action.checkPreconditions shouldBe a[Failure[_]]
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Missing value(s) for: [DCX_SPATIAL_SOUTH]"
+    }
   }
 
-  "preconditions check with required coordinates" should "succeed" in {
+  it should "succeed with required coordinates" in {
     val validDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
       "DCX_SPATIAL_X" -> List("5", ""),
@@ -194,40 +215,44 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "DCX_SPATIAL_EAST" -> List("5", ""),
       "DCX_SPATIAL_WEST" -> List("5", "")
     )
-    val action = new AddDatasetMetadataToDeposit(1, (datasetID, validDataset))
 
-    action.checkPreconditions shouldBe a[Success[_]]
+    new AddDatasetMetadataToDeposit(1, (datasetID, validDataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
-  "preconditions check with valid schemes" should "succeed" in {
+  it should "succeed with valid schemes" in {
     val validDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
       "DCT_TEMPORAL_SCHEME" -> List("abr:ABRperiode", ""),
       "DC_SUBJECT_SCHEME" -> List("abr:ABRcomplex", "")
     )
-    val action = new AddDatasetMetadataToDeposit(1, (datasetID, validDataset))
 
-    action.checkPreconditions shouldBe a[Success[_]]
+    new AddDatasetMetadataToDeposit(1, (datasetID, validDataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
-  "preconditions check with invalid temporal scheme" should "fail" in {
+  it should "fail with invalid temporal scheme" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
       "DCT_TEMPORAL_SCHEME" -> List("invalidTemporalScheme")
     )
-    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
 
-    action.checkPreconditions shouldBe a[Failure[_]]
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Wrong value: invalidTemporalScheme should be empty or one of: [abr:ABRperiode]"
+    }
   }
 
-  "preconditions check with invalid subject scheme" should "fail" in {
+  it should "fail with invalid subject scheme" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
       "DC_SUBJECT_SCHEME" -> List("invalidSubjectScheme")
     )
-    val action = new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset))
 
-    action.checkPreconditions shouldBe a[Failure[_]]
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, invalidDataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Wrong value: invalidSubjectScheme should be empty or one of: [abr:ABRcomplex]"
+    }
   }
 
   "execute" should "write the metadata to a file at the correct place" in {
@@ -241,40 +266,25 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   "datasetToXml" should "return the expected xml" in {
-    new PrettyPrinter(160, 2).format(datasetToXml(dataset)) shouldBe
-      new PrettyPrinter(160, 2).format(expectedXml)
+    verify(datasetToXml(dataset), expectedXml)
   }
 
   it should "return xml on reading from the sip-demo csv" in {
-    val subscriber = toXmlSubscriber("/spacetravel/instructions.csv")
-
-    subscriber.assertNoErrors()
-    subscriber.assertValueCount(2)
-    subscriber.assertCompleted()
-    subscriber.assertUnsubscribed()
+    inside(toXml("/spacetravel/instructions.csv")) {
+      case Success(xmls) => xmls should have size 2
+    }
   }
 
   it should "return xml on reading from the sip001 csv" in {
-    val subscriber = toXmlSubscriber("/sip001/instructions.csv")
-
-    subscriber.assertNoErrors()
-    subscriber.assertValueCount(2)
-    subscriber.assertCompleted()
-    subscriber.assertUnsubscribed()
+    inside(toXml("/sip001/instructions.csv")) {
+      case Success(xmls) => xmls should have size 2
+    }
   }
 
-  def toXmlSubscriber(file: String): TestSubscriber[Elem] = {
+  def toXml(file: String): Try[Seq[Elem]] = {
     val csv = new File(getClass.getResource(file).toURI)
-    val subscriber = TestSubscriber[Elem]
-    Observable.defer {
-      MultiDepositParser.parse(csv) match {
-        case Success(dss) => Observable.from(dss)
-        case Failure(e) => Observable.error(e)
-      }
-    }
-      .map(tuple => AddDatasetMetadataToDeposit.datasetToXml(tuple._2))
-      .subscribe(subscriber)
-    subscriber
+    MultiDepositParser.parse(csv)
+      .map(dss => dss.map { case (_, ds) => AddDatasetMetadataToDeposit.datasetToXml(ds) })
   }
 
   "createDcmiMetadata" should "return the expected spatial elements" in {
@@ -306,7 +316,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         </dcx-gml:spatial>
       </ddm:dcmiMetadata>
     </ddm>
-    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
   }
 
   it should "have a organization-contributor when no other author-details are given" in {
@@ -326,8 +336,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         </dcx-dai:contributorDetails>
       </ddm:dcmiMetadata>
     </ddm>
-    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
   }
+
   it should "return the expected contributor" in {
     val dataset = new Dataset() +=
       "DCX_CONTRIBUTOR_TITLES" -> List("", "", "", "") +=
@@ -346,7 +357,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         </dcx-dai:contributorDetails>
       </ddm:dcmiMetadata>
     </ddm>
-    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
   }
 
   it should "return the expected relations" in {
@@ -362,7 +373,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         <dc:relation>barbapappa</dc:relation>
       </ddm:dcmiMetadata>
     </ddm>
-    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
   }
 
   it should "return the expected dcmidata" in {
@@ -394,11 +405,10 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         <dcterms:temporal>some arbitrary text</dcterms:temporal>
       </ddm:dcmiMetadata>
     </ddm>
-    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>,expectedXml)
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
   }
 
   def verify(actualXml: Elem, expectedXml: Elem): Unit = {
-    new PrettyPrinter(160, 2).format(actualXml) shouldBe
-      new PrettyPrinter(160, 2).format(expectedXml)
+    Utility.trim(actualXml).toString() shouldBe Utility.trim(expectedXml).toString()
   }
 }
