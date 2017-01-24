@@ -18,7 +18,6 @@ package nl.knaw.dans.easy
 import java.io.{File, IOException}
 import java.nio.charset.Charset
 import java.util.Properties
-import javax.naming.NamingEnumeration
 
 import nl.knaw.dans.lib.error.CompositeException
 import org.apache.commons.io.{Charsets, FileUtils}
@@ -307,16 +306,6 @@ package object multideposit {
           .map(i => dataset.map { case (key, values) => (key, values(i)) })
           .map(_.filter(kv => kv._2 != null && !kv._2.isBlank)))
         .getOrElse(IndexedSeq())
-  }
-
-  implicit class NamingEnumerationToObservable[T](val enum: NamingEnumeration[T]) extends AnyVal {
-    def toObservable: Observable[T] = Observable.from(new Iterable[T] {
-      def iterator = new Iterator[T] {
-        def hasNext: Boolean = enum.hasMore
-
-        def next(): T = enum.next()
-      }
-    })
   }
 
   val encoding = Charsets.UTF_8

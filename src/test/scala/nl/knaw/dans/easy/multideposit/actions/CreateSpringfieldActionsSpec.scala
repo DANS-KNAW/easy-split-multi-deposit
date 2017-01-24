@@ -59,9 +59,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     val datasets = new Datasets() += ("dataset-1" -> (testDataset -= "FILE_SIP"))
 
     inside(CreateSpringfieldActions(1, datasets).execute()) {
-      case Failure(ActionException(row, message, _)) =>
-        row shouldBe 1
-        message should include ("Invalid video object")
+      case Failure(ActionException(_, message, _)) => message should include ("Invalid video object")
     }
   }
 

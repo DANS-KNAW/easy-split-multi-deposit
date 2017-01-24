@@ -44,27 +44,20 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
     dataset.get("DEPOSITOR_ID")
       .map(_.filterNot(_.isBlank).toSet)
       .map(uniqueIDs => {
-        if (uniqueIDs.size > 1)
-          Failure(ActionException(row, s"""There are multiple distinct depositorIDs in dataset "$datasetID": $uniqueIDs""".stripMargin))
-        else if (uniqueIDs.size < 1)
-          Failure(ActionException(row, "No depositorID found"))
-        else
-          Success(uniqueIDs.head)
+        if (uniqueIDs.size > 1) Failure(ActionException(row, s"""There are multiple distinct depositorIDs in dataset "$datasetID": $uniqueIDs""".stripMargin))
+        else if (uniqueIDs.size < 1) Failure(ActionException(row, "No depositorID found"))
+        else Success(uniqueIDs.head)
       })
       .map(_.flatMap(id => {
-        Try {
-          settings.ldap
-            .query(id)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
-            .single // can throw an IllegalArgumentException or NoSuchElementException
-            .toBlocking // not ideal, but we keep the Try interface for now
-            .head // safe due to the `single` above
-        } recoverWith {
-          case e: IllegalArgumentException => Failure(ActionException(row, s"""There appear to be multiple users with id "$id"""", e))
-          case e: NoSuchElementException => Failure(ActionException(row, s"""DepositorID "$id" is unknown""", e))
-        } flatMap {
-          case true => Success(())
-          case false => Failure(ActionException(row, s"""The depositor "$id" is not an active user"""))
-        }
+        settings.ldap
+          .query(id)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
+          .flatMap(seq => if (seq.isEmpty) Failure(ActionException(row, s"""DepositorID "$id" is unknown"""))
+                          else if (seq.size > 1) Failure(ActionException(row, s"""There appear to be multiple users with id "$id""""))
+                          else Success(seq.head))
+          .flatMap {
+            case true => Success(())
+            case false => Failure(ActionException(row, s"""The depositor "$id" is not an active user"""))
+          }
       }))
       .getOrElse(Failure(ActionException(row, """The column "DEPOSITOR_ID" is not present""")))
   }

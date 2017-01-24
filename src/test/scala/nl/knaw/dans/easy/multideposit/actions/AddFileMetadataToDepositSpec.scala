@@ -57,9 +57,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
     )
 
     inside(new AddFileMetadataToDeposit(1, (datasetID, invalidDataset)).checkPreconditions) {
-      case Failure(ActionException(row, message, _)) =>
-        row shouldBe 1
-        message should include(s"""for dataset "$datasetID": [non-existing-file-path]""")
+      case Failure(ActionException(_, message, _)) => message should include(s"""for dataset "$datasetID": [non-existing-file-path]""")
     }
   }
 

@@ -21,7 +21,6 @@ import javax.naming.directory.Attributes
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
-import rx.lang.scala.Observable
 
 import scala.collection.mutable
 import scala.util.{ Failure, Success }
@@ -46,7 +45,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if the depositorID is in the dataset and has one value" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.just(true)
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(true))
 
     AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
@@ -55,7 +54,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     val dataset = mutable.HashMap(
       "DEPOSITOR_ID" -> List("dp1", "dp1", "dp1", "dp1")
     )
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.just(true)
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(true))
 
     AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
@@ -66,9 +65,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     )
 
     inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
-      case Failure(ActionException(row, message, _)) =>
-        row shouldBe 1
-        message should include ("is not present")
+      case Failure(ActionException(_, message, _)) => message should include ("is not present")
     }
   }
 
@@ -78,41 +75,31 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     )
 
     inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
-      case Failure(ActionException(row, message, _)) =>
-        row shouldBe 1
-        message should include("multiple distinct")
+      case Failure(ActionException(_, message, _)) => message should include("multiple distinct")
     }
   }
 
   it should "fail if ldap identifies the depositorID as not active" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.just(false)
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(false))
 
     inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
-      case Failure(ActionException(row, message, _)) =>
-        row shouldBe 1
-        message should include("""depositor "dp1" is not an active user""")
+      case Failure(ActionException(_, message, _)) => message should include("""depositor "dp1" is not an active user""")
     }
   }
 
   it should "fail if ldap does not return anything" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.empty
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq.empty)
 
     inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
-      case Failure(ActionException(row, message, cause)) =>
-        row shouldBe 1
-        message should include("""DepositorID "dp1" is unknown""")
-        cause shouldBe a[NoSuchElementException]
+      case Failure(ActionException(_, message, _)) => message should include("""DepositorID "dp1" is unknown""")
     }
   }
 
   it should "fail if ldap returns multiple values" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.just(true, true)
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(true, true))
 
     inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
-      case Failure(ActionException(row, message, cause)) =>
-        row shouldBe 1
-        message should include("""multiple users with id "dp1"""")
-        cause shouldBe a[IllegalArgumentException]
+      case Failure(ActionException(_, message, _)) => message should include("""multiple users with id "dp1"""")
     }
   }
 
