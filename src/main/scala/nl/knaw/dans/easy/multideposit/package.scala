@@ -162,7 +162,7 @@ package object multideposit {
      * @return the file contents, never ``null``
      */
     @throws(classOf[IOException])
-    def read(encoding: Charset = encoding): DatasetID = FileUtils.readFileToString(file, encoding)
+    def read(encoding: Charset = encoding): String = FileUtils.readFileToString(file, encoding)
 
     /**
      * Determines whether the ``parent`` directory contains the ``child`` element (a file or directory).
