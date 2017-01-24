@@ -65,11 +65,11 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
       "TEST_COLUMN" -> List("abc", "def")
     )
 
-    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
-
-    result shouldBe a[Failure[_]]
-    (the[ActionException] thrownBy result.get).row shouldBe 1
-    (the[ActionException] thrownBy result.get).message contains "is not present"
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(row, message, _)) =>
+        row shouldBe 1
+        message should include ("is not present")
+    }
   }
 
   it should "fail when the depositorID column contains multiple different values" in {
@@ -77,43 +77,43 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
       "DEPOSITOR_ID" -> List("dp1", "dp1", "dp2", "dp1")
     )
 
-    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
-
-    result shouldBe a[Failure[_]]
-    (the[ActionException] thrownBy result.get).row shouldBe 1
-    (the[ActionException] thrownBy result.get).message contains "multiple distinct"
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(row, message, _)) =>
+        row shouldBe 1
+        message should include("multiple distinct")
+    }
   }
 
   it should "fail if ldap identifies the depositorID as not active" in {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.just(false)
 
-    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
-
-    result shouldBe a[Failure[_]]
-    (the [ActionException] thrownBy result.get).row shouldBe 1
-    (the [ActionException] thrownBy result.get).message contains "depositor dp1 is not an active user"
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(row, message, _)) =>
+        row shouldBe 1
+        message should include("""depositor "dp1" is not an active user""")
+    }
   }
 
   it should "fail if ldap does not return anything" in {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.empty
 
-    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
-
-    result shouldBe a[Failure[_]]
-    (the [ActionException] thrownBy result.get).row shouldBe 1
-    (the [ActionException] thrownBy result.get).message contains "dp1 is unknown"
-    (the [ActionException] thrownBy result.get).cause.getClass shouldBe classOf[NoSuchElementException]
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(row, message, cause)) =>
+        row shouldBe 1
+        message should include("""DepositorID "dp1" is unknown""")
+        cause shouldBe a[NoSuchElementException]
+    }
   }
 
   it should "fail if ldap returns multiple values" in {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.just(true, true)
 
-    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
-
-    result shouldBe a[Failure[_]]
-    (the [ActionException] thrownBy result.get).row shouldBe 1
-    (the [ActionException] thrownBy result.get).message contains "multiple users with id dp1"
-    (the [ActionException] thrownBy result.get).cause.getClass shouldBe classOf[IllegalArgumentException]
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(row, message, cause)) =>
+        row shouldBe 1
+        message should include("""multiple users with id "dp1"""")
+        cause shouldBe a[IllegalArgumentException]
+    }
   }
 
   "execute" should "generate the properties file" in {

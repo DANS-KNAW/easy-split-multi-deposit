@@ -15,31 +15,30 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{FileOutputStream, OutputStreamWriter}
+import resource._
+import java.io.{ FileOutputStream, OutputStreamWriter }
 import java.util.Properties
 
 import nl.knaw.dans.easy.multideposit.actions.AddPropertiesToDeposit._
-import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
-import org.apache.commons.logging.LogFactory
+import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.postfixOps
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
-case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
-
-  val log = LogFactory.getLog(getClass)
+case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action with DebugEnhancedLogging {
 
   val (datasetID, dataset) = entry
 
   // TODO administratieve metadata, to be decided
 
   /**
-    * @inheritdoc
-    *             Checks whether there is only one unique DEPOSITOR_ID set in the `Dataset` (there can be multiple values but the must all be equal!).
-    * @return `Success` when all preconditions are met, `Failure` otherwise
-    */
+   * @inheritdoc
+   * Checks whether there is only one unique DEPOSITOR_ID set in the `Dataset` (there can be multiple values but the must all be equal!).
+   * @return `Success` when all preconditions are met, `Failure` otherwise
+   */
   override def checkPreconditions: Try[Unit] = {
-    log.debug(s"Checking preconditions for $this")
+    debug(s"Checking preconditions for $this")
 
     // TODO a for-comprehension over monad-transformers would be nice here...
     // see https://github.com/rvanheest/Experiments/tree/master/src/main/scala/experiments/transformers
@@ -71,8 +70,8 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
       .getOrElse(Failure(ActionException(row, """The column "DEPOSITOR_ID" is not present""")))
   }
 
-  def execute() = {
-    log.debug(s"Running $this")
+  def execute(): Try[Unit] = {
+    debug(s"Running $this")
 
     writeProperties(row, datasetID, dataset)
   }
@@ -80,22 +79,24 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
 object AddPropertiesToDeposit {
 
   def writeProperties(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
-    Try {
-      val props = new Properties
-      addProperties(props, dataset)
-      props.store(new OutputStreamWriter(new FileOutputStream(outputPropertiesFile(settings, datasetID)), encoding), "")
-    } recoverWith {
+    val props = new Properties
+
+    addProperties(props, dataset)
+      .flatMap(_ => Using.fileWriter(encoding)(outputPropertiesFile(settings, datasetID)).map(out => props.store(out, "")).tried)
+      .recoverWith {
       case e => Failure(ActionException(row, s"Could not write properties to file: $e", e))
     }
   }
 
-  def addProperties(properties: Properties, dataset: Dataset): Unit = {
-    val depositorUserID = dataset.get("DEPOSITOR_ID")
-      .flatMap(_.headOption)
-      .getOrElse(throw new IllegalStateException("""The column "DEPOSITOR_ID" is not present"""))
-
-    properties.setProperty("state.label", "SUBMITTED")
-    properties.setProperty("state.description", "Deposit is valid and ready for post-submission processing")
-    properties.setProperty("depositor.userId", depositorUserID)
+  def addProperties(properties: Properties, dataset: Dataset): Try[Unit] = {
+    for {
+      depositorUserID <- dataset.get("DEPOSITOR_ID")
+        .flatMap(_.headOption)
+        .map(Success(_))
+        .getOrElse(Failure(new IllegalStateException("""The column "DEPOSITOR_ID" is not present""")))
+      _ = properties.setProperty("state.label", "SUBMITTED")
+      _ = properties.setProperty("state.description", "Deposit is valid and ready for post-submission processing")
+      _ = properties.setProperty("depositor.userId", depositorUserID)
+    } yield ()
   }
 }
