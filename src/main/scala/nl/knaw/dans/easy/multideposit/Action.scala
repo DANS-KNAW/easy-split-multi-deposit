@@ -102,7 +102,7 @@ trait Action {
   }
 
   case class ComposedAction(actions: List[Action]) extends Action {
-    private val executedActions = mutable.Stack[Action]()
+    private lazy val executedActions = mutable.Stack[Action]()
 
     override def checkPreconditions: Try[Unit] = {
       actions.map(_.checkPreconditions).collectResults.map(_ => ())
