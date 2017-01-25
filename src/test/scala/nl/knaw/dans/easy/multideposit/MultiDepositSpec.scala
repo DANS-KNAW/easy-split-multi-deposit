@@ -15,7 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import nl.knaw.dans.easy.multideposit.Main.extractFileParameters
 import org.scalatest.BeforeAndAfter
 
 import scala.util.Try
