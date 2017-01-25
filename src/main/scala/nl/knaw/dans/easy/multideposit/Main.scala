@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit
 import nl.knaw.dans.easy.multideposit.actions._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
+import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
 object Main extends DebugEnhancedLogging {
@@ -36,76 +37,68 @@ object Main extends DebugEnhancedLogging {
   }
 
   def run(implicit settings: Settings): Try[Unit] = {
-    val datasets: Try[Datasets] = MultiDepositParser.parse(multiDepositInstructionsFile(settings))
-    val composedAction: Try[Action] = datasets.map(getActions)
-    val result: Try[Unit] = composedAction.flatMap(_.run)
-
-    result
+    for {
+      datasets <- MultiDepositParser.parse(multiDepositInstructionsFile(settings))
+      _ <- getActions(datasets).reduce(_ compose _).run
+    } yield ()
   }
 
-  def getActions(datasets: Datasets)(implicit s: Settings): Action = {
+  def getActions(datasets: Datasets)(implicit s: Settings): ListBuffer[Action] = {
     logger.info("Compiling list of actions to perform ...")
 
-    val csa = CreateSpringfieldActions(-1, datasets)
-    val actions = datasets.map(getDatasetAction) += csa
-    val action = actions.reduce(_ compose _)
-
-    action
+    datasets.flatMap(getDatasetActions) ++= getGeneralActions(datasets)
   }
 
-  def getDatasetAction(entry: (DatasetID, Dataset))(implicit settings: Settings): Action = {
+  def getGeneralActions(datasets: Datasets)(implicit s: Settings): Seq[Action] = {
+    Seq(CreateSpringfieldActions(-1, datasets))
+  }
+
+  def getDatasetActions(entry: (DatasetID, Dataset))(implicit settings: Settings): Seq[Action] = {
     val datasetID = entry._1
     val dataset = entry._2
     val row = dataset("ROW").head.toInt // first occurence of dataset, assuming it is not empty
 
     logger.debug(s"Getting actions for dataset $datasetID ...")
 
-    val actions: List[Action] = List(
+    Seq(
       CreateOutputDepositDir(row, datasetID),
       AddBagToDeposit(row, datasetID),
       AddDatasetMetadataToDeposit(row, entry),
       AddFileMetadataToDeposit(row, entry),
-      AddPropertiesToDeposit(row, entry))
-
-    val composedAction: Action = actions.reduce(_ compose _)
-
-    getFileAction(dataset, extractFileParameters(dataset))
-      .map(composedAction.compose)
-      .getOrElse(composedAction)
+      AddPropertiesToDeposit(row, entry)
+    ) ++ getFileActions(dataset)
   }
 
-  def getFileAction(dataset: Dataset, fpss: Seq[FileParameters])(implicit settings: Settings): Option[Action] = {
-    fpss.collect {
-      case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo))
-        if isThisAudioVideo matches "(?i)yes" => CopyToSpringfieldInbox(row, fileMd): Action
-    }.reduceOption(_ compose _)
+  def getFileActions(dataset: Dataset)(implicit settings: Settings): Seq[Action] = {
+    extractFileParameters(dataset)
+      .collect {
+        case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo))
+          if isThisAudioVideo matches "(?i)yes" => CopyToSpringfieldInbox(row, fileMd)
+      }
   }
 
   def extractFileParameters(dataset: Dataset): Seq[FileParameters] = {
-    Seq("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
-      .flatMap(dataset.get)
-      .take(1)
-      .flatMap(xs => xs.indices
-        .map(index => {
-          def valueAt(key: String): Option[String] = {
-            dataset.get(key).flatMap(_(index).toOption)
-          }
-          def intAt(key: String): Option[Int] = {
-            dataset.get(key).flatMap(_(index).toIntOption)
-          }
+    dataset.toRows
+      .map(row => {
+        def valueAt(key: String): Option[String] = {
+          row.get(key).flatMap(_.toOption)
+        }
+        def intAt(key: String): Option[Int] = {
+          row.get(key).flatMap(_.toIntOption)
+        }
 
-          FileParameters(
-            row = intAt("ROW"),
-            sip = valueAt("FILE_SIP"),
-            dataset = valueAt("FILE_DATASET"),
-            storageService = valueAt("FILE_STORAGE_SERVICE"),
-            storagePath = valueAt("FILE_STORAGE_PATH"),
-            audioVideo = valueAt("FILE_AUDIO_VIDEO")
-          )
-        })
-        .filter {
-          case FileParameters(_, None, None, None, None, None) => false
-          case _ => true
-        })
+        FileParameters(
+          row = intAt("ROW"),
+          sip = valueAt("FILE_SIP"),
+          dataset = valueAt("FILE_DATASET"),
+          storageService = valueAt("FILE_STORAGE_SERVICE"),
+          storagePath = valueAt("FILE_STORAGE_PATH"),
+          audioVideo = valueAt("FILE_AUDIO_VIDEO")
+        )
+      })
+      .filter {
+        case FileParameters(_, None, None, None, None, None) => false
+        case _ => true
+      }
   }
 }

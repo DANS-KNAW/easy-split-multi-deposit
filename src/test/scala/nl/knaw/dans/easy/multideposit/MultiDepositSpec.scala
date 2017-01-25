@@ -86,28 +86,4 @@ class MultiDepositSpec extends UnitSpec with BeforeAndAfter {
   it should "return None when value is blank" in {
     dataset1.getValue("DDM_CREATED")(1) shouldBe empty
   }
-
-  // TODO move to other class, since this method is now part of Main
-  "extractFileParameters" should "succeed with correct dataset1" in {
-    extractFileParameters(dataset1) should contain theSameElementsInOrderAs testFileParameters1
-  }
-
-  it should "succeed with correct dataset2" in {
-    extractFileParameters(dataset2) should contain theSameElementsInOrderAs testFileParameters2
-  }
-
-  it should "return Nil when the dataset is empty" in {
-    extractFileParameters(new Dataset) shouldBe empty
-  }
-
-  it should "return the fileParameters without row number when these are not supplied" in {
-    val res = FileParameters(None, Option("videos/centaur.mpg"), Option("footage/centaur.mpg"), Option("http://zandbak11.dans.knaw.nl/webdav"), None, Option("Yes"))
-    extractFileParameters(dataset1 -= "ROW") should contain only res
-  }
-
-  it should "return Nil when ALL extracted fields are removed from the dataset" in {
-    dataset1 --= List("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
-
-    extractFileParameters(dataset1) shouldBe empty
-  }
 }
