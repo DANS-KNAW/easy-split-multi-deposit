@@ -15,9 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.easy.multideposit.{ Dataset, _ }
-import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
@@ -31,12 +30,13 @@ TODO For this Action all datasets need to be in memory at the same time. However
      With this, we can eventually make the whole application reactive by also parsing the csv lazily
      and reactive.
  */
-case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit settings: Settings) extends Action with DebugEnhancedLogging {
+case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit settings: Settings) extends Action {
 
-  def execute(): Try[Unit] = {
-    debug(s"Running $this")
-
-    CreateSpringfieldActions.writeSpringfieldXml(row, datasets)
+  override def execute(): Try[Unit] = {
+    for {
+      _ <- super.execute()
+      _ <- CreateSpringfieldActions.writeSpringfieldXml(row, datasets)
+    } yield ()
   }
 }
 object CreateSpringfieldActions {
@@ -60,9 +60,9 @@ object CreateSpringfieldActions {
     } yield createAddElement(target, videos)
 
     if (elems.nonEmpty)
-    // @formatter:off
-    Some(elems.collectResults.map(es => <actions>{es}</actions>))
-    // @formatter:on
+      // @formatter:off
+      Some(elems.collectResults.map(es => <actions>{es}</actions>))
+      // @formatter:on
     else
       None
   }

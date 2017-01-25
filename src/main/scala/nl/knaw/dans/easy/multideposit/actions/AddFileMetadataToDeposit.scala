@@ -20,21 +20,14 @@ import java.net.URLConnection
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
-import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.collection.immutable
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
-case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action with DebugEnhancedLogging {
+case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val (datasetID, dataset) = entry
-
-  def execute(): Try[Unit] = {
-    debug(s"Running $this")
-
-    writeFileMetadataXml(row, datasetID)
-  }
 
   /**
    * Verifies whether all preconditions are met for this specific action.
@@ -43,19 +36,23 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-    debug(s"Checking preconditions for $this")
+    for {
+      _ <- super.checkPreconditions
+      inputDir = settings.multidepositDir
+      // Note that the FILE_SIP paths are not really used in this action
+      nonExistingFileSIPs = dataset.getOrElse("FILE_SIP", List.empty)
+        .filterNot(_.isEmpty)
+        .filterNot(fp => new File(settings.multidepositDir, fp).exists())
+      _ <- if (nonExistingFileSIPs.isEmpty) Success(())
+           else Failure(ActionException(row, s"""The following SIP files are referenced in the instructions but not found in the deposit input dir "$inputDir" for dataset "$datasetID": ${ nonExistingFileSIPs.mkString("[", ", ", "]") }""".stripMargin))
+    } yield ()
+  }
 
-    val inputDir = settings.multidepositDir
-
-    // Note that the FILE_SIP paths are not really used in this action
-    val nonExistingFileSIPs = dataset.getOrElse("FILE_SIP", List.empty)
-      .filterNot(_.isEmpty)
-      .filterNot(fp => new File(inputDir, fp).exists())
-
-    if (nonExistingFileSIPs.isEmpty)
-      Success(())
-    else
-      Failure(ActionException(row, s"""The following SIP files are referenced in the instructions but not found in the deposit input dir "$inputDir" for dataset "$datasetID": ${nonExistingFileSIPs.mkString("[", ", ", "]")}""".stripMargin))
+  override def execute(): Try[Unit] = {
+    for {
+      _ <- super.execute()
+      _ <- writeFileMetadataXml(row, datasetID)
+    } yield ()
   }
 }
 object AddFileMetadataToDeposit {

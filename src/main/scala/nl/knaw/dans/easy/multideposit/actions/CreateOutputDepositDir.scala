@@ -16,11 +16,10 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
 
-case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action with DebugEnhancedLogging {
+case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
 
   private val depositDir = outputDepositDir(settings, datasetID)
   private val bagDir = outputDepositBagDir(settings, datasetID)
@@ -28,31 +27,31 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   private val dirs = depositDir :: bagDir :: metadataDir :: Nil
 
   override def checkPreconditions: Try[Unit] = {
-    debug(s"Checking preconditions for $this")
-
-    dirs.find(_.exists)
-      .map(file => Failure(ActionException(row, s"The deposit for dataset $datasetID already exists in $file.")))
-      .getOrElse(Success(()))
+    for {
+      _ <- super.checkPreconditions
+      _ <- dirs.find(_.exists)
+        .map(file => Failure(ActionException(row, s"The deposit for dataset $datasetID already exists in $file.")))
+        .getOrElse(Success(()))
+    } yield ()
   }
 
-  def execute(): Try[Unit] = {
-    debug(s"Running $this")
-    debug(s"Creating Deposit Directory at $depositDir with bag directory = $bagDir and metadata directory = $metadataDir")
-
-    if (dirs.forall(_.mkdirs))
-      Success(())
-    else
-      Failure(ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
+  override def execute(): Try[Unit] = {
+    for {
+      _ <- super.execute()
+      _ = debug(s"Creating Deposit Directory at $depositDir with bag directory = $bagDir and metadata directory = $metadataDir")
+      _ <- if (dirs.forall(_.mkdirs)) Success(())
+           else Failure(ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
+    } yield ()
   }
 
   override def rollback(): Try[Unit] = {
-    debug(s"Rolling back $this")
-    debug(s"Deleting directory $depositDir")
-
-    Try {
-      depositDir.deleteDirectory()
-    } recoverWith {
-      case e: Exception => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e))
-    }
+    for {
+      _ <- super.rollback()
+      _ = debug(s"Deleting directory $depositDir")
+      _ <- Try { depositDir.deleteDirectory() }
+        .recoverWith {
+          case e: Exception => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e))
+        }
+    } yield ()
   }
 }

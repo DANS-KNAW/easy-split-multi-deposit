@@ -19,13 +19,12 @@ import java.util.Properties
 
 import nl.knaw.dans.easy.multideposit.actions.AddPropertiesToDeposit._
 import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
-import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource._
 
 import scala.language.postfixOps
 import scala.util.{ Failure, Success, Try }
 
-case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action with DebugEnhancedLogging {
+case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val (datasetID, dataset) = entry
 
@@ -37,8 +36,22 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-    debug(s"Checking preconditions for $this")
+    for {
+      _ <- super.checkPreconditions
+      _ <- validateDepositor(row, datasetID, dataset)
+    } yield ()
+  }
 
+  override def execute(): Try[Unit] = {
+    for {
+      _ <- super.execute()
+      _ <- writeProperties(row, datasetID, dataset)
+    } yield ()
+  }
+}
+object AddPropertiesToDeposit {
+
+  def validateDepositor(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     // TODO a for-comprehension over monad-transformers would be nice here...
     // see https://github.com/rvanheest/Experiments/tree/master/src/main/scala/experiments/transformers
     dataset.get("DEPOSITOR_ID")
@@ -61,14 +74,6 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
       }))
       .getOrElse(Failure(ActionException(row, """The column "DEPOSITOR_ID" is not present""")))
   }
-
-  def execute(): Try[Unit] = {
-    debug(s"Running $this")
-
-    writeProperties(row, datasetID, dataset)
-  }
-}
-object AddPropertiesToDeposit {
 
   def writeProperties(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     val props = new Properties

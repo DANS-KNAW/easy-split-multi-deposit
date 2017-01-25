@@ -19,14 +19,13 @@ import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
 import nl.knaw.dans.lib.error.TraversableTryExtensions
-import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.collection.mutable
 import scala.language.postfixOps
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
-case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action with DebugEnhancedLogging {
+case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val (datasetID, dataset) = entry
 
@@ -38,6 +37,22 @@ case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(im
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
+    for {
+      _ <- super.checkPreconditions
+      _ <- verifyDataset(row, dataset)
+    } yield ()
+  }
+
+  override def execute(): Try[Unit] = {
+    for {
+      _ <- super.execute()
+      _ <- writeDatasetMetadataXml(row, datasetID, dataset)
+    } yield ()
+  }
+}
+object AddDatasetMetadataToDeposit {
+
+  def verifyDataset(row: Int, dataset: Dataset): Try[Unit] = {
     dataset.toRows.flatMap(rowVals => {
       List(
         // coordinates
@@ -69,13 +84,6 @@ case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(im
     }).collectResults.map(_ => ())
   }
 
-  def execute(): Try[Unit] = {
-    debug(s"Running $this")
-
-    writeDatasetMetadataXml(row, datasetID, dataset)
-  }
-}
-object AddDatasetMetadataToDeposit {
   def writeDatasetMetadataXml(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     Try {
       outputDatasetMetadataFile(settings, datasetID).writeXml(datasetToXml(dataset))

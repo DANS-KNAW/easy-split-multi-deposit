@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit
 
 import scala.util.{ Failure, Success, Try }
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.collection.mutable
 
@@ -28,29 +29,39 @@ import scala.collection.mutable
   To future developers: this class is a semigroup. It satisfies the associativity law as defined
   in https://wiki.haskell.org/Typeclassopedia#Laws_4.
  */
-trait Action {
+trait Action extends DebugEnhancedLogging {
   self =>
+
+  private def logPreconditions(): Unit = {
+    logger.info(s"Checking preconditions of ${getClass.getSimpleName} ...")
+  }
+  private def logExecute(): Unit = {
+    logger.info(s"Executing action of ${getClass.getSimpleName} ...")
+  }
+  private def logRollback(): Unit = {
+    logger.info(s"An error occurred. Rolling back action ${getClass.getSimpleName} ...")
+  }
 
   /**
    * Verifies whether all preconditions are met for this specific action.
    *
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
-  def checkPreconditions: Try[Unit] = Success(())
+  def checkPreconditions: Try[Unit] = Success(logPreconditions())
 
   /**
    * Exectue the action.
    *
    * @return `Success` if the execution was successful, `Failure` otherwise
    */
-  protected def execute(): Try[Unit]
+  protected def execute(): Try[Unit] = Success(logExecute())
 
   /**
    * Cleans up results of a previous call to run so that a new call to run will not fail because of those results.
    *
    * @return `Success` if the rollback was successful, `Failure` otherwise
    */
-  def rollback(): Try[Unit] = Success(())
+  def rollback(): Try[Unit] = Success(logRollback())
 
   /**
    * Run an action. First the precondition is checked. If it fails a `PreconditionsFailedException`
@@ -60,7 +71,7 @@ trait Action {
    *
    * @return `Success` if the full execution was successful, `Failure` otherwise
    */
-  def run: Try[Unit] = {
+  final def run: Try[Unit] = {
     for {
       _ <- checkPreconditions.recoverWith {
         case e: Exception =>
@@ -138,10 +149,6 @@ trait Action {
 }
 
 object Action {
-  def empty: Action = new Action {
-    def execute(): Try[Unit] = Success(())
-  }
-
   def apply(precondition: () => Try[Unit],
             action: () => Try[Unit],
             undo: () => Try[Unit]): Action = new Action {
