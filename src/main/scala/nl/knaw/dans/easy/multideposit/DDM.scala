@@ -83,7 +83,7 @@ object DDM {
 
   val organizationKeys = Set("DCX_CREATOR_ORGANIZATION", "DCX_CONTRIBUTOR_ORGANIZATION")
 
-  val allFields = "ROW" :: "DATASET" ::
+  val allFields: List[DatasetID] = "ROW" :: "DATASET" ::
     List(profileFields, metadataFields, composedCreatorFields, composedContributorFields, composedSpatialPointFields, composedSpatialBoxFields, composedRelationFields, composedTemporalFields, composedSubjectFields)
       .flatMap(_.keySet)
 }

@@ -16,230 +16,96 @@
 package nl.knaw.dans.easy.multideposit
 
 import nl.knaw.dans.easy.multideposit.actions._
-import org.slf4j.LoggerFactory
-import rx.lang.scala.{Observable, ObservableExtensions}
-import rx.schedulers.Schedulers
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-import scala.util.{Failure, Success, Try}
-import nl.knaw.dans.lib.error._
+import scala.util.Try
 
-object Main {
+object Main extends DebugEnhancedLogging {
 
-  implicit val log = LoggerFactory.getLogger(getClass)
-
-  def main(args: Array[String]) {
-    log.debug("Starting application.")
+  def main(args: Array[String]): Unit = {
+    debug("Starting application")
     implicit val settings = CommandLineOptions.parse(args)
-    getActionsStream
-      .doOnError(e => log.error(e.getMessage))
-      .doOnError(e => log.debug(e.getMessage, e))
-      .doOnCompleted { log.info("Finished successfully!") }
-      .doOnTerminate {
-        // close LDAP at the end of the main
-        log.debug("closing ldap")
-        settings.ldap.close()
-      }
-      .subscribe
 
-    Schedulers.shutdown()
+    run
+      .ifFailure { case e => logger.error(e.getMessage) }
+      .ifFailure { case e => logger.debug(e.getMessage, e) }
+      .ifSuccess(_ => logger.info("Finished successfully!"))
+
+    logger.debug("closing ldap")
+    settings.ldap.close()
   }
 
-  def getActionsStream(implicit settings: Settings): Observable[Action] = {
-    Observable.defer {
-      MultiDepositParser.parse(multiDepositInstructionsFile(settings)) match {
-        case Success(dss) => Observable.from(dss)
-        case Failure(e) => Observable.error(e)
-      }
-    }
-      .getActions
-      .checkActionPreconditions
-      .runActions
+  def run(implicit settings: Settings): Try[Unit] = {
+    val datasets: Try[Datasets] = MultiDepositParser.parse(multiDepositInstructionsFile(settings))
+    val composedAction: Try[Action] = datasets.map(getActions)
+    val result: Try[Unit] = composedAction.flatMap(_.run)
+
+    result
   }
 
-  // Extension methods are used here to do composition
-  // (see http://reactivex.io/rxscala/comparison.html)
-  implicit class ActionExtensionMethods(val actions: Observable[Action]) extends AnyVal {
-    def checkActionPreconditions = Main.checkActionPreconditions(actions)
+  def getActions(datasets: Datasets)(implicit s: Settings): Action = {
+    logger.info("Compiling list of actions to perform ...")
 
-    def runActions = Main.runActions(actions)
+    val csa = CreateSpringfieldActions(-1, datasets)
+    val actions = datasets.map(getDatasetAction) += csa
+    val action = actions.reduce(_ compose _)
+
+    action
   }
 
-  implicit class DatasetsExtensionMethods(val datasets: Observable[(DatasetID, Dataset)]) extends AnyVal {
-    def getActions(implicit s: Settings) = Main.getActions(datasets)
-  }
-
-  def getActions(dss: Observable[(DatasetID, Dataset)])(implicit settings: Settings): Observable[Action] = {
-    log.info("Compiling list of actions to perform ...")
-
-    // object for grouping the actions and looking for failures
-    case class TryAndFailure(total: List[Try[Action]] = Nil, fails: List[Try[Action]] = Nil) {
-      def +=(action: Try[Action]) = {
-        TryAndFailure(total :+ action, if (action.isFailure) fails :+ action else fails)
-      }
-      def toObservable = {
-        if (fails.isEmpty) total.toObservable.map(_.get)
-        else Observable.error(new Exception(
-          generateErrorReport("Errors in Multi-Deposit Instructions file:", fails)))
-      }
-    }
-
-    // object for collecting both the datasets and the actions
-    case class Result(dss: List[(DatasetID, Dataset)] = Nil, actions: Observable[Action] = Observable.empty) {
-      def +=(ds: (DatasetID, Dataset), action: Observable[Action]) = Result(dss :+ ds, actions ++ action)
-    }
-
-    def getActionsPerEntry(entry: (DatasetID, Dataset)) = (entry, getDatasetActions(entry))
-
-    def addToResult(res: Result, daa: ((DatasetID, Dataset), Observable[Try[Action]])): Result = {
-      res += (daa._1, daa._2.foldLeft(TryAndFailure())(_ += _).flatMap(_.toObservable))
-    }
-
-    def addCreateSpringfieldActions(result: Result): Observable[Action] = {
-      result.actions :+ CreateSpringfieldActions(-1, result.dss.to[ListBuffer])
-    }
-
-    dss.map(getActionsPerEntry)
-      .foldLeft(Result())(addToResult)
-      .flatMap(addCreateSpringfieldActions) // because of foldLeft above, this function is only executed once
-  }
-
-  def getDatasetActions2(entry: (DatasetID, Dataset))(implicit settings: Settings): Try[Action] = {
+  def getDatasetAction(entry: (DatasetID, Dataset))(implicit settings: Settings): Action = {
     val datasetID = entry._1
     val dataset = entry._2
     val row = dataset("ROW").head.toInt // first occurence of dataset, assuming it is not empty
 
-    log.debug(s"Getting actions for dataset $datasetID ...")
+    logger.debug(s"Getting actions for dataset $datasetID ...")
 
-    val res1 = CreateOutputDepositDir(row, datasetID)
-      .compose(AddBagToDeposit(row, datasetID))
-      .compose(AddDatasetMetadataToDeposit(row, entry))
-      .compose(AddFileMetadataToDeposit(row, entry))
-      .compose(AddPropertiesToDeposit(row, entry))
-
-    getFileActions2(dataset, extractFileParameters2(dataset))
-      .map(_.map(action2 => res1.compose(action2)).getOrElse(res1))
-  }
-
-  def getFileActions2(dataset: Dataset, fpss: Seq[FileParameters])(implicit settings: Settings): Try[Option[Action]] = {
-    def getActions(fps: FileParameters): Try[Option[Action]] = {
-//      fps match {
-//        // TODO add actions here if needed, remove this function otherwise
-//        case FileParameters(Some(row), p1, p2, p3, p4, p5) => Failure(ActionException(row,
-//          s"Invalid combination of file parameters: FILE_SIP = $p1, FILE_DATASET = $p2, " +
-//            s"FILE_STORAGE_SERVICE = $p3, FILE_STORAGE_PATH = $p4, FILE_AUDIO_VIDEO = $p5"))
-//        case _ => Failure(new RuntimeException("*** Programming error: row without row number ***"))
-//      }
-      Success(None)
-    }
-
-    val res1: Try[Option[Action]] = fpss.map(getActions).collectResults.map(_.collect { case Some(action) => action }.reduceOption(_ compose _))
-    val copyAction: Option[Action] = fpss.collect {
-      case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo))
-        if isThisAudioVideo matches "(?i)yes" => CopyToSpringfieldInbox(row, fileMd): Action
-    }.reduceOption(_ compose _)
-
-    res1.map(_.flatMap(action1 => copyAction.map(action1.compose)).orElse(copyAction))
-  }
-
-  def getDatasetActions(entry: (DatasetID, Dataset))(implicit settings: Settings): Observable[Try[Action]] = {
-    val datasetID = entry._1
-    val dataset = entry._2
-    val row = dataset("ROW").head.toInt // first occurence of dataset, assuming it is not empty
-
-    log.debug(s"Getting actions for dataset $datasetID ...")
-
-    Observable.just(
+    val actions: List[Action] = List(
       CreateOutputDepositDir(row, datasetID),
       AddBagToDeposit(row, datasetID),
       AddDatasetMetadataToDeposit(row, entry),
       AddFileMetadataToDeposit(row, entry),
-      AddPropertiesToDeposit(row, entry)
-    ).map(Success(_)) ++ getFileActions(dataset, extractFileParameters(dataset))
+      AddPropertiesToDeposit(row, entry))
+
+    val composedAction: Action = actions.reduce(_ compose _)
+
+    getFileAction(dataset, extractFileParameters(dataset))
+      .map(composedAction.compose)
+      .getOrElse(composedAction)
   }
 
-  def getFileActions(dataset: Dataset, fpss: Observable[FileParameters])(implicit settings: Settings): Observable[Try[Action]] = {
-    def getActions(fps: FileParameters): Try[Observable[Action]] = {
-//      fps match {
-//        // TODO add actions here if needed, remove this function otherwise
-//        case FileParameters(Some(row), p1, p2, p3, p4, p5) => Failure(ActionException(row,
-//          s"Invalid combination of file parameters: FILE_SIP = $p1, FILE_DATASET = $p2, " +
-//            s"FILE_STORAGE_SERVICE = $p3, FILE_STORAGE_PATH = $p4, FILE_AUDIO_VIDEO = $p5"))
-//        case _ => Failure(new RuntimeException("*** Programming error: row without row number ***"))
-//      }
-      Success(Observable.empty)
-    }
-
-    // TODO in case getActions(FileParameters): Try[Observable[Action]] gets removed,
-    // a lot of other complexity can be removed as well!
-
-    fpss.flatMap(getActions(_).map(as => as.map(Success(_))).onError(exc => Observable.just(Failure(exc))))
-      .merge(fpss.collect[Try[Action]] {
-        case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo))
-          if isThisAudioVideo matches "(?i)yes" => Success(CopyToSpringfieldInbox(row, fileMd))
-      })
+  def getFileAction(dataset: Dataset, fpss: Seq[FileParameters])(implicit settings: Settings): Option[Action] = {
+    fpss.collect {
+      case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo))
+        if isThisAudioVideo matches "(?i)yes" => CopyToSpringfieldInbox(row, fileMd): Action
+    }.reduceOption(_ compose _)
   }
 
-  /**
-    * Checks the preconditions for each action it receives. If the preconditions for all
-    * actions are met, the actions will be returned within an `Observable[Action]` stream.
-    * If any of the preconditions fails, an error report will be generated and returned as
-    * an Exception in the stream.
-    *
-    * @param actions the actions to be checked on preconditions
-    * @return A stream of all actions when all preconditions are met; an exception if any
-    *         of the preconditions fails.
-    */
-  def checkActionPreconditions(actions: Observable[Action]): Observable[Action] = {
-    case class ActionAndResult(actions: List[Action] = Nil, fails: List[Try[Unit]] = Nil) {
-      def +=(action: Action) = {
-        ActionAndResult(actions :+ action, {
-          val check = action.checkPreconditions
+  def extractFileParameters(dataset: Dataset): Seq[FileParameters] = {
+    Seq("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
+      .flatMap(dataset.get)
+      .take(1)
+      .flatMap(xs => xs.indices
+        .map(index => {
+          def valueAt(key: String): Option[String] = {
+            dataset.get(key).flatMap(_(index).toOption)
+          }
+          def intAt(key: String): Option[Int] = {
+            dataset.get(key).flatMap(_(index).toIntOption)
+          }
 
-          if (check.isFailure) fails :+ check else fails
+          FileParameters(
+            row = intAt("ROW"),
+            sip = valueAt("FILE_SIP"),
+            dataset = valueAt("FILE_DATASET"),
+            storageService = valueAt("FILE_STORAGE_SERVICE"),
+            storagePath = valueAt("FILE_STORAGE_PATH"),
+            audioVideo = valueAt("FILE_AUDIO_VIDEO")
+          )
         })
-      }
-      def toObservable = {
-        if (fails.isEmpty) actions.toObservable
-        else Observable.error(new Exception(generateErrorReport("Precondition failures:", fails,
-          "Due to these errors in the preconditions, nothing was done.")))
-      }
-    }
-
-    actions
-      .doOnNext(action => log.info(s"Checking preconditions of ${action.getClass.getSimpleName} ..."))
-      .foldLeft(ActionAndResult())(_ += _)
-      .flatMap(_.toObservable)
-  }
-
-  /**
-    * Executes all actions in the input `List`. Once an action is completed,
-    * it is returned via an `Observable` stream. If an action fails, the action is
-    * returned, followed by an error. This also causes the stream to end and not
-    * proceed executing any later actions. Also, when an action fails, all previous
-    * actions will roll back.
-    *
-    * @param actions a list of actions to be performed.
-    * @return a stream containing the actions if successfull and an error on failure.
-    */
-  def runActions(actions: Observable[Action]): Observable[Action] = {
-    // you can't do this within the Observable sequence, since the stack would
-    // not be available when we need it in the .doOnError(e => ...)
-    val stack = mutable.Stack[Action]()
-
-    actions
-      .doOnNext(action => log.info(s"Executing action of ${action.getClass.getSimpleName} ..."))
-      .flatMap(action => action.run
-        .map(_ => Observable.just(action))
-        .onError(error => Observable.just(action) ++ Observable.error(error)))
-      .doOnNext(stack.push(_))
-      .doOnError(_ => {
-        if (stack.isEmpty)
-          log.error("An error occurred ...")
-        else
-          log.error("An error occurred. Rolling back actions ...")
-        stack.foreach(_.rollback())
-      })
+        .filter {
+          case FileParameters(_, None, None, None, None, None) => false
+          case _ => true
+        })
   }
 }

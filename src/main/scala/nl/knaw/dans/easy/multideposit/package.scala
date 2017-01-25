@@ -19,10 +19,8 @@ import java.io.{File, IOException}
 import java.nio.charset.Charset
 import java.util.Properties
 
-import nl.knaw.dans.lib.error.CompositeException
 import org.apache.commons.io.{Charsets, FileUtils}
 import org.apache.commons.lang.StringUtils
-import rx.lang.scala.{Observable, ObservableExtensions}
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.immutable.IndexedSeq
@@ -112,16 +110,26 @@ package object multideposit {
         case Failure(throwable) => handle(throwable)
       }
     }
-  }
 
-  implicit class OptionExtensions[T](val option: Option[T]) extends AnyVal {
-    /**
-     * Converts an `Option` to an `Observable`. `Some` is mapped to an `Observable` with 1 element,
-     * `None` is mapped to the empty `Observable`.
-     *
-     * @return an `Observable` with either zero or one elements
-     */
-    def toObservable: Observable[T] = option.map(Observable.just(_)).getOrElse(Observable.empty)
+    def ifSuccess(f: T => Unit): Try[T] = {
+      t match {
+        case success@Success(x) => Try {
+          f(x)
+          return success
+        }
+        case e => e
+      }
+    }
+
+    def ifFailure(f: PartialFunction[Throwable, Unit]): Try[T] = {
+      t match {
+        case failure@Failure(e) if f.isDefinedAt(e) => Try {
+          f(e)
+          return failure
+        }
+        case x => x
+      }
+    }
   }
 
   implicit class FileExtensions(val file: File) extends AnyVal {
@@ -361,88 +369,5 @@ package object multideposit {
   // sfiDir/springfield-actions.xml
   def springfieldInboxActionsFile(settings: Settings): File = {
     springfieldInboxDir(settings, springfieldActionsFileName)
-  }
-
-  /**
-   * Extract the ''file parameters'' from a dataset and return these in an ``Observable``.
-   * The following parameters are used for this: '''ROW''', '''FILE_SIP''', '''FILE_DATASET''',
-   * '''FILE_STORAGE_SERVICE''', '''FILE_STORAGE_PATH''', '''FILE_AUDIO_VIDEO'''.
-   *
-   * @param dataset the dataset from which the file parameters get extracted
-   * @return the ``Observable`` with fileparameters values extracted from the dataset
-   */
-  def extractFileParameters(dataset: Dataset): Observable[FileParameters] = {
-    Observable.just("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
-      .flatMap(dataset.get(_).toObservable)
-      .take(1)
-      .flatMap(xs => xs.indices.toObservable
-        .map(index => {
-          def valueAt(key: String): Option[String] = {
-            dataset.get(key).flatMap(_(index).toOption)
-          }
-          def intAt(key: String): Option[Int] = {
-            dataset.get(key).flatMap(_(index).toIntOption)
-          }
-
-          FileParameters(intAt("ROW"), valueAt("FILE_SIP"), valueAt("FILE_DATASET"),
-            valueAt("FILE_STORAGE_SERVICE"), valueAt("FILE_STORAGE_PATH"),
-            valueAt("FILE_AUDIO_VIDEO"))
-        })
-        .filter {
-          case FileParameters(_, None, None, None, None, None) => false
-          case _ => true
-        })
-  }
-
-  def extractFileParameters2(dataset: Dataset): List[FileParameters] = {
-    List("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
-      .flatMap(dataset.get)
-      .take(1)
-      .flatMap(xs => xs.indices
-        .map(index => {
-          def valueAt(key: String): Option[String] = {
-            dataset.get(key).flatMap(_(index).toOption)
-          }
-          def intAt(key: String): Option[Int] = {
-            dataset.get(key).flatMap(_(index).toIntOption)
-          }
-
-          FileParameters(intAt("ROW"), valueAt("FILE_SIP"), valueAt("FILE_DATASET"),
-            valueAt("FILE_STORAGE_SERVICE"), valueAt("FILE_STORAGE_PATH"),
-            valueAt("FILE_AUDIO_VIDEO"))
-        })
-        .filter {
-          case FileParameters(_, None, None, None, None, None) => false
-          case _ => true
-        })
-  }
-
-  /**
-   * Generates an error report with a `heading` and a list of `ActionException`s coming from a
-   * list of `Try`s, sorted by row number. Supplying other exceptions than `ActionException` will
-   * cause an `AssertionError`. `Success` input in `trys` are ignored.
-   *
-   * @param header a piece of text before the list of errors
-   * @param trys the failures to be reported
-   * @return the error report
-   */
-  @deprecated(message = "the report is generated automatically in Action.run when a failure occurs", since = "2017-01-23")
-  def generateErrorReport[T](header: String = "", trys: Seq[Try[T]] = Nil, footer: String = ""): String = {
-    header.toOption.map(s => s"$s\n").getOrElse("") +
-      trys.filter(_.isFailure)
-        .flatMap {
-          case Failure(CompositeException(errors)) => errors.map(Failure(_))
-          case f@Failure(_) => List(f)
-          case _ => assert(assertion = false, "Should always get a Failure"); List.empty
-        }
-        .map {
-          case Failure(actionEx: ActionException) => actionEx
-          // Add other Failure(exceptions) cases if needed and adjust the error message below accordingly
-          case _ => throw new AssertionError("Only Failures of ActionException are expected here")
-        }
-        .sortBy(_.row)
-        .map(actionEx => s" - row ${actionEx.row}: ${actionEx.message}")
-        .mkString("\n") +
-      footer.toOption.map(s => if (trys.isEmpty) s else s"\n$s").getOrElse("")
   }
 }
