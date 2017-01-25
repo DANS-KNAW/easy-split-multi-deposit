@@ -38,7 +38,6 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   override def execute(): Try[Unit] = {
     for {
       _ <- super.execute()
-      _ = debug(s"Creating Deposit Directory at $depositDir with bag directory = $bagDir and metadata directory = $metadataDir")
       _ <- if (dirs.forall(_.mkdirs)) Success(())
            else Failure(ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
     } yield ()
@@ -47,11 +46,8 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   override def rollback(): Try[Unit] = {
     for {
       _ <- super.rollback()
-      _ = debug(s"Deleting directory $depositDir")
       _ <- Try { depositDir.deleteDirectory() }
-        .recoverWith {
-          case e: Exception => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e))
-        }
+        .recoverWith { case e: Exception => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e)) }
     } yield ()
   }
 }

@@ -68,17 +68,21 @@ object AddFileMetadataToDeposit {
   def datasetToFileXml(datasetID: DatasetID)(implicit settings: Settings): Elem = {
     val inputDir = multiDepositDir(settings, datasetID)
 
+    // @formatter:off
     <files xmlns:dcterms="http://purl.org/dc/terms/">{
       if (inputDir.exists && inputDir.isDirectory)
         inputDir.listRecursively.map(xmlPerPath(inputDir))
     }</files>
+    // @formatter:on
   }
 
   // TODO other fields need to be added here later
   def xmlPerPath(inputDir: File)(file: File): Elem = {
-    <file filepath={s"data/${inputDir.toPath.relativize(file.toPath)}"}>{
+    // @formatter:off
+    <file filepath={s"data/${inputDir.toPath.relativize(file.toPath)}"}>
       <dcterms:format>{getMimeType(file.getPath)}</dcterms:format>
-    }</file>
+    </file>
+    // @formatter:off
   }
 
   val fileExtensionMap = immutable.HashMap(

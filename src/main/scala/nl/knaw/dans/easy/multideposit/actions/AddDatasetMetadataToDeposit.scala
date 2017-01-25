@@ -93,7 +93,8 @@ object AddDatasetMetadataToDeposit {
   }
 
   def datasetToXml(dataset: Dataset): Elem = {
-      <ddm:DDM
+    // @formatter:off
+    <ddm:DDM
       xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -106,12 +107,14 @@ object AddDatasetMetadataToDeposit {
       xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/"
       xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/"
       xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.knaw.nl/schemas/md/2012/11/ddm.xsd">
-        {createProfile(dataset)}
-        {createMetadata(dataset)}
-      </ddm:DDM>
+      {createProfile(dataset)}
+      {createMetadata(dataset)}
+    </ddm:DDM>
+    // @formatter:on
   }
 
   def createProfile(dataset: Dataset): Elem = {
+    // @formatter:off
     <ddm:profile>
       {profileElems(dataset, "DC_TITLE")}
       {profileElems(dataset, "DC_DESCRIPTION")}
@@ -120,6 +123,7 @@ object AddDatasetMetadataToDeposit {
       {profileElems(dataset, "DDM_AUDIENCE")}
       {profileElems(dataset, "DDM_ACCESSRIGHTS")}
     </ddm:profile>
+    // @formatter:on
   }
 
   def profileElems(dataset: Dataset, key: MultiDepositKey): Seq[Elem] = {
@@ -133,6 +137,7 @@ object AddDatasetMetadataToDeposit {
 
   def createCreators(dataset: Dataset): Seq[Elem] = {
     dataset.rowsWithValuesFor(composedCreatorFields).map(mdKeyValues =>
+      // @formatter:off
       <dcx-dai:creatorDetails>{
         if (isOrganization(mdKeyValues))
           <dcx-dai:organization>
@@ -145,6 +150,7 @@ object AddDatasetMetadataToDeposit {
             mdKeyValues.map(composedEntry(composedCreatorFields))
           }</dcx-dai:author>
       }</dcx-dai:creatorDetails>
+      // @formatter:off
     )
   }
 
@@ -158,49 +164,58 @@ object AddDatasetMetadataToDeposit {
 
   def createContributors(dataset: Dataset): Seq[Elem] = {
     dataset.rowsWithValuesFor(composedContributorFields).map(mdKeyValues =>
+      // @formatter:off
       <dcx-dai:contributorDetails>{
         if (isOrganization(mdKeyValues))
-        <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">{mdKeyValues.find(field => organizationKeys.contains(field._1)).map(_._2).getOrElse("")}</dcx-dai:name>
-        </dcx-dai:organization>
-      else
-        <dcx-dai:author>
-          {mdKeyValues.map(composedEntry(composedContributorFields))}
-        </dcx-dai:author>
+          <dcx-dai:organization>
+            <dcx-dai:name xml:lang="en">{
+              mdKeyValues.find(field => organizationKeys.contains(field._1)).map(_._2).getOrElse("")
+            }</dcx-dai:name>
+          </dcx-dai:organization>
+        else
+          <dcx-dai:author>{
+            mdKeyValues.map(composedEntry(composedContributorFields))
+          }</dcx-dai:author>
       }</dcx-dai:contributorDetails>
+      // @formatter:on
     )
   }
 
   def composedEntry(dictionary: Dictionary)(entry: (MultiDepositKey, String)): Elem = {
     val (key, value) = entry
     if (organizationKeys.contains(key)) {
+      // @formatter:off
       <dcx-dai:organization>
         <dcx-dai:name xml:lang="en">{value}</dcx-dai:name>
       </dcx-dai:organization>
+      // @formatter:on
     }
-    else {
-      elem(dictionary.getOrElse(key, key))(value)
-    }
+    else elem(dictionary.getOrElse(key, key))(value)
   }
 
-  def createSrsName(fields: mutable.HashMap[MultiDepositKey, String]): String = Map(
-    "degrees" -> "http://www.opengis.net/def/crs/EPSG/0/4326",
-    "RD" -> "http://www.opengis.net/def/crs/EPSG/0/28992"
-  ).getOrElse(fields.getOrElse("DCX_SPATIAL_SCHEME", ""),"")
+  def createSrsName(fields: mutable.HashMap[MultiDepositKey, String]): String = {
+    Map(
+      "degrees" -> "http://www.opengis.net/def/crs/EPSG/0/4326",
+      "RD" -> "http://www.opengis.net/def/crs/EPSG/0/28992"
+    ).getOrElse(fields.getOrElse("DCX_SPATIAL_SCHEME", ""), "")
+  }
 
   def createSpatialPoints(dataset: Dataset): Seq[Elem] = {
     // coordinate order latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
     dataset.rowsWithValuesForAllOf(composedSpatialPointFields).map(mdKeyValues =>
+      // @formatter:off
       <dcx-gml:spatial srsName={createSrsName(mdKeyValues)}>
         <Point xmlns="http://www.opengis.net/gml">
           <pos>{mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")} {mdKeyValues.getOrElse("DCX_SPATIAL_X", "")}</pos>
         </Point>
       </dcx-gml:spatial>
+      // @formatter:on
     )
   }
 
   def createSpatialBoxes(dataset: Dataset): Seq[Elem] = {
     dataset.rowsWithValuesForAllOf(composedSpatialBoxFields).map(mdKeyValues =>
+      // @formatter:off
       <dcx-gml:spatial>
         <boundedBy xmlns="http://www.opengis.net/gml">
           <Envelope srsName={createSrsName(mdKeyValues)}>
@@ -209,6 +224,7 @@ object AddDatasetMetadataToDeposit {
           </Envelope>
         </boundedBy>
       </dcx-gml:spatial>
+      // @formatter:on
     )
   }
 
@@ -217,7 +233,9 @@ object AddDatasetMetadataToDeposit {
     dataset.rowsWithValuesFor(fields).map(mdKeyValues => {
       val value = mdKeyValues.getOrElse(key, "")
       mdKeyValues.get(schemeKey)
-        .map(scheme => <key xsi:type={scheme}>{value}</key>.copy(label=xmlKey))
+        // @formatter:off
+        .map(scheme => <key xsi:type={scheme}>{value}</key>.copy(label = xmlKey))
+        // @formatter:on
         .getOrElse(elem(xmlKey)(value))
     })
   }
@@ -233,14 +251,16 @@ object AddDatasetMetadataToDeposit {
   def createRelations(dataset: Dataset): Seq[Elem] = {
     dataset.rowsWithValuesFor(composedRelationFields).map { row =>
       (row.get("DCX_RELATION_QUALIFIER"), row.get("DCX_RELATION_LINK"), row.get("DCX_RELATION_TITLE")) match {
-        case (Some(q), Some(l),_      ) => elem(s"dcterms:$q")(l)
-        case (Some(q), None,   Some(t)) => elem(s"dcterms:$q")(t)
-        case (None,    Some(l),_      ) => elem(s"dc:relation")(l)
-        case (None,    None,   Some(t)) => elem(s"dc:relation")(t)
-        case _                          =>
+        // @formatter:off
+        case (Some(q), Some(l), _      ) => elem(s"dcterms:$q")(l)
+        case (Some(q), None,    Some(t)) => elem(s"dcterms:$q")(t)
+        case (None,    Some(l), _      ) => elem(s"dc:relation")(l)
+        case (None,    None,    Some(t)) => elem(s"dc:relation")(t)
+        case _                           =>
           // TODO this case needs to be checked to not occur in the preconditions
           // (see also comment in https://github.com/DANS-KNAW/easy-split-multi-deposit/commit/dbda6cc2b78f93196be62b323a988e3781cb6926#diff-efd2dc8d9655ba9c6b577f13dd66627bR32)
           throw new IllegalArgumentException("preconditions should have reported this as an error")
+        // @formatter:on
       }
     }
   }
@@ -250,6 +270,7 @@ object AddDatasetMetadataToDeposit {
       metadataFields.contains(key) && values.nonEmpty
     }
 
+    // @formatter:off
     <ddm:dcmiMetadata>
       {dataset.filter(isMetaData _ tupled).flatMap(simpleMetadataEntryToXML _ tupled)}
       {createRelations(dataset)}
@@ -259,13 +280,18 @@ object AddDatasetMetadataToDeposit {
       {createSpatialBoxes(dataset)}
       {createTemporal(dataset)}
     </ddm:dcmiMetadata>
+    // @formatter:on
   }
 
   def simpleMetadataEntryToXML(key: MultiDepositKey, values: MultiDepositValues): List[Elem] = {
     values.filter(_.nonEmpty).map(elem(metadataFields.getOrElse(key, key)))
   }
 
-  def elem(key: String)(value: String): Elem = <key>{value}</key>.copy(label=key)
+  def elem(key: String)(value: String): Elem = {
+    // @formatter:off
+    <key>{value}</key>.copy(label=key)
+    // @formatter:on
+  }
 
   /**
    * Check if either non of the keys have values or all of them have values
@@ -274,11 +300,10 @@ object AddDatasetMetadataToDeposit {
   def checkAllOrNone(row: Int, map: mutable.HashMap[MultiDepositKey, String], keys: List[String]): Try[Unit] = {
     val emptyVals = keys.filter(key => map.get(key).forall(_.isBlank))
 
-    if (emptyVals.nonEmpty && emptyVals.size < keys.size) {
-      Failure(ActionException(row, s"Missing value(s) for: ${emptyVals.mkString("[", ", ", "]")}"))
-    } else {
+    if (emptyVals.nonEmpty && emptyVals.size < keys.size)
+      Failure(ActionException(row, s"Missing value(s) for: ${ emptyVals.mkString("[", ", ", "]") }"))
+    else
       Success(())
-    }
   }
 
   /**
@@ -293,7 +318,7 @@ object AddDatasetMetadataToDeposit {
     val hasRequiredVals = emptyRequiredVals.size < requiredKeys.size
 
     if ((hasOptionalVals || hasRequiredVals) && emptyRequiredVals.nonEmpty)
-      Failure(ActionException(row, s"Missing value(s) for: ${emptyRequiredVals.mkString("[", ", ", "]")}"))
+      Failure(ActionException(row, s"Missing value(s) for: ${ emptyRequiredVals.mkString("[", ", ", "]") }"))
     else
       Success(())
   }
@@ -303,10 +328,10 @@ object AddDatasetMetadataToDeposit {
    */
   def checkValueIsOneOf(row: Int, map: mutable.HashMap[MultiDepositKey, String], key: String, allowed: List[String]): Try[Unit] = {
     val value = map.getOrElse(key, "")
-    if(value.isEmpty || allowed.contains(value))
+    if (value.isEmpty || allowed.contains(value))
       Success(Unit)
     else
-      Failure(ActionException(row, s"Wrong value: $value should be empty or one of: ${allowed.mkString("[", ", ", "]")}"))
+      Failure(ActionException(row, s"Wrong value: $value should be empty or one of: ${ allowed.mkString("[", ", ", "]") }"))
   }
 
   def checkAccessRights(row: Int, map: mutable.HashMap[MultiDepositKey, String]): Try[Unit] = {

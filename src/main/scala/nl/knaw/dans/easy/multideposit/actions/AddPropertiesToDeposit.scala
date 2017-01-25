@@ -81,8 +81,8 @@ object AddPropertiesToDeposit {
     addProperties(props, dataset)
       .flatMap(_ => Using.fileWriter(encoding)(outputPropertiesFile(settings, datasetID)).map(out => props.store(out, "")).tried)
       .recoverWith {
-      case e => Failure(ActionException(row, s"Could not write properties to file: $e", e))
-    }
+        case e => Failure(ActionException(row, s"Could not write properties to file: $e", e))
+      }
   }
 
   def addProperties(properties: Properties, dataset: Dataset): Try[Unit] = {

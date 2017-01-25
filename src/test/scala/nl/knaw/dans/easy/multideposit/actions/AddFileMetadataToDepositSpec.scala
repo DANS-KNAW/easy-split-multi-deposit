@@ -72,7 +72,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   }
 
   "datasetToFileXml" should "produce the xml for all the files" in {
-    AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01").child should (
+    AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01").child.map(Utility.trim) should (
       have length 5 and
         contain allOf(
       <file filepath="data/ruimtereis01_verklaring.txt"><dcterms:format>text/plain</dcterms:format></file>,

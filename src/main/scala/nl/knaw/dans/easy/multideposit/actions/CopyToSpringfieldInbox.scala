@@ -27,7 +27,7 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
     for {
       _ <- super.checkPreconditions
       _ <- if (mdFile.exists) Success(Unit)
-           else Failure(ActionException(row, s"Cannot find MD file: ${mdFile.getPath}"))
+           else Failure(ActionException(row, s"Cannot find MD file: ${ mdFile.getPath }"))
     } yield ()
   }
 
@@ -36,7 +36,7 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
       _ <- super.execute()
       sfFile = springfieldInboxDir(settings, fileMd)
       _ <- Try { mdFile.copyFile(sfFile) }
-        .recoverWith { case e => Failure(ActionException(row, s"Error in copying $mdFile to $sfFile: ${e.getMessage}", e)) }
+        .recoverWith { case e => Failure(ActionException(row, s"Error in copying $mdFile to $sfFile: ${ e.getMessage }", e)) }
     } yield ()
   }
 
