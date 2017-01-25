@@ -313,7 +313,7 @@ object AddDatasetMetadataToDeposit {
     val emptyOptionalVals = optionalKeys.filter(optionalKey => map.get(optionalKey).forall(_.isBlank))
     val emptyRequiredVals = requiredKeys.filter(requiredKey => map.get(requiredKey).forall(_.isBlank))
 
-    // note that it has vals if not all are empty
+    // note that it has values if not all are empty
     val hasOptionalVals = emptyOptionalVals.size < optionalKeys.size
     val hasRequiredVals = emptyRequiredVals.size < requiredKeys.size
 
