@@ -95,7 +95,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   }
 
   it should "create a bag with no files in data when the input directory does not exist" in {
-    val settings = Settings(
+    implicit val settings = Settings(
       multidepositDir = new File(testDir, "md-empty"),
       outputDepositDir = new File(testDir, "dd")
     )
