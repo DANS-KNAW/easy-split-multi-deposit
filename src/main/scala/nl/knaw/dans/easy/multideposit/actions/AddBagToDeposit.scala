@@ -43,9 +43,9 @@ object AddBagToDeposit {
   // for examples see https://github.com/LibraryOfCongress/bagit-java/issues/18
   //              and http://www.mpcdf.mpg.de/services/data/annotate/downloads -> TacoHarvest
   def createBag(datasetID: DatasetID)(implicit settings: Settings): Try[Unit] = Try {
-    val inputDir = multiDepositDir(settings, datasetID)
+    val inputDir = multiDepositDir(datasetID)
     val inputDirExists = inputDir.exists
-    val outputBagDir = outputDepositBagDir(settings, datasetID)
+    val outputBagDir = outputDepositBagDir(datasetID)
 
     val bagFactory = new BagFactory
     val preBag = bagFactory.createPreBag(outputBagDir)

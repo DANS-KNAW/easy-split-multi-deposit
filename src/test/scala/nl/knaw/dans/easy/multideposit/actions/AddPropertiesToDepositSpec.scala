@@ -106,13 +106,13 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   "execute" should "generate the properties file" in {
     AddPropertiesToDeposit(1, (datasetID, dataset)).execute shouldBe a[Success[_]]
 
-    new File(outputDepositDir(settings, datasetID), "deposit.properties") should exist
+    new File(outputDepositDir(datasetID), "deposit.properties") should exist
   }
 
   "writeProperties" should "generate the properties file and write the properties in it" in {
     AddPropertiesToDeposit(1, (datasetID, dataset)).execute shouldBe a[Success[_]]
 
-    val props = outputPropertiesFile(settings, datasetID)
+    val props = outputPropertiesFile(datasetID)
     val content = props.read()
     content should include ("state.label")
     content should include ("state.description")

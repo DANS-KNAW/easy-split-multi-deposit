@@ -32,7 +32,7 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   def createFile(fileName: MultiDepositKey): Unit = {
-    val file = multiDepositDir(settings, fileName)
+    val file = multiDepositDir(fileName)
     file.getParentFile.mkdirs
     file.write("")
   }
@@ -69,11 +69,11 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
 
     action.execute shouldBe a[Success[_]]
 
-    springfieldInboxDir(settings, "videos/some_rollback.mpg") should exist
+    springfieldInboxDir("videos/some_rollback.mpg") should exist
 
     action.rollback shouldBe a[Success[_]]
 
-    springfieldInboxDir(settings, "videos/some_rollback.mpg") should not (exist)
-    springfieldInboxDir(settings, "videos") should not (exist)
+    springfieldInboxDir("videos/some_rollback.mpg") should not (exist)
+    springfieldInboxDir("videos") should not (exist)
   }
 }

@@ -86,7 +86,7 @@ object AddDatasetMetadataToDeposit {
 
   def writeDatasetMetadataXml(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     Try {
-      outputDatasetMetadataFile(settings, datasetID).writeXml(datasetToXml(dataset))
+      outputDatasetMetadataFile(datasetID).writeXml(datasetToXml(dataset))
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write dataset metadata: $e", e))
     }

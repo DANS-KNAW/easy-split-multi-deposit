@@ -327,47 +327,47 @@ package object multideposit {
   val springfieldActionsFileName = "springfield-actions.xml"
 
   // mdDir/datasetID/
-  def multiDepositDir(settings: Settings, datasetID: DatasetID): File = {
+  def multiDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
     new File(settings.multidepositDir, datasetID)
   }
   // mdDir/instructions.csv
-  def multiDepositInstructionsFile(settings: Settings): File = {
+  def multiDepositInstructionsFile(implicit settings: Settings): File = {
     new File(settings.multidepositDir, instructionsFileName)
   }
   // outDir/mdDir-datasetID/
-  def outputDepositDir(settings: Settings, datasetID: DatasetID): File = {
+  def outputDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
     new File(settings.outputDepositDir, s"${settings.multidepositDir.getName}-$datasetID")
   }
   // outDir/mdDir-datasetID/bag/
-  def outputDepositBagDir(settings: Settings, datasetID: DatasetID): File = {
-    new File(outputDepositDir(settings, datasetID), bagDirName)
+  def outputDepositBagDir(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositDir(datasetID), bagDirName)
   }
   // outDir/mdDir-datasetID/bag/data/
-  def outputDepositBagDataDir(settings: Settings, datasetID: DatasetID): File = {
-    new File(outputDepositBagDir(settings, datasetID), dataDirName)
+  def outputDepositBagDataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositBagDir(datasetID), dataDirName)
   }
   // outDir/mdDir-datasetID/bag/metadata/
-  def outputDepositBagMetadataDir(settings: Settings, datasetID: DatasetID): File = {
-    new File(outputDepositBagDir(settings, datasetID), metadataDirName)
+  def outputDepositBagMetadataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositBagDir(datasetID), metadataDirName)
   }
   // outDir/mdDir-datasetID/deposit.properties
-  def outputPropertiesFile(settings: Settings, datasetID: DatasetID): File = {
-    new File(outputDepositDir(settings, datasetID), propsFileName)
+  def outputPropertiesFile(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositDir(datasetID), propsFileName)
   }
   // outDir/mdDir-datasetID/bag/metadata/dataset.xml
-  def outputDatasetMetadataFile(settings: Settings, datasetID: DatasetID): File = {
-    new File(outputDepositBagMetadataDir(settings, datasetID), datasetMetadataFileName)
+  def outputDatasetMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositBagMetadataDir(datasetID), datasetMetadataFileName)
   }
   // outDir/mdDir-datasetID/bag/metadata/files.xml
-  def outputFileMetadataFile(settings: Settings, datasetID: DatasetID): File = {
-    new File(outputDepositBagMetadataDir(settings, datasetID), fileMetadataFileName)
+  def outputFileMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositBagMetadataDir(datasetID), fileMetadataFileName)
   }
   // sfiDir/<fileMd>
-  def springfieldInboxDir(settings: Settings, fileMd: String): File = {
+  def springfieldInboxDir(fileMd: String)(implicit settings: Settings): File = {
     new File(settings.springfieldInbox, fileMd)
   }
   // sfiDir/springfield-actions.xml
-  def springfieldInboxActionsFile(settings: Settings): File = {
-    springfieldInboxDir(settings, springfieldActionsFileName)
+  def springfieldInboxActionsFile(implicit settings: Settings): File = {
+    springfieldInboxDir(springfieldActionsFileName)
   }
 }

@@ -50,21 +50,21 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
 
   "checkPreconditions" should "succeed if the output directories do not yet exist" in {
     // directories do not exist before
-    outputDepositDir(settings, datasetID) should not (exist)
-    outputDepositBagDir(settings, datasetID) should not (exist)
-    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
+    outputDepositDir(datasetID) should not (exist)
+    outputDepositBagDir(datasetID) should not (exist)
+    outputDepositBagMetadataDir(datasetID) should not (exist)
 
     // creation of directories
     CreateOutputDepositDir(1, datasetID).checkPreconditions shouldBe a[Success[_]]
   }
 
   it should "fail if either one of the output directories does already exist" in {
-    outputDepositBagDir(settings, datasetID).mkdirs()
+    outputDepositBagDir(datasetID).mkdirs()
 
     // some directories do already exist before
-    outputDepositDir(settings, datasetID) should exist
-    outputDepositBagDir(settings, datasetID) should exist
-    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
+    outputDepositDir(datasetID) should exist
+    outputDepositBagDir(datasetID) should exist
+    outputDepositBagMetadataDir(datasetID) should not (exist)
 
     // creation of directories
     inside(CreateOutputDepositDir(1, datasetID).checkPreconditions) {
@@ -86,23 +86,23 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     CreateOutputDepositDir(1, datasetID).rollback() shouldBe a[Success[_]]
 
     // test that the directories are really not there anymore
-    outputDepositDir(settings, datasetID) should not (exist)
-    outputDepositBagDir(settings, datasetID) should not (exist)
-    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
+    outputDepositDir(datasetID) should not (exist)
+    outputDepositBagDir(datasetID) should not (exist)
+    outputDepositBagMetadataDir(datasetID) should not (exist)
   }
 
   def executeTest(): Unit = {
     // directories do not exist before
-    outputDepositDir(settings, datasetID) should not (exist)
-    outputDepositBagDir(settings, datasetID) should not (exist)
-    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
+    outputDepositDir(datasetID) should not (exist)
+    outputDepositBagDir(datasetID) should not (exist)
+    outputDepositBagMetadataDir(datasetID) should not (exist)
 
     // creation of directories
     CreateOutputDepositDir(1, datasetID).execute shouldBe a[Success[_]]
 
     // test existance after creation
-    outputDepositDir(settings, datasetID) should exist
-    outputDepositBagDir(settings, datasetID) should exist
-    outputDepositBagMetadataDir(settings, datasetID) should exist
+    outputDepositDir(datasetID) should exist
+    outputDepositBagDir(datasetID) should exist
+    outputDepositBagMetadataDir(datasetID) should exist
   }
 }

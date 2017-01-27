@@ -59,14 +59,14 @@ object AddFileMetadataToDeposit {
 
   def writeFileMetadataXml(row: Int, datasetID: DatasetID)(implicit settings: Settings): Try[Unit] = {
     Try {
-      outputFileMetadataFile(settings, datasetID).writeXml(datasetToFileXml(datasetID))
+      outputFileMetadataFile(datasetID).writeXml(datasetToFileXml(datasetID))
     } recoverWith {
       case e => Failure(ActionException(row, s"Could not write file meta data: $e", e))
     }
   }
 
   def datasetToFileXml(datasetID: DatasetID)(implicit settings: Settings): Elem = {
-    val inputDir = multiDepositDir(settings, datasetID)
+    val inputDir = multiDepositDir(datasetID)
 
     // @formatter:off
     <files xmlns:dcterms="http://purl.org/dc/terms/">{

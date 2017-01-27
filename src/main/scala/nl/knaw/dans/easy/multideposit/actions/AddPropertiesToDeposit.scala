@@ -79,7 +79,7 @@ object AddPropertiesToDeposit {
     val props = new Properties
 
     addProperties(props, dataset)
-      .flatMap(_ => Using.fileWriter(encoding)(outputPropertiesFile(settings, datasetID)).map(out => props.store(out, "")).tried)
+      .flatMap(_ => Using.fileWriter(encoding)(outputPropertiesFile(datasetID)).map(out => props.store(out, "")).tried)
       .recoverWith {
         case e => Failure(ActionException(row, s"Could not write properties to file: $e", e))
       }

@@ -63,12 +63,12 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
 
   "execute" should "write the file metadata to an xml file" in {
     val action = new AddFileMetadataToDeposit(1, (datasetID, dataset))
-    val metadataDir = outputDepositBagMetadataDir(settings, datasetID)
+    val metadataDir = outputDepositBagMetadataDir(datasetID)
 
     action.execute() shouldBe a[Success[_]]
 
     metadataDir should exist
-    outputFileMetadataFile(settings, datasetID) should exist
+    outputFileMetadataFile(datasetID) should exist
   }
 
   "datasetToFileXml" should "produce the xml for all the files" in {
@@ -85,7 +85,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
 
   //file does not need to exist for the mimetype to be established. it is based solely on filename.
   "xmlPerPath" should "create the correct filepath " in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(settings, datasetID))(new File(multiDepositDir(settings, datasetID), "ruimtereis01_verklaring.txt"))
+    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "ruimtereis01_verklaring.txt"))
     val res = <file filepath="data/ruimtereis01_verklaring.txt">
       <dcterms:format>text/plain</dcterms:format>
     </file>
@@ -95,7 +95,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
 
   //file does not need to exist for the mimetype to be established. it is based solely on filename.
   it should "produce the correct doc mimetype " in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(settings, datasetID))(new File(multiDepositDir(settings, datasetID), "reisverslag/deel01.doc"))
+    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "reisverslag/deel01.doc"))
     val res = <file filepath="data/reisverslag/deel01.doc">
       <dcterms:format>application/msword</dcterms:format>
     </file>
@@ -105,7 +105,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
 
   //file does not need to exist for the mimetype to be established. it is based solely on filename.
   it should "produce the correct docx mimetype " in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(settings, datasetID))(new File(multiDepositDir(settings, datasetID), "reisverslag/deel01.docx"))
+    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "reisverslag/deel01.docx"))
     val res = <file filepath="data/reisverslag/deel01.docx">
       <dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format>
     </file>
@@ -114,7 +114,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   }
 
   it should "produce the xml for one file" in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(settings, datasetID))(new File(multiDepositDir(settings, datasetID), "reisverslag/deel01.txt"))
+    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "reisverslag/deel01.txt"))
     val res = <file filepath="data/reisverslag/deel01.txt">
       <dcterms:format>text/plain</dcterms:format>
     </file>

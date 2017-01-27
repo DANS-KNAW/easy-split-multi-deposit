@@ -21,9 +21,9 @@ import scala.util.{ Failure, Success, Try }
 
 case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
 
-  private val depositDir = outputDepositDir(settings, datasetID)
-  private val bagDir = outputDepositBagDir(settings, datasetID)
-  private val metadataDir = outputDepositBagMetadataDir(settings, datasetID)
+  private val depositDir = outputDepositDir(datasetID)
+  private val bagDir = outputDepositBagDir(datasetID)
+  private val metadataDir = outputDepositBagMetadataDir(datasetID)
   private val dirs = depositDir :: bagDir :: metadataDir :: Nil
 
   override def checkPreconditions: Try[Unit] = {

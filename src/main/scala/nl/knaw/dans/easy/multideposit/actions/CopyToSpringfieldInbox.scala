@@ -21,7 +21,7 @@ import scala.util.{ Failure, Success, Try }
 
 case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action {
 
-  private val mdFile = multiDepositDir(settings, fileMd)
+  private val mdFile = multiDepositDir(fileMd)
 
   override def checkPreconditions: Try[Unit] = {
     for {
@@ -34,7 +34,7 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
   override def execute(): Try[Unit] = {
     for {
       _ <- super.execute()
-      sfFile = springfieldInboxDir(settings, fileMd)
+      sfFile = springfieldInboxDir(fileMd)
       _ <- Try { mdFile.copyFile(sfFile) }
         .recoverWith { case e => Failure(ActionException(row, s"Error in copying $mdFile to $sfFile: ${ e.getMessage }", e)) }
     } yield ()
