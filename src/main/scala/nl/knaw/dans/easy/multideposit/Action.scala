@@ -30,7 +30,6 @@ import scala.collection.mutable
   in https://wiki.haskell.org/Typeclassopedia#Laws_4.
  */
 trait Action extends DebugEnhancedLogging {
-  self =>
 
   private def logPreconditions(): Unit = {
     logger.info(s"Checking preconditions of ${getClass.getSimpleName} ...")
@@ -47,7 +46,7 @@ trait Action extends DebugEnhancedLogging {
    *
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
-  def checkPreconditions: Try[Unit] = Success(logPreconditions())
+  protected def checkPreconditions: Try[Unit] = Success(logPreconditions())
 
   /**
    * Exectue the action.
@@ -61,7 +60,7 @@ trait Action extends DebugEnhancedLogging {
    *
    * @return `Success` if the rollback was successful, `Failure` otherwise
    */
-  def rollback(): Try[Unit] = Success(logRollback())
+  protected def rollback(): Try[Unit] = Success(logRollback())
 
   /**
    * Run an action. First the precondition is checked. If it fails a `PreconditionsFailedException`
@@ -85,7 +84,7 @@ trait Action extends DebugEnhancedLogging {
     } yield ()
   }
 
-  private def generateReport[T](header: String = "", t: Throwable, footer: String = ""): String = {
+  private def generateReport(header: String = "", t: Throwable, footer: String = ""): String = {
     val report = t match {
       case ActionException(row, msg, _) => s" - row $row: $msg"
       case CompositeException(ths) =>
@@ -107,23 +106,26 @@ trait Action extends DebugEnhancedLogging {
    */
   def compose(other: Action): ComposedAction = {
     other match {
-      case composedAction: Action#ComposedAction => ComposedAction(self :: composedAction.actions)
-      case action => ComposedAction(self :: action :: Nil)
+      case composedAction: Action#ComposedAction => ComposedAction(this :: composedAction.actions)
+      case action => ComposedAction(this :: action :: Nil)
     }
   }
 
   case class ComposedAction(actions: List[Action]) extends Action {
     private lazy val executedActions = mutable.Stack[Action]()
 
-    override def checkPreconditions: Try[Unit] = {
+    override protected def checkPreconditions: Try[Unit] = {
       actions.map(_.checkPreconditions).collectResults.map(_ => ())
     }
 
     override protected def execute(): Try[Unit] = {
-      actions.foldLeft(Try { () })((res, action) => res.flatMap(_ => { executedActions.push(action); action.execute() }))
+      actions.foldLeft(Try { () })((res, action) => res.flatMap(_ => {
+        executedActions.push(action)
+        action.execute()
+      }))
     }
 
-    override def rollback(): Try[Unit] = {
+    override protected def rollback(): Try[Unit] = {
       Stream.continually(executedActions.isEmpty)
         .takeWhile(empty => !empty)
         .map(_ => executedActions.pop().rollback())
@@ -152,8 +154,8 @@ object Action {
   def apply(precondition: () => Try[Unit],
             action: () => Try[Unit],
             undo: () => Try[Unit]): Action = new Action {
-    override def checkPreconditions: Try[Unit] = precondition()
-    override def execute(): Try[Unit] = action()
-    override def rollback(): Try[Unit] = undo()
+    override protected def checkPreconditions: Try[Unit] = precondition()
+    override protected def execute(): Try[Unit] = action()
+    override protected def rollback(): Try[Unit] = undo()
   }
 }

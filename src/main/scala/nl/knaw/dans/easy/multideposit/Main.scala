@@ -37,19 +37,17 @@ object Main extends DebugEnhancedLogging {
   }
 
   def run(implicit settings: Settings): Try[Unit] = {
-    for {
-      datasets <- MultiDepositParser.parse(multiDepositInstructionsFile(settings))
-      _ <- getActions(datasets).reduce(_ compose _).run
-    } yield ()
+    MultiDepositParser.parse(multiDepositInstructionsFile)
+      .flatMap(getActions(_).reduce(_ compose _).run)
   }
 
-  def getActions(datasets: Datasets)(implicit s: Settings): ListBuffer[Action] = {
+  def getActions(datasets: Datasets)(implicit settings: Settings): ListBuffer[Action] = {
     logger.info("Compiling list of actions to perform ...")
 
     datasets.flatMap(getDatasetActions) ++= getGeneralActions(datasets)
   }
 
-  def getGeneralActions(datasets: Datasets)(implicit s: Settings): Seq[Action] = {
+  def getGeneralActions(datasets: Datasets)(implicit settings: Settings): Seq[Action] = {
     Seq(CreateSpringfieldActions(-1, datasets))
   }
 
