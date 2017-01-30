@@ -52,17 +52,6 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
 
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
-  "checkPreconditions" should "succeed if the md folder does not exist" in {
-    val inputDir = multiDepositDir(datasetID)
-    inputDir.deleteDirectory()
-
-    AddBagToDeposit(1, datasetID).checkPreconditions shouldBe a[Success[_]]
-  }
-
-  it should "succeed if the md folder exists" in {
-    AddBagToDeposit(1, datasetID).checkPreconditions shouldBe a[Success[_]]
-  }
-
   "execute" should "succeed given the current setup" in {
     AddBagToDeposit(1, datasetID).execute shouldBe a[Success[_]]
   }

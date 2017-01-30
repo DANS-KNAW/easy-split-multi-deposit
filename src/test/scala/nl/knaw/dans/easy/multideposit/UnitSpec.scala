@@ -21,7 +21,7 @@ import org.scalatest._
 
 import scala.collection.mutable.ListBuffer
 
-abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with Inspectors with OneInstancePerTest {
+abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest {
 
   val testDir = new File(s"target/test/${getClass.getSimpleName}")
 
