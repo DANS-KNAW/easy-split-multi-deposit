@@ -28,8 +28,10 @@ object Main extends DebugEnhancedLogging {
     implicit val settings = CommandLineOptions.parse(args)
 
     run
-      .ifFailure { case e => logger.error(e.getMessage) }
-      .ifFailure { case e => logger.debug(e.getMessage, e) }
+      .ifFailure { case e =>
+        logger.error(e.getMessage)
+        logger.debug(e.getMessage, e)
+      }
       .ifSuccess(_ => logger.info("Finished successfully!"))
 
     logger.debug("closing ldap")

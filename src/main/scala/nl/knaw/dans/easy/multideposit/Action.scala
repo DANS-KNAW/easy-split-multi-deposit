@@ -20,6 +20,7 @@ import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.collection.mutable
+import scala.util.control.NonFatal
 
 /**
  * An action to be performed by Process SIP. It provides three methods that can be invoked to verify
@@ -73,11 +74,11 @@ trait Action extends DebugEnhancedLogging {
   final def run: Try[Unit] = {
     for {
       _ <- checkPreconditions.recoverWith {
-        case e: Exception =>
+        case NonFatal(e) =>
           Failure(PreconditionsFailedException(generateReport("Precondition failures:", e, "Due to these errors in the preconditions, nothing was done.")))
       }
       _ <- execute().recoverWith {
-        case e: Exception => List(Failure(e), rollback()).collectResults.recoverWith {
+        case NonFatal(e) => List(Failure(e), rollback()).collectResults.recoverWith {
           case e: CompositeException => Failure(ActionRunFailedException(generateReport("Errors in Multi-Deposit Instructions file:", e)))
         }
       }
@@ -126,8 +127,8 @@ trait Action extends DebugEnhancedLogging {
     }
 
     override protected def rollback(): Try[Unit] = {
-      Stream.continually(executedActions.isEmpty)
-        .takeWhile(empty => !empty)
+      Stream.continually(executedActions.nonEmpty)
+        .takeWhile(_ == true)
         .map(_ => executedActions.pop().rollback())
         .toList
         .collectResults

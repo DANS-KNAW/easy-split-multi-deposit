@@ -22,6 +22,7 @@ import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
 import resource._
 
 import scala.language.postfixOps
+import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
 case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
@@ -81,7 +82,7 @@ object AddPropertiesToDeposit {
     addProperties(props, dataset)
       .flatMap(_ => Using.fileWriter(encoding)(outputPropertiesFile(datasetID)).map(out => props.store(out, "")).tried)
       .recoverWith {
-        case e => Failure(ActionException(row, s"Could not write properties to file: $e", e))
+        case NonFatal(e) => Failure(ActionException(row, s"Could not write properties to file: $e", e))
       }
   }
 

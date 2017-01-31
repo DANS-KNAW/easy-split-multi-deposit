@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit._
 
+import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
 case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
@@ -47,7 +48,7 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
     for {
       _ <- super.rollback()
       _ <- Try { depositDir.deleteDirectory() }
-        .recoverWith { case e: Exception => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e)) }
+        .recoverWith { case NonFatal(e) => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e)) }
     } yield ()
   }
 }

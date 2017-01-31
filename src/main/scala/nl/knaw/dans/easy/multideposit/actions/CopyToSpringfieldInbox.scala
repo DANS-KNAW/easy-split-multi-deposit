@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit.{ Action, ActionException, Settings, _ }
 
+import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
 case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action {
@@ -36,7 +37,7 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
       _ <- super.execute()
       sfFile = springfieldInboxDir(fileMd)
       _ <- Try { mdFile.copyFile(sfFile) }
-        .recoverWith { case e => Failure(ActionException(row, s"Error in copying $mdFile to $sfFile: ${ e.getMessage }", e)) }
+        .recoverWith { case NonFatal(e) => Failure(ActionException(row, s"Error in copying $mdFile to $sfFile: ${ e.getMessage }", e)) }
     } yield ()
   }
 

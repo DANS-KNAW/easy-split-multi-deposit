@@ -22,6 +22,7 @@ import nl.knaw.dans.lib.error.TraversableTryExtensions
 
 import scala.collection.mutable
 import scala.language.postfixOps
+import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
@@ -88,7 +89,7 @@ object AddDatasetMetadataToDeposit {
     Try {
       outputDatasetMetadataFile(datasetID).writeXml(datasetToXml(dataset))
     } recoverWith {
-      case e => Failure(ActionException(row, s"Could not write dataset metadata: $e", e))
+      case NonFatal(e) => Failure(ActionException(row, s"Could not write dataset metadata: $e", e))
     }
   }
 

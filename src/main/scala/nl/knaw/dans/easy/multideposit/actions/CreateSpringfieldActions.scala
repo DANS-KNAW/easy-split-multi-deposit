@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import nl.knaw.dans.easy.multideposit.{ Dataset, _ }
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 
+import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
@@ -49,7 +50,7 @@ object CreateSpringfieldActions {
       .getOrElse(Success(()))
       .recoverWith {
         case e@CompositeException(es) => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: ${es.mkString(", ")}", e))
-        case e => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e", e))
+        case NonFatal(e) => Failure(ActionException(row, s"Could not write Springfield actions file to Springfield inbox: $e", e))
       }
   }
 

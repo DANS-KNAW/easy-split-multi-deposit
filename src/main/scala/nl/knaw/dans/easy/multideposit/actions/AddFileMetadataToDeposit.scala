@@ -22,6 +22,7 @@ import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
 
 import scala.collection.immutable
+import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
@@ -61,7 +62,7 @@ object AddFileMetadataToDeposit {
     Try {
       outputFileMetadataFile(datasetID).writeXml(datasetToFileXml(datasetID))
     } recoverWith {
-      case e => Failure(ActionException(row, s"Could not write file meta data: $e", e))
+      case NonFatal(e) => Failure(ActionException(row, s"Could not write file meta data: $e", e))
     }
   }
 

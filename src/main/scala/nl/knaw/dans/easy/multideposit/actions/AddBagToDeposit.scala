@@ -27,6 +27,7 @@ import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
 
 import scala.collection.JavaConversions.seqAsJavaList
+import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
 case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
@@ -35,7 +36,7 @@ case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Se
     for {
       _ <- super.execute()
       _ <- createBag(datasetID)
-        .recoverWith { case e => Failure(ActionException(row, s"Error occured in creating the bag for $datasetID: ${ e.getMessage }", e)) }
+        .recoverWith { case NonFatal(e) => Failure(ActionException(row, s"Error occured in creating the bag for $datasetID: ${ e.getMessage }", e)) }
     } yield ()
   }
 }
