@@ -33,12 +33,7 @@ TODO For this Action all datasets need to be in memory at the same time. However
  */
 case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit settings: Settings) extends Action {
 
-  override def execute(): Try[Unit] = {
-    for {
-      _ <- super.execute()
-      _ <- CreateSpringfieldActions.writeSpringfieldXml(row, datasets)
-    } yield ()
-  }
+  override def execute(): Try[Unit] = CreateSpringfieldActions.writeSpringfieldXml(row, datasets)
 }
 object CreateSpringfieldActions {
 

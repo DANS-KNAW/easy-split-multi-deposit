@@ -37,24 +37,17 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-    for {
-      _ <- super.checkPreconditions
-      inputDir = settings.multidepositDir
-      // Note that the FILE_SIP paths are not really used in this action
-      nonExistingFileSIPs = dataset.getOrElse("FILE_SIP", List.empty)
-        .filterNot(_.isEmpty)
-        .filterNot(fp => new File(settings.multidepositDir, fp).exists())
-      _ <- if (nonExistingFileSIPs.isEmpty) Success(())
-           else Failure(ActionException(row, s"""The following SIP files are referenced in the instructions but not found in the deposit input dir "$inputDir" for dataset "$datasetID": ${ nonExistingFileSIPs.mkString("[", ", ", "]") }""".stripMargin))
-    } yield ()
+    val inputDir = settings.multidepositDir
+    // Note that the FILE_SIP paths are not really used in this action
+    val nonExistingFileSIPs = dataset.getOrElse("FILE_SIP", List.empty)
+      .filterNot(_.isEmpty)
+      .filterNot(fp => new File(settings.multidepositDir, fp).exists())
+
+    if (nonExistingFileSIPs.isEmpty) Success(())
+    else Failure(ActionException(row, s"""The following SIP files are referenced in the instructions but not found in the deposit input dir "$inputDir" for dataset "$datasetID": ${ nonExistingFileSIPs.mkString("[", ", ", "]") }""".stripMargin))
   }
 
-  override def execute(): Try[Unit] = {
-    for {
-      _ <- super.execute()
-      _ <- writeFileMetadataXml(row, datasetID)
-    } yield ()
-  }
+  override def execute(): Try[Unit] = writeFileMetadataXml(row, datasetID)
 }
 object AddFileMetadataToDeposit {
 

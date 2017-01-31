@@ -37,19 +37,9 @@ case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(im
    *
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
-  override def checkPreconditions: Try[Unit] = {
-    for {
-      _ <- super.checkPreconditions
-      _ <- verifyDataset(row, dataset)
-    } yield ()
-  }
+  override def checkPreconditions: Try[Unit] = verifyDataset(row, dataset)
 
-  override def execute(): Try[Unit] = {
-    for {
-      _ <- super.execute()
-      _ <- writeDatasetMetadataXml(row, datasetID, dataset)
-    } yield ()
-  }
+  override def execute(): Try[Unit] = writeDatasetMetadataXml(row, datasetID, dataset)
 }
 object AddDatasetMetadataToDeposit {
 

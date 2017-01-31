@@ -36,19 +36,9 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
    * Checks whether there is only one unique DEPOSITOR_ID set in the `Dataset` (there can be multiple values but the must all be equal!).
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
-  override def checkPreconditions: Try[Unit] = {
-    for {
-      _ <- super.checkPreconditions
-      _ <- validateDepositor(row, datasetID, dataset)
-    } yield ()
-  }
+  override def checkPreconditions: Try[Unit] = validateDepositor(row, datasetID, dataset)
 
-  override def execute(): Try[Unit] = {
-    for {
-      _ <- super.execute()
-      _ <- writeProperties(row, datasetID, dataset)
-    } yield ()
-  }
+  override def execute(): Try[Unit] = writeProperties(row, datasetID, dataset)
 }
 object AddPropertiesToDeposit {
 

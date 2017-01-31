@@ -28,27 +28,19 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   private val dirs = depositDir :: bagDir :: metadataDir :: Nil
 
   override def checkPreconditions: Try[Unit] = {
-    for {
-      _ <- super.checkPreconditions
-      _ <- dirs.find(_.exists)
-        .map(file => Failure(ActionException(row, s"The deposit for dataset $datasetID already exists in $file.")))
-        .getOrElse(Success(()))
-    } yield ()
+    dirs.find(_.exists)
+      .map(file => Failure(ActionException(row, s"The deposit for dataset $datasetID already exists in $file.")))
+      .getOrElse(Success(()))
   }
 
   override def execute(): Try[Unit] = {
-    for {
-      _ <- super.execute()
-      _ <- if (dirs.forall(_.mkdirs)) Success(())
-           else Failure(ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
-    } yield ()
+    if (dirs.forall(_.mkdirs)) Success(())
+    else Failure(ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
   }
 
   override def rollback(): Try[Unit] = {
-    for {
-      _ <- super.rollback()
-      _ <- Try { depositDir.deleteDirectory() }
-        .recoverWith { case NonFatal(e) => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e)) }
-    } yield ()
+    Try { depositDir.deleteDirectory() } recoverWith {
+      case NonFatal(e) => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e))
+    }
   }
 }

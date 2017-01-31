@@ -25,26 +25,18 @@ case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: S
   private val mdFile = multiDepositDir(fileMd)
 
   override def checkPreconditions: Try[Unit] = {
-    for {
-      _ <- super.checkPreconditions
-      _ <- if (mdFile.exists) Success(Unit)
-           else Failure(ActionException(row, s"Cannot find MD file: ${ mdFile.getPath }"))
-    } yield ()
+    if (mdFile.exists) Success(Unit)
+    else Failure(ActionException(row, s"Cannot find MD file: ${ mdFile.getPath }"))
   }
 
   override def execute(): Try[Unit] = {
-    for {
-      _ <- super.execute()
-      sfFile = springfieldInboxDir(fileMd)
-      _ <- Try { mdFile.copyFile(sfFile) }
-        .recoverWith { case NonFatal(e) => Failure(ActionException(row, s"Error in copying $mdFile to $sfFile: ${ e.getMessage }", e)) }
-    } yield ()
+    val sfFile = springfieldInboxDir(fileMd)
+    Try { mdFile.copyFile(sfFile) } recoverWith {
+      case NonFatal(e) => Failure(ActionException(row, s"Error in copying $mdFile to $sfFile: ${ e.getMessage }", e))
+    }
   }
 
   override def rollback(): Try[Unit] = {
-    for {
-      _ <- super.rollback()
-      _ <- Try { settings.springfieldInbox.listFiles.foreach(_.deleteDirectory()) }
-    } yield ()
+    Try { settings.springfieldInbox.listFiles.foreach(_.deleteDirectory()) }
   }
 }

@@ -33,11 +33,9 @@ import scala.util.{ Failure, Try }
 case class AddBagToDeposit(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
 
   override def execute(): Try[Unit] = {
-    for {
-      _ <- super.execute()
-      _ <- createBag(datasetID)
-        .recoverWith { case NonFatal(e) => Failure(ActionException(row, s"Error occured in creating the bag for $datasetID: ${ e.getMessage }", e)) }
-    } yield ()
+    createBag(datasetID).recoverWith {
+      case NonFatal(e) => Failure(ActionException(row, s"Error occured in creating the bag for $datasetID: ${ e.getMessage }", e))
+    }
   }
 }
 object AddBagToDeposit {

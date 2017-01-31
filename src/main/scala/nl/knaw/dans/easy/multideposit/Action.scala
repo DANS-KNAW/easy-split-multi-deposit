@@ -41,27 +41,30 @@ trait Action extends DebugEnhancedLogging {
   private def logRollback(): Unit = {
     logger.info(s"An error occurred. Rolling back action ${getClass.getSimpleName} ...")
   }
+  private[Action] def innerCheckPreconditions: Try[Unit] = Try(logPreconditions()).flatMap(_ => checkPreconditions)
+  private[Action] def innerExecute(): Try[Unit] = Try(logExecute()).flatMap(_ => execute())
+  private[Action] def innerRollback(): Try[Unit] = Try(logRollback()).flatMap(_ => rollback())
 
   /**
    * Verifies whether all preconditions are met for this specific action.
    *
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
-  protected def checkPreconditions: Try[Unit] = Success(logPreconditions())
+  protected def checkPreconditions: Try[Unit] = Success(())
 
   /**
    * Exectue the action.
    *
    * @return `Success` if the execution was successful, `Failure` otherwise
    */
-  protected def execute(): Try[Unit] = Success(logExecute())
+  protected def execute(): Try[Unit]
 
   /**
    * Cleans up results of a previous call to run so that a new call to run will not fail because of those results.
    *
    * @return `Success` if the rollback was successful, `Failure` otherwise
    */
-  protected def rollback(): Try[Unit] = Success(logRollback())
+  protected def rollback(): Try[Unit] = Success(())
 
   /**
    * Run an action. First the precondition is checked. If it fails a `PreconditionsFailedException`
@@ -73,12 +76,12 @@ trait Action extends DebugEnhancedLogging {
    */
   final def run: Try[Unit] = {
     for {
-      _ <- checkPreconditions.recoverWith {
+      _ <- innerCheckPreconditions.recoverWith {
         case NonFatal(e) =>
           Failure(PreconditionsFailedException(generateReport("Precondition failures:", e, "Due to these errors in the preconditions, nothing was done.")))
       }
-      _ <- execute().recoverWith {
-        case NonFatal(e) => List(Failure(e), rollback()).collectResults.recoverWith {
+      _ <- innerExecute().recoverWith {
+        case NonFatal(e) => List(Failure(e), innerRollback()).collectResults.recoverWith {
           case e: CompositeException => Failure(ActionRunFailedException(generateReport("Errors in Multi-Deposit Instructions file:", e)))
         }
       }
@@ -112,24 +115,28 @@ trait Action extends DebugEnhancedLogging {
     }
   }
 
-  case class ComposedAction(actions: List[Action]) extends Action {
+  final case class ComposedAction(actions: List[Action]) extends Action {
     private lazy val executedActions = mutable.Stack[Action]()
 
+    override private[Action] def innerCheckPreconditions: Try[Unit] = checkPreconditions
+    override private[Action] def innerExecute(): Try[Unit] = execute()
+    override private[Action] def innerRollback(): Try[Unit] = rollback()
+
     override protected def checkPreconditions: Try[Unit] = {
-      actions.map(_.checkPreconditions).collectResults.map(_ => ())
+      actions.map(_.innerCheckPreconditions).collectResults.map(_ => ())
     }
 
     override protected def execute(): Try[Unit] = {
       actions.foldLeft(Try { () })((res, action) => res.flatMap(_ => {
         executedActions.push(action)
-        action.execute()
+        action.innerExecute()
       }))
     }
 
     override protected def rollback(): Try[Unit] = {
       Stream.continually(executedActions.nonEmpty)
         .takeWhile(_ == true)
-        .map(_ => executedActions.pop().rollback())
+        .map(_ => executedActions.pop().innerRollback())
         .toList
         .collectResults
         .map(_ => ())
