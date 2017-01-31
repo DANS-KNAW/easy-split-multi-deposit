@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015-2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,18 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 import java.net.URLConnection
-import java.nio.file.{Files, Paths}
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
-import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
-import org.apache.commons.logging.LogFactory
+import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
 
-import scala.util.{Failure, Success, Try}
+import scala.collection.immutable
+import scala.util.control.NonFatal
+import scala.util.{ Failure, Success, Try }
+import scala.xml.Elem
 
 case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
-  val log = LogFactory.getLog(getClass)
-
   val (datasetID, dataset) = entry
-
-  def run() = {
-    log.debug(s"Running $this")
-
-    writeFileMetadataXml(row, datasetID)
-  }
 
   /**
    * Verifies whether all preconditions are met for this specific action.
@@ -44,50 +37,49 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-    log.debug(s"Checking preconditions for $this")
-
-    val inputDir = settings.multidepositDir;
-    val inputDirPath = Paths.get(inputDir.getAbsolutePath)
-
+    val inputDir = settings.multidepositDir
     // Note that the FILE_SIP paths are not really used in this action
-    val nonExistingPaths = dataset.get("FILE_SIP").getOrElse(List.empty)
+    val nonExistingFileSIPs = dataset.getOrElse("FILE_SIP", List.empty)
       .filterNot(_.isEmpty)
-      .filterNot(fp => Files.exists(inputDirPath.resolve(fp)))
+      .filterNot(fp => new File(settings.multidepositDir, fp).exists())
 
-    if (nonExistingPaths.isEmpty)
-      Success(())
-    else
-      Failure(ActionException(row, s"""The following SIP files are referenced in the instructions but not found in the deposit input dir "$inputDirPath" for dataset "$datasetID": $nonExistingPaths""".stripMargin))
+    if (nonExistingFileSIPs.isEmpty) Success(())
+    else Failure(ActionException(row, s"""The following SIP files are referenced in the instructions but not found in the deposit input dir "$inputDir" for dataset "$datasetID": ${ nonExistingFileSIPs.mkString("[", ", ", "]") }""".stripMargin))
   }
+
+  override def execute(): Try[Unit] = writeFileMetadataXml(row, datasetID)
 }
 object AddFileMetadataToDeposit {
 
   def writeFileMetadataXml(row: Int, datasetID: DatasetID)(implicit settings: Settings): Try[Unit] = {
     Try {
-      outputFileMetadataFile(settings, datasetID).writeXml(datasetToFileXml(datasetID))
+      outputFileMetadataFile(datasetID).writeXml(datasetToFileXml(datasetID))
     } recoverWith {
-      case e => Failure(ActionException(row, s"Could not write file meta data: $e", e))
+      case NonFatal(e) => Failure(ActionException(row, s"Could not write file meta data: $e", e))
     }
   }
 
-  def datasetToFileXml(datasetID: DatasetID)(implicit settings: Settings) = {
-    val inputDir = multiDepositDir(settings, datasetID)
+  def datasetToFileXml(datasetID: DatasetID)(implicit settings: Settings): Elem = {
+    val inputDir = multiDepositDir(datasetID)
 
+    // @formatter:off
     <files xmlns:dcterms="http://purl.org/dc/terms/">{
       if (inputDir.exists && inputDir.isDirectory)
         inputDir.listRecursively.map(xmlPerPath(inputDir))
     }</files>
+    // @formatter:on
   }
 
   // TODO other fields need to be added here later
-  def xmlPerPath(inputDir: File)(file: File) = {
-    <file filepath={s"data/${inputDir.toPath.relativize(file.toPath)}"}>{
+  def xmlPerPath(inputDir: File)(file: File): Elem = {
+    // @formatter:off
+    <file filepath={s"data/${inputDir.toPath.relativize(file.toPath)}"}>
       <dcterms:format>{getMimeType(file.getPath)}</dcterms:format>
-    }</file>
+    </file>
+    // @formatter:off
   }
 
-
-  val fileExtensionMap = scala.collection.immutable.HashMap(
+  val fileExtensionMap = immutable.HashMap(
     // MS Office
     "doc" -> "application/msword",
     "dot" -> "application/msword",
@@ -136,13 +128,13 @@ object AddFileMetadataToDeposit {
     "rtf" -> "application/rtf",
     "pdf" -> "application/pdf"
 
-  );
-  def getMimeType(filename: String): String ={
-    var mimetype = URLConnection.getFileNameMap.getContentTypeFor(filename);
-    if (mimetype == null){
-      val extension = filename.substring(filename.lastIndexOf('.') + 1, filename.length());
-      mimetype = fileExtensionMap(extension);
-    }
-    return mimetype;
+  )
+
+  def getMimeType(filename: String): String = {
+    Option(URLConnection.getFileNameMap.getContentTypeFor(filename))
+      .getOrElse {
+        val extension = filename.substring(filename.lastIndexOf('.') + 1, filename.length())
+        fileExtensionMap(extension)
+      }
   }
 }

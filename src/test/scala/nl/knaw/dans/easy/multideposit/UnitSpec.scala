@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015-2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,7 @@ import org.scalatest._
 
 import scala.collection.mutable.ListBuffer
 
-abstract class UnitSpec extends FlatSpec with Matchers with
-OptionValues with Inside with Inspectors with OneInstancePerTest {
+abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest {
 
   val testDir = new File(s"target/test/${getClass.getSimpleName}")
 
@@ -58,8 +57,8 @@ OptionValues with Inside with Inspectors with OneInstancePerTest {
     val dataset = new Dataset
 
     dataset += "ROW" -> List("2", "3", "4", "5", "6")
-    dataset += "DATASET" -> List("dataset-1", "dataset-1", "dataset-1", "dataset-1", "dataset-1")
-    dataset += "DC_TITLE" -> List("Title 1 of dataset 1", "Title 2 of dataset 1", "", "", "")
+    dataset += "DATASET" -> List("dataset-2", "dataset-2", "dataset-2", "dataset-2", "dataset-2")
+    dataset += "DC_TITLE" -> List("Title 1 of dataset 2", "Title 2 of dataset 2", "", "", "")
     dataset += "DC_DESCRIPTION" -> List("A sample dataset with a not very long description", "", "", "", "")
     dataset += "DC_CREATOR" -> List("Creator A", "", "", "", "")
     dataset += "DC_CONTRIBUTOR" -> List("Contributor 1", "Contributor 2", "", "", "")
@@ -78,7 +77,7 @@ OptionValues with Inside with Inspectors with OneInstancePerTest {
     dataset += "SF_COLLECTION" -> List("coll1", "", "", "", "")
     dataset += "SF_PRESENTATION" -> List("presentation1", "", "", "", "")
     dataset += "FILE_SUBTITLES" -> List("", "", "", "", "")
-    dataset += "FILE_SIP" -> List("dataset-1/no-default-processing.txt", "dataset-1/some/dir/path/no-default-processing-2.txt", "videos/centaur.mpg", "", "")
+    dataset += "FILE_SIP" -> List("dataset-2/no-default-processing.txt", "dataset-2/some/dir/path/no-default-processing-2.txt", "videos/centaur.mpg", "", "")
     dataset += "FILE_DATASET" -> List("some/other/dir/path/non-default-1.txt", "some/other/dir/path/non-default-2.txt", "", "", "")
     dataset += "FILE_STORAGE_SERVICE" -> List("", "", "", "", "")
     dataset += "FILE_STORAGE_PATH" -> List("", "", "", "", "")
@@ -93,8 +92,8 @@ OptionValues with Inside with Inspectors with OneInstancePerTest {
   }
 
   def testFileParameters2: List[FileParameters] = {
-    FileParameters(Some(2), Some("dataset-1/no-default-processing.txt"), Some("some/other/dir/path/non-default-1.txt"), None, None, None) ::
-    FileParameters(Some(3), Some("dataset-1/some/dir/path/no-default-processing-2.txt"), Some("some/other/dir/path/non-default-2.txt"), None, None, None) ::
+    FileParameters(Some(2), Some("dataset-2/no-default-processing.txt"), Some("some/other/dir/path/non-default-1.txt"), None, None, None) ::
+    FileParameters(Some(3), Some("dataset-2/some/dir/path/no-default-processing-2.txt"), Some("some/other/dir/path/non-default-2.txt"), None, None, None) ::
     FileParameters(Some(4), Some("videos/centaur.mpg"), None, None, None, Some("Yes")) ::
     Nil
   }

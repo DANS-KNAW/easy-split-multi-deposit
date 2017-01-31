@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015-2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,41 +15,40 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import javax.naming.directory.{Attributes, SearchControls}
+import javax.naming.directory.{ Attributes, SearchControls }
 import javax.naming.ldap.LdapContext
 
-import rx.lang.scala.Observable
+import scala.collection.JavaConverters._
+import scala.util.Try
 
 trait Ldap extends AutoCloseable {
 
   /**
-    * Queries LDAP for the user data corresponding to the given `depositorID` and transforms it
-    * into an instance of type `T` using the function `f`.
-    *
-    * @param depositorID the identifier related to the depositor
-    * @param f function that transforms an `Attributes` object to an instance of type `T`
-    * @tparam T the result type of the transformer function
-    * @return the instance of `T` wrapped in an `Observable`
-    */
-  def query[T](depositorID: String)(f: Attributes => T): Observable[T]
+   * Queries LDAP for the user data corresponding to the given `depositorID` and transforms it
+   * into an instance of type `T` using the function `f`.
+   *
+   * @param depositorID the identifier related to the depositor
+   * @param f function that transforms an `Attributes` object to an instance of type `T`
+   * @tparam T the result type of the transformer function
+   * @return `Success` if the query succeeds, `Failure` otherwise
+   */
+  def query[T](depositorID: String)(f: Attributes => T): Try[Seq[T]]
 }
 
 case class LdapImpl(ctx: LdapContext) extends Ldap {
 
-  def query[T](depositorID: String)(f: Attributes => T) = {
-    Observable.defer {
-      val searchFilter = s"(&(objectClass=easyUser)(uid=$depositorID))"
-      val searchControls = {
-        val sc = new SearchControls()
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE)
-        sc
-      }
-
-      ctx.search("dc=dans,dc=knaw,dc=nl", searchFilter, searchControls)
-        .toObservable
-        .map(f compose (_.getAttributes))
+  def query[T](depositorID: String)(f: Attributes => T): Try[Seq[T]] = Try {
+    val searchFilter = s"(&(objectClass=easyUser)(uid=$depositorID))"
+    val searchControls = {
+      val sc = new SearchControls()
+      sc.setSearchScope(SearchControls.SUBTREE_SCOPE)
+      sc
     }
+
+    ctx.search("dc=dans,dc=knaw,dc=nl", searchFilter, searchControls)
+      .asScala.toSeq
+      .map(f compose (_.getAttributes))
   }
 
-  def close() = ctx.close()
+  def close(): Unit = ctx.close()
 }

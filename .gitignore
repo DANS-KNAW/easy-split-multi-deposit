@@ -1,4 +1,4 @@
-target/
+/target/
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -10,14 +10,21 @@ buildNumber.properties
 *~
 *.swp
 *.iml
+*.sc
 .idea/
 .DS_Store
-apphome.sh
-home/
-out/
+/apphome.sh
+/home/
+/data/
+/data-*
 
 # Eclipse
 /.project
 /.settings
 /.classpath
 /.cache
+/NOTES.txt
+
+# Vagrant/Ansible
+*.retry
+.vagrant/

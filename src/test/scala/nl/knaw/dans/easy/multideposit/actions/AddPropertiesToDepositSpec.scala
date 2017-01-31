@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015-2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,16 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 import javax.naming.directory.Attributes
 
-import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
+import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
-import rx.lang.scala.Observable
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
 import scala.collection.mutable
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
 class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll with MockFactory {
 
-  val ldapMock = mock[Ldap]
+  val ldapMock: Ldap = mock[Ldap]
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     outputDepositDir = new File(testDir, "dd"),
@@ -43,10 +42,10 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     new File(settings.outputDepositDir, s"md-$datasetID").mkdirs
   }
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if the depositorID is in the dataset and has one value" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.just(true)
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(true))
 
     AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
@@ -55,7 +54,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     val dataset = mutable.HashMap(
       "DEPOSITOR_ID" -> List("dp1", "dp1", "dp1", "dp1")
     )
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.just(true)
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(true))
 
     AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
@@ -65,11 +64,9 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
       "TEST_COLUMN" -> List("abc", "def")
     )
 
-    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
-
-    result shouldBe a[Failure[_]]
-    (the[ActionException] thrownBy result.get).row shouldBe 1
-    (the[ActionException] thrownBy result.get).message contains "is not present"
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) => message should include ("is not present")
+    }
   }
 
   it should "fail when the depositorID column contains multiple different values" in {
@@ -77,55 +74,45 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
       "DEPOSITOR_ID" -> List("dp1", "dp1", "dp2", "dp1")
     )
 
-    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
-
-    result shouldBe a[Failure[_]]
-    (the[ActionException] thrownBy result.get).row shouldBe 1
-    (the[ActionException] thrownBy result.get).message contains "multiple distinct"
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) => message should include("multiple distinct")
+    }
   }
 
   it should "fail if ldap identifies the depositorID as not active" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.just(false)
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(false))
 
-    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
-
-    result shouldBe a[Failure[_]]
-    (the [ActionException] thrownBy result.get).row shouldBe 1
-    (the [ActionException] thrownBy result.get).message contains "depositor dp1 is not an active user"
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) => message should include("""depositor "dp1" is not an active user""")
+    }
   }
 
   it should "fail if ldap does not return anything" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.empty
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq.empty)
 
-    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
-
-    result shouldBe a[Failure[_]]
-    (the [ActionException] thrownBy result.get).row shouldBe 1
-    (the [ActionException] thrownBy result.get).message contains "dp1 is unknown"
-    (the [ActionException] thrownBy result.get).cause.getClass shouldBe classOf[NoSuchElementException]
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) => message should include("""DepositorID "dp1" is unknown""")
+    }
   }
 
   it should "fail if ldap returns multiple values" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Observable.just(true, true)
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(true, true))
 
-    val result = AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions
-
-    result shouldBe a[Failure[_]]
-    (the [ActionException] thrownBy result.get).row shouldBe 1
-    (the [ActionException] thrownBy result.get).message contains "multiple users with id dp1"
-    (the [ActionException] thrownBy result.get).cause.getClass shouldBe classOf[IllegalArgumentException]
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) => message should include("""multiple users with id "dp1"""")
+    }
   }
 
-  "run" should "generate the properties file" in {
-    AddPropertiesToDeposit(1, (datasetID, dataset)).run() shouldBe a[Success[_]]
+  "execute" should "generate the properties file" in {
+    AddPropertiesToDeposit(1, (datasetID, dataset)).execute shouldBe a[Success[_]]
 
-    new File(outputDepositDir(settings, datasetID), "deposit.properties") should exist
+    new File(outputDepositDir(datasetID), "deposit.properties") should exist
   }
 
   "writeProperties" should "generate the properties file and write the properties in it" in {
-    AddPropertiesToDeposit(1, (datasetID, dataset)).run() shouldBe a[Success[_]]
+    AddPropertiesToDeposit(1, (datasetID, dataset)).execute shouldBe a[Success[_]]
 
-    val props = outputPropertiesFile(settings, datasetID)
+    val props = outputPropertiesFile(datasetID)
     val content = props.read()
     content should include ("state.label")
     content should include ("state.description")

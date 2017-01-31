@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015-2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,19 +29,18 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
     springfieldInbox = new File(testDir, "springFieldInbox")
   )
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
-  def createFile(fileName: MultiDepositKey) = {
-    val file = multiDepositDir(settings, fileName)
+  def createFile(fileName: MultiDepositKey): Unit = {
+    val file = multiDepositDir(fileName)
     file.getParentFile.mkdirs
     file.write("")
   }
 
   "checkPreconditions" should "fail if file does not exist" in {
-    val pre = CopyToSpringfieldInbox(1, "videos/some_checkPreFail.mpg").checkPreconditions
-
-    (the [ActionException] thrownBy pre.get).row shouldBe 1
-    (the [ActionException] thrownBy pre.get).message should include ("Cannot find MD file:")
+    inside(CopyToSpringfieldInbox(1, "videos/some_checkPreFail.mpg").checkPreconditions) {
+      case Failure(ActionException(_, message, _)) => message should include ("Cannot find MD file")
+    }
   }
 
   it should "succeed if file exist" in {
@@ -50,31 +49,31 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
     CopyToSpringfieldInbox(1, "videos/some_checkPreSuccess.mpg").checkPreconditions shouldBe a[Success[_]]
   }
 
-  "run" should "succeed if file exist" in {
+  "execute" should "succeed if file exist" in {
     createFile("videos/some.mpg")
 
-    CopyToSpringfieldInbox(1, "videos/some.mpg").run shouldBe a[Success[_]]
+    CopyToSpringfieldInbox(1, "videos/some.mpg").execute shouldBe a[Success[_]]
   }
 
   it should "fail if file does not exist" in {
-    val run = CopyToSpringfieldInbox(1, "videos/some_error.mpg").run()
-
-    run shouldBe a[Failure[_]]
-    (the [ActionException] thrownBy run.get).getMessage should include ("videos/some_error.mpg")
-    (the [ActionException] thrownBy run.get).getCause shouldBe a[FileNotFoundException]
+    inside(CopyToSpringfieldInbox(1, "videos/some_error.mpg").execute()) {
+      case Failure(ActionException(_, message, cause)) =>
+        message should include ("videos/some_error.mpg")
+        cause shouldBe a[FileNotFoundException]
+    }
   }
 
   "rollback" should "delete the files and directories that were added by action.run()" in {
     createFile("videos/some_rollback.mpg")
     val action = CopyToSpringfieldInbox(1, "videos/some_rollback.mpg")
 
-    action.run() shouldBe a[Success[_]]
+    action.execute shouldBe a[Success[_]]
 
-    springfieldInboxDir(settings, "videos/some_rollback.mpg") should exist
+    springfieldInboxDir("videos/some_rollback.mpg") should exist
 
     action.rollback shouldBe a[Success[_]]
 
-    springfieldInboxDir(settings, "videos/some_rollback.mpg") should not (exist)
-    springfieldInboxDir(settings, "videos") should not (exist)
+    springfieldInboxDir("videos/some_rollback.mpg") should not (exist)
+    springfieldInboxDir("videos") should not (exist)
   }
 }

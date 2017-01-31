@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015-2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,50 +15,32 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit
 import nl.knaw.dans.easy.multideposit._
-import org.slf4j.LoggerFactory
 
-import scala.util.{Failure, Success, Try}
+import scala.util.control.NonFatal
+import scala.util.{ Failure, Success, Try }
 
 case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
-  val log = LoggerFactory.getLogger(getClass)
+
+  private val depositDir = outputDepositDir(datasetID)
+  private val bagDir = outputDepositBagDir(datasetID)
+  private val metadataDir = outputDepositBagMetadataDir(datasetID)
+  private val dirs = depositDir :: bagDir :: metadataDir :: Nil
 
   override def checkPreconditions: Try[Unit] = {
-    log.debug(s"Checking preconditions for $this")
-
-    List(multideposit.outputDepositDir(settings, datasetID),
-         outputDepositBagDir(settings, datasetID),
-         outputDepositBagMetadataDir(settings, datasetID))
-      .find(_.exists)
-      .map(file => Failure(new ActionException(row, s"The deposit for dataset $datasetID already exists in $file.")))
-      .getOrElse(Success(Unit))
+    dirs.find(_.exists)
+      .map(file => Failure(ActionException(row, s"The deposit for dataset $datasetID already exists in $file.")))
+      .getOrElse(Success(()))
   }
 
-  def run(): Try[Unit] = {
-    log.debug(s"Running $this")
-    val depositDir = multideposit.outputDepositDir(settings, datasetID)
-    val bagDir = outputDepositBagDir(settings, datasetID)
-    val metadataDir = outputDepositBagMetadataDir(settings, datasetID)
-
-    val dirs = List(depositDir, bagDir, metadataDir)
-
-    log.debug(s"Creating Deposit Directory at $depositDir with bag directory = $bagDir and metadata directory = $metadataDir")
-
-    if (dirs.forall(_.mkdirs))
-      Success(Unit)
-    else
-      Failure(new ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
+  override def execute(): Try[Unit] = {
+    if (dirs.forall(_.mkdirs)) Success(())
+    else Failure(ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
   }
 
   override def rollback(): Try[Unit] = {
-    val depositDir = multideposit.outputDepositDir(settings, datasetID)
-    log.debug(s"Deleting directory $depositDir")
-
-    Try {
-      depositDir.deleteDirectory()
-    } recoverWith {
-      case e: Exception => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e))
+    Try { depositDir.deleteDirectory() } recoverWith {
+      case NonFatal(e) => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e))
     }
   }
 }

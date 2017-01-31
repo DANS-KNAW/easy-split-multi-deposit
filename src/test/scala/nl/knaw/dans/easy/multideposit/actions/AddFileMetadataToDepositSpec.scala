@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015-2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 
-import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
+import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
 import scala.collection.mutable
-import scala.util.{Failure, Success}
-import scala.xml.PrettyPrinter
+import scala.util.{ Failure, Success }
+import scala.xml.Utility
 
 class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
@@ -44,13 +44,10 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
     settings.outputDepositDir.deleteDirectory()
   }
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "preconditions check with existing SIP files" should "succeed" in {
-
-    val action = new AddFileMetadataToDeposit(1, (datasetID, dataset))
-
-    action.checkPreconditions shouldBe a[Success[_]]
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
   "preconditions check with non-existing SIP files" should "fail" in {
@@ -58,68 +55,70 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
       "DATASET" -> List(datasetID, datasetID, datasetID),
       "FILE_SIP" -> List("ruimtereis01/reisverslag/deel01.txt", "", "non-existing-file-path")
     )
-    val action = new AddFileMetadataToDeposit(1, (datasetID, invalidDataset))
 
-    action.checkPreconditions shouldBe a[Failure[_]]
+    inside(new AddFileMetadataToDeposit(1, (datasetID, invalidDataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) => message should include(s"""for dataset "$datasetID": [non-existing-file-path]""")
+    }
   }
 
-  "run" should "write the file metadata to an xml file" in {
+  "execute" should "write the file metadata to an xml file" in {
     val action = new AddFileMetadataToDeposit(1, (datasetID, dataset))
-    val metadataDir = outputDepositBagMetadataDir(settings, datasetID)
+    val metadataDir = outputDepositBagMetadataDir(datasetID)
 
-    action.run() shouldBe a[Success[_]]
+    action.execute() shouldBe a[Success[_]]
 
     metadataDir should exist
-    outputFileMetadataFile(settings, datasetID) should exist
+    outputFileMetadataFile(datasetID) should exist
   }
 
   "datasetToFileXml" should "produce the xml for all the files" in {
-    val xml = AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01")
-    xml.child.length shouldBe 5
-
-    xml.child should contain(<file filepath="data/ruimtereis01_verklaring.txt"><dcterms:format>text/plain</dcterms:format></file>)
-    xml.child should contain(<file filepath="data/reisverslag/deel01.docx"><dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format></file>)
-    xml.child should contain(<file filepath="data/reisverslag/deel01.txt"><dcterms:format>text/plain</dcterms:format></file>)
-    xml.child should contain(<file filepath="data/reisverslag/deel02.txt"><dcterms:format>text/plain</dcterms:format></file>)
-    xml.child should contain(<file filepath="data/reisverslag/deel03.txt"><dcterms:format>text/plain</dcterms:format></file>)
+    AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01").child.map(Utility.trim) should (
+      have length 5 and
+        contain allOf(
+      <file filepath="data/ruimtereis01_verklaring.txt"><dcterms:format>text/plain</dcterms:format></file>,
+      <file filepath="data/reisverslag/deel01.docx"><dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format></file>,
+      <file filepath="data/reisverslag/deel01.txt"><dcterms:format>text/plain</dcterms:format></file>,
+      <file filepath="data/reisverslag/deel02.txt"><dcterms:format>text/plain</dcterms:format></file>,
+      <file filepath="data/reisverslag/deel03.txt"><dcterms:format>text/plain</dcterms:format></file>
+    ))
   }
 
   //file does not need to exist for the mimetype to be established. it is based solely on filename.
   "xmlPerPath" should "create the correct filepath " in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(settings, datasetID))(new File(multiDepositDir(settings, datasetID), "ruimtereis01_verklaring.txt"))
+    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "ruimtereis01_verklaring.txt"))
     val res = <file filepath="data/ruimtereis01_verklaring.txt">
       <dcterms:format>text/plain</dcterms:format>
     </file>
 
-    new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)
+    Utility.trim(xml) shouldBe Utility.trim(res)
   }
 
   //file does not need to exist for the mimetype to be established. it is based solely on filename.
   it should "produce the correct doc mimetype " in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(settings, datasetID))(new File(multiDepositDir(settings, datasetID), "reisverslag/deel01.doc"))
+    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "reisverslag/deel01.doc"))
     val res = <file filepath="data/reisverslag/deel01.doc">
       <dcterms:format>application/msword</dcterms:format>
     </file>
 
-    new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)
+    Utility.trim(xml) shouldBe Utility.trim(res)
   }
 
   //file does not need to exist for the mimetype to be established. it is based solely on filename.
   it should "produce the correct docx mimetype " in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(settings, datasetID))(new File(multiDepositDir(settings, datasetID), "reisverslag/deel01.docx"))
+    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "reisverslag/deel01.docx"))
     val res = <file filepath="data/reisverslag/deel01.docx">
       <dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format>
     </file>
 
-    new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)
+    Utility.trim(xml) shouldBe Utility.trim(res)
   }
 
   it should "produce the xml for one file" in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(settings, datasetID))(new File(multiDepositDir(settings, datasetID), "reisverslag/deel01.txt"))
+    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "reisverslag/deel01.txt"))
     val res = <file filepath="data/reisverslag/deel01.txt">
       <dcterms:format>text/plain</dcterms:format>
     </file>
 
-    new PrettyPrinter(160, 2).format(xml) shouldBe new PrettyPrinter(160, 2).format(res)
+    Utility.trim(xml) shouldBe Utility.trim(res)
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015-2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,9 @@ package nl.knaw.dans.easy
 import java.io.{File, IOException}
 import java.nio.charset.Charset
 import java.util.Properties
-import javax.naming.NamingEnumeration
 
-import nl.knaw.dans.lib.error.CompositeException
 import org.apache.commons.io.{Charsets, FileUtils}
 import org.apache.commons.lang.StringUtils
-import rx.lang.scala.{Observable, ObservableExtensions}
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.immutable.IndexedSeq
@@ -39,6 +36,7 @@ package object multideposit {
   type MultiDepositValues = List[String]
   type Dataset = mutable.HashMap[MultiDepositKey, MultiDepositValues]
   type Datasets = ListBuffer[(DatasetID, Dataset)]
+  def Datasets: Datasets = ListBuffer.empty
 
   case class FileParameters(row: Option[Int], sip: Option[String], dataset: Option[String],
                             storageService: Option[String], storagePath: Option[String],
@@ -53,6 +51,9 @@ package object multideposit {
         s"deposit-dir=$outputDepositDir)"
   }
 
+  case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")
+  case class PreconditionsFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
+  case class ActionRunFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
   case class ActionException(row: Int, message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 
   object Version {
@@ -65,29 +66,31 @@ package object multideposit {
 
   implicit class StringExtensions(val s: String) extends AnyVal {
     /**
-      * Checks whether the `String` is blank
-      * (according to org.apache.commons.lang.StringUtils.isBlank)
-      *
-      * @return
-      */
-    def isBlank = StringUtils.isBlank(s)
+     * Checks whether the `String` is blank
+     * (according to org.apache.commons.lang.StringUtils.isBlank)
+     *
+     * @return
+     */
+    def isBlank: Boolean = StringUtils.isBlank(s)
 
-    /** Converts a `String` to an `Option[String]`. If the `String` is blank
-      * (according to org.apache.commons.lang.StringUtils.isBlank)
-      * the empty `Option` is returned, otherwise the `String` is returned
-      * wrapped in an `Option`.
-      *
-      * @return an `Option` of the input string that indicates whether it is blank
-      */
-    def toOption = if (s.isBlank) Option.empty else Option(s)
+    /**
+     * Converts a `String` to an `Option[String]`. If the `String` is blank
+     * (according to org.apache.commons.lang.StringUtils.isBlank)
+     * the empty `Option` is returned, otherwise the `String` is returned
+     * wrapped in an `Option`.
+     *
+     * @return an `Option` of the input string that indicates whether it is blank
+     */
+    def toOption: Option[String] = if (s.isBlank) Option.empty else Option(s)
 
-    /** Converts a `String` into an `Option[Int]` if it is not blank
-      * (according to org.apache.commons.lang.StringUtils.isBlank).
-      * Strings that do not represent a number will yield an empty `Option`.
-      *
-      * @return an `Option` of the input string, converted as a number if it is not blank
-      */
-    def toIntOption = {
+    /**
+     * Converts a `String` into an `Option[Int]` if it is not blank
+     * (according to org.apache.commons.lang.StringUtils.isBlank).
+     * Strings that do not represent a number will yield an empty `Option`.
+     *
+     * @return an `Option` of the input string, converted as a number if it is not blank
+     */
+    def toIntOption: Option[Int] = {
       Try {
         if (s.isBlank) Option.empty
         else Option(s.toInt)
@@ -96,45 +99,56 @@ package object multideposit {
   }
 
   implicit class TryExceptionHandling[T](val t: Try[T]) extends AnyVal {
-    /** Terminating operator for `Try` that converts the `Failure` case in a value.
-      *
-      * @param handle converts `Throwable` to a value of type `T`
-      * @return either the value inside `Try` (on success) or the result of `handle` (on failure)
-      */
+    /**
+     * Terminating operator for `Try` that converts the `Failure` case in a value.
+     *
+     * @param handle converts `Throwable` to a value of type `T`
+     * @return either the value inside `Try` (on success) or the result of `handle` (on failure)
+     */
     def onError[S >: T](handle: Throwable => S): S = {
       t match {
         case Success(value) => value
         case Failure(throwable) => handle(throwable)
       }
     }
-  }
 
-  implicit class OptionExtensions[T](val option: Option[T]) extends AnyVal {
-    /**
-      * Converts an `Option` to an `Observable`. `Some` is mapped to an `Observable` with 1 element,
-      * `None` is mapped to the empty `Observable`.
-      *
-      * @return an `Observable` with either zero or one elements
-      */
-    def toObservable = option.map(Observable.just(_)).getOrElse(Observable.empty)
+    def ifSuccess(f: T => Unit): Try[T] = {
+      t match {
+        case success@Success(x) => Try {
+          f(x)
+          return success
+        }
+        case e => e
+      }
+    }
+
+    def ifFailure(f: PartialFunction[Throwable, Unit]): Try[T] = {
+      t match {
+        case failure@Failure(e) if f.isDefinedAt(e) => Try {
+          f(e)
+          return failure
+        }
+        case x => x
+      }
+    }
   }
 
   implicit class FileExtensions(val file: File) extends AnyVal {
     /**
-      * Writes a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
-      *
-      * @param data the content to write to the file
-      */
+     * Writes a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
+     *
+     * @param data the content to write to the file
+     */
     @throws(classOf[IOException])
-    def write(data: String, encoding: Charset = encoding) = FileUtils.write(file, data, encoding)
+    def write(data: String, encoding: Charset = encoding): Unit = FileUtils.write(file, data, encoding)
 
     /**
-      * Writes the xml to a `File` and prepends a simple xml header: `<?xml version="1.0" encoding="UTF-8"?>`
-      *
-      * @param elem the xml to be written
-      * @param encoding the encoding applied to this xml
-      */
-    def writeXml(elem: Elem, encoding: Charset = encoding) = {
+     * Writes the xml to a `File` and prepends a simple xml header: `<?xml version="1.0" encoding="UTF-8"?>`
+     *
+     * @param elem the xml to be written
+     * @param encoding the encoding applied to this xml
+     */
+    def writeXml(elem: Elem, encoding: Charset = encoding): Unit = {
       val header = s"""<?xml version="1.0" encoding="$encoding"?>\n"""
       val data = new PrettyPrinter(160, 2).format(elem)
 
@@ -142,109 +156,109 @@ package object multideposit {
     }
 
     /**
-      * Appends a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
-      *
-      * @param data the content to write to the file
-      */
+     * Appends a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
+     *
+     * @param data the content to write to the file
+     */
     @throws(classOf[IOException])
-    def append(data: String) = FileUtils.write(file, data, true)
+    def append(data: String): Unit = FileUtils.write(file, data, true)
 
     /**
-      * Reads the contents of a file into a String using the default encoding for the VM.
-      * The file is always closed.
-      *
-      * @return the file contents, never ``null``
-      */
+     * Reads the contents of a file into a String using the default encoding for the VM.
+     * The file is always closed.
+     *
+     * @return the file contents, never ``null``
+     */
     @throws(classOf[IOException])
-    def read(encoding: Charset = encoding) = FileUtils.readFileToString(file, encoding)
+    def read(encoding: Charset = encoding): String = FileUtils.readFileToString(file, encoding)
 
     /**
-      * Determines whether the ``parent`` directory contains the ``child`` element (a file or directory).
-      * <p>
-      * Files are normalized before comparison.
-      * </p>
-      *
-      * Edge cases:
-      * <ul>
-      * <li>A ``directory`` must not be null: if null, throw IllegalArgumentException</li>
-      * <li>A ``directory`` must be a directory: if not a directory, throw IllegalArgumentException</li>
-      * <li>A directory does not contain itself: return false</li>
-      * <li>A null child file is not contained in any parent: return false</li>
-      * </ul>
-      *
-      * @param child the file to consider as the child.
-      * @return true is the candidate leaf is under by the specified composite. False otherwise.
-      */
+     * Determines whether the ``parent`` directory contains the ``child`` element (a file or directory).
+     * <p>
+     * Files are normalized before comparison.
+     * </p>
+     *
+     * Edge cases:
+     * <ul>
+     * <li>A ``directory`` must not be null: if null, throw IllegalArgumentException</li>
+     * <li>A ``directory`` must be a directory: if not a directory, throw IllegalArgumentException</li>
+     * <li>A directory does not contain itself: return false</li>
+     * <li>A null child file is not contained in any parent: return false</li>
+     * </ul>
+     *
+     * @param child the file to consider as the child.
+     * @return true is the candidate leaf is under by the specified composite. False otherwise.
+     */
     @throws(classOf[IOException])
-    def directoryContains(child: File) = FileUtils.directoryContains(file, child)
+    def directoryContains(child: File): Boolean = FileUtils.directoryContains(file, child)
 
     /**
-      * Copies a whole directory to a new location preserving the file dates.
-      * <p>
-      * This method copies the specified directory and all its child
-      * directories and files to the specified destination.
-      * The destination is the new location and name of the directory.
-      * <p>
-      * The destination directory is created if it does not exist.
-      * If the destination directory did exist, then this method merges
-      * the source with the destination, with the source taking precedence.
-      * <p>
-      * <strong>Note:</strong> This method tries to preserve the files' last
-      * modified date/times using File.setLastModified(long), however
-      * it is not guaranteed that those operations will succeed.
-      * If the modification operation fails, no indication is provided.
-      *
-      * @param destDir the new directory, must not be ``null``
-      */
+     * Copies a whole directory to a new location preserving the file dates.
+     * <p>
+     * This method copies the specified directory and all its child
+     * directories and files to the specified destination.
+     * The destination is the new location and name of the directory.
+     * <p>
+     * The destination directory is created if it does not exist.
+     * If the destination directory did exist, then this method merges
+     * the source with the destination, with the source taking precedence.
+     * <p>
+     * <strong>Note:</strong> This method tries to preserve the files' last
+     * modified date/times using File.setLastModified(long), however
+     * it is not guaranteed that those operations will succeed.
+     * If the modification operation fails, no indication is provided.
+     *
+     * @param destDir the new directory, must not be ``null``
+     */
     @throws(classOf[NullPointerException])
     @throws(classOf[IOException])
-    def copyFile(destDir: File) = FileUtils.copyFile(file, destDir)
+    def copyFile(destDir: File): Unit = FileUtils.copyFile(file, destDir)
 
     /**
-      * Copies a whole directory to a new location preserving the file dates.
-      * <p>
-      * This method copies the specified directory and all its child
-      * directories and files to the specified destination.
-      * The destination is the new location and name of the directory.
-      * <p>
-      * The destination directory is created if it does not exist.
-      * If the destination directory did exist, then this method merges
-      * the source with the destination, with the source taking precedence.
-      * <p>
-      * <strong>Note:</strong> This method tries to preserve the files' last
-      * modified date/times using ``File#setLastModified(long)``, however
-      * it is not guaranteed that those operations will succeed.
-      * If the modification operation fails, no indication is provided.
-      *
-      * @param destDir the new directory, must not be ``null``
-      */
-    def copyDir(destDir: File) = FileUtils.copyDirectory(file, destDir)
+     * Copies a whole directory to a new location preserving the file dates.
+     * <p>
+     * This method copies the specified directory and all its child
+     * directories and files to the specified destination.
+     * The destination is the new location and name of the directory.
+     * <p>
+     * The destination directory is created if it does not exist.
+     * If the destination directory did exist, then this method merges
+     * the source with the destination, with the source taking precedence.
+     * <p>
+     * <strong>Note:</strong> This method tries to preserve the files' last
+     * modified date/times using ``File#setLastModified(long)``, however
+     * it is not guaranteed that those operations will succeed.
+     * If the modification operation fails, no indication is provided.
+     *
+     * @param destDir the new directory, must not be ``null``
+     */
+    def copyDir(destDir: File): Unit = FileUtils.copyDirectory(file, destDir)
 
     /**
-      * Deletes a directory recursively.
-      */
-    def deleteDirectory() = FileUtils.deleteDirectory(file)
+     * Deletes a directory recursively.
+     */
+    def deleteDirectory(): Unit = FileUtils.deleteDirectory(file)
 
     /**
-      * Finds files within a given directory and its subdirectories.
-      *
-      * @return a ``List`` of ``java.io.File`` with the files
-      */
-    def listRecursively = FileUtils.listFiles(file, null, true).toList
+     * Finds files within a given directory and its subdirectories.
+     *
+     * @return a ``List`` of ``java.io.File`` with the files
+     */
+    def listRecursively: List[File] = FileUtils.listFiles(file, null, true).toList
   }
 
   implicit class DatasetExtensions(val dataset: Dataset) extends AnyVal {
     /**
-      * Retrieves the value of a certain parameter from the dataset on a certain row.
-      * If either the key is not present, the specified row does not exist or the value `blank`
-      * (according to org.apache.commons.lang.StringUtils.isBlank), then Option.empty
-      * is returned.
-      *
-      * @param key the key under which the value is stored in the dataset
-      * @param row the row on which the value occurs
-      * @return the value belonging to the (key, row) pair if present, else Option.empty
-      */
-    def getValue(key: MultiDepositKey)(row: Int) = {
+     * Retrieves the value of a certain parameter from the dataset on a certain row.
+     * If either the key is not present, the specified row does not exist or the value `blank`
+     * (according to org.apache.commons.lang.StringUtils.isBlank), then Option.empty
+     * is returned.
+     *
+     * @param key the key under which the value is stored in the dataset
+     * @param row the row on which the value occurs
+     * @return the value belonging to the (key, row) pair if present, else Option.empty
+     */
+    def getValue(key: MultiDepositKey)(row: Int): Option[String] = {
       for {
         values <- dataset.get(key)
         value <- Try(values(row)).toOption
@@ -252,61 +266,55 @@ package object multideposit {
       } yield value2
     }
 
-    /** Turns a map of key-column pairs into a filtered sequence of maps:
-      * a map of key-value pairs per row, only those rows with a value for at least one of the desired columns.
-      *
-      * @param desiredColumns the keys of these key-value pairs specify the desired column keys
-      *                       (the values specifying the DDM equivalent are ignored)
-      * @return A sequence of maps, each map containing key-value pairs of a row.
-      *         Values are neither null nor blank, rows are not empty.
-      *         The keyset of each map is a non-empty subset of the keyset of dictionary.
-      */
+    /**
+     * Turns a map of key-column pairs into a filtered sequence of maps:
+     * a map of key-value pairs per row, only those rows with a value for at least one of the desired columns.
+     *
+     * @param desiredColumns the keys of these key-value pairs specify the desired column keys
+     * (the values specifying the DDM equivalent are ignored)
+     * @return A sequence of maps, each map containing key-value pairs of a row.
+     * Values are neither null nor blank, rows are not empty.
+     * The keyset of each map is a non-empty subset of the keyset of dictionary.
+     */
     def rowsWithValuesFor(desiredColumns: DDM.Dictionary): IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
       dataset.getColumnsIn(desiredColumns).toRows.filter(_.nonEmpty)
 
-    /** Turns a map of key-column pairs into a filtered sequence of maps:
-      * a map of key-value pairs per row and, those rows with a value for each desired column.
-      * Rows with values for some but not all desired columns are ignored.
-      *
-      * @param desiredColumns the keys of these key-value pairs specify the desired column keys
-      *                       (the values specifying the DDM equivalent are ignored)
-      * @return A sequence of maps, each map containing key-value pairs of a row.
-      *         Values are neither null nor blank, rows are not empty,
-      *         The keyset of each map equals the keyset of dictionary.
-      */
+    /**
+     * Turns a map of key-column pairs into a filtered sequence of maps:
+     * a map of key-value pairs per row and, those rows with a value for each desired column.
+     * Rows with values for some but not all desired columns are ignored.
+     *
+     * @param desiredColumns the keys of these key-value pairs specify the desired column keys
+     * (the values specifying the DDM equivalent are ignored)
+     * @return A sequence of maps, each map containing key-value pairs of a row.
+     * Values are neither null nor blank, rows are not empty,
+     * The keyset of each map equals the keyset of dictionary.
+     */
     def rowsWithValuesForAllOf(desiredColumns: DDM.Dictionary): IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
       dataset.getColumnsIn(desiredColumns).toRows.filter(_.size == desiredColumns.size)
 
-    /** Filters a map of key-column pairs.
-      *
-      * @param desiredColumns the keys of these key-value pairs specify the desired column keys
-      *                       (the values specifying the DDM equivalent are ignored)
-      * @return A map with those key-column pairs for which the key is in keyset of the dictionary.
-      */
+    /**
+     * Filters a map of key-column pairs.
+     *
+     * @param desiredColumns the keys of these key-value pairs specify the desired column keys
+     * (the values specifying the DDM equivalent are ignored)
+     * @return A map with those key-column pairs for which the key is in keyset of the dictionary.
+     */
     def getColumnsIn(desiredColumns: DDM.Dictionary): Dataset =
       dataset.filter(kvs => desiredColumns.contains(kvs._1))
 
-    /** Turns a map of key-column pairs into a sequence of maps: one map of key-value pairs per row.
-      *
-      * @return A sequence of maps, each map containing key-value pairs of a row.
-      *         Values are neither null nor blank, a row may be empty.
-      */
+    /**
+     * Turns a map of key-column pairs into a sequence of maps: one map of key-value pairs per row.
+     *
+     * @return A sequence of maps, each map containing key-value pairs of a row.
+     * Values are neither null nor blank, a row may be empty.
+     */
     def toRows: IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
       dataset.values.headOption
         .map(_.indices
           .map(i => dataset.map { case (key, values) => (key, values(i)) })
           .map(_.filter(kv => kv._2 != null && !kv._2.isBlank)))
         .getOrElse(IndexedSeq())
-  }
-
-  implicit class NamingEnumerationToObservable[T](val enum: NamingEnumeration[T]) extends AnyVal {
-    def toObservable = Observable.from(new Iterable[T] {
-      def iterator = new Iterator[T] {
-        def hasNext = enum.hasMore
-
-        def next() = enum.next()
-      }
-    })
   }
 
   val encoding = Charsets.UTF_8
@@ -320,104 +328,47 @@ package object multideposit {
   val springfieldActionsFileName = "springfield-actions.xml"
 
   // mdDir/datasetID/
-  def multiDepositDir(settings: Settings, datasetID: DatasetID) = {
+  def multiDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
     new File(settings.multidepositDir, datasetID)
   }
   // mdDir/instructions.csv
-  def multiDepositInstructionsFile(settings: Settings) = {
+  def multiDepositInstructionsFile(implicit settings: Settings): File = {
     new File(settings.multidepositDir, instructionsFileName)
   }
   // outDir/mdDir-datasetID/
-  def outputDepositDir(settings: Settings, datasetID: DatasetID) = {
+  def outputDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
     new File(settings.outputDepositDir, s"${settings.multidepositDir.getName}-$datasetID")
   }
   // outDir/mdDir-datasetID/bag/
-  def outputDepositBagDir(settings: Settings, datasetID: DatasetID) = {
-    new File(outputDepositDir(settings, datasetID), bagDirName)
+  def outputDepositBagDir(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositDir(datasetID), bagDirName)
   }
   // outDir/mdDir-datasetID/bag/data/
-  def outputDepositBagDataDir(settings: Settings, datasetID: DatasetID) = {
-    new File(outputDepositBagDir(settings, datasetID), dataDirName)
+  def outputDepositBagDataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositBagDir(datasetID), dataDirName)
   }
   // outDir/mdDir-datasetID/bag/metadata/
-  def outputDepositBagMetadataDir(settings: Settings, datasetID: DatasetID) = {
-    new File(outputDepositBagDir(settings, datasetID), metadataDirName)
+  def outputDepositBagMetadataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositBagDir(datasetID), metadataDirName)
   }
   // outDir/mdDir-datasetID/deposit.properties
-  def outputPropertiesFile(settings: Settings, datasetID: DatasetID) = {
-    new File(outputDepositDir(settings, datasetID), propsFileName)
+  def outputPropertiesFile(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositDir(datasetID), propsFileName)
   }
   // outDir/mdDir-datasetID/bag/metadata/dataset.xml
-  def outputDatasetMetadataFile(settings: Settings, datasetID: DatasetID) = {
-    new File(outputDepositBagMetadataDir(settings, datasetID), datasetMetadataFileName)
+  def outputDatasetMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositBagMetadataDir(datasetID), datasetMetadataFileName)
   }
   // outDir/mdDir-datasetID/bag/metadata/files.xml
-  def outputFileMetadataFile(settings: Settings, datasetID: DatasetID) = {
-    new File(outputDepositBagMetadataDir(settings, datasetID), fileMetadataFileName)
+  def outputFileMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(outputDepositBagMetadataDir(datasetID), fileMetadataFileName)
   }
   // sfiDir/<fileMd>
-  def springfieldInboxDir(settings: Settings, fileMd: String) = {
+  def springfieldInboxDir(fileMd: String)(implicit settings: Settings): File = {
     new File(settings.springfieldInbox, fileMd)
   }
   // sfiDir/springfield-actions.xml
-  def springfieldInboxActionsFile(settings: Settings) = {
-    springfieldInboxDir(settings, springfieldActionsFileName)
-  }
-
-  /** Extract the ''file parameters'' from a dataset and return these in an ``Observable``.
-    * The following parameters are used for this: '''ROW''', '''FILE_SIP''', '''FILE_DATASET''',
-    * '''FILE_STORAGE_SERVICE''', '''FILE_STORAGE_PATH''', '''FILE_AUDIO_VIDEO'''.
-    *
-    * @param dataset the dataset from which the file parameters get extracted
-    * @return the ``Observable`` with fileparameters values extracted from the dataset
-    */
-  def extractFileParameters(dataset: Dataset) = {
-    Observable.just("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
-      .flatMap(dataset.get(_).toObservable)
-      .take(1)
-      .flatMap(xs => xs.indices.toObservable
-        .map(index => {
-          def valueAt(key: String): Option[String] = {
-            dataset.get(key).flatMap(_(index).toOption)
-          }
-          def intAt(key: String): Option[Int] = {
-            dataset.get(key).flatMap(_(index).toIntOption)
-          }
-
-          FileParameters(intAt("ROW"), valueAt("FILE_SIP"), valueAt("FILE_DATASET"),
-            valueAt("FILE_STORAGE_SERVICE"), valueAt("FILE_STORAGE_PATH"),
-            valueAt("FILE_AUDIO_VIDEO"))
-        })
-        .filter {
-          case FileParameters(_, None, None, None, None, None) => false
-          case _ => true
-        })
-  }
-
-  /** Generates an error report with a `heading` and a list of `ActionException`s coming from a
-    * list of `Try`s, sorted by row number. Supplying other exceptions than `ActionException` will
-    * cause an `AssertionError`. `Success` input in `trys` are ignored.
-    *
-    * @param header a piece of text before the list of errors
-    * @param trys the failures to be reported
-    * @return the error report
-    */
-  def generateErrorReport[T](header: String = "", trys: Seq[Try[T]] = Nil, footer: String = ""): String = {
-    header.toOption.map(s => s"$s\n").getOrElse("") +
-      trys.filter(_.isFailure)
-        .flatMap {
-          case Failure(CompositeException(errors)) => errors.map(Failure(_))
-          case f@Failure(_) => List(f)
-          case _ => assert(assertion = false, "Should always get a Failure"); List.empty
-        }
-        .map {
-          case Failure(actionEx: ActionException) => actionEx
-          // Add other Failure(exceptions) cases if needed and adjust the error message below accordingly
-          case _ => throw new AssertionError("Only Failures of ActionException are expected here")
-        }
-        .sortBy(_.row)
-        .map(actionEx => s" - row ${actionEx.row}: ${actionEx.message}")
-        .mkString("\n") +
-      footer.toOption.map(s => if (trys.isEmpty) s else s"\n$s").getOrElse("")
+  def springfieldInboxActionsFile(implicit settings: Settings): File = {
+    springfieldInboxDir(springfieldActionsFileName)
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015-2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,28 @@
 package nl.knaw.dans.easy.multideposit
 
 import java.io.File
+import java.util.NoSuchElementException
 
 import nl.knaw.dans.easy.multideposit.MultiDepositParser._
 import org.scalatest.BeforeAndAfterAll
-import rx.lang.scala.ObservableExtensions
-import rx.lang.scala.observers.TestSubscriber
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.util.{ Failure, Success }
 
 class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "validateDatasetHeaders" should "succeed when given an empty list" in {
     val headers = Nil
 
-    validateDatasetHeaders(headers).isSuccess shouldBe true
+    validateDatasetHeaders(headers) shouldBe a[Success[_]]
   }
 
   it should "succeed when given a subset of the valid headers" in {
     val headers = List("DATASET", "FILE_STORAGE_PATH")
 
-    validateDatasetHeaders(headers).isSuccess shouldBe true
+    validateDatasetHeaders(headers) shouldBe a[Success[_]]
   }
 
   it should "fail when the input contains invalid headers" in {
@@ -46,77 +45,57 @@ class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
 
     val validate = validateDatasetHeaders(headers)
 
-    validate.isFailure shouldBe true
-    (the [ActionException] thrownBy validate.get).message should
-      include ("unknown headers: dataset")
-    (the [ActionException] thrownBy validate.get).row shouldBe 0
+    inside(validate) {
+      case Failure(ActionException(row, msg, _)) =>
+        row shouldBe 0
+        msg should include ("unknown headers: dataset")
+    }
   }
 
   "parse" should "fail with empty instruction file" in {
     val csv = new File(testDir, "instructions.csv")
     csv.write("")
 
-    val testSubscriber = TestSubscriber[Datasets]
-    parse(csv).subscribe(testSubscriber)
-
-    testSubscriber.assertNoValues
-    testSubscriber.assertError(classOf[NoSuchElementException])
-    testSubscriber.assertNotCompleted
-    testSubscriber.assertUnsubscribed
+    inside(parse(csv)) {
+      case Failure(EmptyInstructionsFileException(file)) => file shouldBe csv
+    }
   }
 
   it should "fail without DATASET in instructions file?" in {
     val csv = new File(testDir, "instructions.csv")
     csv.write("SF_PRESENTATION,FILE_AUDIO_VIDEO\nx,y")
 
-    val testSubscriber = TestSubscriber[Datasets]
-    parse(csv).subscribe(testSubscriber)
-
-    testSubscriber.assertNoValues
-    testSubscriber.assertError(classOf[Exception])
-    testSubscriber.assertNotCompleted
-    testSubscriber.assertUnsubscribed
+    inside(parse(csv)) {
+      case Failure(e) => e.getMessage should include ("No dataset ID found")
+    }
   }
 
   it should "not complain about an invalid combination in instructions file?" in {
     val csv = new File(testDir, "instructions.csv")
-    csv.write("DATASET,FILE_SIP\ndataset1,x")
+    csv.write("DATASET,FILE_SIP\ndataset1,x\ndataset1,y")
 
-    val testSubscriber = TestSubscriber[Datasets]
-    parse(csv).subscribe(testSubscriber)
-
-    val dataset = mutable.HashMap(
-      "ROW" -> List("2"),
-      "DATASET" -> List("dataset1"),
-      "FILE_SIP" -> List("x"))
-    val expected = ListBuffer(("dataset1", dataset))
-    testSubscriber.assertValue(expected)
-    testSubscriber.assertNoErrors
-    testSubscriber.assertCompleted
-    testSubscriber.assertUnsubscribed
+    inside(parse(csv)) {
+      case Success(ListBuffer((id, ds))) =>
+        id shouldBe "dataset1"
+        ds should contain ("ROW" -> List("1", "2"))
+        ds should contain ("DATASET" -> List("dataset1", "dataset1"))
+        ds should contain ("FILE_SIP" -> List("x", "y"))
+    }
   }
 
   it should "succeed with Roundtrip_MD/spacetravel" in {
     val csv = new File(getClass.getResource("/spacetravel/instructions.csv").toURI)
 
-    val testSubscriber = TestSubscriber[String]
-    parse(csv).flatMap(_.map(_._1).toObservable).subscribe(testSubscriber)
-
-    testSubscriber.assertValues("ruimtereis01", "ruimtereis02")
-    testSubscriber.assertNoErrors
-    testSubscriber.assertCompleted
-    testSubscriber.assertUnsubscribed
+    inside(parse(csv).map(_.map(_._1))) {
+      case Success(ids) => ids should contain allOf ("ruimtereis01", "ruimtereis02")
+    }
   }
 
   it should "not include whitespace identifiers" in {
     val csv = new File(getClass.getResource("/instructions_with_whitespace.csv").toURI)
 
-    val testSubscriber = TestSubscriber[String]
-    parse(csv).flatMap(_.map(_._1).toObservable).subscribe(testSubscriber)
-
-    testSubscriber.assertValues("ruimtereis01")
-    testSubscriber.assertNoErrors
-    testSubscriber.assertCompleted
-    testSubscriber.assertUnsubscribed
+    inside(parse(csv).map(_.map(_._1))) {
+      case Success(ids) => ids should contain only "ruimtereis01"
+    }
   }
 }

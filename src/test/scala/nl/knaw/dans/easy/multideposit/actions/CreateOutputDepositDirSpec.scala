@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015-2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
   )
   val datasetID = "ds1"
 
-  override def beforeAll = testDir.mkdirs
+  override def beforeAll: Unit = testDir.mkdirs
 
   before {
     // create depositDir base directory
@@ -46,61 +46,63 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     baseDir should not (exist)
   }
 
-  override def afterAll = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if the output directories do not yet exist" in {
     // directories do not exist before
-    outputDepositDir(settings, datasetID) should not (exist)
-    outputDepositBagDir(settings, datasetID) should not (exist)
-    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
+    outputDepositDir(datasetID) should not (exist)
+    outputDepositBagDir(datasetID) should not (exist)
+    outputDepositBagMetadataDir(datasetID) should not (exist)
 
     // creation of directories
     CreateOutputDepositDir(1, datasetID).checkPreconditions shouldBe a[Success[_]]
   }
 
   it should "fail if either one of the output directories does already exist" in {
-    outputDepositBagDir(settings, datasetID).mkdirs()
+    outputDepositBagDir(datasetID).mkdirs()
 
     // some directories do already exist before
-    outputDepositDir(settings, datasetID) should exist
-    outputDepositBagDir(settings, datasetID) should exist
-    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
+    outputDepositDir(datasetID) should exist
+    outputDepositBagDir(datasetID) should exist
+    outputDepositBagMetadataDir(datasetID) should not (exist)
 
     // creation of directories
-    CreateOutputDepositDir(1, datasetID).checkPreconditions shouldBe a[Failure[_]]
+    inside(CreateOutputDepositDir(1, datasetID).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) => message should include (s"The deposit for dataset $datasetID already exists")
+    }
   }
 
-  "run" should "create the directories" in {
+  "execute" should "create the directories" in {
     // test is in seperate function,
     // since we want to reuse the code
-    runTest()
+    executeTest()
   }
 
-  "rollback" should "delete the directories that were created in run" in {
+  "rollback" should "delete the directories that were created in execute" in {
     // setup for this test
-    runTest()
+    executeTest()
 
     // roll back the creation of the directories
     CreateOutputDepositDir(1, datasetID).rollback() shouldBe a[Success[_]]
 
     // test that the directories are really not there anymore
-    outputDepositDir(settings, datasetID) should not (exist)
-    outputDepositBagDir(settings, datasetID) should not (exist)
-    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
+    outputDepositDir(datasetID) should not (exist)
+    outputDepositBagDir(datasetID) should not (exist)
+    outputDepositBagMetadataDir(datasetID) should not (exist)
   }
 
-  def runTest(): Unit = {
+  def executeTest(): Unit = {
     // directories do not exist before
-    outputDepositDir(settings, datasetID) should not (exist)
-    outputDepositBagDir(settings, datasetID) should not (exist)
-    outputDepositBagMetadataDir(settings, datasetID) should not (exist)
+    outputDepositDir(datasetID) should not (exist)
+    outputDepositBagDir(datasetID) should not (exist)
+    outputDepositBagMetadataDir(datasetID) should not (exist)
 
     // creation of directories
-    CreateOutputDepositDir(1, datasetID).run() shouldBe a[Success[_]]
+    CreateOutputDepositDir(1, datasetID).execute shouldBe a[Success[_]]
 
     // test existance after creation
-    outputDepositDir(settings, datasetID) should exist
-    outputDepositBagDir(settings, datasetID) should exist
-    outputDepositBagMetadataDir(settings, datasetID) should exist
+    outputDepositDir(datasetID) should exist
+    outputDepositBagDir(datasetID) should exist
+    outputDepositBagMetadataDir(datasetID) should exist
   }
 }
