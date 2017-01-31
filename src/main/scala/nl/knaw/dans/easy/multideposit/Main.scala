@@ -54,9 +54,8 @@ object Main extends DebugEnhancedLogging {
   }
 
   def getDatasetActions(entry: (DatasetID, Dataset))(implicit settings: Settings): Seq[Action] = {
-    val datasetID = entry._1
-    val dataset = entry._2
-    val row = dataset("ROW").head.toInt // first occurence of dataset, assuming it is not empty
+    val (datasetID, dataset) = entry
+    val row = dataset("ROW").head.toInt // first occurrence of dataset, assuming it is not empty
 
     logger.debug(s"Getting actions for dataset $datasetID ...")
 
@@ -72,8 +71,8 @@ object Main extends DebugEnhancedLogging {
   def getFileActions(dataset: Dataset)(implicit settings: Settings): Seq[Action] = {
     extractFileParameters(dataset)
       .collect {
-        case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo))
-          if isThisAudioVideo matches "(?i)yes" => CopyToSpringfieldInbox(row, fileMd)
+        case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo)) if isThisAudioVideo matches "(?i)yes" =>
+          CopyToSpringfieldInbox(row, fileMd)
       }
   }
 

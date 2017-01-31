@@ -51,8 +51,9 @@ package object multideposit {
         s"deposit-dir=$outputDepositDir)"
   }
 
-  case class PreconditionsFailedException(report: String) extends Exception(report)
-  case class ActionRunFailedException(report: String) extends Exception(report)
+  case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")
+  case class PreconditionsFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
+  case class ActionRunFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
   case class ActionException(row: Int, message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 
   object Version {

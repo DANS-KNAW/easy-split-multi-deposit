@@ -42,9 +42,7 @@ object CommandLineOptions extends DebugEnhancedLogging {
       springfieldInbox = opts.springfieldInbox(),
       outputDepositDir = opts.outputDepositDir(),
       ldap = {
-        import java.{util => ju}
-
-        val env = new ju.Hashtable[String, String]
+        val env = new java.util.Hashtable[String, String]
         env.put(Context.PROVIDER_URL, props.getString("auth.ldap.url"))
         env.put(Context.SECURITY_AUTHENTICATION, "simple")
         env.put(Context.SECURITY_PRINCIPAL, props.getString("auth.ldap.user"))
@@ -67,9 +65,12 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
 
   printedName = "easy-split-multi-deposit"
   version(s"$printedName ${Version()}")
-  banner(s"""Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
+  banner(s"""
+           |Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
            |
-           |Usage: $printedName.sh [{--springfield-inbox|-s} <dir>] <multi-deposit-dir> <output-deposits-dir>
+           |Usage:
+           |  $printedName.sh [{--springfield-inbox|-s} <dir>] <multi-deposit-dir> <output-deposits-dir>
+           |
            |Options:
            |""".stripMargin)
 

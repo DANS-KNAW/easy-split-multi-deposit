@@ -47,7 +47,7 @@ object MultiDepositParser extends DebugEnhancedLogging {
           if !record.get(0).isBlank
         } yield record.asScala.toList
       }
-      _ <- validateDatasetHeaders(content.head)
+      _ <- content.headOption.map(validateDatasetHeaders).getOrElse(Failure(EmptyInstructionsFileException(file)))
     } yield {
       debug("Successfully loaded CSV file")
       content.tail

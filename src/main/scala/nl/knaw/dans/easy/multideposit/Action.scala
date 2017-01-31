@@ -78,22 +78,38 @@ trait Action extends DebugEnhancedLogging {
     for {
       _ <- innerCheckPreconditions.recoverWith {
         case NonFatal(e) =>
-          Failure(PreconditionsFailedException(generateReport("Precondition failures:", e, "Due to these errors in the preconditions, nothing was done.")))
+          Failure(PreconditionsFailedException(
+            report = generateReport(
+              header = "Precondition failures:",
+              throwable = e,
+              footer = "Due to these errors in the preconditions, nothing was done."),
+            cause = e))
       }
       _ <- innerExecute().recoverWith {
-        case NonFatal(e) => List(Failure(e), innerRollback()).collectResults.recoverWith {
-          case e: CompositeException => Failure(ActionRunFailedException(generateReport("Errors in Multi-Deposit Instructions file:", e)))
-        }
+        case NonFatal(e) =>
+          List(Failure(e), innerRollback())
+            .collectResults
+            .recoverWith {
+              case e: CompositeException => Failure(ActionRunFailedException(
+                report = generateReport(
+                  header = "Failures during the execute phase:",
+                  throwable = e,
+                  footer = "The actions that were already performed, were rolled back."),
+                cause = e))
+            }
       }
     } yield ()
   }
 
-  private def generateReport(header: String = "", t: Throwable, footer: String = ""): String = {
-    val report = t match {
+  private def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
+    val report = throwable match {
       case ActionException(row, msg, _) => s" - row $row: $msg"
-      case CompositeException(ths) =>
-        ths.toSeq
-          .collect { case ActionException(row, msg, _) => s" - row $row: $msg" }
+      case CompositeException(throwables) =>
+        throwables.toSeq
+          .collect {
+            case ActionException(row, msg, _) => s" - row $row: $msg"
+            case NonFatal(e) => s" - unexpected error: ${e.getMessage}"
+          }
           .mkString("\n")
       case e => s" - unexpected error: ${e.getMessage}"
     }
