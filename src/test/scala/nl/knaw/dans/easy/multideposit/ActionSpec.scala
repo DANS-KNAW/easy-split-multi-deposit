@@ -56,7 +56,7 @@ class ActionSpec extends UnitSpec {
       rollback = Success(()))
 
     inside(action.run) {
-      case Failure(PreconditionsFailedException(report)) => report should include ("1: pre")
+      case Failure(PreconditionsFailedException(report, _)) => report should include ("1: pre")
     }
     action.visited shouldBe (true, false, false)
   }
@@ -68,7 +68,7 @@ class ActionSpec extends UnitSpec {
       rollback = Success(()))
 
     inside(action.run) {
-      case Failure(ActionRunFailedException(report)) => report should include ("1: exe")
+      case Failure(ActionRunFailedException(report, _)) => report should include ("1: exe")
     }
     action.visited shouldBe (true, true, true)
   }
@@ -90,7 +90,7 @@ class ActionSpec extends UnitSpec {
       rollback = Failure(ActionException(1, "undo")))
 
     inside(action.run) {
-      case Failure(ActionRunFailedException(report)) => report should (include ("1: exe") and include ("1: undo"))
+      case Failure(ActionRunFailedException(report, _)) => report should (include ("1: exe") and include ("1: undo"))
     }
     action.visited shouldBe (true, true, true)
   }
@@ -130,7 +130,7 @@ class ActionSpec extends UnitSpec {
       rollback = Success(()))
 
     inside(m1.compose(m2).compose(m3).run) {
-      case Failure(PreconditionsFailedException(report)) => report should include ("row 1: pre")
+      case Failure(PreconditionsFailedException(report, _)) => report should include ("row 1: pre")
     }
     m1.visited shouldBe (true, false, false)
     m2.visited shouldBe (true, false, false)
@@ -152,7 +152,7 @@ class ActionSpec extends UnitSpec {
       rollback = Success(()))
 
     inside(m1.compose(m2).compose(m3).run) {
-      case Failure(PreconditionsFailedException(report)) => report should include ("row 2: pre")
+      case Failure(PreconditionsFailedException(report, _)) => report should include ("row 2: pre")
     }
     m1.visited shouldBe (true, false, false)
     m2.visited shouldBe (true, false, false)
@@ -174,7 +174,7 @@ class ActionSpec extends UnitSpec {
       rollback = Success(()))
 
     inside(m1.compose(m2).compose(m3).run) {
-      case Failure(PreconditionsFailedException(report)) => report should (include ("row 1: pre") and include ("row 2: pre"))
+      case Failure(PreconditionsFailedException(report, _)) => report should (include ("row 1: pre") and include ("row 2: pre"))
     }
     m1.visited shouldBe (true, false, false)
     m2.visited shouldBe (true, false, false)
@@ -196,7 +196,7 @@ class ActionSpec extends UnitSpec {
       rollback = Success(()))
 
     inside(m1.compose(m2).compose(m3).run) {
-      case Failure(ActionRunFailedException(report)) => report should include ("row 1: exe")
+      case Failure(ActionRunFailedException(report, _)) => report should include ("row 1: exe")
     }
     m1.visited shouldBe (true, true, true)
     m2.visited shouldBe (true, false, false)
@@ -218,7 +218,7 @@ class ActionSpec extends UnitSpec {
       rollback = Success(()))
 
     inside(m1.compose(m2).compose(m3).run) {
-      case Failure(ActionRunFailedException(report)) => report should include ("row 2: exe")
+      case Failure(ActionRunFailedException(report, _)) => report should include ("row 2: exe")
     }
     m1.visited shouldBe (true, true, true)
     m2.visited shouldBe (true, true, true)
@@ -240,7 +240,7 @@ class ActionSpec extends UnitSpec {
       rollback = Success(()))
 
     inside(m1.compose(m2.compose(m3)).run) {
-      case Failure(ActionRunFailedException(report)) => report should (include ("row 1: undo") and include ("row 2: exe") and include ("row 2: undo"))
+      case Failure(ActionRunFailedException(report, _)) => report should (include ("row 1: undo") and include ("row 2: exe") and include ("row 2: undo"))
     }
     m1.visited shouldBe (true, true, true)
     m2.visited shouldBe (true, true, true)

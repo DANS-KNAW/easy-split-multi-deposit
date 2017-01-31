@@ -57,7 +57,7 @@ class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
     csv.write("")
 
     inside(parse(csv)) {
-      case Failure(e) => e shouldBe a[NoSuchElementException] // comes from `content.head` where `content` is empty
+      case Failure(EmptyInstructionsFileException(file)) => file shouldBe csv
     }
   }
 
