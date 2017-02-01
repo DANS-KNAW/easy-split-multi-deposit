@@ -41,8 +41,7 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   }
 
   private def checkDatasetIdIsValid: Try[Unit] = {
-    val pattern = "[^a-zA-Z0-9_-]".r
-    val illegalCharacters = pattern.findAllIn(datasetID).toSet
+    val illegalCharacters = "[^a-zA-Z0-9_-]".r.findAllIn(datasetID).toSet
     if (illegalCharacters.isEmpty)
       Success(())
     else

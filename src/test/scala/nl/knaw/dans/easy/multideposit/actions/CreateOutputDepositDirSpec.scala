@@ -72,6 +72,12 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     }
   }
 
+  it should "fail if the datasetId contains forbidden characters" in {
+    inside(CreateOutputDepositDir(1, datasetID + "#" + datasetID).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) => message shouldBe s"The datasetId '$datasetID#$datasetID' contains the following invalid characters: { # }"
+    }
+  }
+
   "execute" should "create the directories" in {
     // test is in seperate function,
     // since we want to reuse the code
