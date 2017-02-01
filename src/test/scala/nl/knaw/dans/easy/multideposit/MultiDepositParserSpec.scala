@@ -77,7 +77,7 @@ class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
     inside(parse(csv)) {
       case Success(ListBuffer((id, ds))) =>
         id shouldBe "dataset1"
-        ds should contain ("ROW" -> List("1", "2"))
+        ds should contain ("ROW" -> List("2", "3"))
         ds should contain ("DATASET" -> List("dataset1", "dataset1"))
         ds should contain ("FILE_SIP" -> List("x", "y"))
     }
