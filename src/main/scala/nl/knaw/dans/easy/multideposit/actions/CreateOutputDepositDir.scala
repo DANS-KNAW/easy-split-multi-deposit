@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,12 +28,29 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   private val dirs = depositDir :: bagDir :: metadataDir :: Nil
 
   override def checkPreconditions: Try[Unit] = {
+    for {
+      _ <- checkDatasetIdIsValid
+      _ <- checkDirectoriesDoNotExist
+    } yield ()
+  }
+
+  private def checkDirectoriesDoNotExist: Try[Unit] = {
     dirs.find(_.exists)
       .map(file => Failure(ActionException(row, s"The deposit for dataset $datasetID already exists in $file.")))
       .getOrElse(Success(()))
   }
 
+  private def checkDatasetIdIsValid: Try[Unit] = {
+    val pattern = "[^a-zA-Z0-9_-]".r
+    val illegalCharacters = pattern.findAllIn(datasetID).toSet
+    if (illegalCharacters.isEmpty)
+      Success(())
+    else
+      Failure(ActionException(row, s"The datasetId '$datasetID' contains the following invalid characters: ${ illegalCharacters.mkString("{ ", ", ", " }") }"))
+  }
+
   override def execute(): Try[Unit] = {
+    debug(s"making directories: $dirs")
     if (dirs.forall(_.mkdirs)) Success(())
     else Failure(ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
   }
