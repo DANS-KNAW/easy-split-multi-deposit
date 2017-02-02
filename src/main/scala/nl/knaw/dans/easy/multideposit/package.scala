@@ -44,6 +44,7 @@ package object multideposit {
   case class Settings(multidepositDir: File = null,
                       springfieldInbox: File = null,
                       outputDepositDir: File = null,
+                      datamanager: String = null,
                       ldap: Ldap = null) {
     override def toString: String =
       s"Settings(multideposit-dir=$multidepositDir, " +
