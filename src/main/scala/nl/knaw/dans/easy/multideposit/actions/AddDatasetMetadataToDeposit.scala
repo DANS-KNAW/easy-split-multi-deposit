@@ -48,11 +48,9 @@ object AddDatasetMetadataToDeposit {
       List(
         // coordinates
         // point
-        checkAllOrNone(row, rowVals,
-          List("DCX_SPATIAL_X", "DCX_SPATIAL_Y")),
+        checkAllOrNone(row, rowVals, "DCX_SPATIAL_X", "DCX_SPATIAL_Y"),
         // box
-        checkAllOrNone(row, rowVals,
-          List("DCX_SPATIAL_NORTH", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_EAST", "DCX_SPATIAL_WEST")),
+        checkAllOrNone(row, rowVals, "DCX_SPATIAL_NORTH", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_EAST", "DCX_SPATIAL_WEST"),
 
         // persons
         // note that the DCX_{}_ORGANISATION can have a value independent of the other fields
@@ -67,10 +65,16 @@ object AddDatasetMetadataToDeposit {
 
         // check allowed value(s)
         // scheme
-        checkValueIsOneOf(row, rowVals, "DCT_TEMPORAL_SCHEME", List("abr:ABRperiode")),
-        checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", List("abr:ABRcomplex")),
+        checkValueIsOneOf(row, rowVals, "DCT_TEMPORAL_SCHEME", "abr:ABRperiode"),
+        checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", "abr:ABRcomplex"),
 
-        checkAccessRights(row, rowVals)
+        checkAccessRights(row, rowVals),
+
+        // if qualifier is defined, only either of {link, title} must be defined
+        // if qualifier is not defined, {link, title} can not be defined both
+        rowVals.get("DCX_RELATION_QUALIFIER").filterNot(_.isBlank)
+          .map(_ => checkOneOf(row, rowVals, "DCX_RELATION_LINK", "DCX_RELATION_TITLE"))
+          .getOrElse(checkNotAll(row, rowVals, "DCX_RELATION_LINK", "DCX_RELATION_TITLE"))
       )
     }).collectResults.map(_ => ())
   }
@@ -239,8 +243,21 @@ object AddDatasetMetadataToDeposit {
     createSchemedMetadata(dataset, composedSubjectFields, "DC_SUBJECT", "DC_SUBJECT_SCHEME")
   }
 
+  /*
+    q   l   t     valid
+    1   1   1     0
+    1   1   0     1
+    1   0   1     1
+    1   0   0     0
+    0   1   1     0
+    0   1   0     1
+    0   0   1     1
+    0   0   0     1
+
+    conclusie: mag niet tegelijk DCX_RELATION_LINK en DCX_RELATION_TITLE hebben
+   */
   def createRelations(dataset: Dataset): Seq[Elem] = {
-    dataset.rowsWithValuesFor(composedRelationFields).map { row =>
+    dataset.rowsWithValuesFor(composedRelationFields).map(row =>
       (row.get("DCX_RELATION_QUALIFIER"), row.get("DCX_RELATION_LINK"), row.get("DCX_RELATION_TITLE")) match {
         // @formatter:off
         case (Some(q), Some(l), _      ) => elem(s"dcterms:$q")(l)
@@ -252,8 +269,7 @@ object AddDatasetMetadataToDeposit {
           // (see also comment in https://github.com/DANS-KNAW/easy-split-multi-deposit/commit/dbda6cc2b78f93196be62b323a988e3781cb6926#diff-efd2dc8d9655ba9c6b577f13dd66627bR32)
           throw new IllegalArgumentException("preconditions should have reported this as an error")
         // @formatter:on
-      }
-    }
+      })
   }
 
   def createMetadata(dataset: Dataset): Elem = {
@@ -288,11 +304,25 @@ object AddDatasetMetadataToDeposit {
    * Check if either non of the keys have values or all of them have values
    * If some are missing, mention them in the exception message
    */
-  def checkAllOrNone(row: Int, map: mutable.HashMap[MultiDepositKey, String], keys: List[String]): Try[Unit] = {
+  def checkAllOrNone(row: Int, map: mutable.HashMap[MultiDepositKey, String], keys: String*): Try[Unit] = {
     val emptyVals = keys.filter(key => map.get(key).forall(_.isBlank))
 
     if (emptyVals.nonEmpty && emptyVals.size < keys.size)
       Failure(ActionException(row, s"Missing value(s) for: ${ emptyVals.mkString("[", ", ", "]") }"))
+    else
+      Success(())
+  }
+
+  def checkOneOf(row: Int, map: scala.collection.Map[MultiDepositKey, String], keys: String*): Try[Unit] = {
+    if (keys.map(map.get(_).filterNot(_.isBlank)).count(_.isDefined) == 1)
+      Success(())
+    else
+      Failure(ActionException(row, s"Exactly one of the following columns must contain a value: ${ keys.mkString("[", ", ", "]") }"))
+  }
+  
+  def checkNotAll(row: Int, map: scala.collection.Map[MultiDepositKey, String], keys: String*): Try[Unit] = {
+    if (keys.map(map.get(_).filterNot(_.isBlank)).forall(_.isDefined))
+      Failure(ActionException(row, s"Only a subset of the following columns must contain a value: ${ keys.mkString("[", ", ", "]") }"))
     else
       Success(())
   }
@@ -317,7 +347,7 @@ object AddDatasetMetadataToDeposit {
   /**
    * When it contains something, this should be from a list af allowed values
    */
-  def checkValueIsOneOf(row: Int, map: mutable.HashMap[MultiDepositKey, String], key: String, allowed: List[String]): Try[Unit] = {
+  def checkValueIsOneOf(row: Int, map: mutable.HashMap[MultiDepositKey, String], key: String, allowed: String*): Try[Unit] = {
     val value = map.getOrElse(key, "")
     if (value.isEmpty || allowed.contains(value))
       Success(Unit)

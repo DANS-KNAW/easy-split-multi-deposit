@@ -255,6 +255,106 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
+  it should "fail with relation qualifier, link and title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCX_RELATION_QUALIFIER" -> List("foo"),
+      "DCX_RELATION_LINK" -> List("bar"),
+      "DCX_RELATION_TITLE" -> List("baz")
+    )
+
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Exactly one of the following columns must contain a value: [DCX_RELATION_LINK, DCX_RELATION_TITLE]"
+    }
+  }
+
+  it should "succeed with relation qualifier and link" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCX_RELATION_QUALIFIER" -> List("foo"),
+      "DCX_RELATION_LINK" -> List("bar"),
+      "DCX_RELATION_TITLE" -> List("")
+    )
+
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "succeed with relation qualifier and title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCX_RELATION_QUALIFIER" -> List("foo"),
+      "DCX_RELATION_LINK" -> List(""),
+      "DCX_RELATION_TITLE" -> List("baz")
+    )
+
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail with only relation qualifier and neither a link or title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCX_RELATION_QUALIFIER" -> List("foo"),
+      "DCX_RELATION_LINK" -> List(""),
+      "DCX_RELATION_TITLE" -> List("")
+    )
+
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Exactly one of the following columns must contain a value: [DCX_RELATION_LINK, DCX_RELATION_TITLE]"
+    }
+  }
+
+  it should "fail with no relation qualifier, but both link and title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCX_RELATION_QUALIFIER" -> List(""),
+      "DCX_RELATION_LINK" -> List("bar"),
+      "DCX_RELATION_TITLE" -> List("baz")
+    )
+
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Only a subset of the following columns must contain a value: [DCX_RELATION_LINK, DCX_RELATION_TITLE]"
+    }
+  }
+
+  it should "succeed with no relation qualifier and only a link" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCX_RELATION_QUALIFIER" -> List(""),
+      "DCX_RELATION_LINK" -> List("bar"),
+      "DCX_RELATION_TITLE" -> List("")
+    )
+
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "succeed with no relation qualifier and only a title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCX_RELATION_QUALIFIER" -> List(""),
+      "DCX_RELATION_LINK" -> List(""),
+      "DCX_RELATION_TITLE" -> List("baz")
+    )
+
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail with no relation qualifier, link or title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DCX_RELATION_QUALIFIER" -> List(""),
+      "DCX_RELATION_LINK" -> List(""),
+      "DCX_RELATION_TITLE" -> List("")
+    )
+
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
   "execute" should "write the metadata to a file at the correct place" in {
     val file = outputDatasetMetadataFile(datasetID)
 
