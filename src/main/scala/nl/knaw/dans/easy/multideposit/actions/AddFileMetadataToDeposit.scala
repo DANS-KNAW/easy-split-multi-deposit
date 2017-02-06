@@ -16,12 +16,12 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
-import java.net.URLConnection
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
+import nl.knaw.dans.lib.error.TraversableTryExtensions
+import org.apache.tika.Tika
 
-import scala.collection.immutable
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
@@ -52,89 +52,55 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
 object AddFileMetadataToDeposit {
 
   def writeFileMetadataXml(row: Int, datasetID: DatasetID)(implicit settings: Settings): Try[Unit] = {
-    Try {
-      outputFileMetadataFile(datasetID).writeXml(datasetToFileXml(datasetID))
-    } recoverWith {
-      case NonFatal(e) => Failure(ActionException(row, s"Could not write file meta data: $e", e))
+    datasetToFileXml(datasetID)
+      .map(outputFileMetadataFile(datasetID).writeXml(_))
+      .recoverWith {
+        case NonFatal(e) => Failure(ActionException(row, s"Could not write file meta data: $e", e))
+      }
+  }
+
+  def datasetToFileXml(datasetID: DatasetID)(implicit settings: Settings): Try[Elem] = {
+    val inputDir = multiDepositDir(datasetID)
+
+    if (inputDir.exists() && inputDir.isDirectory)
+      inputDir.listRecursively
+        .map(xmlPerPath(inputDir))
+        .collectResults
+        .map(elems => {
+          // @formatter:off
+          <files xmlns:dcterms="http://purl.org/dc/terms/">{elems}</files>
+          // @formatter:on
+        })
+    else Try {
+      // @formatter:off
+      <files xmlns:dcterms="http://purl.org/dc/terms/"/>
+      // @formatter:on
     }
   }
 
-  def datasetToFileXml(datasetID: DatasetID)(implicit settings: Settings): Elem = {
-    val inputDir = multiDepositDir(datasetID)
-
-    // @formatter:off
-    <files xmlns:dcterms="http://purl.org/dc/terms/">{
-      if (inputDir.exists && inputDir.isDirectory)
-        inputDir.listRecursively.map(xmlPerPath(inputDir))
-    }</files>
-    // @formatter:on
-  }
-
   // TODO other fields need to be added here later
-  def xmlPerPath(inputDir: File)(file: File): Elem = {
-    // @formatter:off
-    <file filepath={s"data/${inputDir.toPath.relativize(file.toPath)}"}>
-      <dcterms:format>{getMimeType(file.getPath)}</dcterms:format>
-    </file>
-    // @formatter:off
+  def xmlPerPath(inputDir: File)(file: File): Try[Elem] = {
+    getMimeType(file)
+      .map(mimetype => {
+        // @formatter:off
+        <file filepath={s"data/${inputDir.toPath.relativize(file.toPath)}"}>
+          <dcterms:format>{mimetype}</dcterms:format>
+        </file>
+        // @formatter:off
+      })
   }
 
-  val fileExtensionMap = immutable.HashMap(
-    // MS Office
-    "doc" -> "application/msword",
-    "dot" -> "application/msword",
-    "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "dotx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
-    "docm" -> "application/vnd.ms-word.document.macroEnabled.12",
-    "dotm" -> "application/vnd.ms-word.template.macroEnabled.12",
-    "xls" -> "application/vnd.ms-excel",
-    "xlt" -> "application/vnd.ms-excel",
-    "xla" -> "application/vnd.ms-excel",
-    "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "xltx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
-    "xlsm" -> "application/vnd.ms-excel.sheet.macroEnabled.12",
-    "xltm" -> "application/vnd.ms-excel.template.macroEnabled.12",
-    "xlam" -> "application/vnd.ms-excel.addin.macroEnabled.12",
-    "xlsb" -> "application/vnd.ms-excel.sheet.binary.macroEnabled.12",
-    "ppt" -> "application/vnd.ms-powerpoint",
-    "pot" -> "application/vnd.ms-powerpoint",
-    "pps" -> "application/vnd.ms-powerpoint",
-    "ppa" -> "application/vnd.ms-powerpoint",
-    "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    "potx" -> "application/vnd.openxmlformats-officedocument.presentationml.template",
-    "ppsx" -> "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
-    "ppam" -> "application/vnd.ms-powerpoint.addin.macroEnabled.12",
-    "pptm" -> "application/vnd.ms-powerpoint.presentation.macroEnabled.12",
-    "potm" -> "application/vnd.ms-powerpoint.presentation.macroEnabled.12",
-    "ppsm" -> "application/vnd.ms-powerpoint.slideshow.macroEnabled.12",
-    // Open Office
-    "odt" -> "application/vnd.oasis.opendocument.text",
-    "ott" -> "application/vnd.oasis.opendocument.text-template",
-    "oth" -> "application/vnd.oasis.opendocument.text-web",
-    "odm" -> "application/vnd.oasis.opendocument.text-master",
-    "odg" -> "application/vnd.oasis.opendocument.graphics",
-    "otg" -> "application/vnd.oasis.opendocument.graphics-template",
-    "odp" -> "application/vnd.oasis.opendocument.presentation",
-    "otp" -> "application/vnd.oasis.opendocument.presentation-template",
-    "ods" -> "application/vnd.oasis.opendocument.spreadsheet",
-    "ots" -> "application/vnd.oasis.opendocument.spreadsheet-template",
-    "odc" -> "application/vnd.oasis.opendocument.chart",
-    "odf" -> "application/vnd.oasis.opendocument.formula",
-    "odb" -> "application/vnd.oasis.opendocument.database",
-    "odi" -> "application/vnd.oasis.opendocument.image",
-    "oxt" -> "application/vnd.openofficeorg.extension",
-    // Other
-    "txt" -> "text/plain",
-    "rtf" -> "application/rtf",
-    "pdf" -> "application/pdf"
-
-  )
-
-  def getMimeType(filename: String): String = {
-    Option(URLConnection.getFileNameMap.getContentTypeFor(filename))
-      .getOrElse {
-        val extension = filename.substring(filename.lastIndexOf('.') + 1, filename.length())
-        fileExtensionMap(extension)
-      }
+  /**
+   * Identify the mimeType of a file.
+   *
+   * @param file the file to identify
+   * @return the mimeType of the file if the identification was successful; `Failure` otherwise
+   */
+  def getMimeType(file: File): Try[String] = Try {
+    MimeTypeIdentifierFactory.tika.detect(file)
   }
+}
+
+object MimeTypeIdentifierFactory {
+  val tika = new Tika
 }
