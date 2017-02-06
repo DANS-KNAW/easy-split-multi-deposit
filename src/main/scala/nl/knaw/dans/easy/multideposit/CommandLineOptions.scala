@@ -21,7 +21,9 @@ import javax.naming.ldap.InitialLdapContext
 
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.configuration.PropertiesConfiguration
-import org.rogach.scallop.{ ScallopConf, ScallopOption }
+import org.rogach.scallop.{ScallopConf, ScallopOption}
+
+import scala.util.{Failure, Success, Try}
 
 object CommandLineOptions extends DebugEnhancedLogging {
 

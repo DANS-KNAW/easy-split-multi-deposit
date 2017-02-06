@@ -25,6 +25,8 @@ import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
+import nl.knaw.dans.lib.error.TraversableTryExtensions
+
 case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
 
   val (datasetID, dataset) = entry
@@ -33,15 +35,54 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
 
   /**
    * @inheritdoc
-   * Checks whether there is only one unique DEPOSITOR_ID set in the `Dataset` (there can be multiple values but the must all be equal!).
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
-  override def checkPreconditions: Try[Unit] = validateDepositor(row, datasetID, dataset)
+  override def checkPreconditions: Try[Unit] = {
+    List(validateDepositor(row, datasetID, dataset), datamanagerEmailaddress)
+        .collectResults.map(_=>())
+  }
 
-  override def execute(): Try[Unit] = writeProperties(row, datasetID, dataset)
+  override def execute(): Try[Unit] = datamanagerEmailaddress.flatMap(email => writeProperties(row, datasetID, dataset, email))
 }
 object AddPropertiesToDeposit {
+  // Note that the datamanager 'precondition' is checked when datamanagerEmailaddress is evaluated the first time
+  lazy val datamanagerEmailaddress: Try[String] = getDatamanagerMailadres()
 
+  /**
+   * Tries to retrieve the email address of the datamanager
+   * Also used for validation: checks if the datamanager is an active archivist with an email address
+   */
+  def getDatamanagerMailadres()(implicit settings: Settings): Try[String] = {
+    val id = settings.datamanager
+    settings.ldap.query(id)(a => a)
+      .flatMap(attrsSeq => {
+        if (attrsSeq.isEmpty) Failure(new RuntimeException(s"""DatamanagerID "$id" is unknown"""))
+        else if (attrsSeq.size >1 ) Failure(new RuntimeException(s"""There appear to be multiple users with id "$id""""))
+        else Success(attrsSeq.head)
+      })
+      .flatMap(attrs => {
+        Option(attrs.get("dansState"))
+          .filter(_.get.toString == "ACTIVE")
+          .map(_ => Success(attrs))
+          .getOrElse(Failure(new RuntimeException(s"""The datamanager "$id" is not an active user""")))
+      })
+      .flatMap(attrs => {
+        Option(attrs.get("easyRoles"))
+          .filter(_.contains("ARCHIVIST"))
+          .map(_ => Success(attrs))
+          .getOrElse(Failure(new RuntimeException(s"""The datamanager "$id" is not an archivist""")))
+      })
+      .flatMap(attrs => {
+        Option(attrs.get("mail"))
+        .filter(_.get().toString().nonEmpty)
+        .map(att => Success(att.get().toString))
+        .getOrElse(Failure(new RuntimeException(s"""The datamanager "$id" does not have an email address""")))
+      })
+  }
+
+  /**
+   * Checks whether there is only one unique DEPOSITOR_ID set in the `Dataset` (there can be multiple values but the must all be equal!).
+   */
   def validateDepositor(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     // TODO a for-comprehension over monad-transformers would be nice here...
     // see https://github.com/rvanheest/Experiments/tree/master/src/main/scala/experiments/transformers
@@ -66,17 +107,17 @@ object AddPropertiesToDeposit {
       .getOrElse(Failure(ActionException(row, """The column "DEPOSITOR_ID" is not present""")))
   }
 
-  def writeProperties(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
+  def writeProperties(row: Int, datasetID: DatasetID, dataset: Dataset, emailaddress: String)(implicit settings: Settings): Try[Unit] = {
     val props = new Properties
 
-    addProperties(props, dataset)
+    addProperties(props, dataset, emailaddress)
       .flatMap(_ => Using.fileWriter(encoding)(outputPropertiesFile(datasetID)).map(out => props.store(out, "")).tried)
       .recoverWith {
         case NonFatal(e) => Failure(ActionException(row, s"Could not write properties to file: $e", e))
       }
   }
 
-  def addProperties(properties: Properties, dataset: Dataset): Try[Unit] = {
+  def addProperties(properties: Properties, dataset: Dataset, emailaddress: String)(implicit settings: Settings): Try[Unit] = {
     for {
       depositorUserID <- dataset.get("DEPOSITOR_ID")
         .flatMap(_.headOption)
@@ -85,6 +126,8 @@ object AddPropertiesToDeposit {
       _ = properties.setProperty("state.label", "SUBMITTED")
       _ = properties.setProperty("state.description", "Deposit is valid and ready for post-submission processing")
       _ = properties.setProperty("depositor.userId", depositorUserID)
+      _ = properties.setProperty("datamanager.userId", settings.datamanager)
+      _ = properties.setProperty("datamanager.email", emailaddress)
     } yield ()
   }
 }
