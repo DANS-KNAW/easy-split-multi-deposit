@@ -144,4 +144,22 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
       case Success(mimetype) => mimetype shouldBe "application/xml"
     }
   }
+
+  it should "give the correct mimetype if the file is plain text and has no extension" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-unknown"))) {
+      case Success(mimetype) => mimetype shouldBe "text/plain"
+    }
+  }
+
+  it should "give the correct mimetype if the file has no extension" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-unknown-pdf"))) {
+      case Success(mimetype) => mimetype shouldBe "application/pdf"
+    }
+  }
+
+  it should "give the correct mimetype if the file is hidden" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/.file-hidden-pdf"))) {
+      case Success(mimetype) => mimetype shouldBe "application/pdf"
+    }
+  }
 }
