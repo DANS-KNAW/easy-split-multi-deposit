@@ -243,19 +243,6 @@ object AddDatasetMetadataToDeposit {
     createSchemedMetadata(dataset, composedSubjectFields, "DC_SUBJECT", "DC_SUBJECT_SCHEME")
   }
 
-  /*
-    q   l   t     valid
-    1   1   1     0
-    1   1   0     1
-    1   0   1     1
-    1   0   0     0
-    0   1   1     0
-    0   1   0     1
-    0   0   1     1
-    0   0   0     1
-
-    conclusie: mag niet tegelijk DCX_RELATION_LINK en DCX_RELATION_TITLE hebben
-   */
   def createRelations(dataset: Dataset): Seq[Elem] = {
     dataset.rowsWithValuesFor(composedRelationFields).map(row =>
       (row.get("DCX_RELATION_QUALIFIER"), row.get("DCX_RELATION_LINK"), row.get("DCX_RELATION_TITLE")) match {
@@ -265,8 +252,7 @@ object AddDatasetMetadataToDeposit {
         case (None,    Some(l), _      ) => elem(s"dc:relation")(l)
         case (None,    None,    Some(t)) => elem(s"dc:relation")(t)
         case _                           =>
-          // TODO this case needs to be checked to not occur in the preconditions
-          // (see also comment in https://github.com/DANS-KNAW/easy-split-multi-deposit/commit/dbda6cc2b78f93196be62b323a988e3781cb6926#diff-efd2dc8d9655ba9c6b577f13dd66627bR32)
+          // all other cases are checked not to occur in the preconditions
           throw new IllegalArgumentException("preconditions should have reported this as an error")
         // @formatter:on
       })
