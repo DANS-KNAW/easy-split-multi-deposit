@@ -333,7 +333,7 @@ object validators {
     if (keys.map(map.get(_).filterNot(_.isBlank)).count(_.isDefined) == 1)
       Success(())
     else
-      Failure(ActionException(row, s"Exactly one of the following columns must contain a value: ${ keys.mkString("[", ", ", "]") }"))
+      Failure(ActionException(row, s"Only one of the following columns must contain a value: ${ keys.mkString("[", ", ", "]") }"))
   }
 
   /**

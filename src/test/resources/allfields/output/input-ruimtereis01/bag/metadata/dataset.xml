@@ -37,9 +37,9 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.kn
     <dcterms:alternative>Gewoon een stukje steen in de ruimte?</dcterms:alternative>
     <dc:source>whatever</dc:source>
     <dcterms:type>random test data</dcterms:type>
-    <dcterms:replaces>http://x</dcterms:replaces>
+    <dcterms:replaces>dummy</dcterms:replaces>
     <dcterms:isRequiredBy>blabla</dcterms:isRequiredBy>
-    <dc:relation>http://y</dc:relation>
+    <dc:relation>http://x</dc:relation>
     <dcx-dai:contributorDetails>
       <dcx-dai:author>
         <dcx-dai:initials>A.S.</dcx-dai:initials>

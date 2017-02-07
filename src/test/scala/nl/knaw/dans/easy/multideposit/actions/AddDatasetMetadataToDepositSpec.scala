@@ -278,7 +278,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
         val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "Exactly one of the following columns must contain a value: [DCX_RELATION_LINK, DCX_RELATION_TITLE]"
+        message shouldBe "Only one of the following columns must contain a value: [DCX_RELATION_LINK, DCX_RELATION_TITLE]"
     }
   }
 
@@ -318,7 +318,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
         val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "Exactly one of the following columns must contain a value: [DCX_RELATION_LINK, DCX_RELATION_TITLE]"
+        message shouldBe "Only one of the following columns must contain a value: [DCX_RELATION_LINK, DCX_RELATION_TITLE]"
     }
   }
 
