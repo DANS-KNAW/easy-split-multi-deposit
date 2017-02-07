@@ -322,7 +322,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
-  it should "fail with no relation qualifier, but both link and title" in {
+  it should "fail without a relation qualifier, but both link and title" in {
     val dataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
       "DDM_CREATED" -> List("2017-07-30"),
@@ -334,11 +334,11 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
         val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "Only a subset of the following columns must contain a value: [DCX_RELATION_LINK, DCX_RELATION_TITLE]"
+        message shouldBe "The columns [DCX_RELATION_LINK, DCX_RELATION_TITLE] must not all contain a value at the same time"
     }
   }
 
-  it should "succeed with no relation qualifier and only a link" in {
+  it should "succeed without a relation qualifier and only a link" in {
     val dataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
       "DDM_CREATED" -> List("2017-07-30"),
@@ -350,7 +350,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
-  it should "succeed with no relation qualifier and only a title" in {
+  it should "succeed without a relation qualifier and only a title" in {
     val dataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
       "DDM_CREATED" -> List("2017-07-30"),
@@ -362,7 +362,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
-  it should "fail with no relation qualifier, link or title" in {
+  it should "fail without a relation qualifier, link or title" in {
     val dataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
       "DDM_CREATED" -> List("2017-07-30"),

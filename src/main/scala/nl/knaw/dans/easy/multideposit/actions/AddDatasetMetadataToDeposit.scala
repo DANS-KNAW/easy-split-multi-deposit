@@ -82,8 +82,7 @@ object AddDatasetMetadataToDeposit {
 
         checkAccessRights(row, rowVals),
 
-        // if qualifier is defined, only either of {link, title} must be defined
-        // if qualifier is not defined, {link, title} can not be defined both
+        // {link, title} can not be defined both, a qualifier is only allowed if link or title are present
         rowVals.get("DCX_RELATION_QUALIFIER").filterNot(_.isBlank)
           .map(_ => checkOneOf(row, rowVals, "DCX_RELATION_LINK", "DCX_RELATION_TITLE"))
           .getOrElse(checkNotAll(row, rowVals, "DCX_RELATION_LINK", "DCX_RELATION_TITLE"))
@@ -255,6 +254,20 @@ object AddDatasetMetadataToDeposit {
     createSchemedMetadata(dataset, composedSubjectFields, "DC_SUBJECT", "DC_SUBJECT_SCHEME")
   }
 
+  /*
+    qualifier   link   title   valid
+        1        1       1       0
+        1        1       0       1
+        1        0       1       1
+        1        0       0       0
+        0        1       1       0
+        0        1       0       1
+        0        0       1       1
+        0        0       0       1
+
+    observation: if the qualifier is present, either DCX_RELATION_LINK or DCX_RELATION_TITLE must be defined
+                 if the qualifier is not defined, DCX_RELATION_LINK and DCX_RELATION_TITLE must not both be defined
+   */
   def createRelations(dataset: Dataset): Seq[Elem] = {
     dataset.rowsWithValuesFor(composedRelationFields).map(row =>
       (row.get("DCX_RELATION_QUALIFIER"), row.get("DCX_RELATION_LINK"), row.get("DCX_RELATION_TITLE")) match {
@@ -328,7 +341,7 @@ object validators {
    */
   def checkNotAll(row: Int, map: scala.collection.Map[MultiDepositKey, String], keys: String*): Try[Unit] = {
     if (keys.map(map.get(_).filterNot(_.isBlank)).forall(_.isDefined))
-      Failure(ActionException(row, s"Only a subset of the following columns must contain a value: ${ keys.mkString("[", ", ", "]") }"))
+      Failure(ActionException(row, s"The columns ${ keys.mkString("[", ", ", "]") } must not all contain a value at the same time"))
     else
       Success(())
   }
