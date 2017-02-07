@@ -36,7 +36,7 @@ class MainSpec extends UnitSpec {
     val entry @ (datasetID, dataset) = testDatasets.head
     val datasetActions = Seq(
       CreateOutputDepositDir(2, datasetID),
-      AddBagToDeposit(2, datasetID),
+      AddBagToDeposit(2, datasetID, dataset),
       AddDatasetMetadataToDeposit(2, entry),
       AddFileMetadataToDeposit(2, entry),
       AddPropertiesToDeposit(2, entry))
@@ -47,7 +47,7 @@ class MainSpec extends UnitSpec {
     val entry @ (datasetID, dataset) = testDatasets.tail.head
     val datasetActions = Seq(
       CreateOutputDepositDir(2, datasetID),
-      AddBagToDeposit(2, datasetID),
+      AddBagToDeposit(2, datasetID, dataset),
       AddDatasetMetadataToDeposit(2, entry),
       AddFileMetadataToDeposit(2, entry),
       AddPropertiesToDeposit(2, entry))

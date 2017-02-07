@@ -37,13 +37,25 @@ case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(im
    *
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
-  override def checkPreconditions: Try[Unit] = verifyDataset(row, dataset)
+  override def checkPreconditions: Try[Unit] = {
+    (datasetRowValidations(row, dataset) ++ datasetColumnValidations(row, dataset))
+      .collectResults
+      .map(_ => ())
+  }
 
   override def execute(): Try[Unit] = writeDatasetMetadataXml(row, datasetID, dataset)
 }
 object AddDatasetMetadataToDeposit {
 
-  def verifyDataset(row: Int, dataset: Dataset): Try[Unit] = {
+  def datasetColumnValidations(row: Int, dataset: Dataset): Seq[Try[Unit]] = {
+    import validators._
+    List(
+      checkColumnHasOnlyOneValue(row, dataset, "DDM_CREATED")
+    )
+  }
+
+  def datasetRowValidations(row: Int, dataset: Dataset): Seq[Try[Unit]] = {
+    import validators._
     dataset.toRows.flatMap(rowVals => {
       List(
         // coordinates
@@ -76,7 +88,7 @@ object AddDatasetMetadataToDeposit {
           .map(_ => checkOneOf(row, rowVals, "DCX_RELATION_LINK", "DCX_RELATION_TITLE"))
           .getOrElse(checkNotAll(row, rowVals, "DCX_RELATION_LINK", "DCX_RELATION_TITLE"))
       )
-    }).collectResults.map(_ => ())
+    })
   }
 
   def writeDatasetMetadataXml(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
@@ -285,7 +297,9 @@ object AddDatasetMetadataToDeposit {
     <key>{value}</key>.copy(label=key)
     // @formatter:on
   }
+}
 
+object validators {
   /**
    * Check if either non of the keys have values or all of them have values
    * If some are missing, mention them in the exception message
@@ -299,13 +313,19 @@ object AddDatasetMetadataToDeposit {
       Success(())
   }
 
+  /**
+   * Check if only one of the keys contains a non-blank value
+   */
   def checkOneOf(row: Int, map: scala.collection.Map[MultiDepositKey, String], keys: String*): Try[Unit] = {
     if (keys.map(map.get(_).filterNot(_.isBlank)).count(_.isDefined) == 1)
       Success(())
     else
       Failure(ActionException(row, s"Exactly one of the following columns must contain a value: ${ keys.mkString("[", ", ", "]") }"))
   }
-  
+
+  /**
+   * Check if not all keys contain non-blank values
+   */
   def checkNotAll(row: Int, map: scala.collection.Map[MultiDepositKey, String], keys: String*): Try[Unit] = {
     if (keys.map(map.get(_).filterNot(_.isBlank)).forall(_.isDefined))
       Failure(ActionException(row, s"Only a subset of the following columns must contain a value: ${ keys.mkString("[", ", ", "]") }"))
@@ -339,6 +359,20 @@ object AddDatasetMetadataToDeposit {
       Success(Unit)
     else
       Failure(ActionException(row, s"Wrong value: $value should be empty or one of: ${ allowed.mkString("[", ", ", "]") }"))
+  }
+
+  /**
+   * Check if a column in the dataset contains only one non-blank value
+   */
+  def checkColumnHasOnlyOneValue(row: Int, dataset: Dataset, key: String): Try[Unit] = {
+    dataset.get(key)
+      .map(_.filterNot(_.isBlank).size)
+      .map {
+        case 0 => Failure(ActionException(row, s"No value defined for $key"))
+        case 1 => Success(())
+        case _ => Failure(ActionException(row, s"More than one value is defined for $key"))
+      }
+      .getOrElse(Failure(ActionException(row, s"The column $key is not present in this instructions file")))
   }
 
   def checkAccessRights(row: Int, map: mutable.HashMap[MultiDepositKey, String]): Try[Unit] = {

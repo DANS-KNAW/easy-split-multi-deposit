@@ -97,6 +97,11 @@
             <artifactId>commons-configuration</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+        </dependency>
+
         <!-- mime-type detection -->
         <dependency>
             <groupId>org.apache.tika</groupId>
