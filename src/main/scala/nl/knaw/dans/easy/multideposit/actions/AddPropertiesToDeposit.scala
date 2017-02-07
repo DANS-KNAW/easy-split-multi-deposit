@@ -15,16 +15,16 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.util.Properties
+import java.util
+import java.util.{Collections, Properties}
 
 import nl.knaw.dans.easy.multideposit.actions.AddPropertiesToDeposit._
-import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
+import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
 import resource._
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
-
+import scala.util.{Failure, Success, Try}
 import nl.knaw.dans.lib.error.TraversableTryExtensions
 
 case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
@@ -38,46 +38,49 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-    List(validateDepositor(row, datasetID, dataset), datamanagerEmailaddress)
+    List(validateDepositor(row, datasetID, dataset), getDatamanagerMailadres(row))
         .collectResults.map(_=>())
   }
 
-  override def execute(): Try[Unit] = datamanagerEmailaddress.flatMap(email => writeProperties(row, datasetID, dataset, email))
+  override def execute(): Try[Unit] = getDatamanagerMailadres(row).flatMap(email => writeProperties(row, datasetID, dataset, email))
 }
 object AddPropertiesToDeposit {
   // Note that the datamanager 'precondition' is checked when datamanagerEmailaddress is evaluated the first time
-  lazy val datamanagerEmailaddress: Try[String] = getDatamanagerMailadres()
+  private var datamanagerEmailaddress: Try[String] = null
 
   /**
    * Tries to retrieve the email address of the datamanager
    * Also used for validation: checks if the datamanager is an active archivist with an email address
    */
-  def getDatamanagerMailadres()(implicit settings: Settings): Try[String] = {
-    val id = settings.datamanager
-    settings.ldap.query(id)(a => a)
-      .flatMap(attrsSeq => {
-        if (attrsSeq.isEmpty) Failure(new RuntimeException(s"""DatamanagerID "$id" is unknown"""))
-        else if (attrsSeq.size >1 ) Failure(new RuntimeException(s"""There appear to be multiple users with id "$id""""))
-        else Success(attrsSeq.head)
-      })
-      .flatMap(attrs => {
-        Option(attrs.get("dansState"))
-          .filter(_.get.toString == "ACTIVE")
-          .map(_ => Success(attrs))
-          .getOrElse(Failure(new RuntimeException(s"""The datamanager "$id" is not an active user""")))
-      })
-      .flatMap(attrs => {
-        Option(attrs.get("easyRoles"))
-          .filter(_.contains("ARCHIVIST"))
-          .map(_ => Success(attrs))
-          .getOrElse(Failure(new RuntimeException(s"""The datamanager "$id" is not an archivist""")))
-      })
-      .flatMap(attrs => {
-        Option(attrs.get("mail"))
-        .filter(_.get().toString().nonEmpty)
-        .map(att => Success(att.get().toString))
-        .getOrElse(Failure(new RuntimeException(s"""The datamanager "$id" does not have an email address""")))
-      })
+  def getDatamanagerMailadres(row: Int)(implicit settings: Settings): Try[String] = {
+    if(datamanagerEmailaddress == null) {
+      val id = settings.datamanager
+      datamanagerEmailaddress = settings.ldap.query(id)(a => a)
+        .flatMap(attrsSeq => {
+          if (attrsSeq.isEmpty) Failure(new ActionException(row, s"""DatamanagerID "$id" is unknown"""))
+          else if (attrsSeq.size > 1) Failure(new ActionException(row, s"""There appear to be multiple users with id "$id""""))
+          else Success(attrsSeq.head)
+        })
+        .flatMap(attrs => {
+          Option(attrs.get("dansState"))
+            .filter(_.get.toString == "ACTIVE")
+            .map(_ => Success(attrs))
+            .getOrElse(Failure(new ActionException(row, s"""The datamanager "$id" is not an active user""")))
+        })
+        .flatMap(attrs => {
+          Option(attrs.get("easyRoles"))
+            .filter(_.contains("ARCHIVIST"))
+            .map(_ => Success(attrs))
+            .getOrElse(Failure(new ActionException(row, s"""The datamanager "$id" is not an archivist""")))
+        })
+        .flatMap(attrs => {
+          Option(attrs.get("mail"))
+            .filter(_.get().toString().nonEmpty)
+            .map(att => Success(att.get().toString))
+            .getOrElse(Failure(new ActionException(row, s"""The datamanager "$id" does not have an email address""")))
+        })
+    }
+    datamanagerEmailaddress
   }
 
   /**
@@ -108,7 +111,10 @@ object AddPropertiesToDeposit {
   }
 
   def writeProperties(row: Int, datasetID: DatasetID, dataset: Dataset, emailaddress: String)(implicit settings: Settings): Try[Unit] = {
-    val props = new Properties
+    val props = new Properties {
+      // Make sure we get sorted output, which is better readable than random
+      override def keys(): util.Enumeration[AnyRef] = Collections.enumeration(new util.TreeSet[Object](super.keySet()))
+    }
 
     addProperties(props, dataset, emailaddress)
       .flatMap(_ => Using.fileWriter(encoding)(outputPropertiesFile(datasetID)).map(out => props.store(out, "")).tried)
