@@ -19,9 +19,10 @@ import java.io.File
 
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
+import resource._
 
 import scala.collection.JavaConverters._
-import scala.io.{ Codec, Source }
+import scala.io.Source
 import scala.util.{ Failure, Success, Try }
 
 object MultiDepositParser extends DebugEnhancedLogging {
@@ -38,14 +39,17 @@ object MultiDepositParser extends DebugEnhancedLogging {
     debug(s"Start parsing SIP Instructions at $file")
 
     for {
-      content <- Try {
-        val rawContent = Source.fromFile(file)(Codec(encoding)).mkString
-        val parser = CSVParser.parse(rawContent, CSVFormat.RFC4180)
-        for {
-          record <- parser.getRecords.asScala
-          if record.size() > 0
-          if !record.get(0).isBlank
-        } yield record.asScala.toList
+      content <- {
+        managed(Source.fromFile(file)(encoding)).map(_.mkString)
+          .flatMap(rawContent => managed(CSVParser.parse(rawContent, CSVFormat.RFC4180)))
+          .map(parser => {
+            for {
+              record <- parser.getRecords.asScala
+              if record.size() > 0
+              if !record.get(0).isBlank
+            } yield record.asScala.toList
+          })
+          .tried
       }
       _ <- content.headOption.map(validateDatasetHeaders).getOrElse(Failure(EmptyInstructionsFileException(file)))
     } yield {
