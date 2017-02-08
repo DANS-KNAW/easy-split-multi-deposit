@@ -48,11 +48,14 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   def createDatamanagerAttributes(state: String = "ACTIVE",
                                   roles: Seq[String] = Seq("USER","ARCHIVIST"),
                                   mail: String = "dm@test.org"): BasicAttributes = {
-    val r = new BasicAttribute("easyRoles")
-    roles.foreach(r.add)
+
     val a = new BasicAttributes()
     a.put("dansState", state)
-    a.put(r)
+    a.put({
+      val r = new BasicAttribute("easyRoles")
+      roles.foreach(r.add)
+      r
+    })
     a.put("mail", mail)
     a
   }
