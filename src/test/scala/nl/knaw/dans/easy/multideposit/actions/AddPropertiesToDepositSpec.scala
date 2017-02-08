@@ -16,17 +16,17 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
-import javax.naming.directory.{Attributes, BasicAttributes}
+import javax.naming.directory.{Attributes, BasicAttribute, BasicAttributes}
 
 import nl.knaw.dans.easy.multideposit.{ActionException, Settings, UnitSpec, _}
 import nl.knaw.dans.lib.error.CompositeException
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, PrivateMethodTester}
 
 import scala.collection.mutable
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
-class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll with MockFactory {
+class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll with MockFactory with PrivateMethodTester {
 
   val ldapMock: Ldap = mock[Ldap]
   implicit val settings = Settings(
@@ -40,31 +40,42 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     "DEPOSITOR_ID" -> List("dp1", "", "", "")
   )
 
-  before {
-    new File(settings.outputDepositDir, s"md-$datasetID").mkdirs
-  }
+  val correctDatamanagerAttrs = createDatamanagerAttributes()
 
-  val correctDmAttrs = {
+  /**
+   * Default creates correct BasicAttributes
+   */
+  def createDatamanagerAttributes(state: String = "ACTIVE",
+                                  roles: Seq[String] = Seq("USER","ARCHIVIST"),
+                                  mail: String = "dm@test.org"): BasicAttributes = {
+    val r = new BasicAttribute("easyRoles")
+    roles.foreach(r.add)
     val a = new BasicAttributes()
-    a.put("dansState", "ACTIVE")
-    a.put("easyRoles", "ARCHIVIST")
-    a.put("mail", "dm@test.org")
+    a.put("dansState", state)
+    a.put(r)
+    a.put("mail", mail)
     a
   }
 
   def mockLdapForDatamanager(attrs: Attributes): Unit = {
-    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects ("dm", *) noMoreThanOnce() returning Success(Seq(attrs))
+    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects ("dm", *) returning Success(Seq(attrs))
   }
 
   def mockLdapForDepositor(b: Boolean): Unit = {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(b))
   }
 
+  before {
+    new File(settings.outputDepositDir, s"md-$datasetID").mkdirs
+    // force datamanagerEmailaddress to be retrieved from LDAP for each test
+    AddPropertiesToDeposit.invokePrivate(PrivateMethod[Unit]('resetDatamanagerEmailaddress)())
+  }
+
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
-  "checkPreconditions" should "succeed if the depositorID is in the dataset and has one value" in {
+  "checkPreconditions" should "succeed if the depositorID is in the dataset and has one value and the datamanager email can be retrieved" in {
     mockLdapForDepositor(true)
-    mockLdapForDatamanager(correctDmAttrs)
+    mockLdapForDatamanager(correctDatamanagerAttrs)
 
     AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
@@ -74,16 +85,70 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
       "DEPOSITOR_ID" -> List("dp1", "dp1", "dp1", "dp1")
     )
     mockLdapForDepositor(true)
-    mockLdapForDatamanager(correctDmAttrs)
+    mockLdapForDatamanager(correctDatamanagerAttrs)
 
     AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail if ldap does not return anything for the datamanager" in {
+    mockLdapForDepositor(true)
+    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects ("dm", *) returning Success(Seq.empty)
+
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        es should have size 1
+        val ActionException(_, message, _) :: Nil = es
+        message should include ("""DatamanagerID "dm" is unknown""")
+    }
+  }
+
+  it should "fail when the datamanager is not an active user" in {
+    val nonActiveDatamanagerAttrs = createDatamanagerAttributes(state = "BLOCKED")
+
+    mockLdapForDepositor(true)
+    mockLdapForDatamanager(nonActiveDatamanagerAttrs)
+
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        es should have size 1
+        val ActionException(_, message, _) :: Nil = es
+        message should include ("not an active user")
+    }
+  }
+
+  it should "fail when the datamanager is not an achivist" in {
+    val nonArchivistDatamanagerAttrs = createDatamanagerAttributes(roles = Seq("USER"))
+
+    mockLdapForDepositor(true)
+    mockLdapForDatamanager(nonArchivistDatamanagerAttrs)
+
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        es should have size 1
+        val ActionException(_, message, _) :: Nil = es
+        message should include ("is not an archivist")
+    }
+  }
+
+  it should "fail when the datamanager has no email" in {
+    val nonEmailDatamanagerAttrs = createDatamanagerAttributes(mail = "")
+
+    mockLdapForDepositor(true)
+    mockLdapForDatamanager(nonEmailDatamanagerAttrs)
+
+    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        es should have size 1
+        val ActionException(_, message, _) :: Nil = es
+        message should include ("does not have an email address")
+    }
   }
 
   it should "fail when the depositorID column is not in the dataset" in {
     val dataset = mutable.HashMap(
       "TEST_COLUMN" -> List("abc", "def")
     )
-    mockLdapForDatamanager(correctDmAttrs)
+    mockLdapForDatamanager(correctDatamanagerAttrs)
 
     inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
@@ -97,7 +162,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     val dataset = mutable.HashMap(
       "DEPOSITOR_ID" -> List("dp1", "dp1", "dp2", "dp1")
     )
-    mockLdapForDatamanager(correctDmAttrs)
+    mockLdapForDatamanager(correctDatamanagerAttrs)
 
     inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
@@ -109,7 +174,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
 
   it should "fail if ldap identifies the depositorID as not active" in {
     mockLdapForDepositor(false)
-    mockLdapForDatamanager(correctDmAttrs)
+    mockLdapForDatamanager(correctDatamanagerAttrs)
 
     inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
@@ -119,9 +184,9 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     }
   }
 
-  it should "fail if ldap does not return anything" in {
+  it should "fail if ldap does not return anything for the depositor" in {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq.empty)
-    mockLdapForDatamanager(correctDmAttrs)
+    mockLdapForDatamanager(correctDatamanagerAttrs)
 
     inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
@@ -133,7 +198,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
 
   it should "fail if ldap returns multiple values" in {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(true, true))
-    mockLdapForDatamanager(correctDmAttrs)
+    mockLdapForDatamanager(correctDatamanagerAttrs)
 
     inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
@@ -144,7 +209,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   }
 
   "execute" should "generate the properties file" in {
-    mockLdapForDatamanager(correctDmAttrs)
+    mockLdapForDatamanager(correctDatamanagerAttrs)
 
     AddPropertiesToDeposit(1, (datasetID, dataset)).execute shouldBe a[Success[_]]
 
@@ -152,7 +217,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   }
 
   "writeProperties" should "generate the properties file and write the properties in it" in {
-    mockLdapForDatamanager(correctDmAttrs)
+    mockLdapForDatamanager(correctDatamanagerAttrs)
 
     AddPropertiesToDeposit(1, (datasetID, dataset)).execute shouldBe a[Success[_]]
 

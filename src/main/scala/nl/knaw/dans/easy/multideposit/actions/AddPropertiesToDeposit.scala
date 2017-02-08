@@ -33,10 +33,6 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
 
   // TODO administratieve metadata, to be decided
 
-  /**
-   * @inheritdoc
-   * @return `Success` when all preconditions are met, `Failure` otherwise
-   */
   override def checkPreconditions: Try[Unit] = {
     List(validateDepositor(row, datasetID, dataset), getDatamanagerMailadres(row))
         .collectResults.map(_=>())
@@ -45,14 +41,19 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
   override def execute(): Try[Unit] = getDatamanagerMailadres(row).flatMap(email => writeProperties(row, datasetID, dataset, email))
 }
 object AddPropertiesToDeposit {
-  // Note that the datamanager 'precondition' is checked when datamanagerEmailaddress is evaluated the first time
+  // The email needs to be acquired (from LDAP) only once during the program execution
   private var datamanagerEmailaddress: Try[String] = null
+  // Only used for testing
+  private def resetDatamanagerEmailaddress() = {
+    datamanagerEmailaddress = null
+  }
 
   /**
    * Tries to retrieve the email address of the datamanager
    * Also used for validation: checks if the datamanager is an active archivist with an email address
    */
   def getDatamanagerMailadres(row: Int)(implicit settings: Settings): Try[String] = {
+    // Note that the datamanager 'precondition' is checked when datamanagerEmailaddress is evaluated the first time
     if(datamanagerEmailaddress == null) {
       val id = settings.datamanager
       datamanagerEmailaddress = settings.ldap.query(id)(a => a)
