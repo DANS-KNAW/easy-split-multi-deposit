@@ -33,7 +33,9 @@ import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
-case class AddBagToDeposit(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings) extends Action {
+case class AddBagToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
+
+  val (datasetID, dataset) = entry
 
   override def execute(): Try[Unit] = {
     createBag(datasetID, dataset).recoverWith {

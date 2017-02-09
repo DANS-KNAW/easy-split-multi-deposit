@@ -37,6 +37,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   val file4Text = "jklmno"
   val file5Text = "mnopqr"
   val dataset: Dataset = testDataset1
+  val entry: (DatasetID, Dataset) = (datasetID, dataset)
 
   before {
     new File(multiDepositDir(datasetID), "file1.txt").write(file1Text)
@@ -55,11 +56,11 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "execute" should "succeed given the current setup" in {
-    AddBagToDeposit(1, datasetID, dataset).execute shouldBe a[Success[_]]
+    AddBagToDeposit(1, entry).execute shouldBe a[Success[_]]
   }
 
   it should "create a bag with the files from ruimtereis01 in it and some meta-files around" in {
-    AddBagToDeposit(1, datasetID, dataset).execute shouldBe a[Success[_]]
+    AddBagToDeposit(1, entry).execute shouldBe a[Success[_]]
 
     val root = outputDepositBagDir(datasetID)
     root should exist
@@ -76,7 +77,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   }
 
   it should "preserve the file content after making the bag" in {
-    AddBagToDeposit(1, datasetID, dataset).execute shouldBe a[Success[_]]
+    AddBagToDeposit(1, entry).execute shouldBe a[Success[_]]
 
     val root = outputDepositBagDataDir(datasetID)
     new File(root, "file1.txt").read() shouldBe file1Text
@@ -97,7 +98,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
 
     multiDepositDir(datasetID) should not(exist)
 
-    AddBagToDeposit(1, datasetID, dataset)(settings).execute shouldBe a[Success[_]]
+    AddBagToDeposit(1, entry)(settings).execute shouldBe a[Success[_]]
 
     outputDepositDir(datasetID) should exist
     outputDepositBagDataDir(datasetID) should exist
@@ -116,7 +117,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   }
 
   it should "contain the date-created in the bag-info.txt" in {
-    AddBagToDeposit(1, datasetID, dataset).execute() shouldBe a[Success[_]]
+    AddBagToDeposit(1, entry).execute() shouldBe a[Success[_]]
 
     val bagInfo = new File(outputDepositBagDir(datasetID), "bag-info.txt")
     bagInfo should exist
@@ -125,13 +126,13 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   }
 
   it should "contain the correct checksums in its manifest file" in {
-    AddBagToDeposit(1, datasetID, dataset).execute() shouldBe a[Success[_]]
+    AddBagToDeposit(1, entry).execute() shouldBe a[Success[_]]
 
     verifyChecksums(datasetID, "manifest-sha1.txt")
   }
 
   it should "contain the correct checksums in its tagmanifest file" in {
-    AddBagToDeposit(1, datasetID, dataset).execute() shouldBe a[Success[_]]
+    AddBagToDeposit(1, entry).execute() shouldBe a[Success[_]]
 
     verifyChecksums(datasetID, "tagmanifest-sha1.txt")
   }
