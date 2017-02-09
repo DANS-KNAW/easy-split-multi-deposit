@@ -22,14 +22,14 @@ import org.scalatest._
 
 class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
   private val helpInfo = {
-    val RES_DIR_STR = "src/test/resources/"
+    val RES_DIR_STR = new File(getClass.getResource("/").toURI).toString
     val mockedProps = {
       val ps = new PropertiesConfiguration()
       ps.setDelimiterParsingDisabled(true)
-      ps.load(new File(RES_DIR_STR + "debug-config", "application.properties"))
+      ps.load(new File(RES_DIR_STR + "/debug-config", "application.properties"))
       ps
     }
-    val mockedArgs = Array(RES_DIR_STR + "allfields/input", RES_DIR_STR + "allfields/output", "datamanager")
+    val mockedArgs = Array(RES_DIR_STR + "/allfields/input", RES_DIR_STR + "/allfields/output", "datamanager")
     val mockedStdOut = new ByteArrayOutputStream()
     Console.withOut(mockedStdOut) {
       new ScallopCommandLine(mockedProps, mockedArgs).printHelp()
