@@ -32,7 +32,7 @@ class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
     ps.load(new File(RES_DIR_STR + "/debug-config", "application.properties"))
     ps
   }
-  val mockedArgs = Array(RES_DIR_STR + "/allfields/input", RES_DIR_STR + "/allfields/output", "datamanager")
+  val mockedArgs = Array("-s", RES_DIR_STR, RES_DIR_STR + "/allfields/input", RES_DIR_STR + "/allfields/output", "datamanager")
   val clo = new ScallopCommandLine(mockedProps, mockedArgs)
   private val helpInfo = {
     val mockedStdOut = new ByteArrayOutputStream()
