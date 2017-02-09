@@ -593,6 +593,20 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
   }
 
+  it should "return the expected streaming surrogate relation" in {
+    val dataset = new Dataset() +=
+      "SF_DOMAIN" -> List("randomdomainname") +=
+      "SF_USER" -> List("randomusername") +=
+      "SF_COLLECTION" -> List("randomcollectionname") +=
+      "SF_PRESENTATION" -> List("randompresentationname")
+    val expectedXml = <ddm>
+      <ddm:dcmiMetadata>
+        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/randompresentationname</ddm:relation>
+      </ddm:dcmiMetadata>
+    </ddm>
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
+  }
+
   def verify(actualXml: Elem, expectedXml: Elem): Unit = {
     Utility.trim(actualXml).toString() shouldBe Utility.trim(expectedXml).toString()
   }

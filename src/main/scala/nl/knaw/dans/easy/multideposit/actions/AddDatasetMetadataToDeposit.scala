@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
+import nl.knaw.dans.easy.multideposit.actions.CreateSpringfieldActions.SpringfieldPath
 import nl.knaw.dans.lib.error.TraversableTryExtensions
 import org.joda.time.DateTime
 
@@ -287,6 +288,15 @@ object AddDatasetMetadataToDeposit {
       })
   }
 
+  def createSurrogateRelation(dataset: Dataset): Option[Elem] = {
+    CreateSpringfieldActions.getSpringfieldPath(dataset, 0)
+      .map(path =>
+        // @formatter:off
+        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">{path}</ddm:relation>
+        // @formatter:on
+      )
+  }
+
   def createMetadata(dataset: Dataset): Elem = {
     def isMetaData(key: MultiDepositKey, values: MultiDepositValues): Boolean = {
       metadataFields.contains(key) && values.nonEmpty
@@ -295,7 +305,7 @@ object AddDatasetMetadataToDeposit {
     // @formatter:off
     <ddm:dcmiMetadata>
       {dataset.filter(isMetaData _ tupled).flatMap(simpleMetadataEntryToXML _ tupled)}
-      {createRelations(dataset)}
+      {createRelations(dataset) ++ createSurrogateRelation(dataset) }
       {createContributors(dataset)}
       {createSubject(dataset)}
       {createSpatialPoints(dataset)}
