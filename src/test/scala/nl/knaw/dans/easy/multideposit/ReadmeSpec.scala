@@ -21,7 +21,7 @@ import org.apache.commons.configuration.PropertiesConfiguration
 import org.scalatest._
 
 class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
-  val RES_DIR_STR = new File(getClass.getResource("/").toURI).getAbsolutePath//"src/test/resources/"//new File(getClass.getResource("/").toURI).getAbsolutePath
+  val RES_DIR_STR = new File(getClass.getResource("/").toURI).getAbsolutePath
 
   val mockedProps = {
     val ps = new PropertiesConfiguration()
