@@ -18,11 +18,9 @@ package nl.knaw.dans.easy.multideposit.actions
 import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
-import nl.knaw.dans.easy.multideposit.actions.CreateSpringfieldActions.SpringfieldPath
 import nl.knaw.dans.lib.error.TraversableTryExtensions
 import org.joda.time.DateTime
 
-import scala.collection.mutable
 import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
@@ -52,7 +50,8 @@ object AddDatasetMetadataToDeposit {
   def datasetColumnValidations(row: Int, dataset: Dataset): Seq[Try[Unit]] = {
     import validators._
     List(
-      checkColumnHasOnlyOneValue(row, dataset, "DDM_CREATED")
+      checkColumnHasOnlyOneValue(row, dataset, "DDM_CREATED"),
+      checkColumnsHaveAtMostOneRowWithValues(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION", "SF_PRESENTATION")
     )
   }
 
@@ -400,6 +399,13 @@ object validators {
         case _ => Failure(ActionException(row, s"More than one value is defined for $key"))
       }
       .getOrElse(Failure(ActionException(row, s"The column $key is not present in this instructions file")))
+  }
+
+  def checkColumnsHaveAtMostOneRowWithValues(row: Int, dataset: Dataset, keys: String*): Try[Unit] = {
+    dataset.rowsWithValuesFor(keys: _*).size match {
+      case 0 | 1 => Success(())
+      case _ => Failure(ActionException(row, s"Only one row can contain values for all these columns: ${ keys.mkString("[", ", ", "]") }"))
+    }
   }
 
   def checkAccessRights(row: Int, datasetRow: DatasetRow): Try[Unit] = {

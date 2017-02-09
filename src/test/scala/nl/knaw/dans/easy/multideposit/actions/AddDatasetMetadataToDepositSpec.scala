@@ -440,6 +440,50 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
+  it should "succeed when the SF columns only contain one row with values" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "SF_PRESENTATION" -> List("presentation", "")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail when the SF columns contain multiple rows with values" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", "domain2"),
+      "SF_USER" -> List("user", "user2"),
+      "SF_COLLECTION" -> List("collection", "collection2"),
+      "SF_PRESENTATION" -> List("presentation", "presentation2")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Only one row can contain values for all these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PRESENTATION]"
+    }
+  }
+
+  it should "fail when the SF columns have values spread over multiple rows" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("", "user"),
+      "SF_COLLECTION" -> List("collection", ""),
+      "SF_PRESENTATION" -> List("", "presentation")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Only one row can contain values for all these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PRESENTATION]"
+    }
+  }
+
   "execute" should "write the metadata to a file at the correct place" in {
     val file = outputDatasetMetadataFile(datasetID)
 

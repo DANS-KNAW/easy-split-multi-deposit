@@ -281,6 +281,9 @@ package object multideposit {
     def rowsWithValuesFor(desiredColumns: DDM.Dictionary): IndexedSeq[DatasetRow] =
       dataset.getColumnsIn(desiredColumns).toRows.filter(_.nonEmpty)
 
+    def rowsWithValuesFor(desiredColumns: String*): IndexedSeq[DatasetRow] =
+      dataset.getColumns(desiredColumns: _*).toRows.filter(_.nonEmpty)
+
     /**
      * Turns a map of key-column pairs into a filtered sequence of maps:
      * a map of key-value pairs per row and, those rows with a value for each desired column.
@@ -304,6 +307,9 @@ package object multideposit {
      */
     def getColumnsIn(desiredColumns: DDM.Dictionary): Dataset =
       dataset.filter(kvs => desiredColumns.contains(kvs._1))
+
+    def getColumns(columns: String*): Dataset =
+      dataset.filter(kvs => columns.contains(kvs._1))
 
     /**
      * Turns a map of key-column pairs into a sequence of maps: one map of key-value pairs per row.
