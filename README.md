@@ -47,19 +47,18 @@ ARGUMENTS
 
   Options:
 
+    -s, --springfield-inbox  <arg>   The inbox directory of a Springfield Streaming Media Platform installation.
+                                     If not specified the value of springfield-inbox in application.properties
+                                     is used. (default = data/springfield-inbox)
+        --help                       Show help message
+        --version                    Show version of this program
 
-  -s, --springfield-inbox  <arg>   The inbox directory of a Springfield Streaming Media Platform installation.
-                                   If not specified the value of springfield-inbox in application.properties
-                                   is used. 
-      --help                       Show help message
-      --version                    Show version of this program
-
- trailing arguments:
+   trailing arguments:
     multi-deposit-dir (required)   Directory containing the Submission Information Package to process. This must
-                                 be a valid path to a directory containing a file named 'instructions.csv' in
-                                 RFC4180 format.
+                                   be a valid path to a directory containing a file named 'instructions.csv' in
+                                   RFC4180 format.
     deposit-dir (required)         A directory in which the deposit directories must be created. The deposit
-                                 directory layout is described in the easy-sword2 documentation
+                                   directory layout is described in the easy-sword2 documentation
     datamanager (required)         The username (id) of the datamanger (archivist) performing this deposit
 ```
 
