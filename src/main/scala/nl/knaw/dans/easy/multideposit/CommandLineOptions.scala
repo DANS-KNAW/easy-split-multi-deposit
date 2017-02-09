@@ -100,7 +100,7 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
   val datamanager: ScallopOption[String] = trailArg[String](
     name = "datamanager",
     required = true,
-    descr = "The user id of the datamanger (archivist) performing this deposit")
+    descr = "The username (id) of the datamanger (archivist) performing this deposit")
 
   validateFileExists(multiDepositDir)
   validateFileIsDirectory(multiDepositDir)

@@ -60,7 +60,7 @@ ARGUMENTS
                                  RFC4180 format.
     deposit-dir (required)         A directory in which the deposit directories must be created. The deposit
                                  directory layout is described in the easy-sword2 documentation
-    datamanager (required)         The user id of the datamanger (archivist) performing this deposit
+    datamanager (required)         The username (id) of the datamanger (archivist) performing this deposit
 ```
 
 

@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.util
+import java.{util => ju}
 import java.util.{Collections, Properties}
 
 import nl.knaw.dans.easy.multideposit.actions.AddPropertiesToDeposit._
@@ -35,10 +35,11 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
 
   override def checkPreconditions: Try[Unit] = {
     List(validateDepositor(row, datasetID, dataset), getDatamanagerMailadres(row))
-        .collectResults.map(_=>())
+      .collectResults
+      .map(_ => ())
   }
 
-  override def execute(): Try[Unit] = getDatamanagerMailadres(row).flatMap(email => writeProperties(row, datasetID, dataset, email))
+  override def execute(): Try[Unit] = getDatamanagerMailadres(row).flatMap(writeProperties(row, datasetID, dataset, _))
 }
 object AddPropertiesToDeposit {
   // The email needs to be acquired (from LDAP) only once during the program execution
@@ -114,17 +115,17 @@ object AddPropertiesToDeposit {
   def writeProperties(row: Int, datasetID: DatasetID, dataset: Dataset, emailaddress: String)(implicit settings: Settings): Try[Unit] = {
     val props = new Properties {
       // Make sure we get sorted output, which is better readable than random
-      override def keys(): util.Enumeration[AnyRef] = Collections.enumeration(new util.TreeSet[Object](super.keySet()))
+      override def keys(): ju.Enumeration[AnyRef] = Collections.enumeration(new ju.TreeSet[Object](super.keySet()))
     }
 
-    addProperties(props, dataset, emailaddress)
+    addProperties(props, dataset, settings.datamanager, emailaddress)
       .flatMap(_ => Using.fileWriter(encoding)(outputPropertiesFile(datasetID)).map(out => props.store(out, "")).tried)
       .recoverWith {
         case NonFatal(e) => Failure(ActionException(row, s"Could not write properties to file: $e", e))
       }
   }
 
-  def addProperties(properties: Properties, dataset: Dataset, emailaddress: String)(implicit settings: Settings): Try[Unit] = {
+  def addProperties(properties: Properties, dataset: Dataset, datamanager: String, emailaddress: String): Try[Unit] = {
     for {
       depositorUserID <- dataset.get("DEPOSITOR_ID")
         .flatMap(_.headOption)
@@ -133,7 +134,7 @@ object AddPropertiesToDeposit {
       _ = properties.setProperty("state.label", "SUBMITTED")
       _ = properties.setProperty("state.description", "Deposit is valid and ready for post-submission processing")
       _ = properties.setProperty("depositor.userId", depositorUserID)
-      _ = properties.setProperty("datamanager.userId", settings.datamanager)
+      _ = properties.setProperty("datamanager.userId", datamanager)
       _ = properties.setProperty("datamanager.email", emailaddress)
     } yield ()
   }
