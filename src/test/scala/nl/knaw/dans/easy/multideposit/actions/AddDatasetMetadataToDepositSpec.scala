@@ -446,8 +446,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "DDM_CREATED" -> List("2017-07-30", ""),
       "SF_DOMAIN" -> List("domain", ""),
       "SF_USER" -> List("user", ""),
-      "SF_COLLECTION" -> List("collection", ""),
-      "SF_PRESENTATION" -> List("presentation", "")
+      "SF_COLLECTION" -> List("collection", "")
     )
     new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
@@ -458,13 +457,12 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "DDM_CREATED" -> List("2017-07-30", ""),
       "SF_DOMAIN" -> List("domain", "domain2"),
       "SF_USER" -> List("user", "user2"),
-      "SF_COLLECTION" -> List("collection", "collection2"),
-      "SF_PRESENTATION" -> List("presentation", "presentation2")
+      "SF_COLLECTION" -> List("collection", "collection2")
     )
     inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
         val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "Only one row can contain values for all these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PRESENTATION]"
+        message shouldBe "Only one row can contain values for all these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]"
     }
   }
 
@@ -474,13 +472,12 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "DDM_CREATED" -> List("2017-07-30", ""),
       "SF_DOMAIN" -> List("domain", ""),
       "SF_USER" -> List("", "user"),
-      "SF_COLLECTION" -> List("collection", ""),
-      "SF_PRESENTATION" -> List("", "presentation")
+      "SF_COLLECTION" -> List("collection", "")
     )
     inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
         val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "Only one row can contain values for all these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PRESENTATION]"
+        message shouldBe "Only one row can contain values for all these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]"
     }
   }
 
@@ -641,11 +638,10 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     val dataset = new Dataset() +=
       "SF_DOMAIN" -> List("randomdomainname") +=
       "SF_USER" -> List("randomusername") +=
-      "SF_COLLECTION" -> List("randomcollectionname") +=
-      "SF_PRESENTATION" -> List("randompresentationname")
+      "SF_COLLECTION" -> List("randomcollectionname")
     val expectedXml = <ddm>
       <ddm:dcmiMetadata>
-        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/randompresentationname</ddm:relation>
+        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$presentation-placeholder</ddm:relation>
       </ddm:dcmiMetadata>
     </ddm>
     verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)

@@ -63,7 +63,7 @@ class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
 
   it should "fail without DATASET in instructions file?" in {
     val csv = new File(testDir, "instructions.csv")
-    csv.write("SF_PRESENTATION,FILE_AUDIO_VIDEO\nx,y")
+    csv.write("SF_COLLECTION,FILE_AUDIO_VIDEO\nx,y")
 
     inside(parse(csv)) {
       case Failure(e) => e.getMessage should include ("No dataset ID found")

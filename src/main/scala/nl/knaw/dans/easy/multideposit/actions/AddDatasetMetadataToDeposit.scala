@@ -51,7 +51,7 @@ object AddDatasetMetadataToDeposit {
     import validators._
     List(
       checkColumnHasOnlyOneValue(row, dataset, "DDM_CREATED"),
-      checkColumnsHaveAtMostOneRowWithValues(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION", "SF_PRESENTATION")
+      checkColumnsHaveAtMostOneRowWithValues(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
     )
   }
 
@@ -420,7 +420,7 @@ object validators {
   def checkDateFormatting(row: Int, datasetRow: DatasetRow, key: String): Try[Unit] = {
     datasetRow.get(key)
       .map(date => Try { DateTime.parse(date) }.map(_ => ()).recoverWith {
-        case e: IllegalArgumentException => Failure(ActionException(row, s"'$date' does not represent a date"))
+        case _: IllegalArgumentException => Failure(ActionException(row, s"'$date' does not represent a date"))
       })
       .getOrElse(Success(()))
   }
