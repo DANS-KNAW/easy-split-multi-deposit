@@ -19,6 +19,7 @@ import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
 import nl.knaw.dans.lib.error.TraversableTryExtensions
+import org.joda.time.DateTime
 
 import scala.collection.mutable
 import scala.language.postfixOps
@@ -58,6 +59,9 @@ object AddDatasetMetadataToDeposit {
     import validators._
     dataset.toRows.flatMap(rowVals => {
       List(
+        // date created format
+        checkDateFormatting(row, rowVals, "DDM_CREATED"),
+
         // coordinates
         // point
         checkAllOrNone(row, rowVals, "DCX_SPATIAL_X", "DCX_SPATIAL_Y"),
@@ -395,5 +399,13 @@ object validators {
       case (Some("GROUP_ACCESS"), None) => Failure(ActionException(row, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is not defined"))
       case (_, _) => Success(())
     }
+  }
+
+  def checkDateFormatting(row: Int, map: mutable.HashMap[MultiDepositKey, String], key: String): Try[Unit] = {
+    map.get(key)
+      .map(date => Try { DateTime.parse(date) }.map(_ => ()).recoverWith {
+        case e: IllegalArgumentException => Failure(ActionException(row, s"'$date' does not represent a date"))
+      })
+      .getOrElse(Success(()))
   }
 }

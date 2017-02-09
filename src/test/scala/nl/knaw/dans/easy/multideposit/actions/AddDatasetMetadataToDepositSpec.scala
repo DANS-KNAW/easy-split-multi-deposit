@@ -420,6 +420,26 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
+  it should "fail when the DDM_CREATED column contains only one value that does not represent a date" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("foobar")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "'foobar' does not represent a date"
+    }
+  }
+
+  it should "succeed when the DDM_CREATED column contains only one value with a different formatting" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30T09:00:34.921+02:00")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
   "execute" should "write the metadata to a file at the correct place" in {
     val file = outputDatasetMetadataFile(datasetID)
 

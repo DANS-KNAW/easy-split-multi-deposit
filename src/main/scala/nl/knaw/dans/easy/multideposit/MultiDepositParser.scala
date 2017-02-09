@@ -66,7 +66,7 @@ object MultiDepositParser extends DebugEnhancedLogging {
       record <- parser.getRecords.asScala
       if record.size() > 0
       if !record.get(0).isBlank
-    } yield record.asScala.toList
+    } yield record.asScala.toList.map(_.trim)
   }
 
   /**

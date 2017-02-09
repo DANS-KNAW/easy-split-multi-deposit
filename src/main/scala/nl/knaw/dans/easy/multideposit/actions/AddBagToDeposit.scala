@@ -107,7 +107,7 @@ class BagInfoCompleter(bagFactory: BagFactory, dataset: Dataset) extends Complet
     // add the CREATED field
     dataset.get("DDM_CREATED")
       .flatMap(_.find(s => !s.isBlank))
-      .map(DateTime.parse)
+      .map(DateTime.parse) // parse should never fail, since it is already validated in AddDatasetMetadataToDeposit
       .map(_.toString(ISODateTimeFormat.dateTime()))
       .foreach(bagInfo.put("CREATED", _))
 
