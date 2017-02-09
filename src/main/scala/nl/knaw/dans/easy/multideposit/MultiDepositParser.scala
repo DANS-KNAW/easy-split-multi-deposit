@@ -19,9 +19,11 @@ import java.io.File
 
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
+import resource._
 
 import scala.collection.JavaConverters._
-import scala.io.{ Codec, Source }
+import scala.collection.mutable
+import scala.io.Source
 import scala.util.{ Failure, Success, Try }
 
 object MultiDepositParser extends DebugEnhancedLogging {
@@ -38,15 +40,7 @@ object MultiDepositParser extends DebugEnhancedLogging {
     debug(s"Start parsing SIP Instructions at $file")
 
     for {
-      content <- Try {
-        val rawContent = Source.fromFile(file)(Codec(encoding)).mkString
-        val parser = CSVParser.parse(rawContent, CSVFormat.RFC4180)
-        for {
-          record <- parser.getRecords.asScala
-          if record.size() > 0
-          if !record.get(0).isBlank
-        } yield record.asScala.toList
-      }
+      content <- read(file)
       _ <- content.headOption.map(validateDatasetHeaders).getOrElse(Failure(EmptyInstructionsFileException(file)))
     } yield {
       debug("Successfully loaded CSV file")
@@ -54,10 +48,25 @@ object MultiDepositParser extends DebugEnhancedLogging {
         .map(content.head.zip(_))
         .zipWithIndex
         .foldRight(Datasets) {
-          // +2 because we want the second line (element 0) to have index 2
-          case ((values: CsvValues, row: Int), dss: Datasets) => updateDatasets(dss, values, row + 1)
+          // +2 because we want the second line in the csv (element 0) to have index 2
+          case ((values: CsvValues, row: Int), dss: Datasets) => updateDatasets(dss, values, row + 2)
         }
     }
+  }
+
+  private def read(file: File) = {
+    managed(Source.fromFile(file)(encoding)).map(_.mkString)
+      .flatMap(rawContent => managed(CSVParser.parse(rawContent, CSVFormat.RFC4180)))
+      .map(parse)
+      .tried
+  }
+
+  private def parse(parser: CSVParser): mutable.Buffer[List[String]] = {
+    for {
+      record <- parser.getRecords.asScala
+      if record.size() > 0
+      if !record.get(0).isBlank
+    } yield record.asScala.toList.map(_.trim)
   }
 
   /**
@@ -70,7 +79,7 @@ object MultiDepositParser extends DebugEnhancedLogging {
   // TODO valid headers listing as sub-command???
   def validateDatasetHeaders(headers: List[String]): Try[Unit] = {
     val fileHeaders = List("FILE_SIP", "FILE_DATASET", "FILE_AUDIO_VIDEO", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_SUBTITLES")
-    val springfieldHeaders = List("SF_DOMAIN", "SF_USER", "SF_COLLECTION", "SF_PRESENTATION", "SF_SUBTITLES")
+    val springfieldHeaders = List("SF_DOMAIN", "SF_USER", "SF_COLLECTION", "SF_SUBTITLES")
     val administrativeHeaders = List("DEPOSITOR_ID")
 
     val validHeaders = "DATASET" :: fileHeaders ++ springfieldHeaders ++ administrativeHeaders ++ DDM.allFields

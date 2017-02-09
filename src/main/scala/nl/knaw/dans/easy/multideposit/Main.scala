@@ -61,7 +61,7 @@ object Main extends DebugEnhancedLogging {
 
     Seq(
       CreateOutputDepositDir(row, datasetID),
-      AddBagToDeposit(row, datasetID),
+      AddBagToDeposit(row, entry),
       AddDatasetMetadataToDeposit(row, entry),
       AddFileMetadataToDeposit(row, entry),
       AddPropertiesToDeposit(row, entry)

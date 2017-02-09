@@ -38,7 +38,6 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
       "SF_DOMAIN" -> List("dans") +=
       "SF_USER" -> List("someDeveloper") +=
       "SF_COLLECTION" -> List("scala") +=
-      "SF_PRESENTATION" -> List("unit-test") +=
       "FILE_AUDIO_VIDEO" -> List("yes") +=
       "FILE_SIP" -> List("videos/some.mpg") +=
       "FILE_SUBTITLES" -> List("videos/some.txt") +=
@@ -74,7 +73,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     generated should {
       include("subtitles=\"videos/some.txt\"") and
         include("src=\"videos/some.mpg\"") and
-        include("target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test\"")
+        include("target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder\"")
     }
   }
 
@@ -89,7 +88,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     generated should {
       include("subtitles=\"videos/some.txt\"") and
         include("src=\"videos/some.mpg\"") and
-        include("target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test\"")
+        include("target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder\"")
     }
   }
 
@@ -101,7 +100,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     toXML(datasets()).map(_.get).map(Utility.trim).value shouldBe
       Utility.trim {
         <actions>
-          <add target="/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test">
+          <add target="/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder">
             <video src="videos/some.mpg" target="0" subtitles="videos/some.txt"/>
           </add>
         </actions>
@@ -158,7 +157,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
   it should "return a filled map when given the correct input with a single row in the dataset" in {
     extractVideos(testDataset) should {
       have size 1 and
-        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test" ->
+        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder" ->
           List(Video("0", Some("videos/some.mpg"), Some("videos/some.txt"))))
     }
   }
@@ -170,7 +169,6 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
       dataset += "SF_DOMAIN" -> List("dans", "")
       dataset += "SF_USER" -> List("someDeveloper", "")
       dataset += "SF_COLLECTION" -> List("scala", "")
-      dataset += "SF_PRESENTATION" -> List("unit-test", "")
       dataset += "FILE_AUDIO_VIDEO" -> List("yes", "")
       dataset += "FILE_SIP" -> List("videos/some.mpg", "")
       dataset += "FILE_SUBTITLES" -> List("videos/some.txt", "")
@@ -179,7 +177,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
 
     extractVideos(testDataset2) should {
       have size 1 and
-        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test" ->
+        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder" ->
           List(Video("0", Some("videos/some.mpg"), Some("videos/some.txt"))))
     }
   }
@@ -190,7 +188,6 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
       dataset += "SF_DOMAIN" -> List("dans", "")
       dataset += "SF_USER" -> List("someDeveloper", "")
       dataset += "SF_COLLECTION" -> List("scala", "")
-      dataset += "SF_PRESENTATION" -> List("unit-test", "")
       dataset += "FILE_AUDIO_VIDEO" -> List("yes", "yes")
       dataset += "FILE_SIP" -> List("videos/some.mpg", "audio/herrie.mp3")
       dataset += "FILE_SUBTITLES" -> List("videos/some.txt", "")
@@ -199,7 +196,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
 
     extractVideos(testDataset3) should {
       have size 1 and
-        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test" ->
+        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder" ->
           List(Video("0", Some("videos/some.mpg"), Some("videos/some.txt")),
             Video("1", Some("audio/herrie.mp3"), None)))
     }
@@ -221,15 +218,11 @@ class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
     getSpringfieldPath(testDataset -= "SF_COLLECTION", 0) should be (empty)
   }
 
-  it should "not yield a path when no presentation is specified in the dataset" in {
-    getSpringfieldPath(testDataset -= "SF_PRESENTATION", 0) should be (empty)
-  }
-
   it should "not yield a path when given the incorrect index" in {
     getSpringfieldPath(testDataset, 1) should be (empty)
   }
 
   it should "yield the path when given a correct dataset" in {
-    getSpringfieldPath(testDataset, 0).value shouldBe "/domain/dans/user/someDeveloper/collection/scala/presentation/unit-test"
+    getSpringfieldPath(testDataset, 0).value shouldBe "/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder"
   }
 }

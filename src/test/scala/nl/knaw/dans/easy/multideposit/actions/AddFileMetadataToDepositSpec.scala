@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
+import java.io.{ File, FileNotFoundException }
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
@@ -38,6 +38,8 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   before {
     new File(getClass.getResource("/spacetravel").toURI)
       .copyDir(settings.outputDepositDir)
+    new File(getClass.getResource("/mimetypes").toURI)
+      .copyDir(new File(testDir, "mimetypes"))
   }
 
   after {
@@ -72,53 +74,92 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   }
 
   "datasetToFileXml" should "produce the xml for all the files" in {
-    AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01").child.map(Utility.trim) should (
-      have length 5 and
-        contain allOf(
-      <file filepath="data/ruimtereis01_verklaring.txt"><dcterms:format>text/plain</dcterms:format></file>,
-      <file filepath="data/reisverslag/deel01.docx"><dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format></file>,
-      <file filepath="data/reisverslag/deel01.txt"><dcterms:format>text/plain</dcterms:format></file>,
-      <file filepath="data/reisverslag/deel02.txt"><dcterms:format>text/plain</dcterms:format></file>,
-      <file filepath="data/reisverslag/deel03.txt"><dcterms:format>text/plain</dcterms:format></file>
-    ))
+    inside(AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01")) {
+      case Success(xml) => xml.child.map(Utility.trim) should (
+        have length 5 and
+          contain allOf(
+          <file filepath="data/ruimtereis01_verklaring.txt"><dcterms:format>text/plain</dcterms:format></file>,
+          <file filepath="data/reisverslag/deel01.docx"><dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format></file>,
+          <file filepath="data/reisverslag/deel01.txt"><dcterms:format>text/plain</dcterms:format></file>,
+          <file filepath="data/reisverslag/deel02.txt"><dcterms:format>text/plain</dcterms:format></file>,
+          <file filepath="data/reisverslag/deel03.txt"><dcterms:format>text/plain</dcterms:format></file>
+        ))
+    }
   }
 
-  //file does not need to exist for the mimetype to be established. it is based solely on filename.
   "xmlPerPath" should "create the correct filepath " in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "ruimtereis01_verklaring.txt"))
     val res = <file filepath="data/ruimtereis01_verklaring.txt">
       <dcterms:format>text/plain</dcterms:format>
     </file>
 
-    Utility.trim(xml) shouldBe Utility.trim(res)
+    inside(AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "ruimtereis01_verklaring.txt"))) {
+      case Success(xml) => Utility.trim(xml) shouldBe Utility.trim(res)
+    }
   }
 
-  //file does not need to exist for the mimetype to be established. it is based solely on filename.
-  it should "produce the correct doc mimetype " in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "reisverslag/deel01.doc"))
-    val res = <file filepath="data/reisverslag/deel01.doc">
-      <dcterms:format>application/msword</dcterms:format>
-    </file>
-
-    Utility.trim(xml) shouldBe Utility.trim(res)
+  it should "fail if the file does not exist" in {
+    inside(AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "reisverslag/deel01.doc"))) {
+      case Failure(e: FileNotFoundException) => e.getMessage should include ("reisverslag/deel01.doc")
+    }
   }
 
-  //file does not need to exist for the mimetype to be established. it is based solely on filename.
-  it should "produce the correct docx mimetype " in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "reisverslag/deel01.docx"))
-    val res = <file filepath="data/reisverslag/deel01.docx">
-      <dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format>
-    </file>
-
-    Utility.trim(xml) shouldBe Utility.trim(res)
+  "getMimeType" should "produce the correct doc mimetype" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-ms-doc.doc"))) {
+      case Success(mimetype) => mimetype shouldBe "application/msword"
+    }
   }
 
-  it should "produce the xml for one file" in {
-    val xml = AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "reisverslag/deel01.txt"))
-    val res = <file filepath="data/reisverslag/deel01.txt">
-      <dcterms:format>text/plain</dcterms:format>
-    </file>
+  it should "produce the correct docx mimetype" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-ms-docx.docx"))) {
+      case Success(mimetype) => mimetype shouldBe "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    }
+  }
 
-    Utility.trim(xml) shouldBe Utility.trim(res)
+  it should "produce the correct xlsx mimetype" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-ms-excel.xlsx"))) {
+      case Success(mimetype) => mimetype shouldBe "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    }
+  }
+
+  it should "produce the correct pdf mimetype" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-pdf.pdf"))) {
+      case Success(mimetype) => mimetype shouldBe "application/pdf"
+    }
+  }
+
+  it should "produce the correct plain text mimetype" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-plain-text.txt"))) {
+      case Success(mimetype) => mimetype shouldBe "text/plain"
+    }
+  }
+
+  it should "produce the correct json mimetype" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-json.json"))) {
+      case Success(mimetype) => mimetype shouldBe "application/json"
+    }
+  }
+
+  it should "produce the correct xml mimetype" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-xml.xml"))) {
+      case Success(mimetype) => mimetype shouldBe "application/xml"
+    }
+  }
+
+  it should "give the correct mimetype if the file is plain text and has no extension" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-unknown"))) {
+      case Success(mimetype) => mimetype shouldBe "text/plain"
+    }
+  }
+
+  it should "give the correct mimetype if the file has no extension" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-unknown-pdf"))) {
+      case Success(mimetype) => mimetype shouldBe "application/pdf"
+    }
+  }
+
+  it should "give the correct mimetype if the file is hidden" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/.file-hidden-pdf"))) {
+      case Success(mimetype) => mimetype shouldBe "application/pdf"
+    }
   }
 }

@@ -19,8 +19,8 @@ import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
 import nl.knaw.dans.lib.error.TraversableTryExtensions
+import org.joda.time.DateTime
 
-import scala.collection.mutable
 import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
@@ -37,22 +37,36 @@ case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(im
    *
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
-  override def checkPreconditions: Try[Unit] = verifyDataset(row, dataset)
+  override def checkPreconditions: Try[Unit] = {
+    (datasetRowValidations(row, dataset) ++ datasetColumnValidations(row, dataset))
+      .collectResults
+      .map(_ => ())
+  }
 
   override def execute(): Try[Unit] = writeDatasetMetadataXml(row, datasetID, dataset)
 }
 object AddDatasetMetadataToDeposit {
 
-  def verifyDataset(row: Int, dataset: Dataset): Try[Unit] = {
+  def datasetColumnValidations(row: Int, dataset: Dataset): Seq[Try[Unit]] = {
+    import validators._
+    List(
+      checkColumnHasOnlyOneValue(row, dataset, "DDM_CREATED"),
+      checkColumnsHaveAtMostOneRowWithValues(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
+    )
+  }
+
+  def datasetRowValidations(row: Int, dataset: Dataset): Seq[Try[Unit]] = {
+    import validators._
     dataset.toRows.flatMap(rowVals => {
       List(
+        // date created format
+        checkDateFormatting(row, rowVals, "DDM_CREATED"),
+
         // coordinates
         // point
-        checkAllOrNone(row, rowVals,
-          List("DCX_SPATIAL_X", "DCX_SPATIAL_Y")),
+        checkAllOrNone(row, rowVals, "DCX_SPATIAL_X", "DCX_SPATIAL_Y"),
         // box
-        checkAllOrNone(row, rowVals,
-          List("DCX_SPATIAL_NORTH", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_EAST", "DCX_SPATIAL_WEST")),
+        checkAllOrNone(row, rowVals, "DCX_SPATIAL_NORTH", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_EAST", "DCX_SPATIAL_WEST"),
 
         // persons
         // note that the DCX_{}_ORGANISATION can have a value independent of the other fields
@@ -67,12 +81,17 @@ object AddDatasetMetadataToDeposit {
 
         // check allowed value(s)
         // scheme
-        checkValueIsOneOf(row, rowVals, "DCT_TEMPORAL_SCHEME", List("abr:ABRperiode")),
-        checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", List("abr:ABRcomplex")),
+        checkValueIsOneOf(row, rowVals, "DCT_TEMPORAL_SCHEME", "abr:ABRperiode"),
+        checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", "abr:ABRcomplex"),
 
-        checkAccessRights(row, rowVals)
+        checkAccessRights(row, rowVals),
+
+        // {link, title} can not be defined both, a qualifier is only allowed if link or title are present
+        rowVals.get("DCX_RELATION_QUALIFIER").filterNot(_.isBlank)
+          .map(_ => checkOneOf(row, rowVals, "DCX_RELATION_LINK", "DCX_RELATION_TITLE"))
+          .getOrElse(checkNotAll(row, rowVals, "DCX_RELATION_LINK", "DCX_RELATION_TITLE"))
       )
-    }).collectResults.map(_ => ())
+    })
   }
 
   def writeDatasetMetadataXml(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
@@ -184,7 +203,7 @@ object AddDatasetMetadataToDeposit {
     else elem(dictionary.getOrElse(key, key))(value)
   }
 
-  def createSrsName(fields: mutable.HashMap[MultiDepositKey, String]): String = {
+  def createSrsName(fields: DatasetRow): String = {
     Map(
       "degrees" -> "http://www.opengis.net/def/crs/EPSG/0/4326",
       "RD" -> "http://www.opengis.net/def/crs/EPSG/0/28992"
@@ -239,8 +258,22 @@ object AddDatasetMetadataToDeposit {
     createSchemedMetadata(dataset, composedSubjectFields, "DC_SUBJECT", "DC_SUBJECT_SCHEME")
   }
 
+  /*
+    qualifier   link   title   valid
+        1        1       1       0
+        1        1       0       1
+        1        0       1       1
+        1        0       0       0
+        0        1       1       0
+        0        1       0       1
+        0        0       1       1
+        0        0       0       1
+
+    observation: if the qualifier is present, either DCX_RELATION_LINK or DCX_RELATION_TITLE must be defined
+                 if the qualifier is not defined, DCX_RELATION_LINK and DCX_RELATION_TITLE must not both be defined
+   */
   def createRelations(dataset: Dataset): Seq[Elem] = {
-    dataset.rowsWithValuesFor(composedRelationFields).map { row =>
+    dataset.rowsWithValuesFor(composedRelationFields).map(row =>
       (row.get("DCX_RELATION_QUALIFIER"), row.get("DCX_RELATION_LINK"), row.get("DCX_RELATION_TITLE")) match {
         // @formatter:off
         case (Some(q), Some(l), _      ) => elem(s"dcterms:$q")(l)
@@ -248,12 +281,19 @@ object AddDatasetMetadataToDeposit {
         case (None,    Some(l), _      ) => elem(s"dc:relation")(l)
         case (None,    None,    Some(t)) => elem(s"dc:relation")(t)
         case _                           =>
-          // TODO this case needs to be checked to not occur in the preconditions
-          // (see also comment in https://github.com/DANS-KNAW/easy-split-multi-deposit/commit/dbda6cc2b78f93196be62b323a988e3781cb6926#diff-efd2dc8d9655ba9c6b577f13dd66627bR32)
+          // all other cases are checked not to occur in the preconditions
           throw new IllegalArgumentException("preconditions should have reported this as an error")
         // @formatter:on
-      }
-    }
+      })
+  }
+
+  def createSurrogateRelation(dataset: Dataset): Option[Elem] = {
+    CreateSpringfieldActions.getSpringfieldPath(dataset, 0)
+      .map(path =>
+        // @formatter:off
+        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">{path}</ddm:relation>
+        // @formatter:on
+      )
   }
 
   def createMetadata(dataset: Dataset): Elem = {
@@ -264,7 +304,7 @@ object AddDatasetMetadataToDeposit {
     // @formatter:off
     <ddm:dcmiMetadata>
       {dataset.filter(isMetaData _ tupled).flatMap(simpleMetadataEntryToXML _ tupled)}
-      {createRelations(dataset)}
+      {createRelations(dataset) ++ createSurrogateRelation(dataset) }
       {createContributors(dataset)}
       {createSubject(dataset)}
       {createSpatialPoints(dataset)}
@@ -283,13 +323,15 @@ object AddDatasetMetadataToDeposit {
     <key>{value}</key>.copy(label=key)
     // @formatter:on
   }
+}
 
+object validators {
   /**
    * Check if either non of the keys have values or all of them have values
    * If some are missing, mention them in the exception message
    */
-  def checkAllOrNone(row: Int, map: mutable.HashMap[MultiDepositKey, String], keys: List[String]): Try[Unit] = {
-    val emptyVals = keys.filter(key => map.get(key).forall(_.isBlank))
+  def checkAllOrNone(row: Int, datasetRow: DatasetRow, keys: String*): Try[Unit] = {
+    val emptyVals = keys.filter(key => datasetRow.get(key).forall(_.isBlank))
 
     if (emptyVals.nonEmpty && emptyVals.size < keys.size)
       Failure(ActionException(row, s"Missing value(s) for: ${ emptyVals.mkString("[", ", ", "]") }"))
@@ -298,11 +340,31 @@ object AddDatasetMetadataToDeposit {
   }
 
   /**
+   * Check if only one of the keys contains a non-blank value
+   */
+  def checkOneOf(row: Int, map: scala.collection.Map[MultiDepositKey, String], keys: String*): Try[Unit] = {
+    if (keys.map(map.get(_).filterNot(_.isBlank)).count(_.isDefined) == 1)
+      Success(())
+    else
+      Failure(ActionException(row, s"Only one of the following columns must contain a value: ${ keys.mkString("[", ", ", "]") }"))
+  }
+
+  /**
+   * Check if not all keys contain non-blank values
+   */
+  def checkNotAll(row: Int, map: scala.collection.Map[MultiDepositKey, String], keys: String*): Try[Unit] = {
+    if (keys.map(map.get(_).filterNot(_.isBlank)).forall(_.isDefined))
+      Failure(ActionException(row, s"The columns ${ keys.mkString("[", ", ", "]") } must not all contain a value at the same time"))
+    else
+      Success(())
+  }
+
+  /**
    * If any of the keys (optional and required) has a value all required keys should have a value
    */
-  def checkRequiredWithGroup(row: Int, map: mutable.HashMap[MultiDepositKey, String], requiredKeys: List[String], optionalKeys: List[String]): Try[Unit] = {
-    val emptyOptionalVals = optionalKeys.filter(optionalKey => map.get(optionalKey).forall(_.isBlank))
-    val emptyRequiredVals = requiredKeys.filter(requiredKey => map.get(requiredKey).forall(_.isBlank))
+  def checkRequiredWithGroup(row: Int, datasetRow: DatasetRow, requiredKeys: List[String], optionalKeys: List[String]): Try[Unit] = {
+    val emptyOptionalVals = optionalKeys.filter(optionalKey => datasetRow.get(optionalKey).forall(_.isBlank))
+    val emptyRequiredVals = requiredKeys.filter(requiredKey => datasetRow.get(requiredKey).forall(_.isBlank))
 
     // note that it has values if not all are empty
     val hasOptionalVals = emptyOptionalVals.size < optionalKeys.size
@@ -317,20 +379,49 @@ object AddDatasetMetadataToDeposit {
   /**
    * When it contains something, this should be from a list af allowed values
    */
-  def checkValueIsOneOf(row: Int, map: mutable.HashMap[MultiDepositKey, String], key: String, allowed: List[String]): Try[Unit] = {
-    val value = map.getOrElse(key, "")
+  def checkValueIsOneOf(row: Int, datasetRow: DatasetRow, key: String, allowed: String*): Try[Unit] = {
+    val value = datasetRow.getOrElse(key, "")
     if (value.isEmpty || allowed.contains(value))
       Success(Unit)
     else
       Failure(ActionException(row, s"Wrong value: $value should be empty or one of: ${ allowed.mkString("[", ", ", "]") }"))
   }
 
-  def checkAccessRights(row: Int, map: mutable.HashMap[MultiDepositKey, String]): Try[Unit] = {
-    (map.get("DDM_ACCESSRIGHTS"), map.get("DDM_AUDIENCE")) match {
+  /**
+   * Check if a column in the dataset contains only one non-blank value
+   */
+  def checkColumnHasOnlyOneValue(row: Int, dataset: Dataset, key: String): Try[Unit] = {
+    dataset.get(key)
+      .map(_.filterNot(_.isBlank).size)
+      .map {
+        case 0 => Failure(ActionException(row, s"No value defined for $key"))
+        case 1 => Success(())
+        case _ => Failure(ActionException(row, s"More than one value is defined for $key"))
+      }
+      .getOrElse(Failure(ActionException(row, s"The column $key is not present in this instructions file")))
+  }
+
+  def checkColumnsHaveAtMostOneRowWithValues(row: Int, dataset: Dataset, keys: String*): Try[Unit] = {
+    dataset.rowsWithValuesFor(keys: _*).size match {
+      case 0 | 1 => Success(())
+      case _ => Failure(ActionException(row, s"Only one row can contain values for all these columns: ${ keys.mkString("[", ", ", "]") }"))
+    }
+  }
+
+  def checkAccessRights(row: Int, datasetRow: DatasetRow): Try[Unit] = {
+    (datasetRow.get("DDM_ACCESSRIGHTS"), datasetRow.get("DDM_AUDIENCE")) match {
       case (Some("GROUP_ACCESS"), Some("D37000")) => Success(Unit)
       case (Some("GROUP_ACCESS"), Some(code)) => Failure(ActionException(row, s"When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is: $code"))
       case (Some("GROUP_ACCESS"), None) => Failure(ActionException(row, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is not defined"))
       case (_, _) => Success(())
     }
+  }
+
+  def checkDateFormatting(row: Int, datasetRow: DatasetRow, key: String): Try[Unit] = {
+    datasetRow.get(key)
+      .map(date => Try { DateTime.parse(date) }.map(_ => ()).recoverWith {
+        case _: IllegalArgumentException => Failure(ActionException(row, s"'$date' does not represent a date"))
+      })
+      .getOrElse(Success(()))
   }
 }

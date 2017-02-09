@@ -61,8 +61,7 @@ The supported metadata elements are subdivided into the following groups:
 * Other DANS specific metadata elements: `DDM_CREATED`, `DDM_AVAILABLE`,
   `DDM_AUDIENCE`, `DDM_ACCESSRIGHTS`, `DEPOSITOR_ID`
 * Fields that specify the relation to a streaming surrogate on the Springfield
-  platform: `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, `SF_PRESENTATION`, 
-  `SF_SUBTITLES`
+  platform: `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, `SF_SUBTITLES`
 
 \* The use of `DC_CREATOR` and `DC_CONTRIBUTOR` is deprecated in favor of the new
 `DCX_CREATOR_*` and `DCX_CONTRIBUTOR_*` fields.
@@ -108,12 +107,13 @@ of audiovisual data.
 The metadata elements starting with `SF_` are used to create a Streaming Surrogate of
 a audio or video presentation contained in the dataset:
 
-* `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, `SF_PRESENTATION`, together specify a 
+* `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, together specify a 
   presentation in Springfield that must be linked to from EASY. The link is created
   by adding a `dc:relation` metadata value to the dataset metadata. This relation
   is marked as having the `STREAMING_SURROGATE_RELATION` scheme and contains the
   URL of said Streaming Surrogate in Springfield. These fields may only be used if
-  all of them are specified.
+  all of them are specified. Since the `SF_PRESENTATION` is not yet defined at this point in time,
+  a placeholder called '_presentation-placeholder_' is put in its place.
 * Files marked with `FILE_AUDIO_VIDEO` = "Yes" (see below) are added to this presentation
   through the Springfield Inbox and an entry in the Springfield Actions file that 
   will be created by `process-sip`.
