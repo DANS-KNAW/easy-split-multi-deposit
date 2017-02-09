@@ -17,11 +17,10 @@ package nl.knaw.dans.easy.multideposit
 
 import java.io.{ByteArrayOutputStream, File}
 
-import nl.knaw.dans.easy.multideposit.CustomMatchers._
 import org.apache.commons.configuration.PropertiesConfiguration
 import org.scalatest._
 
-class ReadmeSpec extends FlatSpec with Matchers {
+class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
   private val helpInfo = {
     val RES_DIR_STR = "src/test/resources/"
     val mockedProps = {
