@@ -22,7 +22,8 @@ import org.scalatest._
 
 class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
   private val helpInfo = {
-    val RES_DIR_STR = new File(getClass.getResource("/").toURI).toString
+    val RES_DIR_STR = new File(getClass.getResource("/").toURI).getAbsolutePath
+    println(s"Resource dir: $RES_DIR_STR")
     val mockedProps = {
       val ps = new PropertiesConfiguration()
       ps.setDelimiterParsingDisabled(true)
