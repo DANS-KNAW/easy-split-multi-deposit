@@ -38,6 +38,8 @@ package object multideposit {
   type Datasets = ListBuffer[(DatasetID, Dataset)]
   def Datasets: Datasets = ListBuffer.empty
 
+  type DatasetRow = mutable.HashMap[MultiDepositKey, String]
+
   case class FileParameters(row: Option[Int], sip: Option[String], dataset: Option[String],
                             storageService: Option[String], storagePath: Option[String],
                             audioVideo: Option[String])
@@ -276,7 +278,7 @@ package object multideposit {
      * Values are neither null nor blank, rows are not empty.
      * The keyset of each map is a non-empty subset of the keyset of dictionary.
      */
-    def rowsWithValuesFor(desiredColumns: DDM.Dictionary): IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
+    def rowsWithValuesFor(desiredColumns: DDM.Dictionary): IndexedSeq[DatasetRow] =
       dataset.getColumnsIn(desiredColumns).toRows.filter(_.nonEmpty)
 
     /**
@@ -290,7 +292,7 @@ package object multideposit {
      * Values are neither null nor blank, rows are not empty,
      * The keyset of each map equals the keyset of dictionary.
      */
-    def rowsWithValuesForAllOf(desiredColumns: DDM.Dictionary): IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
+    def rowsWithValuesForAllOf(desiredColumns: DDM.Dictionary): IndexedSeq[DatasetRow] =
       dataset.getColumnsIn(desiredColumns).toRows.filter(_.size == desiredColumns.size)
 
     /**
@@ -309,7 +311,7 @@ package object multideposit {
      * @return A sequence of maps, each map containing key-value pairs of a row.
      * Values are neither null nor blank, a row may be empty.
      */
-    def toRows: IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
+    def toRows: IndexedSeq[DatasetRow] =
       dataset.values.headOption
         .map(_.indices
           .map(i => dataset.map { case (key, values) => (key, values(i)) })

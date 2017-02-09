@@ -203,7 +203,7 @@ object AddDatasetMetadataToDeposit {
     else elem(dictionary.getOrElse(key, key))(value)
   }
 
-  def createSrsName(fields: mutable.HashMap[MultiDepositKey, String]): String = {
+  def createSrsName(fields: DatasetRow): String = {
     Map(
       "degrees" -> "http://www.opengis.net/def/crs/EPSG/0/4326",
       "RD" -> "http://www.opengis.net/def/crs/EPSG/0/28992"
@@ -321,8 +321,8 @@ object validators {
    * Check if either non of the keys have values or all of them have values
    * If some are missing, mention them in the exception message
    */
-  def checkAllOrNone(row: Int, map: mutable.HashMap[MultiDepositKey, String], keys: String*): Try[Unit] = {
-    val emptyVals = keys.filter(key => map.get(key).forall(_.isBlank))
+  def checkAllOrNone(row: Int, datasetRow: DatasetRow, keys: String*): Try[Unit] = {
+    val emptyVals = keys.filter(key => datasetRow.get(key).forall(_.isBlank))
 
     if (emptyVals.nonEmpty && emptyVals.size < keys.size)
       Failure(ActionException(row, s"Missing value(s) for: ${ emptyVals.mkString("[", ", ", "]") }"))
@@ -353,9 +353,9 @@ object validators {
   /**
    * If any of the keys (optional and required) has a value all required keys should have a value
    */
-  def checkRequiredWithGroup(row: Int, map: mutable.HashMap[MultiDepositKey, String], requiredKeys: List[String], optionalKeys: List[String]): Try[Unit] = {
-    val emptyOptionalVals = optionalKeys.filter(optionalKey => map.get(optionalKey).forall(_.isBlank))
-    val emptyRequiredVals = requiredKeys.filter(requiredKey => map.get(requiredKey).forall(_.isBlank))
+  def checkRequiredWithGroup(row: Int, datasetRow: DatasetRow, requiredKeys: List[String], optionalKeys: List[String]): Try[Unit] = {
+    val emptyOptionalVals = optionalKeys.filter(optionalKey => datasetRow.get(optionalKey).forall(_.isBlank))
+    val emptyRequiredVals = requiredKeys.filter(requiredKey => datasetRow.get(requiredKey).forall(_.isBlank))
 
     // note that it has values if not all are empty
     val hasOptionalVals = emptyOptionalVals.size < optionalKeys.size
@@ -370,8 +370,8 @@ object validators {
   /**
    * When it contains something, this should be from a list af allowed values
    */
-  def checkValueIsOneOf(row: Int, map: mutable.HashMap[MultiDepositKey, String], key: String, allowed: String*): Try[Unit] = {
-    val value = map.getOrElse(key, "")
+  def checkValueIsOneOf(row: Int, datasetRow: DatasetRow, key: String, allowed: String*): Try[Unit] = {
+    val value = datasetRow.getOrElse(key, "")
     if (value.isEmpty || allowed.contains(value))
       Success(Unit)
     else
@@ -392,8 +392,8 @@ object validators {
       .getOrElse(Failure(ActionException(row, s"The column $key is not present in this instructions file")))
   }
 
-  def checkAccessRights(row: Int, map: mutable.HashMap[MultiDepositKey, String]): Try[Unit] = {
-    (map.get("DDM_ACCESSRIGHTS"), map.get("DDM_AUDIENCE")) match {
+  def checkAccessRights(row: Int, datasetRow: DatasetRow): Try[Unit] = {
+    (datasetRow.get("DDM_ACCESSRIGHTS"), datasetRow.get("DDM_AUDIENCE")) match {
       case (Some("GROUP_ACCESS"), Some("D37000")) => Success(Unit)
       case (Some("GROUP_ACCESS"), Some(code)) => Failure(ActionException(row, s"When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is: $code"))
       case (Some("GROUP_ACCESS"), None) => Failure(ActionException(row, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is not defined"))
@@ -401,8 +401,8 @@ object validators {
     }
   }
 
-  def checkDateFormatting(row: Int, map: mutable.HashMap[MultiDepositKey, String], key: String): Try[Unit] = {
-    map.get(key)
+  def checkDateFormatting(row: Int, datasetRow: DatasetRow, key: String): Try[Unit] = {
+    datasetRow.get(key)
       .map(date => Try { DateTime.parse(date) }.map(_ => ()).recoverWith {
         case e: IllegalArgumentException => Failure(ActionException(row, s"'$date' does not represent a date"))
       })
