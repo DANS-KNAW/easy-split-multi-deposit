@@ -21,19 +21,23 @@ import org.apache.commons.configuration.PropertiesConfiguration
 import org.scalatest._
 
 class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
+  val RES_DIR_STR = "src/test/resources/"//new File(getClass.getResource("/").toURI).getAbsolutePath
+  println(s"Resource dir: ${new File(RES_DIR_STR).getAbsolutePath}")
+  println(s"Resource dir esits: ${new File(RES_DIR_STR).getAbsoluteFile.exists()}")
+  new File(RES_DIR_STR).listFiles().map(println(_))
+
+  val mockedProps = {
+    val ps = new PropertiesConfiguration()
+    ps.setDelimiterParsingDisabled(true)
+    ps.load(new File(RES_DIR_STR + "/debug-config", "application.properties"))
+    ps
+  }
+  val mockedArgs = Array(RES_DIR_STR + "/allfields/input", RES_DIR_STR + "/allfields/output", "datamanager")
+  val clo = new ScallopCommandLine(mockedProps, mockedArgs)
   private val helpInfo = {
-    val RES_DIR_STR = "src/test/resources/"//new File(getClass.getResource("/").toURI).getAbsolutePath
-    println(s"Resource dir: ${new File(RES_DIR_STR).getAbsolutePath}")
-    val mockedProps = {
-      val ps = new PropertiesConfiguration()
-      ps.setDelimiterParsingDisabled(true)
-      ps.load(new File(RES_DIR_STR + "/debug-config", "application.properties"))
-      ps
-    }
-    val mockedArgs = Array(RES_DIR_STR + "/allfields/input", RES_DIR_STR + "/allfields/output", "datamanager")
     val mockedStdOut = new ByteArrayOutputStream()
     Console.withOut(mockedStdOut) {
-      new ScallopCommandLine(mockedProps, mockedArgs).printHelp()
+      clo.printHelp()
     }
     mockedStdOut.toString
   }
@@ -44,13 +48,11 @@ class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
   }
 
   "synopsis in help info" should "be part of README.md" in {
-    val synopsis = helpInfo.split("Options:")(0).split("Usage:")(1)
-    new File("README.md") should containTrimmed(synopsis)
+    new File("README.md") should containTrimmed(clo.synopsis)
   }
 
-  "first banner line" should "be part of README.md and pom.xml" in {
-    val description = helpInfo.split("\n")(2)
-    new File("README.md") should containTrimmed(description)
-    new File("pom.xml") should containTrimmed(s"<description>$description</description>")
+  "description line(s) in help info" should "be part of README.md and pom.xml" in {
+    new File("README.md") should containTrimmed(clo.description)
+    new File("pom.xml") should containTrimmed(clo.description)
   }
 }
