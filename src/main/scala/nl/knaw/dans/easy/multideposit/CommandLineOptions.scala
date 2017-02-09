@@ -69,6 +69,7 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
   printedName = "easy-split-multi-deposit"
   version(s"$printedName ${Version()}")
   banner(s"""
+           |Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive
            |Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
            |
            |Usage:
