@@ -48,7 +48,7 @@ object MultiDepositParser extends DebugEnhancedLogging {
         .map(content.head.zip(_))
         .zipWithIndex
         .foldRight(Datasets) {
-          // +2 because we want the second line (element 0) to have index 2
+          // +2 because we want the second line in the csv (element 0) to have index 2
           case ((values: CsvValues, row: Int), dss: Datasets) => updateDatasets(dss, values, row + 2)
         }
     }
