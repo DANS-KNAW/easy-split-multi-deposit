@@ -101,7 +101,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
       case Failure(CompositeException(es)) =>
         es should have size 1
         val ActionException(_, message, _) :: Nil = es
-        message should include ("""DatamanagerID "dm" is unknown""")
+        message should include ("""The datamanager "dm" is unknown""")
     }
   }
 

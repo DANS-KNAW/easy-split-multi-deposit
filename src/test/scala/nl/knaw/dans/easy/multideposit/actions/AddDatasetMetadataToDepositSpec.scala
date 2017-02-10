@@ -428,7 +428,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
         val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "'foobar' does not represent a date"
+        message shouldBe "DDM_CREATED 'foobar' does not represent a date"
     }
   }
 
@@ -438,6 +438,19 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "DDM_CREATED" -> List("2017-07-30T09:00:34.921+02:00")
     )
     new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail when the DDM_AVAILABLE column contains a wrong format" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "DDM_AVAILABLE" -> List("01-01-2017")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+        case Failure(CompositeException(es)) =>
+          val ActionException(_, message, _) :: Nil = es.toList
+          message shouldBe "DDM_AVAILABLE '01-01-2017' does not represent a date"
+      }
   }
 
   it should "succeed when the SF columns only contain one row with values" in {
@@ -480,6 +493,58 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         message shouldBe "Only one row can contain values for all these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]"
     }
   }
+
+  it should "fail if the SF_COLLECTION contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("no_weird_char"),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "SF_COLLECTION" -> List("do main")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("no_weird_char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'SF_COLLECTION' contains the following invalid characters: { ' ' }"
+    }
+  }
+
+  it should "fail if the SF_USER contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("no_weird_char"),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "SF_USER" -> List("do%main")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("no_weird_char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'SF_USER' contains the following invalid characters: { '%' }"
+    }
+  }
+
+  it should "fail if the SF_DOMAIN contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("no_weird_char"),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "SF_DOMAIN" -> List("do/main")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("no_weird_char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'SF_DOMAIN' contains the following invalid characters: { '/' }"
+    }
+  }
+
+  it should "fail if the DATASET contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("weird#char"),
+      "DDM_CREATED" -> List("2017-07-30")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("weird#char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'DATASET' contains the following invalid characters: { '#' }"
+    }
+  }
+
 
   "execute" should "write the metadata to a file at the correct place" in {
     val file = outputDatasetMetadataFile(datasetID)

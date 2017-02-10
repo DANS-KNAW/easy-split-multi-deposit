@@ -61,6 +61,13 @@ object AddDatasetMetadataToDeposit {
       List(
         // date created format
         checkDateFormatting(row, rowVals, "DDM_CREATED"),
+        checkDateFormatting(row, rowVals, "DDM_AVAILABLE"),
+
+        // only valid chars allowed
+        checkValidChars(row, rowVals, "SF_COLLECTION"),
+        checkValidChars(row, rowVals, "SF_DOMAIN"),
+        checkValidChars(row, rowVals, "SF_USER"),
+        checkValidChars(row, rowVals, "DATASET"),
 
         // coordinates
         // point
@@ -326,6 +333,16 @@ object AddDatasetMetadataToDeposit {
 }
 
 object validators {
+
+  def checkValidChars(row: Int, datasetRow: DatasetRow, key: String): Try[Unit] = {
+    datasetRow.get(key)
+      .map(value => "[^a-zA-Z0-9_-]".r.findAllIn(value).toSet)
+      .map(illegalCharacters => if (illegalCharacters.isEmpty)
+                                  Success(())
+                                else
+                                  Failure(ActionException(row, s"The column '$key' contains the following invalid characters: ${ illegalCharacters.map(s => s"'$s'").mkString("{ ", ", ", " }") }"))
+      ).getOrElse(Success(()))
+  }
   /**
    * Check if either non of the keys have values or all of them have values
    * If some are missing, mention them in the exception message
@@ -420,7 +437,7 @@ object validators {
   def checkDateFormatting(row: Int, datasetRow: DatasetRow, key: String): Try[Unit] = {
     datasetRow.get(key)
       .map(date => Try { DateTime.parse(date) }.map(_ => ()).recoverWith {
-        case _: IllegalArgumentException => Failure(ActionException(row, s"'$date' does not represent a date"))
+        case _: IllegalArgumentException => Failure(ActionException(row, s"$key '$date' does not represent a date"))
       })
       .getOrElse(Success(()))
   }

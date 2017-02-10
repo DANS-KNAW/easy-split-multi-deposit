@@ -27,25 +27,12 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   private val metadataDir = outputDepositBagMetadataDir(datasetID)
   private val dirs = depositDir :: bagDir :: metadataDir :: Nil
 
-  override def checkPreconditions: Try[Unit] = {
-    for {
-      _ <- checkDatasetIdIsValid
-      _ <- checkDirectoriesDoNotExist
-    } yield ()
-  }
+  override def checkPreconditions: Try[Unit] = checkDirectoriesDoNotExist
 
   private def checkDirectoriesDoNotExist: Try[Unit] = {
     dirs.find(_.exists)
       .map(file => Failure(ActionException(row, s"The deposit for dataset $datasetID already exists in $file.")))
       .getOrElse(Success(()))
-  }
-
-  private def checkDatasetIdIsValid: Try[Unit] = {
-    val illegalCharacters = "[^a-zA-Z0-9_-]".r.findAllIn(datasetID).toSet
-    if (illegalCharacters.isEmpty)
-      Success(())
-    else
-      Failure(ActionException(row, s"The datasetId '$datasetID' contains the following invalid characters: ${ illegalCharacters.mkString("{ ", ", ", " }") }"))
   }
 
   override def execute(): Try[Unit] = {
