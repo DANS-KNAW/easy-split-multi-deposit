@@ -46,11 +46,13 @@ package object multideposit {
   case class Settings(multidepositDir: File = null,
                       springfieldInbox: File = null,
                       outputDepositDir: File = null,
+                      datamanager: String = null,
                       ldap: Ldap = null) {
     override def toString: String =
       s"Settings(multideposit-dir=$multidepositDir, " +
         s"springfield-inbox=$springfieldInbox, " +
-        s"deposit-dir=$outputDepositDir)"
+        s"deposit-dir=$outputDepositDir, " +
+        s"datamanager=$datamanager)"
   }
 
   case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")

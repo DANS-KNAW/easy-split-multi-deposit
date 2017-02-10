@@ -21,7 +21,9 @@ import javax.naming.ldap.InitialLdapContext
 
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.configuration.PropertiesConfiguration
-import org.rogach.scallop.{ ScallopConf, ScallopOption }
+import org.rogach.scallop.{ScallopConf, ScallopOption}
+
+import scala.util.{Failure, Success, Try}
 
 object CommandLineOptions extends DebugEnhancedLogging {
 
@@ -41,6 +43,7 @@ object CommandLineOptions extends DebugEnhancedLogging {
       multidepositDir = opts.multiDepositDir(),
       springfieldInbox = opts.springfieldInbox(),
       outputDepositDir = opts.outputDepositDir(),
+      datamanager = opts.datamanager(),
       ldap = {
         val env = new java.util.Hashtable[String, String]
         env.put(Context.PROVIDER_URL, props.getString("auth.ldap.url"))
@@ -65,11 +68,15 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
 
   printedName = "easy-split-multi-deposit"
   version(s"$printedName ${Version()}")
+  val description = "Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive"
+  val synopsis = s"""$printedName.sh [{--springfield-inbox|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>"""
   banner(s"""
-           |Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
+           |  $description
+           |  Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
            |
            |Usage:
-           |  $printedName.sh [{--springfield-inbox|-s} <dir>] <multi-deposit-dir> <output-deposits-dir>
+           |
+           |  $synopsis
            |
            |Options:
            |""".stripMargin)
@@ -92,6 +99,11 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
     required = true,
     descr = "A directory in which the deposit directories must be created. "
       + "The deposit directory layout is described in the easy-sword2 documentation")
+
+  val datamanager: ScallopOption[String] = trailArg[String](
+    name = "datamanager",
+    required = true,
+    descr = "The username (id) of the datamanger (archivist) performing this deposit")
 
   validateFileExists(multiDepositDir)
   validateFileIsDirectory(multiDepositDir)

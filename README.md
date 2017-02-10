@@ -2,7 +2,8 @@ easy-split-multi-deposit
 ========================
 [![Build Status](https://travis-ci.org/DANS-KNAW/easy-split-multi-deposit.png?branch=master)](https://travis-ci.org/DANS-KNAW/easy-split-multi-deposit)
 
-Convert a Multi-Deposit splitting it into several Dataset Deposits.
+Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive
+Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
 
 SYNOPSIS
 --------
@@ -12,7 +13,6 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
-
 A command line tool to process a Multi-Deposit into several Dataset Deposit. A Multi-Deposit
 is a deposit containing data files and metadata for several datasets. The tool splits the
 Multi-Deposit into separate Dataset Deposit directories that can be ingested into the archive by 
@@ -41,25 +41,25 @@ If the MDI file is found and is correct the following actions are taken:
 ARGUMENTS
 ---------
 ```
-Usage: easy-split-multi-deposit.sh [{--springfield-inbox|-s} <dir>] <multi-deposit-dir> <output-deposits-dir>
-Options:
+  Usage: 
 
-  -s, --springfield-inbox  <arg>   The inbox directory of a Springfield Streaming
-                                   Media Platform installation. If not specified
-                                   the value of springfield-inbox in
-                                   application.properties is used.
-                                   (default = /vagrant/shared/springfield-inbox)
-      --help                       Show help message
-      --version                    Show version of this program
+      easy-split-multi-deposit.sh [{--springfield-inbox|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
 
- trailing arguments:
-  multi-deposit-dir (required)   Directory containing the Submission Information
-                                 Package to process. This must be a valid path to
-                                 a directory containing a file named
-                                 'instructions.csv' in RFC4180 format.
-  deposit-dir (required)         A directory in which the deposit directories must
-                                 be created. The deposit directory layout is
-                                 described in the easy-sword2 documentation
+  Options:
+
+    -s, --springfield-inbox  <arg>   The inbox directory of a Springfield Streaming Media Platform installation.
+                                     If not specified the value of springfield-inbox in application.properties
+                                     is used. (default = data/springfield-inbox)
+        --help                       Show help message
+        --version                    Show version of this program
+
+   trailing arguments:
+    multi-deposit-dir (required)   Directory containing the Submission Information Package to process. This must
+                                   be a valid path to a directory containing a file named 'instructions.csv' in
+                                   RFC4180 format.
+    deposit-dir (required)         A directory in which the deposit directories must be created. The deposit
+                                   directory layout is described in the easy-sword2 documentation
+    datamanager (required)         The username (id) of the datamanger (archivist) performing this deposit
 ```
 
 
