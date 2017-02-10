@@ -62,6 +62,12 @@ object AddDatasetMetadataToDeposit {
         // date created format
         checkDateFormatting(row, rowVals, "DDM_CREATED"),
 
+        // only valid chars allowed
+        checkValidChars(row, rowVals, "SF_COLLECTION"),
+        checkValidChars(row, rowVals, "SF_DOMAIN"),
+        checkValidChars(row, rowVals, "SF_USER"),
+        checkValidChars(row, rowVals, "DATASET"),
+
         // coordinates
         // point
         checkAllOrNone(row, rowVals, "DCX_SPATIAL_X", "DCX_SPATIAL_Y"),
@@ -326,6 +332,16 @@ object AddDatasetMetadataToDeposit {
 }
 
 object validators {
+
+  def checkValidChars(row: Int, datasetRow: DatasetRow, key: String): Try[Unit] = {
+    datasetRow.get(key)
+      .map(value => "[^a-zA-Z0-9_-]".r.findAllIn(value).toSet)
+      .map(illegalCharacters => if (illegalCharacters.isEmpty)
+                                  Success(())
+                                else
+                                  Failure(ActionException(row, s"The column '$key' contains the following invalid characters: ${ illegalCharacters.mkString("{ ", ", ", " }") }"))
+      ).getOrElse(Success(()))
+  }
   /**
    * Check if either non of the keys have values or all of them have values
    * If some are missing, mention them in the exception message

@@ -481,6 +481,32 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
+  it should "fail if the SF_DOMAIN contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("no_weird_char"),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "SF_DOMAIN" -> List("do/main")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("no_weird_char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'SF_DOMAIN' contains the following invalid characters: { / }"
+    }
+  }
+
+  it should "fail if the DATASET contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("weird#char"),
+      "DDM_CREATED" -> List("2017-07-30")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("weird#char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'DATASET' contains the following invalid characters: { # }"
+    }
+  }
+
+
   "execute" should "write the metadata to a file at the correct place" in {
     val file = outputDatasetMetadataFile(datasetID)
 
