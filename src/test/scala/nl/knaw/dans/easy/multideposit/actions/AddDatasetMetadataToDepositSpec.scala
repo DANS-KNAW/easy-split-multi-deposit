@@ -481,6 +481,32 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
+  it should "fail if the SF_COLLECTION contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("no_weird_char"),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "SF_COLLECTION" -> List("do main")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("no_weird_char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'SF_COLLECTION' contains the following invalid characters: { ' ' }"
+    }
+  }
+
+  it should "fail if the SF_USER contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("no_weird_char"),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "SF_USER" -> List("do%main")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("no_weird_char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'SF_USER' contains the following invalid characters: { '%' }"
+    }
+  }
+
   it should "fail if the SF_DOMAIN contains forbidden characters" in {
     val dataset = mutable.HashMap(
       "DATASET" -> List("no_weird_char"),
@@ -490,7 +516,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     inside(new AddDatasetMetadataToDeposit(1, ("no_weird_char", dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
         val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "The column 'SF_DOMAIN' contains the following invalid characters: { / }"
+        message shouldBe "The column 'SF_DOMAIN' contains the following invalid characters: { '/' }"
     }
   }
 
@@ -502,7 +528,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     inside(new AddDatasetMetadataToDeposit(1, ("weird#char", dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
         val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "The column 'DATASET' contains the following invalid characters: { # }"
+        message shouldBe "The column 'DATASET' contains the following invalid characters: { '#' }"
     }
   }
 

@@ -339,7 +339,7 @@ object validators {
       .map(illegalCharacters => if (illegalCharacters.isEmpty)
                                   Success(())
                                 else
-                                  Failure(ActionException(row, s"The column '$key' contains the following invalid characters: ${ illegalCharacters.mkString("{ ", ", ", " }") }"))
+                                  Failure(ActionException(row, s"The column '$key' contains the following invalid characters: ${ illegalCharacters.map(s => s"'$s'").mkString("{ ", ", ", " }") }"))
       ).getOrElse(Success(()))
   }
   /**
