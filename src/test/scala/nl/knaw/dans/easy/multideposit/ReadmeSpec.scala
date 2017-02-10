@@ -32,7 +32,10 @@ class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
 
   val mockedArgs = Array("-s", RES_DIR_STR, RES_DIR_STR + "/allfields/input", RES_DIR_STR + "/allfields/output", "datamanager")
 
-  val clo = new ScallopCommandLine(mockedProps, mockedArgs)
+  private val clo = new ScallopCommandLine(mockedProps, mockedArgs) {
+    // avoids System.exit() in case of invalid arguments or "--help"
+    override def verify(): Unit = {}
+  }
 
   private val helpInfo = {
     val mockedStdOut = new ByteArrayOutputStream()
