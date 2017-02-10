@@ -34,12 +34,12 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
   // TODO administratieve metadata, to be decided
 
   override def checkPreconditions: Try[Unit] = {
-    List(validateDepositor(row, datasetID, dataset), getDatamanagerMailadres(row))
+    List(validateDepositor(row, datasetID, dataset), getDatamanagerMailadres)
       .collectResults
       .map(_ => ())
   }
 
-  override def execute(): Try[Unit] = getDatamanagerMailadres(row).flatMap(writeProperties(row, datasetID, dataset, _))
+  override def execute(): Try[Unit] = getDatamanagerMailadres.flatMap(writeProperties(row, datasetID, dataset, _))
 }
 object AddPropertiesToDeposit {
   // The email needs to be acquired (from LDAP) only once during the program execution
@@ -53,13 +53,14 @@ object AddPropertiesToDeposit {
    * Tries to retrieve the email address of the datamanager
    * Also used for validation: checks if the datamanager is an active archivist with an email address
    */
-  def getDatamanagerMailadres(row: Int)(implicit settings: Settings): Try[String] = {
+  def getDatamanagerMailadres(implicit settings: Settings): Try[String] = {
+    val row = -1
     // Note that the datamanager 'precondition' is checked when datamanagerEmailaddress is evaluated the first time
     if(datamanagerEmailaddress == null) {
       val id = settings.datamanager
       datamanagerEmailaddress = settings.ldap.query(id)(a => a)
         .flatMap(attrsSeq => {
-          if (attrsSeq.isEmpty) Failure(new ActionException(row, s"""DatamanagerID "$id" is unknown"""))
+          if (attrsSeq.isEmpty) Failure(new ActionException(row, s"""The datamanager "$id" is unknown"""))
           else if (attrsSeq.size > 1) Failure(new ActionException(row, s"""There appear to be multiple users with id "$id""""))
           else Success(attrsSeq.head)
         })
