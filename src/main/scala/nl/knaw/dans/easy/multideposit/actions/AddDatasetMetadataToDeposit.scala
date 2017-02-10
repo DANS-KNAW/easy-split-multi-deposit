@@ -61,6 +61,7 @@ object AddDatasetMetadataToDeposit {
       List(
         // date created format
         checkDateFormatting(row, rowVals, "DDM_CREATED"),
+        checkDateFormatting(row, rowVals, "DDM_AVAILABLE"),
 
         // only valid chars allowed
         checkValidChars(row, rowVals, "SF_COLLECTION"),
@@ -436,7 +437,7 @@ object validators {
   def checkDateFormatting(row: Int, datasetRow: DatasetRow, key: String): Try[Unit] = {
     datasetRow.get(key)
       .map(date => Try { DateTime.parse(date) }.map(_ => ()).recoverWith {
-        case _: IllegalArgumentException => Failure(ActionException(row, s"'$date' does not represent a date"))
+        case _: IllegalArgumentException => Failure(ActionException(row, s"$key '$date' does not represent a date"))
       })
       .getOrElse(Success(()))
   }

@@ -428,7 +428,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
         val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "'foobar' does not represent a date"
+        message shouldBe "DDM_CREATED 'foobar' does not represent a date"
     }
   }
 
@@ -438,6 +438,19 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "DDM_CREATED" -> List("2017-07-30T09:00:34.921+02:00")
     )
     new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail when the DDM_AVAILABLE column contains a wrong format" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "DDM_AVAILABLE" -> List("01-01-2017")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+        case Failure(CompositeException(es)) =>
+          val ActionException(_, message, _) :: Nil = es.toList
+          message shouldBe "DDM_AVAILABLE '01-01-2017' does not represent a date"
+      }
   }
 
   it should "succeed when the SF columns only contain one row with values" in {
