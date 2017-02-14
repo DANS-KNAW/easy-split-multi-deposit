@@ -28,6 +28,7 @@ if [ -e $TEMPDIR ]; then
 fi
 
 mkdir -p $TEMPDIR
+touch $TEMPDIR/easy-split-multi-deposit.log
 mkdir $TEMPDIR/input
 cp -r src/test/resources/allfields/input $TEMPDIR/input/allfields
 cp -r src/test/resources/sip001 $TEMPDIR/input/sip001
