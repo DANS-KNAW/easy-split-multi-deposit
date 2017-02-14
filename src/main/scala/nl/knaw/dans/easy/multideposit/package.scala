@@ -38,17 +38,21 @@ package object multideposit {
   type Datasets = ListBuffer[(DatasetID, Dataset)]
   def Datasets: Datasets = ListBuffer.empty
 
+  type DatasetRow = mutable.HashMap[MultiDepositKey, String]
+
   case class FileParameters(row: Option[Int], sip: Option[String], dataset: Option[String],
                             storageService: Option[String], storagePath: Option[String],
                             audioVideo: Option[String])
   case class Settings(multidepositDir: File = null,
                       springfieldInbox: File = null,
                       outputDepositDir: File = null,
+                      datamanager: String = null,
                       ldap: Ldap = null) {
     override def toString: String =
       s"Settings(multideposit-dir=$multidepositDir, " +
         s"springfield-inbox=$springfieldInbox, " +
-        s"deposit-dir=$outputDepositDir)"
+        s"deposit-dir=$outputDepositDir, " +
+        s"datamanager=$datamanager)"
   }
 
   case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")
@@ -276,8 +280,11 @@ package object multideposit {
      * Values are neither null nor blank, rows are not empty.
      * The keyset of each map is a non-empty subset of the keyset of dictionary.
      */
-    def rowsWithValuesFor(desiredColumns: DDM.Dictionary): IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
+    def rowsWithValuesFor(desiredColumns: DDM.Dictionary): IndexedSeq[DatasetRow] =
       dataset.getColumnsIn(desiredColumns).toRows.filter(_.nonEmpty)
+
+    def rowsWithValuesFor(desiredColumns: String*): IndexedSeq[DatasetRow] =
+      dataset.getColumns(desiredColumns: _*).toRows.filter(_.nonEmpty)
 
     /**
      * Turns a map of key-column pairs into a filtered sequence of maps:
@@ -290,7 +297,7 @@ package object multideposit {
      * Values are neither null nor blank, rows are not empty,
      * The keyset of each map equals the keyset of dictionary.
      */
-    def rowsWithValuesForAllOf(desiredColumns: DDM.Dictionary): IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
+    def rowsWithValuesForAllOf(desiredColumns: DDM.Dictionary): IndexedSeq[DatasetRow] =
       dataset.getColumnsIn(desiredColumns).toRows.filter(_.size == desiredColumns.size)
 
     /**
@@ -303,13 +310,16 @@ package object multideposit {
     def getColumnsIn(desiredColumns: DDM.Dictionary): Dataset =
       dataset.filter(kvs => desiredColumns.contains(kvs._1))
 
+    def getColumns(columns: String*): Dataset =
+      dataset.filter(kvs => columns.contains(kvs._1))
+
     /**
      * Turns a map of key-column pairs into a sequence of maps: one map of key-value pairs per row.
      *
      * @return A sequence of maps, each map containing key-value pairs of a row.
      * Values are neither null nor blank, a row may be empty.
      */
-    def toRows: IndexedSeq[mutable.HashMap[MultiDepositKey, String]] =
+    def toRows: IndexedSeq[DatasetRow] =
       dataset.values.headOption
         .map(_.indices
           .map(i => dataset.map { case (key, values) => (key, values(i)) })

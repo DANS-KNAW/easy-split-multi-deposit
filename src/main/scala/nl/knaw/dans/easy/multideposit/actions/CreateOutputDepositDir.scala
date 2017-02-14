@@ -27,13 +27,16 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   private val metadataDir = outputDepositBagMetadataDir(datasetID)
   private val dirs = depositDir :: bagDir :: metadataDir :: Nil
 
-  override def checkPreconditions: Try[Unit] = {
+  override def checkPreconditions: Try[Unit] = checkDirectoriesDoNotExist
+
+  private def checkDirectoriesDoNotExist: Try[Unit] = {
     dirs.find(_.exists)
       .map(file => Failure(ActionException(row, s"The deposit for dataset $datasetID already exists in $file.")))
       .getOrElse(Success(()))
   }
 
   override def execute(): Try[Unit] = {
+    debug(s"making directories: $dirs")
     if (dirs.forall(_.mkdirs)) Success(())
     else Failure(ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
   }

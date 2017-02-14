@@ -105,6 +105,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
  "checkPreconditions" should "succeed with correctly corresponding access rights and audience" in {
    val validDataset = mutable.HashMap(
      "DATASET" -> List(datasetID, datasetID),
+     "DDM_CREATED" -> List("2017-07-30", ""),
      "DDM_ACCESSRIGHTS" -> List("GROUP_ACCESS", "OPEN_ACCESS"),
      "DDM_AUDIENCE" -> List("D37000", "") // Archaeology
    )
@@ -115,6 +116,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "fail with incorrectly corresponding access rights and audience" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
       "DDM_ACCESSRIGHTS" -> List("GROUP_ACCESS", ""),
       "DDM_AUDIENCE" -> List("D30000", "") // Humanities
     )
@@ -128,6 +130,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "fail with undefined audience" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
       "DDM_ACCESSRIGHTS" -> List("GROUP_ACCESS", ""),
       "DDM_AUDIENCE" -> List("", "") // Humanities
     )
@@ -141,6 +144,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "succeed with required person information" in {
     val validDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
       "DCX_CREATOR_TITLES" -> List("", ""),
       "DCX_CREATOR_INITIALS" -> List("C.R.E.A.T.O.R.", ""),
       "DCX_CREATOR_INSERTIONS" -> List("", ""),
@@ -161,6 +165,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "fail with missing required person information" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
       "DCX_CREATOR_TITLES" -> List("Prof"),
       "DCX_CREATOR_INITIALS" -> List("F.A.I.L"),
       "DCX_CREATOR_INSERTIONS" -> List(""),
@@ -178,6 +183,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "fail with missing required point coordinates" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
       "DCX_SPATIAL_X" -> List("5"),
       "DCX_SPATIAL_Y" -> List("")
     )
@@ -192,6 +198,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "fail with missing required box coordinates" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
       "DCX_SPATIAL_NORTH" -> List("5"),
       "DCX_SPATIAL_SOUTH" -> List(""),
       "DCX_SPATIAL_EAST" -> List("5"),
@@ -208,6 +215,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "succeed with required coordinates" in {
     val validDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
       "DCX_SPATIAL_X" -> List("5", ""),
       "DCX_SPATIAL_Y" -> List("5", ""),
       "DCX_SPATIAL_NORTH" -> List("5", ""),
@@ -222,6 +230,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "succeed with valid schemes" in {
     val validDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
       "DCT_TEMPORAL_SCHEME" -> List("abr:ABRperiode", ""),
       "DC_SUBJECT_SCHEME" -> List("abr:ABRcomplex", "")
     )
@@ -232,6 +241,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "fail with invalid temporal scheme" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
       "DCT_TEMPORAL_SCHEME" -> List("invalidTemporalScheme")
     )
 
@@ -245,6 +255,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "fail with invalid subject scheme" in {
     val invalidDataset = mutable.HashMap(
       "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
       "DC_SUBJECT_SCHEME" -> List("invalidSubjectScheme")
     )
 
@@ -254,6 +265,286 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         message shouldBe "Wrong value: invalidSubjectScheme should be empty or one of: [abr:ABRcomplex]"
     }
   }
+
+  it should "fail with relation qualifier, link and title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "DCX_RELATION_QUALIFIER" -> List("foo"),
+      "DCX_RELATION_LINK" -> List("bar"),
+      "DCX_RELATION_TITLE" -> List("baz")
+    )
+
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Only one of the following columns must contain a value: [DCX_RELATION_LINK, DCX_RELATION_TITLE]"
+    }
+  }
+
+  it should "succeed with relation qualifier and link" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "DCX_RELATION_QUALIFIER" -> List("foo"),
+      "DCX_RELATION_LINK" -> List("bar"),
+      "DCX_RELATION_TITLE" -> List("")
+    )
+
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "succeed with relation qualifier and title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "DCX_RELATION_QUALIFIER" -> List("foo"),
+      "DCX_RELATION_LINK" -> List(""),
+      "DCX_RELATION_TITLE" -> List("baz")
+    )
+
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail with only relation qualifier and neither a link or title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "DCX_RELATION_QUALIFIER" -> List("foo"),
+      "DCX_RELATION_LINK" -> List(""),
+      "DCX_RELATION_TITLE" -> List("")
+    )
+
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Only one of the following columns must contain a value: [DCX_RELATION_LINK, DCX_RELATION_TITLE]"
+    }
+  }
+
+  it should "fail without a relation qualifier, but both link and title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "DCX_RELATION_QUALIFIER" -> List(""),
+      "DCX_RELATION_LINK" -> List("bar"),
+      "DCX_RELATION_TITLE" -> List("baz")
+    )
+
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The columns [DCX_RELATION_LINK, DCX_RELATION_TITLE] must not all contain a value at the same time"
+    }
+  }
+
+  it should "succeed without a relation qualifier and only a link" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "DCX_RELATION_QUALIFIER" -> List(""),
+      "DCX_RELATION_LINK" -> List("bar"),
+      "DCX_RELATION_TITLE" -> List("")
+    )
+
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "succeed without a relation qualifier and only a title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "DCX_RELATION_QUALIFIER" -> List(""),
+      "DCX_RELATION_LINK" -> List(""),
+      "DCX_RELATION_TITLE" -> List("baz")
+    )
+
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail without a relation qualifier, link or title" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "DCX_RELATION_QUALIFIER" -> List(""),
+      "DCX_RELATION_LINK" -> List(""),
+      "DCX_RELATION_TITLE" -> List("")
+    )
+
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail when the DDM_CREATED column is not defined" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID)
+    )
+
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column DDM_CREATED is not present in this instructions file"
+    }
+  }
+
+  it should "fail when the DDM_CREATED column contains no non-blank values" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID, datasetID),
+      "DDM_CREATED" -> List("  ", " ", "")
+    )
+
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "No value defined for DDM_CREATED"
+    }
+  }
+
+  it should "fail when the DDM_CREATED column contains multiple non-blank values" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", "2016-07-30")
+    )
+
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "More than one value is defined for DDM_CREATED"
+    }
+  }
+
+  it should "succeed when the DDM_CREATED column contains only one non-blank value but also other blank values" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("    ", "2017-07-30")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail when the DDM_CREATED column contains only one value that does not represent a date" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("foobar")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "DDM_CREATED 'foobar' does not represent a date"
+    }
+  }
+
+  it should "succeed when the DDM_CREATED column contains only one value with a different formatting" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30T09:00:34.921+02:00")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail when the DDM_AVAILABLE column contains a wrong format" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "DDM_AVAILABLE" -> List("01-01-2017")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+        case Failure(CompositeException(es)) =>
+          val ActionException(_, message, _) :: Nil = es.toList
+          message shouldBe "DDM_AVAILABLE '01-01-2017' does not represent a date"
+      }
+  }
+
+  it should "succeed when the SF columns only contain one row with values" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", "")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail when the SF columns contain multiple rows with values" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", "domain2"),
+      "SF_USER" -> List("user", "user2"),
+      "SF_COLLECTION" -> List("collection", "collection2")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Only one row can contain values for all these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]"
+    }
+  }
+
+  it should "fail when the SF columns have values spread over multiple rows" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("", "user"),
+      "SF_COLLECTION" -> List("collection", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Only one row can contain values for all these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]"
+    }
+  }
+
+  it should "fail if the SF_COLLECTION contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("no_weird_char"),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "SF_COLLECTION" -> List("do main")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("no_weird_char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'SF_COLLECTION' contains the following invalid characters: { ' ' }"
+    }
+  }
+
+  it should "fail if the SF_USER contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("no_weird_char"),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "SF_USER" -> List("do%main")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("no_weird_char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'SF_USER' contains the following invalid characters: { '%' }"
+    }
+  }
+
+  it should "fail if the SF_DOMAIN contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("no_weird_char"),
+      "DDM_CREATED" -> List("2017-07-30"),
+      "SF_DOMAIN" -> List("do/main")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("no_weird_char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'SF_DOMAIN' contains the following invalid characters: { '/' }"
+    }
+  }
+
+  it should "fail if the DATASET contains forbidden characters" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List("weird#char"),
+      "DDM_CREATED" -> List("2017-07-30")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, ("weird#char", dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column 'DATASET' contains the following invalid characters: { '#' }"
+    }
+  }
+
 
   "execute" should "write the metadata to a file at the correct place" in {
     val file = outputDatasetMetadataFile(datasetID)
@@ -403,6 +694,19 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         <dcterms:temporal xsi:type="abr:ABRperiode">PALEOV</dcterms:temporal>
         <dcterms:temporal>2005</dcterms:temporal>
         <dcterms:temporal>some arbitrary text</dcterms:temporal>
+      </ddm:dcmiMetadata>
+    </ddm>
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
+  }
+
+  it should "return the expected streaming surrogate relation" in {
+    val dataset = new Dataset() +=
+      "SF_DOMAIN" -> List("randomdomainname") +=
+      "SF_USER" -> List("randomusername") +=
+      "SF_COLLECTION" -> List("randomcollectionname")
+    val expectedXml = <ddm>
+      <ddm:dcmiMetadata>
+        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$presentation-placeholder</ddm:relation>
       </ddm:dcmiMetadata>
     </ddm>
     verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)

@@ -97,6 +97,23 @@
             <artifactId>commons-configuration</artifactId>
         </dependency>
 
+        <!-- joda time -->
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.joda</groupId>
+            <artifactId>joda-convert</artifactId>
+        </dependency>
+
+        <!-- mime-type detection -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>1.14</version>
+        </dependency>
+
         <!-- logging -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -135,6 +152,11 @@
             <plugin>
                 <groupId>com.mycila</groupId>
                 <artifactId>license-maven-plugin</artifactId>
+                <configuration combine.self="override">
+                    <excludes>
+                        <exclude>data/</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>

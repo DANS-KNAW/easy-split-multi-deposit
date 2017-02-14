@@ -1,10 +1,10 @@
-DATASET,DC_TITLE,DC_DESCRIPTION,DC_CREATOR,DC_CONTRIBUTOR,DCX_CREATOR_ORGANIZATION,DCX_CREATOR_DAI,DCX_CREATOR_SURNAME,DC_SUBJECT,DC_PUBLISHER,DC_TYPE,DC_FORMAT,DC_IDENTIFIER,DC_SOURCE,DC_LANGUAGE,SF_DOMAIN,SF_USER,SF_COLLECTION,SF_PRESENTATION,FILE_SUBTITLES,FILE_SIP,FILE_DATASET,FILE_STORAGE_SERVICE,FILE_STORAGE_PATH,FILE_AUDIO_VIDEO
+DATASET,DC_TITLE,DC_DESCRIPTION,DC_CREATOR,DC_CONTRIBUTOR,DCX_CREATOR_ORGANIZATION,DCX_CREATOR_DAI,DCX_CREATOR_SURNAME,DC_SUBJECT,DC_PUBLISHER,DC_TYPE,DC_FORMAT,DC_IDENTIFIER,DC_SOURCE,DC_LANGUAGE,SF_DOMAIN,SF_USER,SF_COLLECTION,FILE_SUBTITLES,FILE_SIP,FILE_DATASET,FILE_STORAGE_SERVICE,FILE_STORAGE_PATH,FILE_AUDIO_VIDEO
 dataset-1,Title 1 of dataset 1,"A sample dataset with a not very
-long description",Creator A,Contributor 1,,,,subject 1,,type1,,id1234,,,dans,project1,coll1,presentation1,,dataset-1/no-default-processing.txt,some/other/dir/path/non-default-1.txt,,,
-dataset-1,Title 2 of dataset 1,,,Contributor 2,,,,subject 2,,,,,,,,,,,,dataset-1/some/dir/path/no-default-processing-2.txt,some/other/dir/path/non-default-2.txt,,,
-dataset-1,,,,,,,,,publisher 1,,,,,,,,,,,videos/centaur.mpg,,,,Yes
-dataset-1,,,,,,,,subject 3,,,,,,,,,,,,,,,,
-dataset-1,,,,,,,,,,,,,,,,,,,,,,,,
-dataset-2,Title of dataset 2,,Creator A,,,,,,,,,,,,,,,,,misc-files/file001.txt,,,,
-dataset-2,,,Creator B,,,,,,,,,,,,,,,,,misc-files/file002.txt,file002-copied.txt,,,
-dataset-2,,,,,,,,,,,,,,,,,,,,misc-files/file003.txt,,http://zandbak11.dans.knaw.nl/webdav/,An/other5/dir/file003-copied.txt,
+long description",Creator A,Contributor 1,,,,subject 1,,type1,,id1234,,,dans,project1,coll1,,dataset-1/no-default-processing.txt,some/other/dir/path/non-default-1.txt,,,
+dataset-1,Title 2 of dataset 1,,,Contributor 2,,,,subject 2,,,,,,,,,,,dataset-1/some/dir/path/no-default-processing-2.txt,some/other/dir/path/non-default-2.txt,,,
+dataset-1,,,,,,,,,publisher 1,,,,,,,,,,videos/centaur.mpg,,,,Yes
+dataset-1,,,,,,,,subject 3,,,,,,,,,,,,,,,
+dataset-1,,,,,,,,,,,,,,,,,,,,,,,
+dataset-2,Title of dataset 2,,Creator A,,,,,,,,,,,,,,,,misc-files/file001.txt,,,,
+dataset-2,,,Creator B,,,,,,,,,,,,,,,,misc-files/file002.txt,file002-copied.txt,,,
+dataset-2,,,,,,,,,,,,,,,,,,,misc-files/file003.txt,,http://zandbak11.dans.knaw.nl/webdav/,An/other5/dir/file003-copied.txt,
