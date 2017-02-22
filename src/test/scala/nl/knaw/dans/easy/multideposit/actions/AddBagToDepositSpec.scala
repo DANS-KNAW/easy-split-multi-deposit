@@ -122,7 +122,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
     val bagInfo = new File(outputDepositBagDir(datasetID), "bag-info.txt")
     bagInfo should exist
 
-    bagInfo.read() should include("CREATED")
+    bagInfo.read() should include("Created")
   }
 
   it should "contain the correct checksums in its manifest file" in {

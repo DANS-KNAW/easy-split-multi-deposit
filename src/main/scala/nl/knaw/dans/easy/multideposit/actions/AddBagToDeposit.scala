@@ -109,7 +109,7 @@ class BagInfoCompleter(bagFactory: BagFactory, dataset: Dataset) extends Complet
       .flatMap(_.find(s => !s.isBlank))
       .map(DateTime.parse) // parse should never fail, since it is already validated in AddDatasetMetadataToDeposit
       .map(_.toString(ISODateTimeFormat.dateTime()))
-      .foreach(bagInfo.put("CREATED", _))
+      .foreach(bagInfo.put("Created", _))
 
     // add the new BagInfoTxt to the newBag
     newBag.putBagFile(bagInfo)

@@ -1,4 +1,4 @@
 Payload-Oxum: 26467.5
-Bagging-Date: 2017-02-07
+Bagging-Date: 2017-02-14
 Bag-Size: 25.9 KB
-CREATED: 2015-05-19T00:00:00.000+02:00
+Created: 2015-05-19T00:00:00.000+02:00
