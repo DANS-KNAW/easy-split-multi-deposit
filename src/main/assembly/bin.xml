@@ -28,7 +28,7 @@
     <fileSets>
         <fileSet>
             <directory>${project.build.directory}</directory>
-            <outputDirectory>/bin</outputDirectory>
+            <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>*.jar</include>
             </includes>
@@ -38,7 +38,7 @@
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/src/main/assembly/dist/bin</directory>
-            <outputDirectory>/bin</outputDirectory>
+            <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>*.sh</include>
             </includes>
@@ -46,14 +46,14 @@
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/src/main/resources</directory>
-            <outputDirectory>/cfg</outputDirectory>
+            <outputDirectory>cfg</outputDirectory>
             <includes>
                 <include>default-logback-conf.xml</include>
             </includes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/src/main/assembly/dist</directory>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory/>
             <excludes>
                 <exclude>/bin</exclude>
             </excludes>
