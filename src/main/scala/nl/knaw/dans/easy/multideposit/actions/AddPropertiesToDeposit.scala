@@ -43,7 +43,8 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
 }
 object AddPropertiesToDeposit {
   // The email needs to be acquired (from LDAP) only once during the program execution
-  private var datamanagerEmailaddress: Try[String] = null
+  private var datamanagerEmailaddress: Try[String] = _
+
   // Only used for testing
   private def resetDatamanagerEmailaddress() = {
     datamanagerEmailaddress = null
@@ -60,27 +61,27 @@ object AddPropertiesToDeposit {
       val id = settings.datamanager
       datamanagerEmailaddress = settings.ldap.query(id)(a => a)
         .flatMap(attrsSeq => {
-          if (attrsSeq.isEmpty) Failure(new ActionException(row, s"""The datamanager "$id" is unknown"""))
-          else if (attrsSeq.size > 1) Failure(new ActionException(row, s"""There appear to be multiple users with id "$id""""))
+          if (attrsSeq.isEmpty) Failure(ActionException(row, s"""The datamanager "$id" is unknown"""))
+          else if (attrsSeq.size > 1) Failure(ActionException(row, s"""There appear to be multiple users with id "$id""""))
           else Success(attrsSeq.head)
         })
         .flatMap(attrs => {
           Option(attrs.get("dansState"))
             .filter(_.get.toString == "ACTIVE")
             .map(_ => Success(attrs))
-            .getOrElse(Failure(new ActionException(row, s"""The datamanager "$id" is not an active user""")))
+            .getOrElse(Failure(ActionException(row, s"""The datamanager "$id" is not an active user""")))
         })
         .flatMap(attrs => {
           Option(attrs.get("easyRoles"))
             .filter(_.contains("ARCHIVIST"))
             .map(_ => Success(attrs))
-            .getOrElse(Failure(new ActionException(row, s"""The datamanager "$id" is not an archivist""")))
+            .getOrElse(Failure(ActionException(row, s"""The datamanager "$id" is not an archivist""")))
         })
         .flatMap(attrs => {
           Option(attrs.get("mail"))
-            .filter(_.get().toString().nonEmpty)
+            .filter(_.get().toString.nonEmpty)
             .map(att => Success(att.get().toString))
-            .getOrElse(Failure(new ActionException(row, s"""The datamanager "$id" does not have an email address""")))
+            .getOrElse(Failure(ActionException(row, s"""The datamanager "$id" does not have an email address""")))
         })
     }
     datamanagerEmailaddress

@@ -47,6 +47,7 @@ package object multideposit {
                       springfieldInbox: File = null,
                       outputDepositDir: File = null,
                       datamanager: String = null,
+                      depositPermissions: String = null,
                       ldap: Ldap = null) {
     override def toString: String =
       s"Settings(multideposit-dir=$multidepositDir, " +

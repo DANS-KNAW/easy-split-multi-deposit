@@ -39,7 +39,8 @@ class MainSpec extends UnitSpec {
       AddBagToDeposit(2, entry),
       AddDatasetMetadataToDeposit(2, entry),
       AddFileMetadataToDeposit(2, entry),
-      AddPropertiesToDeposit(2, entry))
+      AddPropertiesToDeposit(2, entry),
+      SetDepositPermissions(2, datasetID))
     val fileActions = Seq(CopyToSpringfieldInbox(2, "videos/centaur.mpg"))
   }
 
@@ -50,13 +51,14 @@ class MainSpec extends UnitSpec {
       AddBagToDeposit(2, entry),
       AddDatasetMetadataToDeposit(2, entry),
       AddFileMetadataToDeposit(2, entry),
-      AddPropertiesToDeposit(2, entry))
+      AddPropertiesToDeposit(2, entry),
+      SetDepositPermissions(2, datasetID))
     val fileActions = Seq(CopyToSpringfieldInbox(4, "videos/centaur.mpg"))
   }
 
   "getActions" should "return all actions to be performed given the collection of datasets" in {
     getActions(testDatasets) should {
-      have size 13 and
+      have size 15 and
       contain theSameElementsInOrderAs(
         dataset1Actions.datasetActions ++ dataset1Actions.fileActions ++
         dataset2Actions.datasetActions ++ dataset2Actions.fileActions ++
@@ -74,14 +76,14 @@ class MainSpec extends UnitSpec {
   "getDatasetActions" should "return a collection of actions for the given dataset" in {
     import dataset1Actions._
     getDatasetActions(entry) should {
-      have size 6 and contain theSameElementsInOrderAs (datasetActions ++ fileActions)
+      have size 7 and contain theSameElementsInOrderAs (datasetActions ++ fileActions)
     }
   }
 
   it should "do the same for testDataset2" in {
     import dataset2Actions._
     getDatasetActions(entry) should {
-      have size 6 and contain theSameElementsInOrderAs (datasetActions ++ fileActions)
+      have size 7 and contain theSameElementsInOrderAs (datasetActions ++ fileActions)
     }
   }
 

@@ -64,7 +64,8 @@ object Main extends DebugEnhancedLogging {
       AddBagToDeposit(row, entry),
       AddDatasetMetadataToDeposit(row, entry),
       AddFileMetadataToDeposit(row, entry),
-      AddPropertiesToDeposit(row, entry)
+      AddPropertiesToDeposit(row, entry),
+      SetDepositPermissions(row, datasetID)
     ) ++ getFileActions(dataset)
   }
 
