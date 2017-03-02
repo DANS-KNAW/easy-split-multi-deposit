@@ -44,9 +44,10 @@ case class SetDepositPermissions(row: Int, datasetID: DatasetID)(implicit settin
       } onError {
         case usoe: UnsupportedOperationException => logger.error("Not on a POSIX supported file system", usoe); FileVisitResult.TERMINATE
         case cce: ClassCastException => logger.error("Non file permission elements in set", cce); FileVisitResult.TERMINATE
+        case iae: IllegalArgumentException => logger.error(s"Invalid privileges ($permissions)", iae); FileVisitResult.TERMINATE
         case ioe: IOException => logger.error(s"Could not set file permissions on $path", ioe); FileVisitResult.TERMINATE
         case se: SecurityException => logger.error(s"Not enough privileges to set file permissions on $path", se); FileVisitResult.TERMINATE
-        case NonFatal(e) => logger.error("unexpected error occured", e); FileVisitResult.TERMINATE
+        case NonFatal(e) => logger.error(s"unexpected error occured on $path", e); FileVisitResult.TERMINATE
       }
     }
 
