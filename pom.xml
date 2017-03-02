@@ -21,7 +21,7 @@
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
         <artifactId>dans-scala-prototype</artifactId>
-        <version>1.35</version>
+        <version>1.42</version>
     </parent>
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-split-multi-deposit</artifactId>
@@ -152,11 +152,11 @@
             <plugin>
                 <groupId>com.mycila</groupId>
                 <artifactId>license-maven-plugin</artifactId>
-                <configuration combine.self="override">
-                    <excludes>
-                        <exclude>data/</exclude>
-                    </excludes>
-                </configuration>
+                <!--<configuration combine.self="override">-->
+                    <!--<excludes>-->
+                        <!--<exclude>data/</exclude>-->
+                    <!--</excludes>-->
+                <!--</configuration>-->
             </plugin>
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>
