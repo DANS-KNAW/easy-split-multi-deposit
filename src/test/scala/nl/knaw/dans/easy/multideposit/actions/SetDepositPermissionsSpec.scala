@@ -26,19 +26,19 @@ import scala.util.{ Failure, Success }
 
 class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
-  private val (userGroup, unrelatedGroup) = {
+  private val (user, userGroup, unrelatedGroup) = {
     import scala.sys.process._
 
     // don't hardcode users and groups, since we don't know what we have on travis
     val user = System.getProperty("user.name")
-    val allGroups = "cut -d: -f1 /etc/group".!!.split("\n").filterNot(_ startsWith "#")
-    val userGroups = s"id -Gn $user".!!.split(" ")
+    val allGroups = "cut -d: -f1 /etc/group".!!.split("\n").filterNot(_ startsWith "#").toList
+    val userGroups = s"id -Gn $user".!!.split(" ").toList
 
     println(s"user: $user")
     println(s"all groups: $allGroups")
     println(s"user groups: $userGroups")
 
-    (userGroups.head, allGroups.diff(userGroups).head)
+    (user, userGroups.head, allGroups.diff(userGroups).head)
   }
 
   implicit val settings = Settings(
@@ -81,6 +81,8 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with Before
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "setFilePermissions" should "set the permissions of each of the files and folders to the correct permissions" in {
+    assume(user != "travis")
+
     SetDepositPermissions(1, datasetID).execute() shouldBe a[Success[_]]
 
     for (file <- filesAndFolders) {
