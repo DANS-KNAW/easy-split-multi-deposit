@@ -34,10 +34,6 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with Before
     val allGroups = "cut -d: -f1 /etc/group".!!.split("\n").filterNot(_ startsWith "#").toList
     val userGroups = s"id -Gn $user".!!.split(" ").toList
 
-    println(s"user: $user")
-    println(s"all groups: $allGroups")
-    println(s"user groups: $userGroups")
-
     (user, userGroups.head, allGroups.diff(userGroups).head)
   }
 
