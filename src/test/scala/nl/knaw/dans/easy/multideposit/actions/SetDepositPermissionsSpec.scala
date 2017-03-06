@@ -26,10 +26,25 @@ import scala.util.{ Failure, Success }
 
 class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
+  private val (userGroup, unrelatedGroup) = {
+    import scala.sys.process._
+
+    // don't hardcode users and groups, since we don't know what we have on travis
+    val user = System.getProperty("user.name")
+    val allGroups = "cut -d: -f1 /etc/group".!!.split("\n").filterNot(_ startsWith "#")
+    val userGroups = s"id -Gn $user".!!.split(" ")
+
+    println(s"user: $user")
+    println(s"all groups: $allGroups")
+    println(s"user groups: $userGroups")
+
+    (userGroups.head, allGroups.diff(userGroups).head)
+  }
+
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     outputDepositDir = new File(testDir, "dd"),
-    depositPermissions = DepositPermissions("rwxrwx---", "admin")
+    depositPermissions = DepositPermissions("rwxrwx---", userGroup)
   )
 
   private val datasetID = "ruimtereis01"
@@ -84,7 +99,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with Before
         )
       }
 
-      Files.readAttributes(file.toPath, classOf[PosixFileAttributes]).group().getName shouldBe "admin"
+      Files.readAttributes(file.toPath, classOf[PosixFileAttributes]).group().getName shouldBe userGroup
     }
   }
 
@@ -116,11 +131,11 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with Before
     implicit val settings = Settings(
       multidepositDir = new File(testDir, "md"),
       outputDepositDir = new File(testDir, "dd"),
-      depositPermissions = DepositPermissions("rwxrwx---", "_appleevents")
+      depositPermissions = DepositPermissions("rwxrwx---", unrelatedGroup)
     )
 
     inside(SetDepositPermissions(1, datasetID)(settings).execute()) {
-      case Failure(ActionException(1, msg, _: FileSystemException)) => msg should include ("Not able to set the group to _appleevents")
+      case Failure(ActionException(1, msg, _: FileSystemException)) => msg should include (s"Not able to set the group to $unrelatedGroup")
     }
   }
 }
