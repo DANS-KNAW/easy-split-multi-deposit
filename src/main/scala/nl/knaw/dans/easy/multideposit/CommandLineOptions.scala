@@ -44,7 +44,7 @@ object CommandLineOptions extends DebugEnhancedLogging {
       springfieldInbox = opts.springfieldInbox(),
       outputDepositDir = opts.outputDepositDir(),
       datamanager = opts.datamanager(),
-      depositPermissions = props.getString("deposit.permissions"),
+      depositPermissions = DepositPermissions(props.getString("deposit.permissions.access"), props.getString("deposit.permissions.group")),
       ldap = {
         val env = new java.util.Hashtable[String, String]
         env.put(Context.PROVIDER_URL, props.getString("auth.ldap.url"))

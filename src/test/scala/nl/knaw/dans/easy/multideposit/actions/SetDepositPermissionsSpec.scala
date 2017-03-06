@@ -16,20 +16,20 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.attribute.PosixFilePermission
+import java.nio.file.{ FileSystemException, Files }
+import java.nio.file.attribute.{ PosixFileAttributes, PosixFilePermission, UserPrincipalNotFoundException }
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
-import scala.util.Success
+import scala.util.{ Failure, Success }
 
 class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     outputDepositDir = new File(testDir, "dd"),
-    depositPermissions = "rwxrwx---"
+    depositPermissions = DepositPermissions("rwxrwx---", "admin")
   )
 
   private val datasetID = "ruimtereis01"
@@ -83,6 +83,44 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with Before
           PosixFilePermission.OTHERS_EXECUTE
         )
       }
+
+      Files.readAttributes(file.toPath, classOf[PosixFileAttributes]).group().getName shouldBe "admin"
+    }
+  }
+
+  it should "fail if the group name does not exist" in {
+    implicit val settings = Settings(
+      multidepositDir = new File(testDir, "md"),
+      outputDepositDir = new File(testDir, "dd"),
+      depositPermissions = DepositPermissions("rwxrwx---", "non-existing-group-name")
+    )
+
+    inside(SetDepositPermissions(1, datasetID)(settings).execute()) {
+      case Failure(ActionException(1, msg, _: UserPrincipalNotFoundException)) => msg shouldBe "Group non-existing-group-name could not be found"
+    }
+  }
+
+  it should "fail if the access permissions are invalid" in {
+    implicit val settings = Settings(
+      multidepositDir = new File(testDir, "md"),
+      outputDepositDir = new File(testDir, "dd"),
+      depositPermissions = DepositPermissions("abcdefghi", "admin")
+    )
+
+    inside(SetDepositPermissions(1, datasetID)(settings).execute()) {
+      case Failure(ActionException(1, msg, _: IllegalArgumentException)) => msg shouldBe "Invalid privileges (abcdefghi)"
+    }
+  }
+
+  it should "fail if the user is not part of the given group" in {
+    implicit val settings = Settings(
+      multidepositDir = new File(testDir, "md"),
+      outputDepositDir = new File(testDir, "dd"),
+      depositPermissions = DepositPermissions("rwxrwx---", "_appleevents")
+    )
+
+    inside(SetDepositPermissions(1, datasetID)(settings).execute()) {
+      case Failure(ActionException(1, msg, _: FileSystemException)) => msg should include ("Not able to set the group to _appleevents")
     }
   }
 }
