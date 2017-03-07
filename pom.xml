@@ -152,11 +152,6 @@
             <plugin>
                 <groupId>com.mycila</groupId>
                 <artifactId>license-maven-plugin</artifactId>
-                <!--<configuration combine.self="override">-->
-                    <!--<excludes>-->
-                        <!--<exclude>data/</exclude>-->
-                    <!--</excludes>-->
-                <!--</configuration>-->
             </plugin>
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>
