@@ -22,10 +22,10 @@ import scala.util.{ Failure, Success, Try }
 
 case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
 
-  private val depositDir = stagingDir(datasetID)
+  private val stagingDirectory = stagingDir(datasetID)
   private val bagDir = stagingBagDir(datasetID)
   private val metadataDir = stagingBagMetadataDir(datasetID)
-  private val dirs = depositDir :: bagDir :: metadataDir :: Nil
+  private val dirs = stagingDirectory :: bagDir :: metadataDir :: Nil
 
   override def checkPreconditions: Try[Unit] = checkDirectoriesDoNotExist
 
@@ -38,12 +38,12 @@ case class CreateOutputDepositDir(row: Int, datasetID: DatasetID)(implicit setti
   override def execute(): Try[Unit] = {
     debug(s"making directories: $dirs")
     if (dirs.forall(_.mkdirs)) Success(())
-    else Failure(ActionException(row, s"Could not create the dataset output deposit directory at $depositDir"))
+    else Failure(ActionException(row, s"Could not create the staging directory at $stagingDirectory"))
   }
 
   override def rollback(): Try[Unit] = {
-    Try { depositDir.deleteDirectory() } recoverWith {
-      case NonFatal(e) => Failure(ActionException(row, s"Could not delete $depositDir, exception: $e", e))
+    Try { stagingDirectory.deleteDirectory() } recoverWith {
+      case NonFatal(e) => Failure(ActionException(row, s"Could not delete $stagingDirectory, exception: $e", e))
     }
   }
 }

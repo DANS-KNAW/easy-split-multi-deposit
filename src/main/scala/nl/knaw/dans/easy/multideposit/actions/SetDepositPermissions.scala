@@ -38,10 +38,10 @@ case class SetDepositPermissions(row: Int, datasetID: DatasetID)(implicit settin
   }
 
   private def setFilePermissions(): Try[Unit] = {
-    val depositDir = stagingDir(datasetID)
-    isOnPosixFileSystem(depositDir)
+    val stagingDirectory = stagingDir(datasetID)
+    isOnPosixFileSystem(stagingDirectory)
       .flatMap {
-        case true => Try { Files.walkFileTree(depositDir.toPath, PermissionFileVisitor(settings.depositPermissions)) }
+        case true => Try { Files.walkFileTree(stagingDirectory.toPath, PermissionFileVisitor(settings.depositPermissions)) }
         case false => Success(())
       }
   }
