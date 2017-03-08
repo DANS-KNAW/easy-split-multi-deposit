@@ -22,7 +22,7 @@ import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 
 import scala.util.{Failure, Success}
 
-class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
+class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
@@ -55,7 +55,7 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     stagingBagMetadataDir(datasetID) should not (exist)
 
     // creation of directories
-    CreateOutputDepositDir(1, datasetID).checkPreconditions shouldBe a[Success[_]]
+    CreateStagingDir(1, datasetID).checkPreconditions shouldBe a[Success[_]]
   }
 
   it should "fail if either one of the output directories does already exist" in {
@@ -67,7 +67,7 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     stagingBagMetadataDir(datasetID) should not (exist)
 
     // creation of directories
-    inside(CreateOutputDepositDir(1, datasetID).checkPreconditions) {
+    inside(CreateStagingDir(1, datasetID).checkPreconditions) {
       case Failure(ActionException(_, message, _)) => message should include (s"The deposit for dataset $datasetID already exists")
     }
   }
@@ -83,7 +83,7 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     executeTest()
 
     // roll back the creation of the directories
-    CreateOutputDepositDir(1, datasetID).rollback() shouldBe a[Success[_]]
+    CreateStagingDir(1, datasetID).rollback() shouldBe a[Success[_]]
 
     // test that the directories are really not there anymore
     stagingDir(datasetID) should not (exist)
@@ -98,7 +98,7 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     stagingBagMetadataDir(datasetID) should not (exist)
 
     // creation of directories
-    CreateOutputDepositDir(1, datasetID).execute shouldBe a[Success[_]]
+    CreateStagingDir(1, datasetID).execute shouldBe a[Success[_]]
 
     // test existance after creation
     stagingDir(datasetID) should exist

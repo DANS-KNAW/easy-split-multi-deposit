@@ -60,7 +60,7 @@ object Main extends DebugEnhancedLogging {
     logger.debug(s"Getting actions for dataset $datasetID ...")
 
     Seq(
-      CreateOutputDepositDir(row, datasetID),
+      CreateStagingDir(row, datasetID),
       AddBagToDeposit(row, entry),
       AddDatasetMetadataToDeposit(row, entry),
       AddFileMetadataToDeposit(row, entry),
