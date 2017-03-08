@@ -55,7 +55,7 @@ ARGUMENTS
                                      'staging-dir' in 'application.properties' is used. (default = data/staging)
         --help                       Show help message
         --version                    Show version of this program
-  
+
    trailing arguments:
     multi-deposit-dir (required)   Directory containing the Submission Information Package to process. This must
                                    be a valid path to a directory containing a file named 'instructions.csv' in
