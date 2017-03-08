@@ -276,6 +276,10 @@ package object multideposit {
   }
 
   implicit class DatasetExtensions(val dataset: Dataset) extends AnyVal {
+    def getRowNumber: Int = {
+      dataset("ROW").head.toInt // first occurrence of dataset, assuming it is not empty
+    }
+
     /**
      * Retrieves the value of a certain parameter from the dataset on a certain row.
      * If either the key is not present, the specified row does not exist or the value `blank`

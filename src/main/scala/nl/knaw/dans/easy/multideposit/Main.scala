@@ -50,12 +50,13 @@ object Main extends DebugEnhancedLogging {
   }
 
   def getGeneralActions(datasets: Datasets)(implicit settings: Settings): Seq[Action] = {
-    Seq(CreateSpringfieldActions(-1, datasets))
+    Seq(CreateSpringfieldActions(-1, datasets)) ++
+      datasets.map { case (datasetID, dataset) => MoveDepositToOutputDir(dataset.getRowNumber, datasetID) }
   }
 
   def getDatasetActions(entry: (DatasetID, Dataset))(implicit settings: Settings): Seq[Action] = {
     val (datasetID, dataset) = entry
-    val row = dataset("ROW").head.toInt // first occurrence of dataset, assuming it is not empty
+    val row = dataset.getRowNumber
 
     logger.debug(s"Getting actions for dataset $datasetID ...")
 
