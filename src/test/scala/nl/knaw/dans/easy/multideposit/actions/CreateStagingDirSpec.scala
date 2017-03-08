@@ -43,16 +43,16 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAf
     // clean up stuff after the test is done
     val baseDir = settings.stagingDir
     baseDir.deleteDirectory()
-    baseDir should not (exist)
+    baseDir shouldNot exist
   }
 
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if the output directories do not yet exist" in {
     // directories do not exist before
-    stagingDir(datasetID) should not (exist)
-    stagingBagDir(datasetID) should not (exist)
-    stagingBagMetadataDir(datasetID) should not (exist)
+    stagingDir(datasetID) shouldNot exist
+    stagingBagDir(datasetID) shouldNot exist
+    stagingBagMetadataDir(datasetID) shouldNot exist
 
     // creation of directories
     CreateStagingDir(1, datasetID).checkPreconditions shouldBe a[Success[_]]
@@ -64,7 +64,7 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAf
     // some directories do already exist before
     stagingDir(datasetID) should exist
     stagingBagDir(datasetID) should exist
-    stagingBagMetadataDir(datasetID) should not (exist)
+    stagingBagMetadataDir(datasetID) shouldNot exist
 
     // creation of directories
     inside(CreateStagingDir(1, datasetID).checkPreconditions) {
@@ -86,16 +86,16 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAf
     CreateStagingDir(1, datasetID).rollback() shouldBe a[Success[_]]
 
     // test that the directories are really not there anymore
-    stagingDir(datasetID) should not (exist)
-    stagingBagDir(datasetID) should not (exist)
-    stagingBagMetadataDir(datasetID) should not (exist)
+    stagingDir(datasetID) shouldNot exist
+    stagingBagDir(datasetID) shouldNot exist
+    stagingBagMetadataDir(datasetID) shouldNot exist
   }
 
   def executeTest(): Unit = {
     // directories do not exist before
-    stagingDir(datasetID) should not (exist)
-    stagingBagDir(datasetID) should not (exist)
-    stagingBagMetadataDir(datasetID) should not (exist)
+    stagingDir(datasetID) shouldNot exist
+    stagingBagDir(datasetID) shouldNot exist
+    stagingBagMetadataDir(datasetID) shouldNot exist
 
     // creation of directories
     CreateStagingDir(1, datasetID).execute shouldBe a[Success[_]]

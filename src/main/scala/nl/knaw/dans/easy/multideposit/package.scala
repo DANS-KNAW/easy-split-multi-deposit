@@ -15,19 +15,19 @@
  */
 package nl.knaw.dans.easy
 
-import java.io.{File, IOException}
+import java.io.{ File, IOException }
 import java.nio.charset.Charset
 import java.util.Properties
 
-import org.apache.commons.io.{Charsets, FileUtils}
+import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.apache.commons.lang.StringUtils
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.immutable.IndexedSeq
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.util.{Failure, Success, Try}
-import scala.xml.{Elem, PrettyPrinter}
+import scala.util.{ Failure, Success, Try }
+import scala.xml.{ Elem, PrettyPrinter }
 
 package object multideposit {
 
@@ -148,7 +148,7 @@ package object multideposit {
      *
      * @param data the content to write to the file
      */
-    @throws(classOf[IOException])
+    @throws[IOException]("in case of an I/O error")
     def write(data: String, encoding: Charset = encoding): Unit = FileUtils.write(file, data, encoding)
 
     /**
@@ -157,6 +157,7 @@ package object multideposit {
      * @param elem the xml to be written
      * @param encoding the encoding applied to this xml
      */
+    @throws[IOException]("in case of an I/O error")
     def writeXml(elem: Elem, encoding: Charset = encoding): Unit = {
       val header = s"""<?xml version="1.0" encoding="$encoding"?>\n"""
       val data = new PrettyPrinter(160, 2).format(elem)
@@ -169,7 +170,7 @@ package object multideposit {
      *
      * @param data the content to write to the file
      */
-    @throws(classOf[IOException])
+    @throws[IOException]("in case of an I/O error")
     def append(data: String): Unit = FileUtils.write(file, data, true)
 
     /**
@@ -178,7 +179,7 @@ package object multideposit {
      *
      * @return the file contents, never ``null``
      */
-    @throws(classOf[IOException])
+    @throws[IOException]("in case of an I/O error")
     def read(encoding: Charset = encoding): String = FileUtils.readFileToString(file, encoding)
 
     /**
@@ -198,7 +199,7 @@ package object multideposit {
      * @param child the file to consider as the child.
      * @return true is the candidate leaf is under by the specified composite. False otherwise.
      */
-    @throws(classOf[IOException])
+    @throws[IOException]("if an IO error occurs while checking the files.")
     def directoryContains(child: File): Boolean = FileUtils.directoryContains(file, child)
 
     /**
@@ -219,8 +220,9 @@ package object multideposit {
      *
      * @param destDir the new directory, must not be ``null``
      */
-    @throws(classOf[NullPointerException])
-    @throws(classOf[IOException])
+    @throws[NullPointerException]("if source or destination is null")
+    @throws[IOException]("if source or destination is invalid")
+    @throws[IOException]("if an IO error occurs during copying")
     def copyFile(destDir: File): Unit = FileUtils.copyFile(file, destDir)
 
     /**
@@ -241,11 +243,28 @@ package object multideposit {
      *
      * @param destDir the new directory, must not be ``null``
      */
+    @throws[NullPointerException]("if source or destination is null")
+    @throws[IOException]("if source or destination is invalid")
+    @throws[IOException]("if an IO error occurs during copying")
     def copyDir(destDir: File): Unit = FileUtils.copyDirectory(file, destDir)
+
+    /**
+     * Moves a directory.
+     * <p>
+     * When the destination directory is on another file system, do a "copy and delete".
+     *
+     * @param destDir the destination directory
+     */
+    @throws[NullPointerException]("if source or destination is null")
+    @throws[FileExistsException]("if the destination directory exists")
+    @throws[IOException]("if source or destination is invalid")
+    @throws[IOException]("if an IO error occurs moving the file")
+    def moveDir(destDir: File): Unit = FileUtils.moveDirectory(file, destDir)
 
     /**
      * Deletes a directory recursively.
      */
+    @throws[IOException]("in case deletion is unsuccessful")
     def deleteDirectory(): Unit = FileUtils.deleteDirectory(file)
 
     /**
