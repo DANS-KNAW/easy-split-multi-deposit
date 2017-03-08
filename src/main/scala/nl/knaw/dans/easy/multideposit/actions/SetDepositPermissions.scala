@@ -38,7 +38,7 @@ case class SetDepositPermissions(row: Int, datasetID: DatasetID)(implicit settin
   }
 
   private def setFilePermissions(): Try[Unit] = {
-    val depositDir = outputDepositDir(datasetID)
+    val depositDir = stagingDir(datasetID)
     isOnPosixFileSystem(depositDir)
       .flatMap {
         case true => Try { Files.walkFileTree(depositDir.toPath, PermissionFileVisitor(settings.depositPermissions)) }

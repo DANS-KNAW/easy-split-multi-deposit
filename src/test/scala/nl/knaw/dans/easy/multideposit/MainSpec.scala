@@ -26,7 +26,7 @@ class MainSpec extends UnitSpec {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
-    outputDepositDir = new File(testDir, "dd"),
+    stagingDir = new File(testDir, "dd"),
     springfieldInbox = new File(testDir, "sfi")
   )
 

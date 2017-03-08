@@ -42,6 +42,7 @@ object CommandLineOptions extends DebugEnhancedLogging {
     val settings = Settings(
       multidepositDir = opts.multiDepositDir(),
       springfieldInbox = opts.springfieldInbox(),
+      stagingDir = opts.stagingDir(),
       outputDepositDir = opts.outputDepositDir(),
       datamanager = opts.datamanager(),
       depositPermissions = DepositPermissions(props.getString("deposit.permissions.access"), props.getString("deposit.permissions.group")),
@@ -119,7 +120,7 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
   validateFileExists(multiDepositDir)
   validateFileIsDirectory(multiDepositDir)
   validate(multiDepositDir)(dir => {
-    val instructionFile: File = new File(dir, instructionsFileName)
+    val instructionFile: File = multiDepositInstructionsFile(dir)
     if (!dir.directoryContains(instructionFile))
       Left(s"No instructions file found in this directory, expected: $instructionFile")
     else

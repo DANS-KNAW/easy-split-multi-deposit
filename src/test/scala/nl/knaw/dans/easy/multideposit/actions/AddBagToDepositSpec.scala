@@ -27,7 +27,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
-    outputDepositDir = new File(testDir, "dd")
+    stagingDir = new File(testDir, "sd")
   )
 
   val datasetID = "ruimtereis01"
@@ -46,11 +46,11 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
     new File(multiDepositDir(datasetID), "folder2/file4.txt").write(file4Text)
     new File(multiDepositDir("ruimtereis02"), "folder3/file5.txt").write("file5Text")
 
-    outputDepositBagDir(datasetID).mkdirs
+    stagingBagDir(datasetID).mkdirs
   }
 
   after {
-    outputDepositBagDir(datasetID).deleteDirectory()
+    stagingBagDir(datasetID).deleteDirectory()
   }
 
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
@@ -62,7 +62,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   it should "create a bag with the files from ruimtereis01 in it and some meta-files around" in {
     AddBagToDeposit(1, entry).execute shouldBe a[Success[_]]
 
-    val root = outputDepositBagDir(datasetID)
+    val root = stagingBagDir(datasetID)
     root should exist
     root.listRecursively.map(_.getName) should contain theSameElementsAs
       List("bag-info.txt",
@@ -73,13 +73,13 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
         "file4.txt",
         "manifest-sha1.txt",
         "tagmanifest-sha1.txt")
-    outputDepositBagDataDir(datasetID) should exist
+    stagingBagDataDir(datasetID) should exist
   }
 
   it should "preserve the file content after making the bag" in {
     AddBagToDeposit(1, entry).execute shouldBe a[Success[_]]
 
-    val root = outputDepositBagDataDir(datasetID)
+    val root = stagingBagDataDir(datasetID)
     new File(root, "file1.txt").read() shouldBe file1Text
     new File(root, "folder1/file2.txt").read() shouldBe file2Text
     new File(root, "folder1/file3.txt").read() shouldBe file3Text
@@ -89,10 +89,10 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   it should "create a bag with no files in data when the input directory does not exist" in {
     implicit val settings = Settings(
       multidepositDir = new File(testDir, "md-empty"),
-      outputDepositDir = new File(testDir, "dd")
+      stagingDir = new File(testDir, "sd")
     )
 
-    val outputDir = outputDepositBagDir(datasetID)
+    val outputDir = stagingBagDir(datasetID)
     outputDir.mkdirs
     outputDir should exist
 
@@ -100,16 +100,16 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
 
     AddBagToDeposit(1, entry)(settings).execute shouldBe a[Success[_]]
 
-    outputDepositDir(datasetID) should exist
-    outputDepositBagDataDir(datasetID) should exist
-    outputDepositBagDataDir(datasetID).listRecursively shouldBe empty
-    outputDepositBagDir(datasetID).listRecursively.map(_.getName) should contain theSameElementsAs
+    stagingDir(datasetID) should exist
+    stagingBagDataDir(datasetID) should exist
+    stagingBagDataDir(datasetID).listRecursively shouldBe empty
+    stagingBagDir(datasetID).listRecursively.map(_.getName) should contain theSameElementsAs
       List("bag-info.txt",
         "bagit.txt",
         "manifest-sha1.txt",
         "tagmanifest-sha1.txt")
 
-    val root = outputDepositBagDir(datasetID)
+    val root = stagingBagDir(datasetID)
     new File(root, "manifest-sha1.txt").read() shouldBe empty
     new File(root, "tagmanifest-sha1.txt").read() should include("bag-info.txt")
     new File(root, "tagmanifest-sha1.txt").read() should include("bagit.txt")
@@ -119,7 +119,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   it should "contain the date-created in the bag-info.txt" in {
     AddBagToDeposit(1, entry).execute() shouldBe a[Success[_]]
 
-    val bagInfo = new File(outputDepositBagDir(datasetID), "bag-info.txt")
+    val bagInfo = new File(stagingBagDir(datasetID), "bag-info.txt")
     bagInfo should exist
 
     bagInfo.read() should include("Created")
@@ -138,7 +138,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   }
 
   def verifyChecksums(datasetID: DatasetID, manifestFile: String): Unit = {
-    val root = outputDepositBagDir(datasetID)
+    val root = stagingBagDir(datasetID)
     new File(root, manifestFile).read()
       .split('\n')
       .map(_.split("  "))

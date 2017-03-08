@@ -27,8 +27,8 @@ import scala.xml.Utility
 class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
   implicit val settings = Settings(
-    multidepositDir = new File(testDir, "dd"),
-    outputDepositDir = new File(testDir, "dd")
+    multidepositDir = new File(testDir, "md"),
+    stagingDir = new File(testDir, "sd")
   )
   val datasetID = "ruimtereis01"
   val dataset = mutable.HashMap(
@@ -37,13 +37,13 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   )
   before {
     new File(getClass.getResource("/spacetravel").toURI)
-      .copyDir(settings.outputDepositDir)
+      .copyDir(settings.multidepositDir)
     new File(getClass.getResource("/mimetypes").toURI)
       .copyDir(new File(testDir, "mimetypes"))
   }
 
   after {
-    settings.outputDepositDir.deleteDirectory()
+    settings.stagingDir.deleteDirectory()
   }
 
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
@@ -65,12 +65,12 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
 
   "execute" should "write the file metadata to an xml file" in {
     val action = new AddFileMetadataToDeposit(1, (datasetID, dataset))
-    val metadataDir = outputDepositBagMetadataDir(datasetID)
+    val metadataDir = stagingBagMetadataDir(datasetID)
 
     action.execute() shouldBe a[Success[_]]
 
     metadataDir should exist
-    outputFileMetadataFile(datasetID) should exist
+    stagingFileMetadataFile(datasetID) should exist
   }
 
   "datasetToFileXml" should "produce the xml for all the files" in {
