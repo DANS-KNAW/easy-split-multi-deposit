@@ -36,6 +36,13 @@ if [[ " ${ARGS[*]} " != *"--help"* ]] && [[ " ${ARGS[*]} " != *"--version"* ]]; 
         mkdir $SPRINGFIELD
         echo "the old springfield-inbox folder has been moved to $NEWSPRINGFIELD"
     fi
+
+    if [ "$(ls -A $STAGING)" ]; then
+        NEWSTAGING=$STAGING-`date  +"%Y-%m-%d@%H:%M:%S"`
+        mv $STAGING $NEWSTAGING
+        mkdir $STAGING
+        echo "the old staging folder has been moved to $NEWSTAGING"
+    fi
 fi
 
 mvn exec:java -Dapp.home=$APPHOME \
