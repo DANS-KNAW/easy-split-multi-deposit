@@ -26,8 +26,6 @@ import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-// TODO add the 'move to easy-ingest-flow inbox' functionality in this class
-// TODO rename this file accordingly
 case class SetDepositPermissions(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
 
   def execute(): Try[Unit] = {
