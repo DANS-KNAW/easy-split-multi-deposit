@@ -130,5 +130,8 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
   validateFileExists(springfieldInbox)
   validateFileIsDirectory(springfieldInbox)
 
+  validateFileExists(outputDepositDir)
+  validateFileIsDirectory(outputDepositDir)
+
   verify()
 }
