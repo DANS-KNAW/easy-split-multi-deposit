@@ -35,6 +35,7 @@ cp -r src/test/resources/sip001 $TEMPDIR/input/sip001
 cp -r src/test/resources/spacetravel $TEMPDIR/input/spacetravel
 mkdir $TEMPDIR/output/
 mkdir $TEMPDIR/springfield-inbox
+mkdir $TEMPDIR/staging
 chmod -R 777 $TEMPDIR
 
 echo "A fresh application home directory for debugging has been set up at $APPHOME"

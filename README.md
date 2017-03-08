@@ -43,22 +43,26 @@ ARGUMENTS
 ```
   Usage: 
 
-      easy-split-multi-deposit.sh [{--springfield-inbox|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
+      easy-split-multi-deposit.sh [{--springfield-inbox|-s} <dir>] [{--staging-dir|-d} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
 
   Options:
 
     -s, --springfield-inbox  <arg>   The inbox directory of a Springfield Streaming Media Platform installation.
-                                     If not specified the value of springfield-inbox in application.properties
-                                     is used. (default = data/springfield-inbox)
+                                     If not specified the value of 'springfield-inbox' in
+                                     'application.properties' is used. (default = data/springfield-inbox)
+    -d, --staging-dir  <arg>         A directory in which the deposit directories are created, after which they
+                                     will be moved to the 'deposit-dir'. If not specified, the value of
+                                     'staging-dir' in 'application.properties' is used. (default = data/staging)
         --help                       Show help message
         --version                    Show version of this program
-
+  
    trailing arguments:
     multi-deposit-dir (required)   Directory containing the Submission Information Package to process. This must
                                    be a valid path to a directory containing a file named 'instructions.csv' in
                                    RFC4180 format.
-    deposit-dir (required)         A directory in which the deposit directories must be created. The deposit
-                                   directory layout is described in the easy-sword2 documentation
+    deposit-dir (required)         A directory to which the deposit directories are moved after the staging has
+                                   been completed successfully. The deposit directory layout is described in the
+                                   easy-sword2 documentation
     datamanager (required)         The username (id) of the datamanger (archivist) performing this deposit
 ```
 
