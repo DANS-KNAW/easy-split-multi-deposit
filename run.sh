@@ -18,7 +18,23 @@
 
 ARGS=$@
 APPHOME=home
-. apphome.sh
+OUTPUT=data/output
+SPRINGFIELD=data/springfield-inbox
+STAGING=data/staging
+
+if [ "$(ls -A $OUTPUT)" ]; then
+    NEWOUTPUT=$OUTPUT-`date  +"%Y-%m-%d@%H:%M:%S"`
+    mv $OUTPUT $NEWOUTPUT
+    mkdir $OUTPUT
+    echo "the old output folder has been moved to $NEWOUTPUT"
+fi
+
+if [ "$(ls -A $SPRINGFIELD)" ]; then
+    NEWSPRINGFIELD=$SPRINGFIELD-`date  +"%Y-%m-%d@%H:%M:%S"`
+    mv $SPRINGFIELD $NEWSPRINGFIELD
+    mkdir $SPRINGFIELD
+    echo "the old springfield-inbox folder has been moved to $NEWSPRINGFIELD"
+fi
 
 mvn exec:java -Dapp.home=$APPHOME \
               -Dlogback.configurationFile=$APPHOME/cfg/logback.xml \
