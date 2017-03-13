@@ -32,6 +32,7 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.kn
     <ddm:available>1992-07-30</ddm:available>
     <dc:format>video/mpeg</dc:format>
     <dc:format>text/plain</dc:format>
+    <dc:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dc:format>
     <dcterms:spatial>here</dcterms:spatial>
     <dcterms:spatial>there</dcterms:spatial>
     <dcterms:alternative>Gewoon een stukje steen in de ruimte?</dcterms:alternative>

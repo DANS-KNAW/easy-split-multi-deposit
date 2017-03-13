@@ -1,0 +1,56 @@
+Ruimtetelescoop Hubble
+Ruimtetelescoop Hubble
+De ruimtetelescoop Hubble gezien vanuit de Space Shuttle Discovery tijdens missie STS-82
+De ruimtetelescoop Hubble gezien vanuit de Space Shuttle Discovery tijdens missie STS-82
+Algemene informatie
+Organisatie 	NASA/ESA
+Lancering 	24 april 1990
+Gelanceerd met 	Space Shuttle Discovery
+Terugkeer 	Na 2013
+Gewicht 	11.000 kg
+Type omloopbaan 	Lage baan
+Baanhoogte 	569 km
+Omloopduur 	97 min
+Type telescoop 	ruimtetelescoop
+Telescoop diameter 	2,4 m
+Brandpuntsafstand 	57,6 m
+Instrumenten
+ACS 	Karteringscamera (defect)
+WFPC2 	Groothoekcamera
+STIS 	Spectrometer/camera (defect)
+NICMOS 	Camera/spectrometer
+Portaal  Portaalicoon   	Heelal
+Foto's genomen door de ruimtetelescoop Hubble in valse kleuren weergegeven: vanaf linksboven met de klok mee: het Kikkervisstelsel, de Kegelwolk, twee botsende spiraalvormige sterrenstelsels (NGC 4676) en de geboorte van een ster in de Omeganevel.
+Langdurige waarneming met de Hubble-telescoop waarop vele verre melkwegstelsels te zien zijn: het zogenaamde Hubble Deep Field. Klik voor hogere resolutie. zie Hubble Ultra Deep Field.
+
+De Hubble-ruimtetelescoop (Hubble Space Telescope, HST) bestaat uit een aantal precisie-instrumenten voor astronomische waarnemingen. Hij is genoemd naar de Amerikaanse astronoom Edwin Hubble, en draait sinds de lancering door de NASA op 24 april 1990 als een kunstmaan rond de aarde. De Hubble wordt gebruikt voor optische waarnemingen. De telescoop bezit ook een infraroodcamera. Voor observaties in het röntgengolflengtegebied wordt gebruikgemaakt van het Chandra X-Ray Observatory.
+
+Door het ontbreken van een atmosfeer in de ruimte is een ongekend scherpe afbeelding van verre astronomische objecten mogelijk. Eén van de bekendste foto's die door de Hubble genomen zijn is van de Adelaarsnevel (M16). Deze foto is volgens veel astronomen de mooiste foto ooit genomen van een object in het heelal.
+
+Inhoud
+
+    1 Problemen met de spiegel
+    2 Verdere geschiedenis
+    3 Externe links
+    4 Literatuur/noten/verwijzingen
+
+Problemen met de spiegel
+
+Binnen weken na de lancering van de telescoop toonden de teruggestuurde beelden dat er een serieus probleem was met het optische systeem. Hoewel de eerste beelden scherper leken te zijn dan beelden vanop de grond, was de telescoop niet in staat goed scherp te stellen en waren de gemaakte beelden minder goed dan was verwacht.
+
+Uit analyse van de onscherpe beelden bleek dat de primaire spiegel de verkeerde vorm had gekregen, hoewel de spiegel zeer precies geslepen is. De afwijking bedroeg slechts 10 nanometer, maar de spiegel was ongeveer 2200 nanometer (2,2 micron) te plat aan de randen. Dit verschil veroorzaakte sferische aberratie (het licht dat van de randen werd weerkaatst had een ander brandpunt dan het licht van het centrum van de spiegel). Ter vergelijking: de fout van 10 nanometer op een spiegel van 2,4 meter diameter komt overeen met de diameter van een 5 eurocentstuk op de 'diameter' van de Verenigde Staten.
+
+De spiegelfout beïnvloedde niet alle wetenschappelijke waarnemingen evenveel. Heldere objecten waren scherp genoeg en de spectroscopie was grotendeels onovertroffen. Door het verlies aan lichtsterkte door de slechte scherpstelling was de telescoop niet goed bruikbaar voor zwakke lichtbronnen en beelden met een hoog contrast. Dit maakte bijna alle kosmologische programma's onmogelijk, omdat die gebruik moesten maken van het waarnemen van zeer zwakke lichtbronnen. NASA en de telescoop werden hierdoor het onderwerp van vele grappen (zo werd de telescoop bijvoorbeeld voorgesteld naast de Hindenburg en de Titanic).
+
+Een tweede ruimtemissie in december 1993, waarbij door astronauten onder andere een corrigerende spiegel werd aangebracht, verhielp dit euvel. In de jaren hierna zijn nog twee onderhoudsmissies uitgevoerd.
+Verdere geschiedenis
+
+Intussen werden al plannen gemaakt voor de volgende, betere en grotere ruimtetelescoop: de James Webb-ruimtetelescoop. Anderzijds stond de ontwikkeling van de aardse telescopen niet stil. Door een groot aantal kleinere telescoopbeelden te combineren, en optische fouten, veroorzaakt door temperatuurverschillen en turbulentie in de atmosfeer, in real time computergestuurd te corrigeren, werd het mogelijk ook vanaf de aarde afbeeldingen te maken die niet meer voor die van de Hubble onderdoen.
+
+Op 16 januari 2004 maakte de NASA bekend dat er geen onderhoud meer aan de Hubble zou worden verricht. President George W. Bush had bekendgemaakt dat er voorrang zou worden gegeven aan reizen naar de maan en naar Mars. Naar verwachting had de Hubble hierna nog een nuttige levensduur van een jaar of vijf.
+
+Ton Linssens van de ESA-afdeling die over de Hubble-telescoop gaat stelde echter dat de beslissing om de telescoop niet meer te onderhouden niets te maken heeft met de plannen om naar Mars te reizen. De reden is dat het ruimteveer in de toekomst uitsluitend naar het internationale ruimtestation mag vliegen. Alleen daar kan gecontroleerd worden of de tegeltjes van het hitteschild nog in goede staat zijn om de terugreis te maken. Daar is ook de mogelijkheid aanwezig om eventueel met een Sojoez de terugreis te maken.
+
+Op 31 oktober 2006 maakte de NASA echter bekend dat in de tweede helft van 2008 alsnog een vierde onderhoudsmissie naar de Hubble zou worden uitgevoerd. Door het aanbrengen van nieuwe gyroscopen en nikkel-waterstof-accu's zou de levensduur van de telescoop kunnen worden verlengd tot ten minste 2014.[1] Verder zouden nieuwe instrumenten worden geïnstalleerd: een Cosmic Origins Spectrograph en een nieuwe groothoekcamera, WFC3, die de huidige WFPC2 zal vervangen.
+
+In september 2008 deed zich echter nog een technische storing aan de Hubble voor, in de Science Instrument Command and Data Handling (SIC&DH) Unit. Om deze tijdens het groot onderhoud te kunnen verhelpen, bleek extra voorbereiding nodig. Daarom werd deze vierde reparatie-missie (STS-125) uitgesteld tot 2009. De lancering vond op 11 mei 2009 plaats. Dit is waarschijnlijk de laatste onderhoudsbeurt die de telescoop krijgt. Hubble kan nu meer gegevens verwerken dan ooit. En met de nieuwe camera die werd geplaatst krijgt men steeds duidelijkere opnamen van sterrenstelsels, exploderende sterren en mysterieuze nevels. Op 19 mei 2009 werd de Hubble weer door spaceshuttle Atlantis in de ruimte geplaatst.

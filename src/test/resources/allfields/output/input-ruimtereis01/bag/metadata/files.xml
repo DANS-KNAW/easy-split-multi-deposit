@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <files xmlns:dcterms="http://purl.org/dc/terms/">
+  <file filepath="data/path/to/a/random/video/hubble.mpg">
+    <dcterms:type>http://schema.org/VideoObject</dcterms:type>
+    <dcterms:format>video/mpeg</dcterms:format> <!-- (te bepalen adhv het bestand) -->
+    <dcterms:title>hubble.mpg</dcterms:title>
+    <dcterms:accessRights>GROUP_ACCESS</dcterms:accessRights>
+  </file>
+  <file filepath="data/path/to/a/random/sound/chicken.mp3">
+    <dcterms:type>http://schema.org/AudioObject</dcterms:type>
+    <dcterms:format>audio/mpeg</dcterms:format>
+    <dcterms:title>our daily wake up call</dcterms:title>
+    <dcterms:accessRights>GROUP_ACCESS</dcterms:accessRights>
+  </file>
   <file filepath="data/reisverslag/deel01.docx">
     <dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format>
   </file>
@@ -10,6 +22,16 @@
     <dcterms:format>text/plain</dcterms:format>
   </file>
   <file filepath="data/reisverslag/deel03.txt">
+    <dcterms:format>text/plain</dcterms:format>
+  </file>
+  <file filepath="data/reisverslag/centaur.mpg">
+    <dcterms:type>http://schema.org/VideoObject</dcterms:type>
+    <dcterms:format>video/mpeg</dcterms:format>
+    <dcterms:title>video about the centaur meteorite</dcterms:title>
+    <dcterms:accessRights>GROUP_ACCESS</dcterms:accessRights>
+    <dcterms:relation>ruimtereis01/reisverslag/centaur.srt</dcterms:relation>
+  </file>
+  <file filepath="data/reisverslag/centaur.srt">
     <dcterms:format>text/plain</dcterms:format>
   </file>
   <file filepath="data/ruimtereis01_verklaring.txt">

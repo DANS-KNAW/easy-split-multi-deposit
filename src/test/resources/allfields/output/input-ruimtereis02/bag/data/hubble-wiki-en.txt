@@ -1,0 +1,235 @@
+Hubble Space Telescope
+From Wikipedia, the free encyclopedia
+"Hubble" redirects here. For other uses, see Hubble (disambiguation).
+Hubble Space Telescope The Hubble Space Telescope in orbit
+The Hubble Space Telescope as seen from the departing Space Shuttle Atlantis, flying Servicing Mission 4 (STS-125), the fifth and final human spaceflight to it.
+Mission type 	Astronomy
+Operator 	NASA / ESA / STScI
+COSPAR ID 	1990-037B
+SATCAT № 	20580
+Website 	hubble.nasa.gov
+hubblesite.org
+spacetelescope.org
+Mission duration 	24 years and 10 months elapsed
+Spacecraft properties
+Manufacturer 	Perkin-Elmer (optics)
+Lockheed (spacecraft)
+Launch mass 	11,110 kg (24,490 lb)[1]
+Dimensions 	13.2 m × 4.2 m (43 ft × 14 ft)
+Power 	2800 watts
+Start of mission
+Launch date 	24 April 1990, 12:33:51 UTC[2]
+Rocket 	Space Shuttle Discovery (STS-31)
+Launch site 	Kennedy LC-39B
+Deployment date 	25 April 1990
+Entered service 	20 May 1990
+End of mission
+Decay date 	estimated 2021-2032[3]
+Orbital parameters
+Reference system 	Geocentric
+Regime 	Low Earth
+Semi-major axis 	6,924 kilometres (4,302 mi)[4]
+Perigee 	551.4 kilometres (342.6 mi)[4]
+Apogee 	555.6 kilometres (345.2 mi)[4]
+Inclination 	28.5 degrees[4]
+Period 	95.6 minutes[4]
+Velocity 	7,160 metres per second (16,000 mph)[4]
+Epoch 	27 January 2015, 09:27:58 UTC[4]
+Main telescope
+Type 	Ritchey–Chrétien reflector
+Diameter 	2.4 m (7.9 ft)
+Focal length 	57.6 m (189 ft)
+Collecting area 	4.5 m2 (48 sq ft)[5]
+Wavelengths 	near-infrared, visible light, ultraviolet
+Instruments
+NICMOS 	infrared camera/spectrometer
+ACS 	photometric optical camera
+WFC3 	wide field optical camera
+COS 	ultraviolet spectrograph
+STIS 	optical spectrometer/camera
+FGS 	fine guidance instrument
+
+The Hubble Space Telescope (HST) is a space telescope that was launched into low Earth orbit in 1990, and remains in operation. With a 2.4-meter (7.9 ft) mirror, Hubble's four main instruments observe in the near ultraviolet, visible, and near infrared spectra. The telescope is named after the astronomer Edwin Hubble.
+
+Hubble's orbit outside the distortion of Earth's atmosphere allows it to take extremely high-resolution images with negligible background light. Hubble has recorded some of the most detailed visible-light images ever, allowing a deep view into space and time. Many Hubble observations have led to breakthroughs in astrophysics, such as accurately determining the rate of expansion of the universe.
+
+Although not the first space telescope, Hubble is one of the largest and most versatile, and is well known as both a vital research tool and a public relations boon for astronomy. The HST was built by the United States space agency NASA, with contributions from the European Space Agency, and is operated by the Space Telescope Science Institute. The HST is one of NASA's Great Observatories, along with the Compton Gamma Ray Observatory, the Chandra X-ray Observatory, and the Spitzer Space Telescope.[6]
+
+Space telescopes were proposed as early as 1923. Hubble was funded in the 1970s, with a proposed launch in 1983, but the project was beset by technical delays, budget problems, and the Challenger disaster. When finally launched in 1990, Hubble's main mirror was found to have been ground incorrectly, compromising the telescope's capabilities. The optics were corrected to their intended quality by a servicing mission in 1993.
+
+Hubble is the only telescope designed to be serviced in space by astronauts. After launch by Space Shuttle Discovery in 1990, four subsequent Space Shuttle missions repaired, upgraded, and replaced systems on the telescope. A fifth mission was canceled on safety grounds following the Columbia disaster. However, after spirited public discussion, NASA administrator Mike Griffin approved one final servicing mission, completed in 2009. The telescope is still operating as of 2015, and may last until 2020.[7] Its scientific successor, the James Webb Space Telescope (JWST), is scheduled for launch in 2018.
+
+Contents
+
+    1 Conception, design and aim
+        1.1 Proposals and precursors
+        1.2 Quest for funding
+        1.3 Construction and engineering
+        1.4 Optical Telescope Assembly (OTA)
+        1.5 Spacecraft systems
+        1.6 Initial instruments
+        1.7 Ground support
+        1.8 Challenger disaster, delays, and eventual launch
+    2 Flawed mirror
+        2.1 Origin of the problem
+        2.2 Design of a solution
+    3 Servicing missions and new instruments
+        3.1 Servicing Mission 1
+        3.2 Servicing Mission 2
+        3.3 Servicing Mission 3A
+        3.4 Servicing Mission 3B
+        3.5 Servicing Mission 4
+    4 Major projects
+        4.1 Cosmic Assembly Near-infrared Deep Extragalactic Legacy Survey
+        4.2 Frontier Fields program
+    5 Public use
+        5.1 Amateur observations
+        5.2 20th anniversary
+    6 Scientific results
+        6.1 Key projects
+        6.2 Important discoveries
+        6.3 Impact on astronomy
+    7 Hubble data
+        7.1 Transmission to Earth
+        7.2 Color images
+        7.3 Archives
+        7.4 Pipeline reduction
+        7.5 Data analysis
+    8 Outreach activities
+    9 Future
+        9.1 Equipment failure
+        9.2 Orbital decay
+        9.3 Successors
+    10 List of Hubble instruments
+    11 See also
+    12 References
+        12.1 Bibliography
+        12.2 Further reading
+    13 External links
+
+Conception, design and aim
+Proposals and precursors
+
+In 1923, Hermann Oberth—considered a father of modern rocketry, along with Robert H. Goddard and Konstantin Tsiolkovsky—published Die Rakete zu den Planetenräumen ("The Rocket into Planetary Space"), which mentioned how a telescope could be propelled into Earth orbit by a rocket.[8]
+
+The history of the Hubble Space Telescope can be traced back as far as 1946, to the astronomer Lyman Spitzer's paper "Astronomical advantages of an extraterrestrial observatory".[9] In it, he discussed the two main advantages that a space-based observatory would have over ground-based telescopes. First, the angular resolution (the smallest separation at which objects can be clearly distinguished) would be limited only by diffraction, rather than by the turbulence in the atmosphere, which causes stars to twinkle, known to astronomers as seeing. At that time ground-based telescopes were limited to resolutions of 0.5–1.0 arcseconds, compared to a theoretical diffraction-limited resolution of about 0.05 arcsec for a telescope with a mirror 2.5 m in diameter. Second, a space-based telescope could observe infrared and ultraviolet light, which are strongly absorbed by the atmosphere.
+
+Spitzer devoted much of his career to pushing for the development of a space telescope. In 1962, a report by the US National Academy of Sciences recommended the development of a space telescope as part of the space program, and in 1965 Spitzer was appointed as head of a committee given the task of defining scientific objectives for a large space telescope.[10]
+
+Space-based astronomy had begun on a very small scale following World War II, as scientists made use of developments that had taken place in rocket technology. The first ultraviolet spectrum of the Sun was obtained in 1946,[11] and the National Aeronautics and Space Administration (NASA) launched the Orbiting Solar Observatory (OSO) to obtain UV, X-ray, and gamma-ray spectra in 1962.[12] An orbiting solar telescope was launched in 1962 by the United Kingdom as part of the Ariel space program, and in 1966 NASA launched the first Orbiting Astronomical Observatory (OAO) mission. OAO-1's battery failed after three days, terminating the mission. It was followed by OAO-2, which carried out ultraviolet observations of stars and galaxies from its launch in 1968 until 1972, well beyond its original planned lifetime of one year.[13]
+
+The OSO and OAO missions demonstrated the important role space-based observations could play in astronomy, and in 1968, NASA developed firm plans for a space-based reflecting telescope with a mirror 3 m in diameter, known provisionally as the Large Orbiting Telescope or Large Space Telescope (LST), with a launch slated for 1979. These plans emphasized the need for manned maintenance missions to the telescope to ensure such a costly program had a lengthy working life, and the concurrent development of plans for the reusable space shuttle indicated that the technology to allow this was soon to become available.[14]
+Quest for funding
+
+The continuing success of the OAO program encouraged increasingly strong consensus within the astronomical community that the LST should be a major goal. In 1970, NASA established two committees, one to plan the engineering side of the space telescope project, and the other to determine the scientific goals of the mission. Once these had been established, the next hurdle for NASA was to obtain funding for the instrument, which would be far more costly than any Earth-based telescope. The U.S. Congress questioned many aspects of the proposed budget for the telescope and forced cuts in the budget for the planning stages, which at the time consisted of very detailed studies of potential instruments and hardware for the telescope. In 1974, public spending cuts led to Congress deleting all funding for the telescope project.[15]
+
+In response to this, a nationwide lobbying effort was coordinated among astronomers. Many astronomers met congressmen and senators in person, and large scale letter-writing campaigns were organized. The National Academy of Sciences published a report emphasizing the need for a space telescope, and eventually the Senate agreed to half of the budget that had originally been approved by Congress.[16]
+Grinding of Hubble's primary mirror at Perkin-Elmer, March 1979
+
+The funding issues led to something of a reduction in the scale of the project, with the proposed mirror diameter reduced from 3 m to 2.4 m, both to cut costs [17] and to allow a more compact and effective configuration for the telescope hardware. A proposed precursor 1.5 m space telescope to test the systems to be used on the main satellite was dropped, and budgetary concerns also prompted collaboration with the European Space Agency. ESA agreed to provide funding and supply one of the first generation instruments for the telescope, as well as the solar cells that would power it, and staff to work on the telescope in the United States, in return for European astronomers being guaranteed at least 15% of the observing time on the telescope.[18] Congress eventually approved funding of US$36 million for 1978, and the design of the LST began in earnest, aiming for a launch date of 1983.[16] In 1983 the telescope was named after Edwin Hubble,[19] who made one of the greatest scientific breakthroughs of the 20th century when he discovered that the universe is expanding.[20]
+Construction and engineering
+
+Once the Space Telescope project had been given the go-ahead, work on the program was divided among many institutions. Marshall Space Flight Center (MSFC) was given responsibility for the design, development, and construction of the telescope, while Goddard Space Flight Center was given overall control of the scientific instruments and ground-control center for the mission.[21] MSFC commissioned the optics company Perkin-Elmer to design and build the Optical Telescope Assembly (OTA) and Fine Guidance Sensors for the space telescope. Lockheed was commissioned to construct and integrate the spacecraft in which the telescope would be housed.[22]
+Optical Telescope Assembly (OTA)
+
+Optically, the HST is a Cassegrain reflector of Ritchey–Chrétien design, as are most large professional telescopes. This design, with two hyperbolic mirrors, is known for good imaging performance over a wide field of view, with the disadvantage that the mirrors have shapes that are hard to fabricate and test. The mirror and optical systems of the telescope determine the final performance, and they were designed to exacting specifications. Optical telescopes typically have mirrors polished to an accuracy of about a tenth of the wavelength of visible light, but the Space Telescope was to be used for observations from the visible through the ultraviolet (shorter wavelengths) and was specified to be diffraction limited to take full advantage of the space environment. Therefore its mirror needed to be polished to an accuracy of 10 nanometers, or about 1/65 of the wavelength of red light.[23] On the long wavelength end, the OTA was not designed with optimum IR performance in mind—for example, the mirrors are kept at stable (and warm, about 15 °C) temperatures by heaters. This limits Hubble's performance as an infrared telescope.[24]
+The backup mirror, by Kodak; its inner support structure can be seen because it is not coated with a reflective surface.
+
+Perkin-Elmer intended to use custom-built and extremely sophisticated computer-controlled polishing machines to grind the mirror to the required shape.[22] However, in case their cutting-edge technology ran into difficulties, NASA demanded that PE sub-contract to Kodak to construct a back-up mirror using traditional mirror-polishing techniques.[25] (The team of Kodak and Itek also bid on the original mirror polishing work. Their bid called for the two companies to double-check each other's work, which would have almost certainly caught the polishing error that later caused such problems.[26]) The Kodak mirror is now on permanent display at the National Air and Space Museum.[27][28] An Itek mirror built as part of the effort is now used in the 2.4 m telescope at the Magdalena Ridge Observatory.[29]
+The OTA, metering truss, and secondary baffle are visible in this image of Hubble during early construction.
+
+Construction of the Perkin-Elmer mirror began in 1979, starting with a blank manufactured by Corning from their ultra-low expansion glass. To keep the mirror's weight to a minimum it consisted of inch-thick top and bottom plates sandwiching a honeycomb lattice. Perkin-Elmer simulated microgravity by supporting the mirror from the back with 130 rods that exerted varying amounts of force.[30] This ensured that the mirror's final shape would be correct and to specification when finally deployed. Mirror polishing continued until May 1981. NASA reports at the time questioned Perkin-Elmer's managerial structure, and the polishing began to slip behind schedule and over budget. To save money, NASA halted work on the back-up mirror and put the launch date of the telescope back to October 1984.[31] The mirror was completed by the end of 1981; it was washed using 2,400 gallons (9,100 L) of hot, deionized water and then received a reflective coating of 65 nm-thick aluminum and a protective coating of 25 nm-thick magnesium fluoride.[24][32]
+
+Doubts continued to be expressed about Perkin-Elmer's competence on a project of this importance, as their budget and timescale for producing the rest of the OTA continued to inflate. In response to a schedule described as "unsettled and changing daily", NASA postponed the launch date of the telescope until April 1985. Perkin-Elmer's schedules continued to slip at a rate of about one month per quarter, and at times delays reached one day for each day of work. NASA was forced to postpone the launch date until March and then September 1986. By this time, the total project budget had risen to US$1.175 billion.[33]
+Spacecraft systems
+
+The spacecraft in which the telescope and instruments were to be housed was another major engineering challenge. It would have to withstand frequent passages from direct sunlight into the darkness of Earth's shadow, which would cause major changes in temperature, while being stable enough to allow extremely accurate pointing of the telescope. A shroud of multi-layer insulation keeps the temperature within the telescope stable, and surrounds a light aluminum shell in which the telescope and instruments sit. Within the shell, a graphite-epoxy frame keeps the working parts of the telescope firmly aligned.[34] Because graphite composites are hygroscopic, there was a risk that water vapor absorbed by the truss while in Lockheed's clean room would later be expressed in the vacuum of space; the telescope's instruments would be covered in ice. To reduce that risk, a nitrogen gas purge was performed before launching the telescope into space.[35]
+
+While construction of the spacecraft in which the telescope and instruments would be housed proceeded somewhat more smoothly than the construction of the OTA, Lockheed still experienced some budget and schedule slippage, and by the summer of 1985, construction of the spacecraft was 30% over budget and three months behind schedule. An MSFC report said that Lockheed tended to rely on NASA directions rather than take their own initiative in the construction.[36]
+Initial instruments
+Main articles: Wide Field and Planetary Camera, Goddard High Resolution Spectrograph, High Speed Photometer, Faint Object Camera and Faint Object Spectrograph
+Exploded view of the Hubble Telescope
+
+When launched, the HST carried five scientific instruments: the Wide Field and Planetary Camera (WF/PC), Goddard High Resolution Spectrograph (GHRS), High Speed Photometer (HSP), Faint Object Camera (FOC) and the Faint Object Spectrograph (FOS). WF/PC was a high-resolution imaging device primarily intended for optical observations. It was built by NASA's Jet Propulsion Laboratory, and incorporated a set of 48 filters isolating spectral lines of particular astrophysical interest. The instrument contained eight charge-coupled device (CCD) chips divided between two cameras, each using four CCDs. Each CCD has a resolution of 0.64 megapixels.[37] The "wide field camera" (WFC) covered a large angular field at the expense of resolution, while the "planetary camera" (PC) took images at a longer effective focal length than the WF chips, giving it a greater magnification.[38]
+
+The GHRS was a spectrograph designed to operate in the ultraviolet. It was built by the Goddard Space Flight Center and could achieve a spectral resolution of 90,000.[39] Also optimized for ultraviolet observations were the FOC and FOS, which were capable of the highest spatial resolution of any instruments on Hubble. Rather than CCDs these three instruments used photon-counting digicons as their detectors. The FOC was constructed by ESA, while the University of California, San Diego, and Martin Marietta Corporation built the FOS.[38]
+
+The final instrument was the HSP, designed and built at the University of Wisconsin–Madison. It was optimized for visible and ultraviolet light observations of variable stars and other astronomical objects varying in brightness. It could take up to 100,000 measurements per second with a photometric accuracy of about 2% or better.[40]
+
+HST's guidance system can also be used as a scientific instrument. Its three Fine Guidance Sensors (FGS) are primarily used to keep the telescope accurately pointed during an observation, but can also be used to carry out extremely accurate astrometry; measurements accurate to within 0.0003 arcseconds have been achieved.[41]
+Ground support
+Hubble Control Center at Goddard Space Flight Center, 1999
+Main article: Space Telescope Science Institute
+
+The Space Telescope Science Institute (STScI) is responsible for the scientific operation of the telescope and the delivery of data products to astronomers. STScI is operated by the Association of Universities for Research in Astronomy (AURA) and is physically located in Baltimore, Maryland on the Homewood campus of Johns Hopkins University, one of the 39 US universities and seven international affiliates that make up the AURA consortium. STScI was established in 1981[42][43] after something of a power struggle between NASA and the scientific community at large. NASA had wanted to keep this function in-house, but scientists wanted it to be based in an academic establishment.[44][45] The Space Telescope European Coordinating Facility (ST-ECF), established at Garching bei München near Munich in 1984, provides similar support for European astronomers.
+Hubble's low orbit means many targets are visible for somewhat less than half of elapsed time, since they are blocked from view by the Earth for one-half of each orbit.
+
+One rather complex task that falls to STScI is scheduling observations for the telescope.[46] Hubble is in a low-Earth orbit to enable servicing missions, but this means that most astronomical targets are occulted by the Earth for slightly less than half of each orbit. Observations cannot take place when the telescope passes through the South Atlantic Anomaly due to elevated radiation levels, and there are also sizable exclusion zones around the Sun (precluding observations of Mercury), Moon and Earth. The solar avoidance angle is about 50°, to keep sunlight from illuminating any part of the OTA. Earth and Moon avoidance keeps bright light out of the FGSs, and keeps scattered light from entering the instruments. If the FGSs are turned off, however, the Moon and Earth can be observed. Earth observations were used very early in the program to generate flat-fields for the WFPC1 instrument. There is a so-called continuous viewing zone (CVZ), at roughly 90° to the plane of Hubble's orbit, in which targets are not occulted for long periods. Due to the precession of the orbit, the location of the CVZ moves slowly over a period of eight weeks. Because the limb of the Earth is always within about 30° of regions within the CVZ, the brightness of scattered earthshine may be elevated for long periods during CVZ observations.
+
+Hubble orbits in the upper atmosphere at an altitude of approximately 569 kilometres (354 mi) and an inclination of 28.5°.[47] The position along its orbit changes over time in a way that is not accurately predictable. The density of the upper atmosphere varies according to many factors, and this means that Hubble's predicted position for six weeks' time could be in error by up to 4,000 km (2,500 mi). Observation schedules are typically finalized only a few days in advance, as a longer lead time would mean there was a chance that the target would be unobservable by the time it was due to be observed.[48]
+
+Engineering support for HST is provided by NASA and contractor personnel at the Goddard Space Flight Center in Greenbelt, Maryland, 48 km (30 mi) south of the STScI. Hubble's operation is monitored 24 hours per day by four teams of flight controllers who make up Hubble's Flight Operations Team.[46]
+Challenger disaster, delays, and eventual launch
+STS-31 lifts off, carrying Hubble into orbit.
+
+By early 1986, the planned launch date of October that year looked feasible, but the Challenger accident brought the U.S. space program to a halt, grounding the Space Shuttle fleet and forcing the launch of Hubble to be postponed for several years. The telescope had to be kept in a clean room, powered up and purged with nitrogen, until a launch could be rescheduled. This costly situation (about $6 million per month) pushed the overall costs of the project even higher. This delay did allow time for engineers to perform extensive tests, swap out a possibly failure-prone battery, and make other improvements.[49] Furthermore, the ground software needed to control Hubble was not ready in 1986, and in fact was barely ready by the 1990 launch.[50]
+
+Eventually, following the resumption of shuttle flights in 1988, the launch of the telescope was scheduled for 1990. On April 24, 1990, shuttle mission STS-31 saw Discovery launch the telescope successfully into its planned orbit.[51]
+
+From its original total cost estimate of about US$400 million, the telescope had by now cost over $2.5 billion to construct. Hubble's cumulative costs up to this day are estimated to be several times higher still, roughly US$10 billion as of 2010.[52]
+Flawed mirror
+
+Within weeks of the launch of the telescope, the returned images indicated a serious problem with the optical system. Although the first images appeared to be sharper than those of ground-based telescopes, Hubble failed to achieve a final sharp focus and the best image quality obtained was drastically lower than expected. Images of point sources spread out over a radius of more than one arcsecond, instead of having a point spread function (PSF) concentrated within a circle 0.1 arcsec in diameter as had been specified in the design criteria.[53][54]
+Hubble is deployed from Discovery in 1990.
+
+Analysis of the flawed images showed that the cause of the problem was that the primary mirror had been ground to the wrong shape. Although it was probably the most precisely figured mirror ever made, with variations from the prescribed curve of only 10 nanometers,[23] at the perimeter it was too flat by about 2,200 nanometers (2.2 micrometres).[55] This difference was catastrophic, introducing severe spherical aberration, a flaw in which light reflecting off the edge of a mirror focuses on a different point from the light reflecting off its center.[56]
+
+The effect of the mirror flaw on scientific observations depended on the particular observation—the core of the aberrated PSF was sharp enough to permit high-resolution observations of bright objects, and spectroscopy of point sources was only affected through a sensitivity loss. However, the loss of light to the large, out of focus halo severely reduced the usefulness of the telescope for faint objects or high-contrast imaging. This meant that nearly all of the cosmological programs were essentially impossible, since they required observation of exceptionally faint objects.[56] NASA and the telescope became the butt of many jokes, and the project was popularly regarded as a white elephant. For instance, in the 1991 comedy The Naked Gun 2½: The Smell of Fear, the Hubble was pictured with the Titanic, the Hindenburg, and the Edsel.[57] Nonetheless, during the first three years of the Hubble mission, before the optical corrections, the telescope still carried out a large number of productive observations of less demanding targets.[58] The error was well characterized and stable, enabling astronomers to partially compensate for the defective mirror by using sophisticated image processing techniques such as deconvolution.[59]
+Origin of the problem
+An extract from a WF/PC image shows the light from a star spread over a wide area instead of being concentrated on a few pixels.
+
+A commission headed by Lew Allen, director of the Jet Propulsion Laboratory, was established to determine how the error could have arisen. The Allen Commission found that the main null corrector, a testing device used to achieve a properly shaped non-spherical mirror, had been incorrectly assembled—one lens was out of position by 1.3 mm.[60] During the initial grinding and polishing of the mirror, Perkin-Elmer analyzed its surface with two conventional null correctors. However, for the final manufacturing step (figuring), they switched to a custom-built null corrector, designed explicitly to meet very strict tolerances. Ironically, this device was assembled incorrectly, resulting in an extremely precise (but wrong) shape for the mirror. There was one later opportunity to catch the error, since for technical reasons a few of the final tests needed to use the two conventional null correctors. These tests correctly reported spherical aberration, but were dismissed since the reflective null corrector was considered more accurate.[61]
+
+The commission blamed the failings primarily on Perkin-Elmer. Relations between NASA and the optics company had been severely strained during the telescope construction, due to frequent schedule slippage and cost overruns. NASA found that Perkin-Elmer did not review or supervise the mirror construction adequately, did not assign its best optical scientists to the project (as it had for the prototype), and in particular did not involve the optical designers in the construction and verification of the mirror. While the commission heavily criticized Perkin-Elmer for these managerial failings, NASA was also criticized for not picking up on the quality control shortcomings, such as relying totally on test results from a single instrument.[62]
+Design of a solution
+The spiral galaxy M100, imaged with Hubble before and after corrective optics.
+
+The design of the telescope had always incorporated servicing missions, and astronomers immediately began to seek potential solutions to the problem that could be applied at the first servicing mission, scheduled for 1993. While Kodak had ground a back-up mirror for Hubble, it would have been impossible to replace the mirror in orbit, and too expensive and time-consuming to bring the telescope back to Earth for a refit. Instead, the fact that the mirror had been ground so precisely to the wrong shape led to the design of new optical components with exactly the same error but in the opposite sense, to be added to the telescope at the servicing mission, effectively acting as "spectacles" to correct the spherical aberration.[63][64]
+
+The first step was a precise characterization of the error in the main mirror. Working backwards from images of point sources, astronomers determined that the conic constant of the mirror as built was −1.01390±0.0002, instead of the intended −1.00230.[65][66] The same number was also derived by analyzing the null corrector used by Perkin-Elmer to figure the mirror, as well as by analyzing interferograms obtained during ground testing of the mirror.[67]
+COSTAR on display at the National Air and Space Museum
+
+Because of the way the HST's instruments were designed, two different sets of correctors were required. The design of the Wide Field and Planetary Camera 2, already planned to replace the existing WF/PC, included relay mirrors to direct light onto the four separate Charge-coupled device (CCD) chips making up its two cameras. An inverse error built into their surfaces could completely cancel the aberration of the primary. However, the other instruments lacked any intermediate surfaces that could be figured in this way, and so required an external correction device.[68]
+
+The Corrective Optics Space Telescope Axial Replacement (COSTAR) system was designed to correct the spherical aberration for light focused at the FOC, FOS, and GHRS. It consists of two mirrors in the light path with one ground to correct the aberration.[69] To fit the COSTAR system onto the telescope, one of the other instruments had to be removed, and astronomers selected the High Speed Photometer to be sacrificed.[68] By 2002, all of the original instruments requiring COSTAR had been replaced by instruments with their own corrective optics.[70] COSTAR was removed and returned to Earth in 2009 where it is exhibited at the National Air and Space Museum. The area previously used by COSTAR is now occupied by the Cosmic Origins Spectrograph.[71]
+Servicing missions and new instruments
+
+Hubble was designed to accommodate regular servicing and equipment upgrades. Five servicing missions (SM 1, 2, 3A, 3B, and 4) were flown by NASA space shuttles, the first in December 1993 and the last in May 2009. Servicing missions were delicate operations that began with maneuvering to intercept the telescope in orbit and carefully retrieving it with the shuttle's mechanical arm. The necessary work was then carried out in multiple tethered spacewalks over a period of four to five days. After a visual inspection of the telescope, astronauts conducted repairs, replaced failed or degraded components, upgraded equipment, and installed new instruments. Once work was completed, the telescope was redeployed, typically after boosting to a higher orbit to address the orbital decay caused by atmospheric drag.
+Servicing Mission 1
+Main article: STS-61
+Astronauts Musgrave and Hoffman install corrective optics during SM1
+
+After the problems with Hubble's mirror were discovered, the first servicing mission assumed greater importance, as the astronauts would need to do extensive work to install corrective optics. The seven astronauts for the mission were trained to use about a hundred specialized tools.[72] SM1 flew aboard Endeavour in December 1993, and involved installation of several instruments and other equipment over ten days.
+
+Most importantly, the High Speed Photometer was replaced with the COSTAR corrective optics package, and WFPC was replaced with the Wide Field and Planetary Camera 2 (WFPC2) with an internal optical correction system. The solar arrays and their drive electronics were also replaced, as well as four gyroscopes in the telescope pointing system, two electrical control units and other electrical components, and two magnetometers. The onboard computers were upgraded, and the Hubble's orbit was boosted.[55]
+
+On January 13, 1994, NASA declared the mission a complete success and showed the first sharper images.[73] At the time, the mission was one of the most complex, involving five long extra-vehicular activity periods. Its success was a boon for NASA, as well as for the astronomers with a more capable space telescope.
+Servicing Mission 2
+Main article: STS-82
+Hubble as seen from Discovery during its second servicing mission
+
+Servicing Mission 2, flown by Discovery in February 1997, replaced the GHRS and the FOS with the Space Telescope Imaging Spectrograph (STIS) and the Near Infrared Camera and Multi-Object Spectrometer (NICMOS), replaced an Engineering and Science Tape Recorder with a new Solid State Recorder, and repaired thermal insulation.[74] NICMOS contained a heat sink of solid nitrogen to reduce the thermal noise from the instrument, but shortly after it was installed, an unexpected thermal expansion resulted in part of the heat sink coming into contact with an optical baffle. This led to an increased warming rate for the instrument and reduced its original expected lifetime of 4.5 years to about 2 years.[75]
+Servicing Mission 3A
+Main article: STS-103
+
+Servicing Mission 3A, flown by Discovery, took place in December 1999, and was a split-off from Servicing Mission 3 after three of the six onboard gyroscopes had failed. A fourth failed a few weeks before the mission, rendering the telescope incapable of performing scientific observations. The mission replaced all six gyroscopes, replaced a Fine Guidance Sensor and the computer, installed a Voltage/temperature Improvement Kit (VIK) to prevent battery overcharging, and replaced thermal insulation blankets.[76] The new computer is 20 times faster, with six times more memory, than the DF-224 it replaced. It increases throughput by moving some computing tasks from the ground to the spacecraft, and saves money by allowing the use of modern programming languages.[77]
+Servicing Mission 3B
+Main article: STS-109
+
+Servicing Mission 3B flown by Columbia in March 2002 saw the installation of a new instrument, with the FOC (the last original instrument) being replaced by the Advanced Camera for Surveys (ACS). This meant that COSTAR was no longer required, since all new instruments had built-in correction for the main mirror aberration.[70] The mission also revived NICMOS by installing a closed-cycle cooler[75] and replaced the solar arrays for the second time, providing 30 percent more power.[78]
+Servicing Mission 4
+Main article: STS-125
+Hubble during SM4
+Hubble after release
+
+Plans called for Hubble to be serviced in February 2005, but the Columbia disaster in 2003, in which the orbiter disintegrated on re-entry into the atmosphere, had wide-ranging effects on the Hubble program. NASA Administrator Sean O'Keefe decided that all future shuttle missions had to be able to reach the safe haven of the International Space Station should in-flight problems develop. As no shuttles were capable of reaching both HST and the ISS during the same mission, future manned service missions were canceled.[79] This decision was assailed by numerous astronomers, who felt that Hubble was valuable enough to merit the human risk.[80] HST's planned successor, the James Webb Telescope (JWST), is not expected to launch until at least 2018. A gap in space-observing capabilities between a decommissioning of Hubble and the commissioning of a successor is of major concern to many astronomers, given the significant scientific impact of HST.[81] The consideration that JWST will not be located in low Earth orbit, and therefore cannot be easily upgraded or repaired in the event of an early failure, only makes these concerns more acute. On the other hand, many astronomers felt strongly that the servicing of Hubble should not take place if the expense were to come from the JWST budget.

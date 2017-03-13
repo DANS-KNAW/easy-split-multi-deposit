@@ -44,14 +44,10 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.kn
     <dcterms:rightsHolder>richard</dcterms:rightsHolder>
     <dcterms:rightsHolder>joke</dcterms:rightsHolder>
     <dcterms:rightsHolder>vesa</dcterms:rightsHolder>
-    <dc:format>video/mpeg</dc:format>
     <dc:format>image/jpeg</dc:format>
     <dc:format>text/plain</dc:format>
     <dc:source>http://scholar.google.com</dc:source>
     <dc:relation>barbapappa</dc:relation>
-    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">
-      /domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$presentation-placeholder
-    </ddm:relation>
     <dc:subject>astronomie</dc:subject>
     <dc:subject>telescopen</dc:subject>
     <dcterms:temporal>2015-2016</dcterms:temporal>
