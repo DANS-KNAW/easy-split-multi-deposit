@@ -83,11 +83,11 @@ class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
-  it should "succeed with Roundtrip_MD/spacetravel" in {
-    val csv = new File(getClass.getResource("/spacetravel/instructions.csv").toURI)
+  it should "succeed with allfields/input/spacetravel" in {
+    val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
 
     inside(parse(csv).map(_.map(_._1))) {
-      case Success(ids) => ids should contain allOf ("ruimtereis01", "ruimtereis02")
+      case Success(ids) => ids should contain allOf ("ruimtereis01", "ruimtereis02", "ruimtereis03")
     }
   }
 

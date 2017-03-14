@@ -35,8 +35,9 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
     "DATASET" -> List(datasetID, datasetID),
     "FILE_SIP" -> List("ruimtereis01/reisverslag/deel01.txt", "")
   )
+
   before {
-    new File(getClass.getResource("/spacetravel").toURI)
+    new File(getClass.getResource("/allfields/input").toURI)
       .copyDir(settings.outputDepositDir)
     new File(getClass.getResource("/mimetypes").toURI)
       .copyDir(new File(testDir, "mimetypes"))
@@ -75,14 +76,18 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
 
   "datasetToFileXml" should "produce the xml for all the files" in {
     inside(AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01")) {
-      case Success(xml) => xml.child.map(Utility.trim) should (
-        have length 5 and
+      case Success(xml) => xml.child.map(Utility.trim).map(node => (node \@ "filepath", node.child.filter(_.label == "format").head.text)) should (
+        have length 9 and
           contain allOf(
-          <file filepath="data/ruimtereis01_verklaring.txt"><dcterms:format>text/plain</dcterms:format></file>,
-          <file filepath="data/reisverslag/deel01.docx"><dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format></file>,
-          <file filepath="data/reisverslag/deel01.txt"><dcterms:format>text/plain</dcterms:format></file>,
-          <file filepath="data/reisverslag/deel02.txt"><dcterms:format>text/plain</dcterms:format></file>,
-          <file filepath="data/reisverslag/deel03.txt"><dcterms:format>text/plain</dcterms:format></file>
+          ("data/ruimtereis01_verklaring.txt", "text/plain"),
+          ("data/reisverslag/deel01.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+          ("data/reisverslag/deel01.txt", "text/plain"),
+          ("data/reisverslag/deel02.txt", "text/plain"),
+          ("data/reisverslag/deel03.txt", "text/plain"),
+          ("data/path/to/a/random/video/hubble.mpg", "video/mpeg"),
+          ("data/path/to/a/random/sound/chicken.mp3", "audio/mpeg"),
+          ("data/reisverslag/centaur.mpg", "video/mpeg"),
+          ("data/reisverslag/centaur.srt", "text/plain")
         ))
     }
   }

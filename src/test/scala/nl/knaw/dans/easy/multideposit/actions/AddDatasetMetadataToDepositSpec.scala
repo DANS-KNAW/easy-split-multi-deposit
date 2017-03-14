@@ -23,7 +23,7 @@ import nl.knaw.dans.lib.error.CompositeException
 import org.scalatest.BeforeAndAfterAll
 
 import scala.collection.mutable
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Success }
 import scala.xml.{ Elem, Utility }
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
@@ -560,22 +560,11 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     verify(datasetToXml(dataset), expectedXml)
   }
 
-  it should "return xml on reading from the sip-demo csv" in {
-    inside(toXml("/spacetravel/instructions.csv")) {
-      case Success(xmls) => xmls should have size 2
+  it should "return xml on reading from the allfields input instructions csv" in {
+    val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
+    inside(MultiDepositParser.parse(csv).map(_.map { case (_, ds) => datasetToXml(ds) })) {
+      case Success(xmls) => xmls should have size 3
     }
-  }
-
-  it should "return xml on reading from the sip001 csv" in {
-    inside(toXml("/sip001/instructions.csv")) {
-      case Success(xmls) => xmls should have size 2
-    }
-  }
-
-  def toXml(file: String): Try[Seq[Elem]] = {
-    val csv = new File(getClass.getResource(file).toURI)
-    MultiDepositParser.parse(csv)
-      .map(dss => dss.map { case (_, ds) => AddDatasetMetadataToDeposit.datasetToXml(ds) })
   }
 
   "createDcmiMetadata" should "return the expected spatial elements" in {
