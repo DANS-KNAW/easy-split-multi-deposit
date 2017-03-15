@@ -4,13 +4,13 @@
     <dcterms:type>http://schema.org/VideoObject</dcterms:type>
     <dcterms:format>video/mpeg</dcterms:format> <!-- (te bepalen adhv het bestand) -->
     <dcterms:title>hubble.mpg</dcterms:title>
-    <dcterms:accessRights>GROUP_ACCESS</dcterms:accessRights>
+    <dcterms:accessRights>RESTRICTED_GROUP</dcterms:accessRights>
   </file>
   <file filepath="data/path/to/a/random/sound/chicken.mp3">
     <dcterms:type>http://schema.org/AudioObject</dcterms:type>
     <dcterms:format>audio/mpeg</dcterms:format>
     <dcterms:title>our daily wake up call</dcterms:title>
-    <dcterms:accessRights>GROUP_ACCESS</dcterms:accessRights>
+    <dcterms:accessRights>RESTRICTED_GROUP</dcterms:accessRights>
   </file>
   <file filepath="data/reisverslag/deel01.docx">
     <dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format>
@@ -28,7 +28,7 @@
     <dcterms:type>http://schema.org/VideoObject</dcterms:type>
     <dcterms:format>video/mpeg</dcterms:format>
     <dcterms:title>video about the centaur meteorite</dcterms:title>
-    <dcterms:accessRights>GROUP_ACCESS</dcterms:accessRights>
+    <dcterms:accessRights>RESTRICTED_GROUP</dcterms:accessRights>
     <dcterms:relation xml:lang="en">data/reisverslag/centaur.srt</dcterms:relation>
     <dcterms:relation xml:lang="nl">data/reisverslag/centaur-nederlands.srt</dcterms:relation>
   </file>
