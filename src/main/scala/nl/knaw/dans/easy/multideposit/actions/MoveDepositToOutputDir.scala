@@ -16,6 +16,8 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit.{ Action, DatasetID, Settings, _ }
+import nl.knaw.dans.lib.error.CompositeException
+import org.apache.commons.io.FileExistsException
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
@@ -37,10 +39,21 @@ case class MoveDepositToOutputDir(row: Int, datasetID: DatasetID)(implicit setti
 
     debug(s"moving $stagingDirectory to $outputDir")
 
-    Try { stagingDirectory.moveDir(outputDir) } recover {
-      case NonFatal(e) => println(s"An error occurred while moving $stagingDirectory to " +
-        s"$outputDir: ${e.getMessage}. This move is NOT revertable! When in doubt, contact your " +
-        s"application manager.", e)
+    Try { stagingDirectory.moveDir(outputDir) } recoverWith {
+      case e =>
+        Try { outputDir.exists() } match {
+          case Success(true) => Failure(ActionException(row, "An error occurred while moving " +
+            s"$stagingDirectory to $outputDir: ${e.getMessage}. The move is probably only partially " +
+            s"done since the output directory does exist. This move is, however, NOT revertable! " +
+            s"Please contact your application manager ASAP!", e))
+          case Success(false) => Failure(ActionException(row, "An error occurred while moving " +
+            s"$stagingDirectory to $outputDir: ${e.getMessage}. The move did not take place, since " +
+            s"the output directory does not yet exist.", e))
+          case Failure(e2) => Failure(ActionException(row, "An error occurred both while moving " +
+            s"$stagingDirectory to $outputDir: ${e.getMessage} and while checking whether the " +
+            s"output directory actually exists now: ${e2.getMessage}. Please contact your " +
+            s"application manager ASAP!", CompositeException(List(e, e2))))
+        }
     }
   }
 
@@ -48,5 +61,5 @@ case class MoveDepositToOutputDir(row: Int, datasetID: DatasetID)(implicit setti
   // These moves are not revertable, since they (depending on configuration) will be moved to the
   // easy-ingest-flow inbox, which might have started processing the first deposit when a second
   // move fails. At this point the application manager needs to take a look at what happened and why
-  // the deposits where not able to be moved.
+  // the deposits were not able to be moved.
 }
