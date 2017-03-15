@@ -5,5 +5,6 @@ e8254922967695d60d24db565f1a7d72ee8893ed  data/reisverslag/deel01.txt
 a172c01f396818d90cce049a201b4aec4f65cc68  data/reisverslag/deel03.txt
 1dd40013ce63dfa98dfe19f5b4bbf811ee2240f7  data/reisverslag/centaur.mpg
 463eb5053757ef0b1824bef7791ba982e356fbe3  data/reisverslag/centaur.srt
+4ea30209bf5aa6842125393dc5a42fd99e1f1907  data/reisverslag/centaur-nederlands.srt
 09fa443a225838758344d019ef1b2b27798346c9  data/path/to/a/random/video/hubble.mpg
 94c236cdcb2b961ecc9bf434676646da53bfc776  data/path/to/a/random/sound/chicken.mp3
