@@ -77,7 +77,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   "datasetToFileXml" should "produce the xml for all the files" in {
     inside(AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01")) {
       case Success(xml) => xml.child.map(Utility.trim).map(node => (node \@ "filepath", node.child.filter(_.label == "format").head.text)) should (
-        have length 9 and
+        have length 10 and
           contain allOf(
           ("data/ruimtereis01_verklaring.txt", "text/plain"),
           ("data/reisverslag/deel01.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
@@ -87,7 +87,8 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
           ("data/path/to/a/random/video/hubble.mpg", "video/mpeg"),
           ("data/path/to/a/random/sound/chicken.mp3", "audio/mpeg"),
           ("data/reisverslag/centaur.mpg", "video/mpeg"),
-          ("data/reisverslag/centaur.srt", "text/plain")
+          ("data/reisverslag/centaur.srt", "text/plain"),
+          ("data/reisverslag/centaur-nederlands.srt", "text/plain")
         ))
     }
   }
