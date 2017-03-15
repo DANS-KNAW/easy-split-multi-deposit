@@ -29,7 +29,7 @@
     <dcterms:format>video/mpeg</dcterms:format>
     <dcterms:title>video about the centaur meteorite</dcterms:title>
     <dcterms:accessRights>GROUP_ACCESS</dcterms:accessRights>
-    <dcterms:relation>ruimtereis01/reisverslag/centaur.srt</dcterms:relation>
+    <dcterms:relation>data/reisverslag/centaur.srt</dcterms:relation>
   </file>
   <file filepath="data/reisverslag/centaur.srt">
     <dcterms:format>text/plain</dcterms:format>
