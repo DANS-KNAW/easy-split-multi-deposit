@@ -47,7 +47,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-    import validators.checkColumnsAreNonEmpty
+    import validators._
 
     def checkSFColumnsIfDatasetContainsAVFiles(mimetypes: List[(File, String)]): Try[Unit] = {
       val avFiles = mimetypes.filter {

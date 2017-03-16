@@ -38,7 +38,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
 
   before {
     new File(getClass.getResource("/allfields/input").toURI)
-      .copyDir(settings.outputDepositDir)
+      .copyDir(settings.multidepositDir)
     new File(getClass.getResource("/mimetypes").toURI)
       .copyDir(new File(testDir, "mimetypes"))
   }
