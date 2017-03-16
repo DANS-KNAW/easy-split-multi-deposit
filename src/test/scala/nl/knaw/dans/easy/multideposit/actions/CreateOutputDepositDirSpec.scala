@@ -22,15 +22,13 @@ import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 
 import scala.util.{Failure, Success}
 
-class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
+class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     outputDepositDir = new File(testDir, "dd")
   )
   val datasetID = "ds1"
-
-  override def beforeAll: Unit = testDir.mkdirs
 
   before {
     // create depositDir base directory
@@ -45,8 +43,6 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     baseDir.deleteDirectory()
     baseDir should not (exist)
   }
-
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if the output directories do not yet exist" in {
     // directories do not exist before

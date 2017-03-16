@@ -24,9 +24,7 @@ import org.scalatest.BeforeAndAfterAll
 import scala.collection.mutable.ListBuffer
 import scala.util.{ Failure, Success }
 
-class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
-
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
+class MultiDepositParserSpec extends UnitSpec {
 
   "validateDatasetHeaders" should "succeed when given an empty list" in {
     val headers = Nil

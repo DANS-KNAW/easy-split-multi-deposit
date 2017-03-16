@@ -24,7 +24,7 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
 import scala.util.{ Failure, Success }
 
-class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
+class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
 
   private val (user, userGroup, unrelatedGroup) = {
     import scala.sys.process._
@@ -73,8 +73,6 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with Before
   after {
     base.deleteDirectory()
   }
-
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "setFilePermissions" should "set the permissions of each of the files and folders to the correct permissions" in {
     assume(user != "travis")

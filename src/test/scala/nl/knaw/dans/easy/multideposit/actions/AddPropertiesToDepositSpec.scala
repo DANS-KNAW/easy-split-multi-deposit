@@ -26,7 +26,7 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll, PrivateMethodTester }
 import scala.collection.mutable
 import scala.util.{ Failure, Success }
 
-class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll with MockFactory with PrivateMethodTester {
+class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with MockFactory with PrivateMethodTester {
 
   val ldapMock: Ldap = mock[Ldap]
   implicit val settings = Settings(
@@ -73,8 +73,6 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     // force datamanagerEmailaddress to be retrieved from LDAP for each test
     AddPropertiesToDeposit.invokePrivate(PrivateMethod[Unit]('resetDatamanagerEmailaddress)())
   }
-
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if the depositorID is in the dataset and has one value and the datamanager email can be retrieved" in {
     mockLdapForDepositor(true)

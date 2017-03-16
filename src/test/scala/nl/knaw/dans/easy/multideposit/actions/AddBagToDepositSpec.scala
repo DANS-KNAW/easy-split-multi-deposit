@@ -23,7 +23,7 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
 import scala.util.Success
 
-class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
+class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
@@ -52,8 +52,6 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAft
   after {
     outputDepositBagDir(datasetID).deleteDirectory()
   }
-
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "execute" should "succeed given the current setup" in {
     AddBagToDeposit(1, entry).execute shouldBe a[Success[_]]

@@ -24,14 +24,12 @@ import org.scalatest.BeforeAndAfterAll
 import scala.util.{Failure, Success}
 import scala.xml.Utility
 
-class CreateSpringfieldActionsSpec extends UnitSpec with BeforeAndAfterAll {
+class CreateSpringfieldActionsSpec extends UnitSpec {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     springfieldInbox = new File(testDir, "springFieldInbox")
   )
-
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   def testDataset: Dataset = {
     new Dataset +=

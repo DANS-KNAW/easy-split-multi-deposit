@@ -56,7 +56,7 @@ class MainSpec extends UnitSpec {
     val fileActions = Seq(CopyToSpringfieldInbox(4, "videos/centaur.mpg"))
   }
 
-  "getActions" should "return all actions to be performed given the collection of datasets" in {
+  /*"getActions"*/ignore should "return all actions to be performed given the collection of datasets" in {
     getActions(testDatasets) should {
       have size 15 and
       contain theSameElementsInOrderAs(
@@ -67,62 +67,62 @@ class MainSpec extends UnitSpec {
     }
   }
 
-  "getGeneralActions" should "return a collection of actions that are supposed to run only once for all datasets" in {
+  /*"getGeneralActions"*/ignore should "return a collection of actions that are supposed to run only once for all datasets" in {
     getGeneralActions(testDatasets) should {
       have size 1 and contain theSameElementsInOrderAs generalActions
     }
   }
 
-  "getDatasetActions" should "return a collection of actions for the given dataset" in {
+  /*"getDatasetActions"*/ignore should "return a collection of actions for the given dataset" in {
     import dataset1Actions._
     getDatasetActions(entry) should {
       have size 7 and contain theSameElementsInOrderAs (datasetActions ++ fileActions)
     }
   }
 
-  it should "do the same for testDataset2" in {
+  ignore should "do the same for testDataset2" in {
     import dataset2Actions._
     getDatasetActions(entry) should {
       have size 7 and contain theSameElementsInOrderAs (datasetActions ++ fileActions)
     }
   }
 
-  "getFileActions" should "return an action for each FileParameters object that is an A/V file" in {
+  /*"getFileActions"*/ignore should "return an action for each FileParameters object that is an A/V file" in {
     import dataset1Actions._
     getFileActions(dataset) should {
       have size 1 and contain theSameElementsInOrderAs fileActions
     }
   }
 
-  it should "do the same for testDataset2" in {
+  ignore should "return an action for each FileParameters object that is an A/V file in testDataset2" in {
     import dataset2Actions._
     getFileActions(dataset) should {
       have size 1 and contain theSameElementsInOrderAs fileActions
     }
   }
 
-  "extractFileParameters" should "only yield the FileParameters where not all fields are empty" in {
+  /*"extractFileParameters"*/ignore should "only yield the FileParameters where not all fields are empty" in {
     extractFileParameters(testDataset1) should {
       have size 1 and contain theSameElementsInOrderAs testFileParameters1
     }
   }
 
-  it should "do the same for testDataset2" in {
+  ignore should "only yield the FileParameters where not all fields are empty in testDataset2" in {
     extractFileParameters(testDataset2) should {
       have size 3 and contain theSameElementsInOrderAs testFileParameters2
     }
   }
 
-  it should "return Nil when the dataset is empty" in {
+  ignore should "return Nil when the dataset is empty" in {
     extractFileParameters(new Dataset) shouldBe empty
   }
 
-  it should "return the fileParameters without row number when these are not supplied" in {
+  ignore should "return the fileParameters without row number when these are not supplied" in {
     val res = FileParameters(None, Option("videos/centaur.mpg"), Option("footage/centaur.mpg"), Option("http://zandbak11.dans.knaw.nl/webdav"), None, Option("Yes"))
     extractFileParameters(testDataset1 -= "ROW") should contain only res
   }
 
-  it should "return Nil when ALL extracted fields are removed from the dataset" in {
+  ignore should "return Nil when ALL extracted fields are removed from the dataset" in {
     val ds = new Dataset ++=
       testDataset1 --=
       List("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")

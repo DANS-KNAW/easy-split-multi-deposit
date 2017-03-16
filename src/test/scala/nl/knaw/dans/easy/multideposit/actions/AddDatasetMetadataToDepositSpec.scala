@@ -100,7 +100,13 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     </ddm:dcmiMetadata>
   </ddm:DDM>
 
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    new File(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.mpg").toURI)
+      .copyFile(new File(settings.multidepositDir, s"$datasetID/reisverslag/centaur.mpg"))
+    new File(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.srt").toURI)
+      .copyFile(new File(settings.multidepositDir, s"$datasetID/reisverslag/centaur.srt"))
+  }
 
  "checkPreconditions" should "succeed with correctly corresponding access rights and audience" in {
    val validDataset = mutable.HashMap(
@@ -545,6 +551,277 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
+  it should "succeed if the AV_FILEs exist" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail if the AV_FILE does not exist" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur-does-not-exist.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe s"AV_FILE '$datasetID/reisverslag/centaur-does-not-exist.mpg' does not exist"
+    }
+  }
+
+  it should "succeed if the AV_SUBTITLESs exist" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", ""),
+      "AV_SUBTITLES" -> List(s"$datasetID/reisverslag/centaur.srt", ""),
+      "AV_SUBTITLES_LANGUAGE" -> List("en", "")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail if the AV_SUBTITLES does not exist" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", ""),
+      "AV_SUBTITLES" -> List(s"$datasetID/reisverslag/centaur-does-not-exist.srt", ""),
+      "AV_SUBTITLES_LANGUAGE" -> List("en", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe s"AV_SUBTITLES '$datasetID/reisverslag/centaur-does-not-exist.srt' does not exist"
+    }
+  }
+
+  it should "succeed if the AV_FILE is present when the AV_FILE_TITLE is present" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", ""),
+      "AV_FILE_TITLE" -> List("hello world", "")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "succeed if the AV_FILE is present when the AV_SUBTITLES and AV_SUBTITLES_LANGUAGE are present" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", ""),
+      "AV_SUBTITLES" -> List(s"$datasetID/reisverslag/centaur.srt", ""),
+      "AV_SUBTITLES_LANGUAGE" -> List("en", "")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "succeed if the AV_FILE is present when the AV_FILE_TITLE and AV_SUBTITLES and AV_SUBTITLES_LANGUAGE are present" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", ""),
+      "AV_FILE_TITLE" -> List("hello world", ""),
+      "AV_SUBTITLES" -> List(s"$datasetID/reisverslag/centaur.srt", ""),
+      "AV_SUBTITLES_LANGUAGE" -> List("en", "")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail if the AV_FILE is not present when the AV_FILE_TITLE is present" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE_TITLE" -> List("hello world", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Missing value(s) for: [AV_FILE]"
+    }
+  }
+
+  it should "fail if the AV_FILE is not present when the AV_SUBTITLES and AV_SUBTITLES_LANGUAGE are present" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_SUBTITLES" -> List(s"$datasetID/reisverslag/centaur.srt", ""),
+      "AV_SUBTITLES_LANGUAGE" -> List("en", "")
+    )
+
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Missing value(s) for: [AV_FILE]"
+    }
+  }
+
+  it should "fail if the AV_FILE is not present when the AV_FILE_TITLE and AV_SUBTITLES and AV_SUBTITLES_LANGUAGE are present" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE_TITLE" -> List("hello world", ""),
+      "AV_SUBTITLES" -> List(s"$datasetID/reisverslag/centaur.srt", ""),
+      "AV_SUBTITLES_LANGUAGE" -> List("en", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Missing value(s) for: [AV_FILE]"
+    }
+  }
+
+  it should "succeed if AV_SUBTITLES is given, but AV_SUBTITLES_LANGUAGE is not" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", ""),
+      "AV_FILE_TITLE" -> List("hello world", ""),
+      "AV_SUBTITLES" -> List(s"$datasetID/reisverslag/centaur.srt", ""),
+      "AV_SUBTITLES_LANGUAGE" -> List("", "")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail if AV_SUBTITLES_LANGUAGE is given, but AV_SUBTITLES is not" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", ""),
+      "AV_FILE_TITLE" -> List("hello world", ""),
+      "AV_SUBTITLES" -> List("", ""),
+      "AV_SUBTITLES_LANGUAGE" -> List("en", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "Missing value(s) for: [AV_SUBTITLES]"
+    }
+  }
+
+  it should "fail if AV_FILE is given, but SF_COLLECTION is not" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_COLLECTION] do not"
+    }
+  }
+
+  it should "fail if AV_FILE is given, but SF_COLLECTION has empty values only" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("", ""),
+      "SF_USER" -> List("", ""),
+      "SF_COLLECTION" -> List("", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_COLLECTION] do not"
+    }
+  }
+
+  it should "fail if AV_FILE is given, SF_DOMAIN and SF_USER have values too, but SF_COLLECTION is missing" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_COLLECTION] do not"
+    }
+  }
+
+  it should "fail if AV_FILE is given, SF_DOMAIN and SF_USER have values too, but SF_COLLECTION has empty values only" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_COLLECTION] do not"
+    }
+  }
+
+  it should "succeed if AV_FILE is not given, and SF_COLLECTION has empty values only" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("", ""),
+      "SF_USER" -> List("", ""),
+      "SF_COLLECTION" -> List("", "")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "succeed if AV_FILE and SF_COLLECTION both have empty values only" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("", ""),
+      "SF_USER" -> List("", ""),
+      "SF_COLLECTION" -> List("", ""),
+      "AV_FILE" -> List("", "")
+    )
+    new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
 
   "execute" should "write the metadata to a file at the correct place" in {
     val file = outputDatasetMetadataFile(datasetID)
