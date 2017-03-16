@@ -218,31 +218,75 @@ object AddDatasetMetadataToDeposit {
   }
 
   def createSpatialPoints(dataset: Dataset): Seq[Elem] = {
-    // coordinate order latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
-    dataset.rowsWithValuesForAllOf(composedSpatialPointFields).map(mdKeyValues =>
+    dataset.rowsWithValuesForAllOf(composedSpatialPointFields).map(mdKeyValues => {
+      val srsName = createSrsName(mdKeyValues)
+      // coordinate order x, y = longitude (DCX_SPATIAL_X), latitude (DCX_SPATIAL_Y)
+      val xy = s"${mdKeyValues.getOrElse("DCX_SPATIAL_X", "")} ${mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")}"
+      // coordinate order y, x = latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
+      val yx = s"${mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")} ${mdKeyValues.getOrElse("DCX_SPATIAL_X", "")}"
+
+      val pos = srsName match {
+        case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
+        case "http://www.opengis.net/def/crs/EPSG/0/4326" => yx
+        case _ => yx
+      }
+
       // @formatter:off
-      <dcx-gml:spatial srsName={createSrsName(mdKeyValues)}>
+      <dcx-gml:spatial srsName={srsName}>
         <Point xmlns="http://www.opengis.net/gml">
-          <pos>{mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")} {mdKeyValues.getOrElse("DCX_SPATIAL_X", "")}</pos>
+          <pos>{pos}</pos>
         </Point>
       </dcx-gml:spatial>
       // @formatter:on
-    )
+    })
   }
 
+  /*
+   Note that X is along North - South and Y is along East - West
+   The lower corner is with the minimal coordinate values and upper corner with the maximal coordinate values
+   If x was increasing from West to East and y was increasing from South to North we would have
+   lower corner (x,y) = (West,South) and upper corner (x,y) = (East,North)
+   This is the case for the WGS84 and RD coordinate systems, but not per se for any other system!
+
+                         upper(x,y)=(E,N)
+                *---N---u
+                |       |
+                W       E
+                |       |
+    ^           l---S---*
+    |           lower(x,y)=(W,S)
+    y
+     x -->
+
+   */
   def createSpatialBoxes(dataset: Dataset): Seq[Elem] = {
-    dataset.rowsWithValuesForAllOf(composedSpatialBoxFields).map(mdKeyValues =>
+    dataset.rowsWithValuesForAllOf(composedSpatialBoxFields).map(mdKeyValues => {
+      val srsName = createSrsName(mdKeyValues)
+
+      val lowerX = mdKeyValues.getOrElse("DCX_SPATIAL_WEST", "")
+      val upperX = mdKeyValues.getOrElse("DCX_SPATIAL_EAST", "")
+      val lowerY = mdKeyValues.getOrElse("DCX_SPATIAL_SOUTH", "")
+      val upperY = mdKeyValues.getOrElse("DCX_SPATIAL_NORTH", "")
+      val xy = (s"$lowerX $lowerY", s"$upperX $upperY")
+      val yx = (s"$lowerY $lowerX", s"$upperY $upperX")
+
+      val (lower, upper) = srsName match {
+        case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
+        case "http://www.opengis.net/def/crs/EPSG/0/4326" => yx
+        case _ => yx
+      }
+
       // @formatter:off
       <dcx-gml:spatial>
         <boundedBy xmlns="http://www.opengis.net/gml">
-          <Envelope srsName={createSrsName(mdKeyValues)}>
-            <lowerCorner>{mdKeyValues.getOrElse("DCX_SPATIAL_NORTH", "")} {mdKeyValues.getOrElse("DCX_SPATIAL_EAST", "")}</lowerCorner>
-            <upperCorner>{mdKeyValues.getOrElse("DCX_SPATIAL_SOUTH", "")} {mdKeyValues.getOrElse("DCX_SPATIAL_WEST", "")}</upperCorner>
+          <Envelope srsName={srsName}>
+            <lowerCorner>{lower}</lowerCorner>
+            <upperCorner>{upper}</upperCorner>
           </Envelope>
         </boundedBy>
       </dcx-gml:spatial>
       // @formatter:on
-    )
+    })
   }
 
   def createSchemedMetadata(dataset: Dataset, fields: Dictionary, key: MultiDepositKey, schemeKey: MultiDepositKey): Seq[Elem] = {
