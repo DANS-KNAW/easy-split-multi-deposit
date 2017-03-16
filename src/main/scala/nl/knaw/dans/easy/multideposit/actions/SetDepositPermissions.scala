@@ -26,8 +26,6 @@ import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-// TODO add the 'move to easy-ingest-flow inbox' functionality in this class
-// TODO rename this file accordingly
 case class SetDepositPermissions(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
 
   def execute(): Try[Unit] = {
@@ -38,10 +36,10 @@ case class SetDepositPermissions(row: Int, datasetID: DatasetID)(implicit settin
   }
 
   private def setFilePermissions(): Try[Unit] = {
-    val depositDir = outputDepositDir(datasetID)
-    isOnPosixFileSystem(depositDir)
+    val stagingDirectory = stagingDir(datasetID)
+    isOnPosixFileSystem(stagingDirectory)
       .flatMap {
-        case true => Try { Files.walkFileTree(depositDir.toPath, PermissionFileVisitor(settings.depositPermissions)) }
+        case true => Try { Files.walkFileTree(stagingDirectory.toPath, PermissionFileVisitor(settings.depositPermissions)) }
         case false => Success(())
       }
   }

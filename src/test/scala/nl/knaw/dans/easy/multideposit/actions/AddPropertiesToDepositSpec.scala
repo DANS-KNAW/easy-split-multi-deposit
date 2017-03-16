@@ -31,7 +31,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with MockF
   val ldapMock: Ldap = mock[Ldap]
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
-    outputDepositDir = new File(testDir, "dd"),
+    stagingDir = new File(testDir, "sd"),
     datamanager = "dm",
     ldap = ldapMock
   )
@@ -69,7 +69,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with MockF
   }
 
   before {
-    new File(settings.outputDepositDir, s"md-$datasetID").mkdirs
+    new File(settings.stagingDir, s"md-$datasetID").mkdirs
     // force datamanagerEmailaddress to be retrieved from LDAP for each test
     AddPropertiesToDeposit.invokePrivate(PrivateMethod[Unit]('resetDatamanagerEmailaddress)())
   }
@@ -214,7 +214,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with MockF
 
     AddPropertiesToDeposit(1, (datasetID, dataset)).execute shouldBe a[Success[_]]
 
-    new File(outputDepositDir(datasetID), "deposit.properties") should exist
+    new File(stagingDir(datasetID), "deposit.properties") should exist
   }
 
   "writeProperties" should "generate the properties file and write the properties in it" in {
@@ -222,7 +222,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with MockF
 
     AddPropertiesToDeposit(1, (datasetID, dataset)).execute shouldBe a[Success[_]]
 
-    val props = outputPropertiesFile(datasetID)
+    val props = stagingPropertiesFile(datasetID)
     val content = props.read()
     content should include ("state.label")
     content should include ("state.description")

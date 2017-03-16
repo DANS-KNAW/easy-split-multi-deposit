@@ -22,17 +22,17 @@ import scala.util.{ Failure, Success, Try }
 
 case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action {
 
-  private val mdFile = multiDepositDir(fileMd)
+  private val mdDir = multiDepositDir(fileMd)
 
   override def checkPreconditions: Try[Unit] = {
-    if (mdFile.exists) Success(Unit)
-    else Failure(ActionException(row, s"Cannot find MD file: ${ mdFile.getPath }"))
+    if (mdDir.exists) Success(Unit)
+    else Failure(ActionException(row, s"Cannot find ${ mdDir.getPath }"))
   }
 
   override def execute(): Try[Unit] = {
     val sfFile = springfieldInboxDir(fileMd)
-    Try { mdFile.copyFile(sfFile) } recoverWith {
-      case NonFatal(e) => Failure(ActionException(row, s"Error in copying $mdFile to $sfFile: ${ e.getMessage }", e))
+    Try { mdDir.copyFile(sfFile) } recoverWith {
+      case NonFatal(e) => Failure(ActionException(row, s"Error in copying $mdDir to $sfFile: ${ e.getMessage }", e))
     }
   }
 

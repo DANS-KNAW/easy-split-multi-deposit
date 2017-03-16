@@ -21,13 +21,11 @@ import org.apache.commons.configuration.PropertiesConfiguration
 import org.scalatest._
 
 class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
-  val RES_DIR_STR = new File(getClass.getResource("/").toURI).getAbsolutePath
+  private val RES_DIR_STR: String = new File(getClass.getResource("/").toURI).getAbsolutePath
 
-  val mockedProps = {
-    val ps = new PropertiesConfiguration()
-    ps.setDelimiterParsingDisabled(true)
-    ps.load(new File(RES_DIR_STR + "/debug-config", "application.properties"))
-    ps
+  private val mockedProps = new PropertiesConfiguration() {
+    setDelimiterParsingDisabled(true)
+    load(new File(RES_DIR_STR + "/debug-config", "application.properties"))
   }
 
   val mockedArgs = Array("-s", RES_DIR_STR, RES_DIR_STR + "/allfields/input", RES_DIR_STR + "/allfields/output", "datamanager")

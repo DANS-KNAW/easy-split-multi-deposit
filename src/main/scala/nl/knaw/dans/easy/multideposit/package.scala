@@ -15,19 +15,19 @@
  */
 package nl.knaw.dans.easy
 
-import java.io.{File, IOException}
+import java.io.{ File, IOException }
 import java.nio.charset.Charset
 import java.util.Properties
 
-import org.apache.commons.io.{Charsets, FileUtils}
+import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.apache.commons.lang.StringUtils
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.immutable.IndexedSeq
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.util.{Failure, Success, Try}
-import scala.xml.{Elem, PrettyPrinter}
+import scala.util.{ Failure, Success, Try }
+import scala.xml.{ Elem, PrettyPrinter }
 
 package object multideposit {
 
@@ -46,6 +46,7 @@ package object multideposit {
   case class DepositPermissions(permissions: String, group: String)
   case class Settings(multidepositDir: File = null,
                       springfieldInbox: File = null,
+                      stagingDir: File = null,
                       outputDepositDir: File = null,
                       datamanager: String = null,
                       depositPermissions: DepositPermissions = null,
@@ -53,8 +54,10 @@ package object multideposit {
     override def toString: String =
       s"Settings(multideposit-dir=$multidepositDir, " +
         s"springfield-inbox=$springfieldInbox, " +
-        s"deposit-dir=$outputDepositDir, " +
-        s"datamanager=$datamanager)"
+        s"staging-dir=$stagingDir, " +
+        s"output-deposit-dir=$outputDepositDir" +
+        s"datamanager=$datamanager, " +
+        s"deposit-permissions=$depositPermissions)"
   }
 
   case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")
@@ -145,7 +148,7 @@ package object multideposit {
      *
      * @param data the content to write to the file
      */
-    @throws(classOf[IOException])
+    @throws[IOException]("in case of an I/O error")
     def write(data: String, encoding: Charset = encoding): Unit = FileUtils.write(file, data, encoding)
 
     /**
@@ -154,6 +157,7 @@ package object multideposit {
      * @param elem the xml to be written
      * @param encoding the encoding applied to this xml
      */
+    @throws[IOException]("in case of an I/O error")
     def writeXml(elem: Elem, encoding: Charset = encoding): Unit = {
       val header = s"""<?xml version="1.0" encoding="$encoding"?>\n"""
       val data = new PrettyPrinter(160, 2).format(elem)
@@ -166,7 +170,7 @@ package object multideposit {
      *
      * @param data the content to write to the file
      */
-    @throws(classOf[IOException])
+    @throws[IOException]("in case of an I/O error")
     def append(data: String): Unit = FileUtils.write(file, data, true)
 
     /**
@@ -175,7 +179,7 @@ package object multideposit {
      *
      * @return the file contents, never ``null``
      */
-    @throws(classOf[IOException])
+    @throws[IOException]("in case of an I/O error")
     def read(encoding: Charset = encoding): String = FileUtils.readFileToString(file, encoding)
 
     /**
@@ -195,7 +199,7 @@ package object multideposit {
      * @param child the file to consider as the child.
      * @return true is the candidate leaf is under by the specified composite. False otherwise.
      */
-    @throws(classOf[IOException])
+    @throws[IOException]("if an IO error occurs while checking the files.")
     def directoryContains(child: File): Boolean = FileUtils.directoryContains(file, child)
 
     /**
@@ -216,8 +220,9 @@ package object multideposit {
      *
      * @param destDir the new directory, must not be ``null``
      */
-    @throws(classOf[NullPointerException])
-    @throws(classOf[IOException])
+    @throws[NullPointerException]("if source or destination is null")
+    @throws[IOException]("if source or destination is invalid")
+    @throws[IOException]("if an IO error occurs during copying")
     def copyFile(destDir: File): Unit = FileUtils.copyFile(file, destDir)
 
     /**
@@ -238,11 +243,28 @@ package object multideposit {
      *
      * @param destDir the new directory, must not be ``null``
      */
+    @throws[NullPointerException]("if source or destination is null")
+    @throws[IOException]("if source or destination is invalid")
+    @throws[IOException]("if an IO error occurs during copying")
     def copyDir(destDir: File): Unit = FileUtils.copyDirectory(file, destDir)
+
+    /**
+     * Moves a directory.
+     * <p>
+     * When the destination directory is on another file system, do a "copy and delete".
+     *
+     * @param destDir the destination directory
+     */
+    @throws[NullPointerException]("if source or destination is null")
+    @throws[FileExistsException]("if the destination directory exists")
+    @throws[IOException]("if source or destination is invalid")
+    @throws[IOException]("if an IO error occurs moving the file")
+    def moveDir(destDir: File): Unit = FileUtils.moveDirectory(file, destDir)
 
     /**
      * Deletes a directory recursively.
      */
+    @throws[IOException]("in case deletion is unsuccessful")
     def deleteDirectory(): Unit = FileUtils.deleteDirectory(file)
 
     /**
@@ -254,6 +276,10 @@ package object multideposit {
   }
 
   implicit class DatasetExtensions(val dataset: Dataset) extends AnyVal {
+    def getRowNumber: Int = {
+      dataset("ROW").head.toInt // first occurrence of dataset, assuming it is not empty
+    }
+
     /**
      * Retrieves the value of a certain parameter from the dataset on a certain row.
      * If either the key is not present, the specified row does not exist or the value `blank`
@@ -339,41 +365,48 @@ package object multideposit {
   val propsFileName = "deposit.properties"
   val springfieldActionsFileName = "springfield-actions.xml"
 
+  private def datasetDir(datasetID: DatasetID)(implicit settings: Settings): String = {
+    s"${settings.multidepositDir.getName}-$datasetID"
+  }
+  def multiDepositInstructionsFile(baseDir: File): File = {
+    new File(baseDir, instructionsFileName)
+  }
+
   // mdDir/datasetID/
   def multiDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
     new File(settings.multidepositDir, datasetID)
   }
   // mdDir/instructions.csv
   def multiDepositInstructionsFile(implicit settings: Settings): File = {
-    new File(settings.multidepositDir, instructionsFileName)
+    multiDepositInstructionsFile(settings.multidepositDir)
   }
-  // outDir/mdDir-datasetID/
-  def outputDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(settings.outputDepositDir, s"${settings.multidepositDir.getName}-$datasetID")
+  // stagingDir/mdDir-datasetID/
+  def stagingDir(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(settings.stagingDir, datasetDir(datasetID))
   }
-  // outDir/mdDir-datasetID/bag/
-  def outputDepositBagDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(outputDepositDir(datasetID), bagDirName)
+  // stagingDir/mdDir-datasetID/bag/
+  def stagingBagDir(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(stagingDir(datasetID), bagDirName)
   }
-  // outDir/mdDir-datasetID/bag/data/
-  def outputDepositBagDataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(outputDepositBagDir(datasetID), dataDirName)
+  // stagingDir/mdDir-datasetID/bag/data/
+  def stagingBagDataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(stagingBagDir(datasetID), dataDirName)
   }
-  // outDir/mdDir-datasetID/bag/metadata/
-  def outputDepositBagMetadataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(outputDepositBagDir(datasetID), metadataDirName)
+  // stagingDir/mdDir-datasetID/bag/metadata/
+  def stagingBagMetadataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(stagingBagDir(datasetID), metadataDirName)
   }
-  // outDir/mdDir-datasetID/deposit.properties
-  def outputPropertiesFile(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(outputDepositDir(datasetID), propsFileName)
+  // stagingDir/mdDir-datasetID/deposit.properties
+  def stagingPropertiesFile(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(stagingDir(datasetID), propsFileName)
   }
-  // outDir/mdDir-datasetID/bag/metadata/dataset.xml
-  def outputDatasetMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(outputDepositBagMetadataDir(datasetID), datasetMetadataFileName)
+  // stagingDir/mdDir-datasetID/bag/metadata/dataset.xml
+  def stagingDatasetMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(stagingBagMetadataDir(datasetID), datasetMetadataFileName)
   }
-  // outDir/mdDir-datasetID/bag/metadata/files.xml
-  def outputFileMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(outputDepositBagMetadataDir(datasetID), fileMetadataFileName)
+  // stagingDir/mdDir-datasetID/bag/metadata/files.xml
+  def stagingFileMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(stagingBagMetadataDir(datasetID), fileMetadataFileName)
   }
   // sfiDir/<fileMd>
   def springfieldInboxDir(fileMd: String)(implicit settings: Settings): File = {
@@ -382,5 +415,9 @@ package object multideposit {
   // sfiDir/springfield-actions.xml
   def springfieldInboxActionsFile(implicit settings: Settings): File = {
     springfieldInboxDir(springfieldActionsFileName)
+  }
+  // outputDepositDir/mdDir-datasetID/
+  def outputDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
+    new File(settings.outputDepositDir, datasetDir(datasetID))
   }
 }

@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.{ File, FileNotFoundException }
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
+import org.scalatest.BeforeAndAfter
 
 import scala.collection.mutable
 import scala.util.{ Failure, Success }
@@ -27,8 +27,8 @@ import scala.xml.{ Utility, XML }
 class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
 
   implicit val settings = Settings(
-    multidepositDir = new File(testDir, "dd"),
-    outputDepositDir = new File(testDir, "dd")
+    multidepositDir = new File(testDir, "md"),
+    stagingDir = new File(testDir, "sd")
   )
   val datasetID = "ruimtereis01"
   val dataset = mutable.HashMap(
@@ -44,7 +44,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
   }
 
   after {
-    settings.outputDepositDir.deleteDirectory()
+    settings.stagingDir.deleteDirectory()
   }
 
   "checkPreconditions" should "succeed if the dataset contains the SF_* fields in case a A/V file is found" in {
@@ -127,18 +127,18 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
 
   "execute" should "write the file metadata to an xml file" in {
     val action = new AddFileMetadataToDeposit(1, (datasetID, dataset))
-    val metadataDir = outputDepositBagMetadataDir(datasetID)
+    val metadataDir = stagingBagMetadataDir(datasetID)
 
     action.execute() shouldBe a[Success[_]]
 
     metadataDir should exist
-    outputFileMetadataFile(datasetID) should exist
+    stagingFileMetadataFile(datasetID) should exist
   }
 
   it should "produce the xml for all the files" in {
     AddFileMetadataToDeposit(1, (datasetID, dataset)).execute() shouldBe a[Success[_]]
 
-    Utility.trim(XML.loadFile(outputFileMetadataFile(datasetID)))
+    Utility.trim(XML.loadFile(stagingFileMetadataFile(datasetID)))
       .child
       .map(node => (node \@ "filepath", node.child.filter(_.label == "format").head.text)) should {
       have length 10 and

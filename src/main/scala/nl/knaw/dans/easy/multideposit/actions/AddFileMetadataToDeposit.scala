@@ -69,7 +69,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
 
   override def execute(): Try[Unit] = {
     datasetToFileXml
-      .map(outputFileMetadataFile(datasetID).writeXml(_))
+      .map(stagingFileMetadataFile(datasetID).writeXml(_))
       .recoverWith {
         case NonFatal(e) => Failure(ActionException(row, s"Could not write file meta data: $e", e))
       }

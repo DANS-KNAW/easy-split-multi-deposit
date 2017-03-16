@@ -26,16 +26,19 @@ class MainSpec extends UnitSpec {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
-    outputDepositDir = new File(testDir, "dd"),
+    stagingDir = new File(testDir, "dd"),
     springfieldInbox = new File(testDir, "sfi")
   )
 
-  val generalActions = Seq(CreateSpringfieldActions(-1, testDatasets))
+  val generalActions = Seq(
+    CreateSpringfieldActions(-1, testDatasets),
+    MoveDepositToOutputDir(2, testDatasets.head._1),
+    MoveDepositToOutputDir(2, testDatasets.tail.head._1))
 
   val dataset1Actions = new {
     val entry @ (datasetID, dataset) = testDatasets.head
     val datasetActions = Seq(
-      CreateOutputDepositDir(2, datasetID),
+      CreateStagingDir(2, datasetID),
       AddBagToDeposit(2, entry),
       AddDatasetMetadataToDeposit(2, entry),
       AddFileMetadataToDeposit(2, entry),
@@ -47,7 +50,7 @@ class MainSpec extends UnitSpec {
   val dataset2Actions = new {
     val entry @ (datasetID, dataset) = testDatasets.tail.head
     val datasetActions = Seq(
-      CreateOutputDepositDir(2, datasetID),
+      CreateStagingDir(2, datasetID),
       AddBagToDeposit(2, entry),
       AddDatasetMetadataToDeposit(2, entry),
       AddFileMetadataToDeposit(2, entry),
@@ -58,7 +61,7 @@ class MainSpec extends UnitSpec {
 
   /*"getActions"*/ignore should "return all actions to be performed given the collection of datasets" in {
     getActions(testDatasets) should {
-      have size 15 and
+      have size 17 and
       contain theSameElementsInOrderAs(
         dataset1Actions.datasetActions ++ dataset1Actions.fileActions ++
         dataset2Actions.datasetActions ++ dataset2Actions.fileActions ++
@@ -69,7 +72,7 @@ class MainSpec extends UnitSpec {
 
   /*"getGeneralActions"*/ignore should "return a collection of actions that are supposed to run only once for all datasets" in {
     getGeneralActions(testDatasets) should {
-      have size 1 and contain theSameElementsInOrderAs generalActions
+      have size 3 and contain theSameElementsInOrderAs generalActions
     }
   }
 
