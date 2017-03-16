@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ddm:DDM 
-xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.knaw.nl/schemas/md/2012/11/ddm.xsd" xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/" xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/" xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/" xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/" xmlns:dcx="http://easy.dans.knaw.nl/schemas/dcx/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dct="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/">
+xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.knaw.nl/schemas/md/2016/ddm.xsd" xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/" xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/" xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/" xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/" xmlns:dcx="http://easy.dans.knaw.nl/schemas/dcx/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dct="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/">
   <ddm:profile>
     <dc:title>Hubble ruimtetelescoop</dc:title>
     <dc:title>Hubble space telescope</dc:title>
@@ -44,14 +44,10 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.kn
     <dcterms:rightsHolder>richard</dcterms:rightsHolder>
     <dcterms:rightsHolder>joke</dcterms:rightsHolder>
     <dcterms:rightsHolder>vesa</dcterms:rightsHolder>
-    <dc:format>video/mpeg</dc:format>
     <dc:format>image/jpeg</dc:format>
     <dc:format>text/plain</dc:format>
     <dc:source>http://scholar.google.com</dc:source>
     <dc:relation>barbapappa</dc:relation>
-    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">
-      /domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$presentation-placeholder
-    </ddm:relation>
     <dc:subject>astronomie</dc:subject>
     <dc:subject>telescopen</dc:subject>
     <dcterms:temporal>2015-2016</dcterms:temporal>

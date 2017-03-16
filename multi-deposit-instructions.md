@@ -62,8 +62,7 @@ The supported metadata elements are subdivided into the following groups:
   `DDM_AUDIENCE`, `DDM_ACCESSRIGHTS`, `DEPOSITOR_ID`
 * Fields that specify the relation to a streaming surrogate on the Springfield
   platform: `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, `SF_SUBTITLES`
-
-\* The use of `DC_CREATOR` and `DC_CONTRIBUTOR` is deprecated in favor of the new
+* The use of `DC_CREATOR` and `DC_CONTRIBUTOR` is deprecated in favor of the new
 `DCX_CREATOR_*` and `DCX_CONTRIBUTOR_*` fields.
 
 The following elements are required: `DC_TITLE`, `DC_DESCRIPTION`, `DCX_CREATOR_*`

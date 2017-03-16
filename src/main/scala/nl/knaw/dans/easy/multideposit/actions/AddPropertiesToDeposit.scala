@@ -93,6 +93,7 @@ object AddPropertiesToDeposit {
   def validateDepositor(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     // TODO a for-comprehension over monad-transformers would be nice here...
     // see https://github.com/rvanheest/Experiments/tree/master/src/main/scala/experiments/transformers
+    // TODO check that only one depositorID is given, rather than multiple that are the same
     dataset.get("DEPOSITOR_ID")
       .map(_.filterNot(_.isBlank).toSet)
       .map(uniqueIDs => {
