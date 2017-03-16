@@ -121,7 +121,7 @@ object AddPropertiesToDeposit {
     }
 
     addProperties(props, dataset, settings.datamanager, emailaddress)
-      .flatMap(_ => Using.fileWriter(encoding)(outputPropertiesFile(datasetID)).map(out => props.store(out, "")).tried)
+      .flatMap(_ => Using.fileWriter(encoding)(stagingPropertiesFile(datasetID)).map(out => props.store(out, "")).tried)
       .recoverWith {
         case NonFatal(e) => Failure(ActionException(row, s"Could not write properties to file: $e", e))
       }

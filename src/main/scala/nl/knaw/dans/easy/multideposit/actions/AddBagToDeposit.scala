@@ -49,7 +49,7 @@ object AddBagToDeposit {
   def createBag(datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = Try {
     val inputDir = multiDepositDir(datasetID)
     val inputDirExists = inputDir.exists
-    val outputBagDir = outputDepositBagDir(datasetID)
+    val outputBagDir = stagingBagDir(datasetID)
 
     val bagFactory = new BagFactory
     val preBag = bagFactory.createPreBag(outputBagDir)

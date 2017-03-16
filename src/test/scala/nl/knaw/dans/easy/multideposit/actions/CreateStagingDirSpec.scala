@@ -22,11 +22,11 @@ import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 
 import scala.util.{Failure, Success}
 
-class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
+class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
-    outputDepositDir = new File(testDir, "dd")
+    stagingDir = new File(testDir, "sd")
   )
   val datasetID = "ds1"
 
@@ -34,40 +34,40 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
 
   before {
     // create depositDir base directory
-    val baseDir = settings.outputDepositDir
+    val baseDir = settings.stagingDir
     baseDir.mkdir
     baseDir should exist
   }
 
   after {
     // clean up stuff after the test is done
-    val baseDir = settings.outputDepositDir
+    val baseDir = settings.stagingDir
     baseDir.deleteDirectory()
-    baseDir should not (exist)
+    baseDir shouldNot exist
   }
 
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if the output directories do not yet exist" in {
     // directories do not exist before
-    outputDepositDir(datasetID) should not (exist)
-    outputDepositBagDir(datasetID) should not (exist)
-    outputDepositBagMetadataDir(datasetID) should not (exist)
+    stagingDir(datasetID) shouldNot exist
+    stagingBagDir(datasetID) shouldNot exist
+    stagingBagMetadataDir(datasetID) shouldNot exist
 
     // creation of directories
-    CreateOutputDepositDir(1, datasetID).checkPreconditions shouldBe a[Success[_]]
+    CreateStagingDir(1, datasetID).checkPreconditions shouldBe a[Success[_]]
   }
 
   it should "fail if either one of the output directories does already exist" in {
-    outputDepositBagDir(datasetID).mkdirs()
+    stagingBagDir(datasetID).mkdirs()
 
     // some directories do already exist before
-    outputDepositDir(datasetID) should exist
-    outputDepositBagDir(datasetID) should exist
-    outputDepositBagMetadataDir(datasetID) should not (exist)
+    stagingDir(datasetID) should exist
+    stagingBagDir(datasetID) should exist
+    stagingBagMetadataDir(datasetID) shouldNot exist
 
     // creation of directories
-    inside(CreateOutputDepositDir(1, datasetID).checkPreconditions) {
+    inside(CreateStagingDir(1, datasetID).checkPreconditions) {
       case Failure(ActionException(_, message, _)) => message should include (s"The deposit for dataset $datasetID already exists")
     }
   }
@@ -83,26 +83,26 @@ class CreateOutputDepositDirSpec extends UnitSpec with BeforeAndAfter with Befor
     executeTest()
 
     // roll back the creation of the directories
-    CreateOutputDepositDir(1, datasetID).rollback() shouldBe a[Success[_]]
+    CreateStagingDir(1, datasetID).rollback() shouldBe a[Success[_]]
 
     // test that the directories are really not there anymore
-    outputDepositDir(datasetID) should not (exist)
-    outputDepositBagDir(datasetID) should not (exist)
-    outputDepositBagMetadataDir(datasetID) should not (exist)
+    stagingDir(datasetID) shouldNot exist
+    stagingBagDir(datasetID) shouldNot exist
+    stagingBagMetadataDir(datasetID) shouldNot exist
   }
 
   def executeTest(): Unit = {
     // directories do not exist before
-    outputDepositDir(datasetID) should not (exist)
-    outputDepositBagDir(datasetID) should not (exist)
-    outputDepositBagMetadataDir(datasetID) should not (exist)
+    stagingDir(datasetID) shouldNot exist
+    stagingBagDir(datasetID) shouldNot exist
+    stagingBagMetadataDir(datasetID) shouldNot exist
 
     // creation of directories
-    CreateOutputDepositDir(1, datasetID).execute shouldBe a[Success[_]]
+    CreateStagingDir(1, datasetID).execute shouldBe a[Success[_]]
 
     // test existance after creation
-    outputDepositDir(datasetID) should exist
-    outputDepositBagDir(datasetID) should exist
-    outputDepositBagMetadataDir(datasetID) should exist
+    stagingDir(datasetID) should exist
+    stagingBagDir(datasetID) should exist
+    stagingBagMetadataDir(datasetID) should exist
   }
 }

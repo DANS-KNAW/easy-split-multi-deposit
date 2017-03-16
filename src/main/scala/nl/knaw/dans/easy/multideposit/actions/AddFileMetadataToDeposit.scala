@@ -53,7 +53,7 @@ object AddFileMetadataToDeposit {
 
   def writeFileMetadataXml(row: Int, datasetID: DatasetID)(implicit settings: Settings): Try[Unit] = {
     datasetToFileXml(datasetID)
-      .map(outputFileMetadataFile(datasetID).writeXml(_))
+      .map(stagingFileMetadataFile(datasetID).writeXml(_))
       .recoverWith {
         case NonFatal(e) => Failure(ActionException(row, s"Could not write file meta data: $e", e))
       }

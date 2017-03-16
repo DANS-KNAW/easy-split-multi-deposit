@@ -39,13 +39,13 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with Before
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
-    outputDepositDir = new File(testDir, "dd"),
+    stagingDir = new File(testDir, "sd"),
     depositPermissions = DepositPermissions("rwxrwx---", userGroup)
   )
 
   private val datasetID = "ruimtereis01"
 
-  private val base = outputDepositDir(datasetID)
+  private val base = stagingDir(datasetID)
   private val folder1 = new File(base, "folder1")
   private val folder2 = new File(base, "folder2")
   private val file1 = new File(base, "file1.txt")
@@ -104,7 +104,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with Before
   it should "fail if the group name does not exist" in {
     implicit val settings = Settings(
       multidepositDir = new File(testDir, "md"),
-      outputDepositDir = new File(testDir, "dd"),
+      stagingDir = new File(testDir, "sd"),
       depositPermissions = DepositPermissions("rwxrwx---", "non-existing-group-name")
     )
 
@@ -116,7 +116,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with Before
   it should "fail if the access permissions are invalid" in {
     implicit val settings = Settings(
       multidepositDir = new File(testDir, "md"),
-      outputDepositDir = new File(testDir, "dd"),
+      stagingDir = new File(testDir, "sd"),
       depositPermissions = DepositPermissions("abcdefghi", "admin")
     )
 
@@ -128,7 +128,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter with Before
   it should "fail if the user is not part of the given group" in {
     implicit val settings = Settings(
       multidepositDir = new File(testDir, "md"),
-      outputDepositDir = new File(testDir, "dd"),
+      stagingDir = new File(testDir, "sd"),
       depositPermissions = DepositPermissions("rwxrwx---", unrelatedGroup)
     )
 

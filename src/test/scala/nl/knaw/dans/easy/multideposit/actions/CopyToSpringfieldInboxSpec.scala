@@ -39,7 +39,9 @@ class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
 
   "checkPreconditions" should "fail if file does not exist" in {
     inside(CopyToSpringfieldInbox(1, "videos/some_checkPreFail.mpg").checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include ("Cannot find MD file")
+      case Failure(ActionException(_, message, _)) => message should {
+        include ("Cannot find") and include ("videos/some_checkPreFail.mpg")
+      }
     }
   }
 
