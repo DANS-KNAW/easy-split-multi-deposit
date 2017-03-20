@@ -578,16 +578,45 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       .map(dss => dss.map { case (_, ds) => AddDatasetMetadataToDeposit.datasetToXml(ds) })
   }
 
-  "createDcmiMetadata" should "return the expected spatial elements" in {
+  "createDcmiMetadata" should "return the expected spatial Box elements" in {
     val dataset = new Dataset() +=
       "DCT_SPATIAL" -> List("here", "there", "", "") +=
       "DCX_SPATIAL_SCHEME" -> List("degrees", "RD", "", "") +=
-      "DCX_SPATIAL_X" -> List("83575.4", "", "", "") +=
-      "DCX_SPATIAL_Y" -> List("455271.2", "", "", "") +=
-      "DCX_SPATIAL_NORTH" -> List("", "1", "", "") +=
-      "DCX_SPATIAL_SOUTH" -> List("", "2", "", "") +=
-      "DCX_SPATIAL_EAST" -> List("", "3", "", "") +=
-      "DCX_SPATIAL_WEST" -> List("", "4", "", "")
+      "DCX_SPATIAL_NORTH" -> List("4", "40", "", "") +=
+      "DCX_SPATIAL_SOUTH" -> List("3", "30", "", "") +=
+      "DCX_SPATIAL_EAST" -> List("2", "20", "", "") +=
+      "DCX_SPATIAL_WEST" -> List("1", "10", "", "")
+    val expectedXml = <ddm>
+      <ddm:dcmiMetadata>
+        <dcterms:spatial>here</dcterms:spatial>
+        <dcterms:spatial>there</dcterms:spatial>
+        <dcx-gml:spatial>
+          <boundedBy xmlns="http://www.opengis.net/gml">
+            <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+              <lowerCorner>3 1</lowerCorner>
+              <upperCorner>4 2</upperCorner>
+            </Envelope>
+          </boundedBy>
+        </dcx-gml:spatial>
+        <dcx-gml:spatial>
+          <boundedBy xmlns="http://www.opengis.net/gml">
+            <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
+              <lowerCorner>10 30</lowerCorner>
+              <upperCorner>20 40</upperCorner>
+            </Envelope>
+          </boundedBy>
+        </dcx-gml:spatial>
+      </ddm:dcmiMetadata>
+    </ddm>
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
+  }
+
+  "createDcmiMetadata" should "return the expected spatial Point elements" in {
+    val dataset = new Dataset() +=
+      "DCT_SPATIAL" -> List("here", "there", "", "") +=
+      "DCX_SPATIAL_SCHEME" -> List("degrees", "RD", "", "") +=
+      "DCX_SPATIAL_X" -> List("83575.4", "210902", "", "") +=
+      "DCX_SPATIAL_Y" -> List("455271.2", "442193", "", "")
     val expectedXml = <ddm>
       <ddm:dcmiMetadata>
         <dcterms:spatial>here</dcterms:spatial>
@@ -597,13 +626,10 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
             <pos>455271.2 83575.4</pos>
           </Point>
         </dcx-gml:spatial>
-        <dcx-gml:spatial>
-          <boundedBy xmlns="http://www.opengis.net/gml">
-            <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
-              <lowerCorner>1 3</lowerCorner>
-              <upperCorner>2 4</upperCorner>
-            </Envelope>
-          </boundedBy>
+        <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
+          <Point xmlns="http://www.opengis.net/gml">
+            <pos>210902 442193</pos>
+          </Point>
         </dcx-gml:spatial>
       </ddm:dcmiMetadata>
     </ddm>
