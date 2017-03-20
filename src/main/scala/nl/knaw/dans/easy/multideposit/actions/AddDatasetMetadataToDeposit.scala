@@ -220,10 +220,14 @@ object AddDatasetMetadataToDeposit {
   def createSpatialPoints(dataset: Dataset): Seq[Elem] = {
     dataset.rowsWithValuesForAllOf(composedSpatialPointFields).map(mdKeyValues => {
       val srsName = createSrsName(mdKeyValues)
+
+      val x = mdKeyValues.getOrElse("DCX_SPATIAL_X", "")
+      val y = mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")
+
       // coordinate order x, y = longitude (DCX_SPATIAL_X), latitude (DCX_SPATIAL_Y)
-      lazy val xy = s"${mdKeyValues.getOrElse("DCX_SPATIAL_X", "")} ${mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")}"
+      lazy val xy = s"$x $y"
       // coordinate order y, x = latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
-      lazy val yx = s"${mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")} ${mdKeyValues.getOrElse("DCX_SPATIAL_X", "")}"
+      lazy val yx = s"$y $x"
 
       val pos = srsName match {
         case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
