@@ -72,6 +72,12 @@
             <artifactId>dans-scala-lib</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>nl.knaw.dans.easy</groupId>
+            <artifactId>ddm</artifactId>
+            <version>333.x-SNAPSHOT</version>
+        </dependency>
+
         <!-- BagIt -->
         <dependency>
             <groupId>gov.loc</groupId>

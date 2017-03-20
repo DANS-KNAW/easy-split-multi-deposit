@@ -147,6 +147,41 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
+  it should "succeed with correct access right" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "DDM_ACCESSRIGHTS" -> List("OPEN_ACCESS", "")
+    )
+    AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail with an incorrect access right" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "DDM_ACCESSRIGHTS" -> List("INCORRECT_ACCESS", "")
+    )
+    inside(AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message should include ("Wrong value: INCORRECT_ACCESS")
+    }
+  }
+
+  it should "fail with a correct access right that is not 'all-caps'" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "DDM_ACCESSRIGHTS" -> List("open_access", "")
+    )
+    inside(AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message should include ("Wrong value: open_access")
+    }
+  }
+
   it should "succeed with required person information" in {
     val validDataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
@@ -941,6 +976,41 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "AV_FILE" -> List("", "")
     )
     new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "succeed with correct file access right" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_ACCESSIBILITY" -> List("ANONYMOUS", "")
+    )
+    AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail with an incorrect file access right" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_ACCESSIBILITY" -> List("INCORRECT_ACCESS", "")
+    )
+    inside(AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message should include ("Wrong value: INCORRECT_ACCESS")
+    }
+  }
+
+  it should "fail with a correct file access right that is not 'all-caps'" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_ACCESSIBILITY" -> List("anonymous", "")
+    )
+    inside(AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message should include ("Wrong value: anonymous")
+    }
   }
 
   "execute" should "write the metadata to a file at the correct place" in {

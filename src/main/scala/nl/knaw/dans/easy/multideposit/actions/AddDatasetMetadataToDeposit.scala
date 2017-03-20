@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 
+import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
@@ -108,6 +109,8 @@ object AddDatasetMetadataToDeposit {
         // scheme
         checkValueIsOneOf(row, rowVals, "DCT_TEMPORAL_SCHEME", "abr:ABRperiode"),
         checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", "abr:ABRcomplex"),
+        checkValueIsOneOf(row, rowVals, "DDM_ACCESSRIGHTS", AccessCategory.values().map(_.toString): _*),
+        checkValueIsOneOf(row, rowVals, "SF_ACCESSIBILITY", FileAccessRights.values.map(_.toString).toList: _*),
 
         checkAccessRights(row, rowVals),
 
