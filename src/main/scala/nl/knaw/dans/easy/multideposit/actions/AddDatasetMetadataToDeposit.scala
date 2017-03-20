@@ -221,9 +221,9 @@ object AddDatasetMetadataToDeposit {
     dataset.rowsWithValuesForAllOf(composedSpatialPointFields).map(mdKeyValues => {
       val srsName = createSrsName(mdKeyValues)
       // coordinate order x, y = longitude (DCX_SPATIAL_X), latitude (DCX_SPATIAL_Y)
-      val xy = s"${mdKeyValues.getOrElse("DCX_SPATIAL_X", "")} ${mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")}"
+      lazy val xy = s"${mdKeyValues.getOrElse("DCX_SPATIAL_X", "")} ${mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")}"
       // coordinate order y, x = latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
-      val yx = s"${mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")} ${mdKeyValues.getOrElse("DCX_SPATIAL_X", "")}"
+      lazy val yx = s"${mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")} ${mdKeyValues.getOrElse("DCX_SPATIAL_X", "")}"
 
       val pos = srsName match {
         case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
@@ -242,10 +242,11 @@ object AddDatasetMetadataToDeposit {
   }
 
   /*
-   Note that X is along North - South and Y is along East - West
+   Note that Y is along North - South and X is along East - West
    The lower corner is with the minimal coordinate values and upper corner with the maximal coordinate values
    If x was increasing from West to East and y was increasing from South to North we would have
    lower corner (x,y) = (West,South) and upper corner (x,y) = (East,North)
+   as shown in the schematic drawing of the box below.
    This is the case for the WGS84 and RD coordinate systems, but not per se for any other system!
 
                          upper(x,y)=(E,N)
@@ -263,12 +264,12 @@ object AddDatasetMetadataToDeposit {
     dataset.rowsWithValuesForAllOf(composedSpatialBoxFields).map(mdKeyValues => {
       val srsName = createSrsName(mdKeyValues)
 
-      val lowerX = mdKeyValues.getOrElse("DCX_SPATIAL_WEST", "")
-      val upperX = mdKeyValues.getOrElse("DCX_SPATIAL_EAST", "")
-      val lowerY = mdKeyValues.getOrElse("DCX_SPATIAL_SOUTH", "")
-      val upperY = mdKeyValues.getOrElse("DCX_SPATIAL_NORTH", "")
-      val xy = (s"$lowerX $lowerY", s"$upperX $upperY")
-      val yx = (s"$lowerY $lowerX", s"$upperY $upperX")
+      lazy val lowerX = mdKeyValues.getOrElse("DCX_SPATIAL_WEST", "")
+      lazy val upperX = mdKeyValues.getOrElse("DCX_SPATIAL_EAST", "")
+      lazy val lowerY = mdKeyValues.getOrElse("DCX_SPATIAL_SOUTH", "")
+      lazy val upperY = mdKeyValues.getOrElse("DCX_SPATIAL_NORTH", "")
+      lazy val xy = (s"$lowerX $lowerY", s"$upperX $upperY")
+      lazy val yx = (s"$lowerY $lowerX", s"$upperY $upperX")
 
       val (lower, upper) = srsName match {
         case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
