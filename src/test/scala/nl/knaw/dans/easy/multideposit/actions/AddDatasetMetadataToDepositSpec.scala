@@ -739,10 +739,11 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
-  it should "fail if AV_FILE is given, but SF_COLLECTION is not" in {
+  it should "fail if AV_FILE is given, SF_USER is given, but SF_COLLECTION is not" in {
     val dataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
       "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_USER" -> List("user", ""),
       "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
     )
     inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
@@ -752,12 +753,12 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
-  it should "fail if AV_FILE is given, but SF_COLLECTION has empty values only" in {
+  it should "fail if AV_FILE is given, SF_USER is given, but SF_COLLECTION has empty values only" in {
     val dataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
       "DDM_CREATED" -> List("2017-07-30", ""),
       "SF_DOMAIN" -> List("", ""),
-      "SF_USER" -> List("", ""),
+      "SF_USER" -> List("user", ""),
       "SF_COLLECTION" -> List("", ""),
       "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
     )
@@ -774,7 +775,6 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "DDM_CREATED" -> List("2017-07-30", ""),
       "SF_DOMAIN" -> List("domain", ""),
       "SF_USER" -> List("user", ""),
-      "SF_COLLECTION" -> List("", ""),
       "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
     )
     inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
@@ -800,7 +800,127 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
-  it should "succeed if AV_FILE is not given, and SF_COLLECTION has empty values only" in {
+  it should "fail if AV_FILE is given, SF_COLLECTION is given, but SF_USER is not" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_USER] do not"
+    }
+  }
+
+  it should "fail if AV_FILE is given, SF_COLLECTION is given, but SF_USER has empty values only" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("", ""),
+      "SF_USER" -> List("", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_USER] do not"
+    }
+  }
+
+  it should "fail if AV_FILE is given, SF_DOMAIN and SF_COLLECTION have values too, but SF_USER is missing" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_USER] do not"
+    }
+  }
+
+  it should "fail if AV_FILE is given, SF_DOMAIN and SF_COLLECTION have values too, but SF_USER has empty values only" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("", ""),
+      "SF_COLLECTION" -> List("collection", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_USER] do not"
+    }
+  }
+
+  it should "fail if AV_FILE is given, but SF_COLLECTION and SF_USER are not" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_COLLECTION, SF_USER] do not"
+    }
+  }
+
+  it should "fail if AV_FILE is given, but SF_COLLECTION and SF_USER have empty values only" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("", ""),
+      "SF_USER" -> List("", ""),
+      "SF_COLLECTION" -> List("", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_COLLECTION, SF_USER] do not"
+    }
+  }
+
+  it should "fail if AV_FILE is given, SF_DOMAIN has values too, but SF_COLLECTION and SF_USER are missing" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_COLLECTION, SF_USER] do not"
+    }
+  }
+
+  it should "fail if AV_FILE is given, SF_DOMAIN has values too, but SF_COLLECTION and SF_USER have empty values only" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("", ""),
+      "SF_COLLECTION" -> List("", ""),
+      "AV_FILE" -> List(s"$datasetID/reisverslag/centaur.mpg", "")
+    )
+    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "The column AV_FILE contains values, but the column(s) [SF_COLLECTION, SF_USER] do not"
+    }
+  }
+
+  it should "succeed if AV_FILE is not given, and SF_COLLECTION and SF_USER have empty values only" in {
     val dataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
       "DDM_CREATED" -> List("2017-07-30", ""),

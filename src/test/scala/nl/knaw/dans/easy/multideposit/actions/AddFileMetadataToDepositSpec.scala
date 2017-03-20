@@ -31,10 +31,6 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     stagingDir = new File(testDir, "sd")
   )
   val datasetID = "ruimtereis01"
-  val dataset = mutable.HashMap(
-    "DATASET" -> List(datasetID, datasetID),
-    "AV_FILE" -> List("ruimtereis01/reisverslag/centaur.mpg", "")
-  )
 
   before {
     new File(getClass.getResource("/allfields/input").toURI)
@@ -57,6 +53,25 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
+  it should "succeed if the dataset does not contain the SF_DOMAIN (which is optional)" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", "")
+    )
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "succeed if the dataset only contains empty values for the SF_DOMAIN (which is optional)" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "SF_DOMAIN" -> List("", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", "")
+    )
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
   it should "fail if the dataset contains A/V files but the SF_* fields are all blank" in {
     val dataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),
@@ -67,7 +82,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     inside(new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(ActionException(_, message, _)) =>
         message should {
-          include("No values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]") and
+          include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
             include("reisverslag/centaur.mpg") and
             include("path/to/a/random/video/hubble.mpg") and
             include("path/to/a/random/sound/chicken.mp3")
@@ -100,7 +115,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     inside(new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(ActionException(_, message, _)) =>
         message should {
-          include("No values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]") and
+          include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
             include("reisverslag/centaur.mpg") and
             include("path/to/a/random/video/hubble.mpg") and
             include("path/to/a/random/sound/chicken.mp3")
@@ -117,7 +132,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     inside(new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(ActionException(_, message, _)) =>
         message should {
-          include("No values found for these columns: [SF_DOMAIN, SF_USER]") and
+          include("No values found for these columns: [SF_USER]") and
             include("reisverslag/centaur.mpg") and
             include("path/to/a/random/video/hubble.mpg") and
             include("path/to/a/random/sound/chicken.mp3")
@@ -126,6 +141,10 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
   }
 
   "execute" should "write the file metadata to an xml file" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "AV_FILE" -> List("ruimtereis01/reisverslag/centaur.mpg", "")
+    )
     val action = new AddFileMetadataToDeposit(1, (datasetID, dataset))
     val metadataDir = stagingBagMetadataDir(datasetID)
 
@@ -136,6 +155,10 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
   }
 
   it should "produce the xml for all the files" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "AV_FILE" -> List("ruimtereis01/reisverslag/centaur.mpg", "")
+    )
     AddFileMetadataToDeposit(1, (datasetID, dataset)).execute() shouldBe a[Success[_]]
 
     Utility.trim(XML.loadFile(stagingFileMetadataFile(datasetID)))

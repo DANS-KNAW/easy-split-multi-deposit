@@ -55,7 +55,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
       }
 
       if (avFiles.nonEmpty)
-        checkColumnsAreNonEmpty(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
+        checkColumnsAreNonEmpty(row, dataset, "SF_USER", "SF_COLLECTION")
           .recoverWith {
             case ActionException(r, msg, cause) => Failure(ActionException(r,
               s"$msg\ncause: these columns should contain values because audio/video files are " +

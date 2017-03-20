@@ -54,7 +54,7 @@ object AddDatasetMetadataToDeposit {
   def datasetValidations(row: Int, dataset: Dataset): Seq[Try[Unit]] = {
     import validators._
     List(
-      checkDependendColumns(row, dataset, "AV_FILE", List("SF_COLLECTION"))
+      checkDependendColumns(row, dataset, "AV_FILE", List("SF_COLLECTION", "SF_USER"))
     )
   }
 
@@ -492,12 +492,14 @@ object validators {
     dataset.get(key)
       .filterNot(values => values.isEmpty || values.forall(_.isBlank))
       .map(_ => {
-        val sfEmpty = required.map(dataset.get)
-          .exists(_.forall(values => values.isEmpty || values.forall(_.isBlank)))
-        if (sfEmpty)
-          Failure(ActionException(row, s"The column $key contains values, but the column(s) ${ required.mkString("[", ", ", "]") } do not"))
-        else
+        val sfEmpty = required.filter(dataset.get(_)
+          .forall(values => values.isEmpty || values.forall(_.isBlank)))
+
+        if (sfEmpty.isEmpty)
           Success(())
+        else
+          Failure(ActionException(row, s"The column $key contains values, but the column(s) " +
+            s"${ sfEmpty.mkString("[", ", ", "]") } do not"))
       })
       .getOrElse(Success(()))
   }
