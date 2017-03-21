@@ -40,21 +40,21 @@ object Main extends DebugEnhancedLogging {
 
   def run(implicit settings: Settings): Try[Unit] = {
     MultiDepositParser.parse(multiDepositInstructionsFile)
-      .flatMap(getActions(_).reduce(_ compose _).run)
+      .flatMap(getActions(_).reduce(_ andThen _).run())
   }
 
-  def getActions(datasets: Datasets)(implicit settings: Settings): ListBuffer[Action] = {
+  def getActions(datasets: Datasets)(implicit settings: Settings): ListBuffer[Action[Unit]] = {
     logger.info("Compiling list of actions to perform ...")
 
     datasets.flatMap(getDatasetActions) ++= getGeneralActions(datasets)
   }
 
-  def getGeneralActions(datasets: Datasets)(implicit settings: Settings): Seq[Action] = {
+  def getGeneralActions(datasets: Datasets)(implicit settings: Settings): Seq[Action[Unit]] = {
     Seq(CreateSpringfieldActions(-1, datasets)) ++
       datasets.map { case (datasetID, dataset) => MoveDepositToOutputDir(dataset.getRowNumber, datasetID) }
   }
 
-  def getDatasetActions(entry: (DatasetID, Dataset))(implicit settings: Settings): Seq[Action] = {
+  def getDatasetActions(entry: (DatasetID, Dataset))(implicit settings: Settings): Seq[Action[Unit]] = {
     val (datasetID, dataset) = entry
     val row = dataset.getRowNumber
 
@@ -70,7 +70,7 @@ object Main extends DebugEnhancedLogging {
     ) ++ getFileActions(dataset)
   }
 
-  def getFileActions(dataset: Dataset)(implicit settings: Settings): Seq[Action] = {
+  def getFileActions(dataset: Dataset)(implicit settings: Settings): Seq[Action[Unit]] = {
     extractFileParameters(dataset)
       .collect {
         case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo)) if isThisAudioVideo matches "(?i)yes" =>

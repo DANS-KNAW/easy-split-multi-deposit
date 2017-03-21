@@ -33,7 +33,7 @@ import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
-case class AddBagToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
+case class AddBagToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action[Unit] {
 
   val (datasetID, dataset) = entry
 
@@ -91,7 +91,7 @@ object AddBagToDeposit {
   }
 }
 
-class BagInfoCompleter(bagFactory: BagFactory, dataset: Dataset) extends Completer {
+private class BagInfoCompleter(bagFactory: BagFactory, dataset: Dataset) extends Completer {
 
   def complete(bag: Bag): Bag = {
     val newBag = bagFactory.createBag(bag)

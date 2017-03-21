@@ -22,7 +22,7 @@ import org.apache.commons.io.FileExistsException
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class MoveDepositToOutputDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
+case class MoveDepositToOutputDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action[Unit] {
 
   private val outputDir = outputDepositDir(datasetID)
 

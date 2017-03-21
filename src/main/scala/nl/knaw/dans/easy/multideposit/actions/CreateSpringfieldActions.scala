@@ -31,7 +31,7 @@ TODO For this Action all datasets need to be in memory at the same time. However
      With this, we can eventually make the whole application reactive by also parsing the csv lazily
      and reactive.
  */
-case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit settings: Settings) extends Action {
+case class CreateSpringfieldActions(row: Int, datasets: Datasets)(implicit settings: Settings) extends Action[Unit] {
 
   override def execute(): Try[Unit] = CreateSpringfieldActions.writeSpringfieldXml(row, datasets)
 }

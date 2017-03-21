@@ -26,7 +26,7 @@ import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class SetDepositPermissions(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
+case class SetDepositPermissions(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action[Unit] {
 
   def execute(): Try[Unit] = {
     setFilePermissions().recoverWith {

@@ -27,7 +27,7 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 import nl.knaw.dans.lib.error.TraversableTryExtensions
 
-case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
+case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action[Unit] {
 
   val (datasetID, dataset) = entry
 

@@ -20,7 +20,7 @@ import nl.knaw.dans.easy.multideposit._
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class CreateStagingDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
+case class CreateStagingDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action[Unit] {
 
   private val stagingDirectory = stagingDir(datasetID)
   private val bagDir = stagingBagDir(datasetID)

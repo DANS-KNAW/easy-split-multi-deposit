@@ -20,7 +20,7 @@ import nl.knaw.dans.easy.multideposit.{ Action, ActionException, Settings, _ }
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action {
+case class CopyToSpringfieldInbox(row: Int, fileMd: String)(implicit settings: Settings) extends Action[Unit] {
 
   private val mdDir = multiDepositDir(fileMd)
 

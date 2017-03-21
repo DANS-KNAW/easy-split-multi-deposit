@@ -22,9 +22,9 @@ import scala.util.{ Failure, Success, Try }
 
 class ActionSpec extends UnitSpec {
 
-  class TestAction(precondition: Try[Unit],
-                   execute: Try[Unit],
-                   rollback: Try[Unit]) {
+  class TestAction[T](precondition: Try[Unit],
+                      execute: Try[T],
+                      rollback: Try[Unit]) {
     private val pre = new AtomicBoolean()
     private val exe = new AtomicBoolean()
     private val undo = new AtomicBoolean()
@@ -34,29 +34,34 @@ class ActionSpec extends UnitSpec {
       undo = () => { undo.set(true); rollback }
     )
 
-    def run: Try[Unit] = action.run
+    def test: Try[T] = action.run()
     def visited: (Boolean, Boolean, Boolean) = (pre.get(), exe.get(), undo.get())
   }
-  implicit def testActionIsAction(testAction: TestAction): Action = testAction.action
+  implicit def testActionIsAction[T](testAction: TestAction[T]): Action[T] = testAction.action
 
   "run" should "succeed if the precondition and execute both return Success" in {
     val action = new TestAction(
       precondition = Success(()),
-      execute = Success(()),
+      execute = Success(42),
       rollback = Success(()))
 
-    action.run shouldBe a[Success[_]]
+    inside(action.test) {
+      case Success(x) => x shouldBe 42
+    }
     action.visited shouldBe (true, true, false)
   }
 
   it should "fail if the precondition fails" in {
     val action = new TestAction(
       precondition = Failure(ActionException(1, "pre")),
-      execute = Success(()),
+      execute = Success(42),
       rollback = Success(()))
 
-    inside(action.run) {
-      case Failure(PreconditionsFailedException(report, _)) => report should include ("1: pre")
+    inside(action.test) {
+      case Failure(PreconditionsFailedException(report, _)) => report shouldBe
+        """Precondition failures:
+          | - row 1: pre
+          |Due to these errors in the preconditions, nothing was done.""".stripMargin
     }
     action.visited shouldBe (true, false, false)
   }
@@ -67,8 +72,11 @@ class ActionSpec extends UnitSpec {
       execute = Failure(ActionException(1, "exe")),
       rollback = Success(()))
 
-    inside(action.run) {
-      case Failure(ActionRunFailedException(report, _)) => report should include ("1: exe")
+    inside(action.test) {
+      case Failure(ActionRunFailedException(report, _)) => report shouldBe
+        """Errors in Multi-Deposit Instructions file:
+          | - row 1: exe
+          |The actions that were already performed, were rolled back.""".stripMargin
     }
     action.visited shouldBe (true, true, true)
   }
@@ -76,10 +84,12 @@ class ActionSpec extends UnitSpec {
   it should "succeed if the precondition and execute succeed but the rollback fails (never called)" in {
     val action = new TestAction(
       precondition = Success(()),
-      execute = Success(()),
+      execute = Success(42),
       rollback = Failure(ActionException(1, "undo")))
 
-    action.run shouldBe a[Success[_]]
+    inside(action.test) {
+      case Success(x) => x shouldBe 42
+    }
     action.visited shouldBe (true, true, false)
   }
 
@@ -89,48 +99,133 @@ class ActionSpec extends UnitSpec {
       execute = Failure(ActionException(1, "exe")),
       rollback = Failure(ActionException(1, "undo")))
 
-    inside(action.run) {
-      case Failure(ActionRunFailedException(report, _)) => report should (include ("1: exe") and include ("1: undo"))
+    inside(action.test) {
+      case Failure(ActionRunFailedException(report, _)) => report shouldBe
+        """Errors in Multi-Deposit Instructions file:
+          | - row 1: exe
+          | - row 1: undo
+          |The actions that were already performed, were rolled back.""".stripMargin
     }
     action.visited shouldBe (true, true, true)
   }
 
-  "compose" should "succeed if everything succeeds" in {
-    val m1 = new TestAction(
+  "map" should "apply the function to the output of execute" in {
+    val action = new TestAction(
+      precondition = Success(()),
+      execute = Success(42),
+      rollback = Success(())
+    )
+
+    inside(action.map(_ + 1).run()) {
+      case Success(x) => x shouldBe 43
+    }
+  }
+
+  it should "not apply the function when the preconditions fail" in {
+    val action = new TestAction[Int](
+      precondition = Failure(ActionException(1, "pre")),
+      execute = Success(42),
+      rollback = Success(())
+    )
+    var notVisited = true
+
+    inside(action.map(i => { notVisited = false; i + 1 }).run()) {
+      case Failure(PreconditionsFailedException(report, _)) => report shouldBe
+        """Precondition failures:
+          | - row 1: pre
+          |Due to these errors in the preconditions, nothing was done.""".stripMargin
+    }
+    notVisited shouldBe true
+  }
+
+  it should "not apply the function when the execute fails" in {
+    val action = new TestAction[Int](
+      precondition = Success(()),
+      execute = Failure(ActionException(1, "exe")),
+      rollback = Success(())
+    )
+    var notVisited = true
+
+    inside(action.map(i => { notVisited = false; i + 1 }).run()) {
+      case Failure(ActionRunFailedException(report, _)) => report shouldBe
+        """Errors in Multi-Deposit Instructions file:
+          | - row 1: exe
+          |The actions that were already performed, were rolled back.""".stripMargin
+    }
+    notVisited shouldBe true
+  }
+
+  it should "apply the function to the output of execute when only the rollback would have failed if it was called (but it isn't!)" in {
+    val action = new TestAction[Int](
+      precondition = Success(()),
+      execute = Success(42),
+      rollback = Failure(ActionException(1, "undo"))
+    )
+    var notVisited = true
+
+    inside(action.map(i => { notVisited = false; i + 1 }).run()) {
+      case Success(x) => x shouldBe 43
+    }
+    notVisited shouldBe false
+  }
+
+  it should "not apply the function when the execute and rollback fail" in {
+    val action = new TestAction[Int](
+      precondition = Success(()),
+      execute = Failure(ActionException(1, "exe")),
+      rollback = Failure(ActionException(1, "undo"))
+    )
+    var notVisited = true
+
+    inside(action.map(i => { notVisited = false; i + 1 }).run()) {
+      case Failure(ActionRunFailedException(report, _)) => report shouldBe
+        """Errors in Multi-Deposit Instructions file:
+          | - row 1: exe
+          | - row 1: undo
+          |The actions that were already performed, were rolled back.""".stripMargin
+    }
+    notVisited shouldBe true
+  }
+
+  "combineWith" should "succeed if everything succeeds" in {
+    val m1 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
-    val m2 = new TestAction(
+    val m2 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
-    val m3 = new TestAction(
+    val m3 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
 
-    m1.compose(m2).compose(m3).run shouldBe a[Success[_]]
+    m1.andThen(m2).andThen(m3).run shouldBe a[Success[_]]
     m1.visited shouldBe (true, true, false)
     m2.visited shouldBe (true, true, false)
     m3.visited shouldBe (true, true, false)
   }
 
   it should "fail when the first precondition fails" in {
-    val m1 = new TestAction(
+    val m1 = new TestAction[Unit](
       precondition = Failure(ActionException(1, "pre")),
       execute = Success(()),
       rollback = Success(()))
-    val m2 = new TestAction(
+    val m2 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
-    val m3 = new TestAction(
+    val m3 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
 
-    inside(m1.compose(m2).compose(m3).run) {
-      case Failure(PreconditionsFailedException(report, _)) => report should include ("row 1: pre")
+    inside(m1.andThen(m2).andThen(m3).run()) {
+      case Failure(PreconditionsFailedException(report, _)) => report shouldBe
+        """Precondition failures:
+          | - row 1: pre
+          |Due to these errors in the preconditions, nothing was done.""".stripMargin
     }
     m1.visited shouldBe (true, false, false)
     m2.visited shouldBe (true, false, false)
@@ -138,21 +233,24 @@ class ActionSpec extends UnitSpec {
   }
 
   it should "fail when the second precondition fails" in {
-    val m1 = new TestAction(
+    val m1 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
-    val m2 = new TestAction(
+    val m2 = new TestAction[Unit](
       precondition = Failure(ActionException(2, "pre")),
       execute = Success(()),
       rollback = Success(()))
-    val m3 = new TestAction(
+    val m3 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
 
-    inside(m1.compose(m2).compose(m3).run) {
-      case Failure(PreconditionsFailedException(report, _)) => report should include ("row 2: pre")
+    inside(m1.andThen(m2).andThen(m3).run()) {
+      case Failure(PreconditionsFailedException(report, _)) => report shouldBe
+        """Precondition failures:
+          | - row 2: pre
+          |Due to these errors in the preconditions, nothing was done.""".stripMargin
     }
     m1.visited shouldBe (true, false, false)
     m2.visited shouldBe (true, false, false)
@@ -160,21 +258,25 @@ class ActionSpec extends UnitSpec {
   }
 
   it should "fail when multiple preconditions fail" in {
-    val m1 = new TestAction(
+    val m1 = new TestAction[Unit](
       precondition = Failure(ActionException(1, "pre")),
       execute = Success(()),
       rollback = Success(()))
-    val m2 = new TestAction(
+    val m2 = new TestAction[Unit](
       precondition = Failure(ActionException(2, "pre")),
       execute = Success(()),
       rollback = Success(()))
-    val m3 = new TestAction(
+    val m3 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
 
-    inside(m1.compose(m2).compose(m3).run) {
-      case Failure(PreconditionsFailedException(report, _)) => report should (include ("row 1: pre") and include ("row 2: pre"))
+    inside(m1.andThen(m2).andThen(m3).run()) {
+      case Failure(PreconditionsFailedException(report, _)) => report shouldBe
+        """Precondition failures:
+          | - row 1: pre
+          | - row 2: pre
+          |Due to these errors in the preconditions, nothing was done.""".stripMargin
     }
     m1.visited shouldBe (true, false, false)
     m2.visited shouldBe (true, false, false)
@@ -182,21 +284,24 @@ class ActionSpec extends UnitSpec {
   }
 
   it should "fail when the preconditions succeed, but the first run fails" in {
-    val m1 = new TestAction(
+    val m1 = new TestAction[Unit](
       precondition = Success(()),
       execute = Failure(ActionException(1, "exe")),
       rollback = Success(()))
-    val m2 = new TestAction(
+    val m2 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
-    val m3 = new TestAction(
+    val m3 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
 
-    inside(m1.compose(m2).compose(m3).run) {
-      case Failure(ActionRunFailedException(report, _)) => report should include ("row 1: exe")
+    inside(m1.andThen(m2).andThen(m3).run()) {
+      case Failure(ActionRunFailedException(report, _)) => report shouldBe
+        """Errors in Multi-Deposit Instructions file:
+          | - row 1: exe
+          |The actions that were already performed, were rolled back.""".stripMargin
     }
     m1.visited shouldBe (true, true, true)
     m2.visited shouldBe (true, false, false)
@@ -204,21 +309,24 @@ class ActionSpec extends UnitSpec {
   }
 
   it should "fail when the preconditions succeed, but the second run fails" in {
-    val m1 = new TestAction(
+    val m1 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
-    val m2 = new TestAction(
+    val m2 = new TestAction[Unit](
       precondition = Success(()),
       execute = Failure(ActionException(2, "exe")),
       rollback = Success(()))
-    val m3 = new TestAction(
+    val m3 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
 
-    inside(m1.compose(m2).compose(m3).run) {
-      case Failure(ActionRunFailedException(report, _)) => report should include ("row 2: exe")
+    inside(m1.andThen(m2).andThen(m3).run()) {
+      case Failure(ActionRunFailedException(report, _)) => report shouldBe
+        """Errors in Multi-Deposit Instructions file:
+          | - row 2: exe
+          |The actions that were already performed, were rolled back.""".stripMargin
     }
     m1.visited shouldBe (true, true, true)
     m2.visited shouldBe (true, true, true)
@@ -226,21 +334,26 @@ class ActionSpec extends UnitSpec {
   }
 
   it should "fail when the preconditions succeed, but both the second run and rollback fail, as well as the first rollback" in {
-    val m1 = new TestAction(
+    val m1 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Failure(ActionException(1, "undo")))
-    val m2 = new TestAction(
+    val m2 = new TestAction[Unit](
       precondition = Success(()),
       execute = Failure(ActionException(2, "exe")),
       rollback = Failure(ActionException(2, "undo")))
-    val m3 = new TestAction(
+    val m3 = new TestAction[Unit](
       precondition = Success(()),
       execute = Success(()),
       rollback = Success(()))
 
-    inside(m1.compose(m2.compose(m3)).run) {
-      case Failure(ActionRunFailedException(report, _)) => report should (include ("row 1: undo") and include ("row 2: exe") and include ("row 2: undo"))
+    inside(m1.combineWith(m2.andThen(m3))((_, _) => ()).run()) {
+      case Failure(ActionRunFailedException(report, _)) => report shouldBe
+        """Errors in Multi-Deposit Instructions file:
+          | - row 2: exe
+          | - row 2: undo
+          | - row 1: undo
+          |The actions that were already performed, were rolled back.""".stripMargin
     }
     m1.visited shouldBe (true, true, true)
     m2.visited shouldBe (true, true, true)
