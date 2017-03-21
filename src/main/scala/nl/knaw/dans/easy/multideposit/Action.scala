@@ -38,9 +38,9 @@ trait Action[+T] extends DebugEnhancedLogging {
   private def logRollback(): Unit = {
     logger.info(s"An error occurred. Rolling back action ${getClass.getSimpleName} ...")
   }
-  private[Action] def innerCheckPreconditions: Try[Unit] = Try(logPreconditions()).flatMap(_ => checkPreconditions)
-  private[Action] def innerExecute(): Try[T] = Try(logExecute()).flatMap(_ => execute())
-  private[Action] def innerRollback(): Try[Unit] = Try(logRollback()).flatMap(_ => rollback())
+  protected[Action] def innerCheckPreconditions: Try[Unit] = Try(logPreconditions()).flatMap(_ => checkPreconditions)
+  protected[Action] def innerExecute(): Try[T] = Try(logExecute()).flatMap(_ => execute())
+  protected[Action] def innerRollback(): Try[Unit] = Try(logRollback()).flatMap(_ => rollback())
 
   /**
    * Verifies whether all preconditions are met for this specific action.
@@ -172,21 +172,25 @@ object Action {
       super.run()
     }
 
+    override def innerCheckPreconditions: Try[Unit] = checkPreconditions
+    override def innerExecute(): Try[Z] = execute()
+    override def innerRollback(): Try[Unit] = rollback()
+
     override def checkPreconditions: Try[Unit] = {
-      List(left, right).map(_.checkPreconditions).collectResults.map(_ => ())
+      List(left, right).map(_.innerCheckPreconditions).collectResults.map(_ => ())
     }
 
     override def execute(): Try[Z] = {
       for {
-        t <- left.execute()
+        t <- left.innerExecute()
         _ = pastLeft = true
-        s <- right.execute()
+        s <- right.innerExecute()
       } yield f(t, s)
     }
 
     override def rollback(): Try[Unit] = {
       (if (pastLeft) List(right, left) else List(left))
-        .map(_.rollback())
+        .map(_.innerRollback())
         .collectResults
         .map(_ => ())
     }
