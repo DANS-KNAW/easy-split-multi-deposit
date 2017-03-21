@@ -27,7 +27,7 @@ import scala.util.control.NonFatal
     - https://wiki.haskell.org/Typeclassopedia#Laws
     - https://wiki.haskell.org/Typeclassopedia#Laws_2.
  */
-trait Action[T] extends DebugEnhancedLogging { self =>
+trait Action[+T] extends DebugEnhancedLogging {
 
   private def logPreconditions(): Unit = {
     logger.info(s"Checking preconditions of ${getClass.getSimpleName} ...")
@@ -127,13 +127,10 @@ trait Action[T] extends DebugEnhancedLogging { self =>
   }
 
   // fmap
-  def map[S](f: T => S): Action[S] = new Action[S] {
-    override def checkPreconditions: Try[Unit] = self.checkPreconditions
-
-    override def execute(): Try[S] = self.execute().map(f)
-
-    override def rollback(): Try[Unit] = self.rollback()
-  }
+  def map[S](f: T => S): Action[S] = Action(
+    () => this.checkPreconditions,
+    () => this.execute().map(f),
+    () => this.rollback())
 
   /*
     Note that this operator will change the order of operations in the 'execute' phase.
@@ -153,33 +150,7 @@ trait Action[T] extends DebugEnhancedLogging { self =>
   def andThen[S](other: Action[S]): Action[S] = combineWith(other)((_, s) => s)
 
   // liftA2
-  def combineWith[S, R](other: Action[S])(f: (T, S) => R): Action[R] = new Action[R] {
-    private var pastSelf = false
-
-    override def run(): Try[R] = {
-      pastSelf = false
-      super.run()
-    }
-
-    override def checkPreconditions: Try[Unit] = {
-      List(self, other).map(_.checkPreconditions).collectResults.map(_ => ())
-    }
-
-    override def execute(): Try[R] = {
-      for {
-        t <- self.execute()
-        _ = pastSelf = true
-        s <- other.execute()
-      } yield f(t, s)
-    }
-
-    override def rollback(): Try[Unit] = {
-      (if (pastSelf) List(other, self) else List(self))
-        .map(_.rollback())
-        .collectResults
-        .map(_ => ())
-    }
-  }
+  def combineWith[S, R](other: Action[S])(f: (T, S) => R): Action[R] = Action.CombinedAction(this, other)(f)
 }
 
 object Action {
@@ -192,4 +163,32 @@ object Action {
   }
 
   def from[A](a: A): Action[A] = Action(action = () => Success(a))
+
+  case class CombinedAction[X, Y, Z](left: Action[X], right: Action[Y])(f: (X, Y) => Z) extends Action[Z] {
+    private var pastLeft = false
+
+    override def run(): Try[Z] = {
+      pastLeft = false
+      super.run()
+    }
+
+    override def checkPreconditions: Try[Unit] = {
+      List(left, right).map(_.checkPreconditions).collectResults.map(_ => ())
+    }
+
+    override def execute(): Try[Z] = {
+      for {
+        t <- left.execute()
+        _ = pastLeft = true
+        s <- right.execute()
+      } yield f(t, s)
+    }
+
+    override def rollback(): Try[Unit] = {
+      (if (pastLeft) List(right, left) else List(left))
+        .map(_.rollback())
+        .collectResults
+        .map(_ => ())
+    }
+  }
 }

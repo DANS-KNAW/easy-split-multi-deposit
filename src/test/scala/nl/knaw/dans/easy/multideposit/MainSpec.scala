@@ -30,6 +30,7 @@ class MainSpec extends UnitSpec {
     springfieldInbox = new File(testDir, "sfi")
   )
 
+  val retrieveDatamanagerAction = RetrieveDatamanagerAction()
   val generalActions = Seq(
     CreateSpringfieldActions(-1, testDatasets),
     MoveDepositToOutputDir(2, testDatasets.head._1),
@@ -42,7 +43,7 @@ class MainSpec extends UnitSpec {
       AddBagToDeposit(2, entry),
       AddDatasetMetadataToDeposit(2, entry),
       AddFileMetadataToDeposit(2, entry),
-      AddPropertiesToDeposit(2, entry),
+      Action.CombinedAction(retrieveDatamanagerAction, AddPropertiesToDeposit(2, entry))((s, f) => f(s)),
       SetDepositPermissions(2, datasetID))
     val fileActions = Seq(CopyToSpringfieldInbox(2, "videos/centaur.mpg"))
   }
@@ -54,7 +55,7 @@ class MainSpec extends UnitSpec {
       AddBagToDeposit(2, entry),
       AddDatasetMetadataToDeposit(2, entry),
       AddFileMetadataToDeposit(2, entry),
-      AddPropertiesToDeposit(2, entry),
+      Action.CombinedAction(retrieveDatamanagerAction, AddPropertiesToDeposit(2, entry))((s, f) => f(s)),
       SetDepositPermissions(2, datasetID))
     val fileActions = Seq(CopyToSpringfieldInbox(4, "videos/centaur.mpg"))
   }
@@ -62,31 +63,11 @@ class MainSpec extends UnitSpec {
   "getActions" should "return all actions to be performed given the collection of datasets" in {
     getActions(testDatasets) should {
       have size 17 and
-      contain theSameElementsInOrderAs(
-        dataset1Actions.datasetActions ++ dataset1Actions.fileActions ++
-        dataset2Actions.datasetActions ++ dataset2Actions.fileActions ++
-        generalActions
-      )
-    }
-  }
-
-  "getGeneralActions" should "return a collection of actions that are supposed to run only once for all datasets" in {
-    getGeneralActions(testDatasets) should {
-      have size 3 and contain theSameElementsInOrderAs generalActions
-    }
-  }
-
-  "getDatasetActions" should "return a collection of actions for the given dataset" in {
-    import dataset1Actions._
-    getDatasetActions(entry) should {
-      have size 7 and contain theSameElementsInOrderAs (datasetActions ++ fileActions)
-    }
-  }
-
-  it should "do the same for testDataset2" in {
-    import dataset2Actions._
-    getDatasetActions(entry) should {
-      have size 7 and contain theSameElementsInOrderAs (datasetActions ++ fileActions)
+        contain allElementsOf generalActions and
+        contain allElementsOf dataset1Actions.datasetActions and
+        contain allElementsOf dataset1Actions.fileActions and
+        contain allElementsOf dataset2Actions.datasetActions and
+        contain allElementsOf dataset2Actions.fileActions
     }
   }
 
