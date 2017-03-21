@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit
 
+import nl.knaw.dans.easy.multideposit.Action.CombinedAction
+
 import scala.util.{ Failure, Success, Try }
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -126,42 +128,101 @@ trait Action[+T] extends DebugEnhancedLogging {
       footer.toOption.fold("")("\n" + _)
   }
 
-  // fmap
+  /**
+   * Return an `Action` that applies `f` to the output of this `execute`.
+   *
+   * @param f the transformation function to be applied
+   * @tparam S the output type
+   * @return an `Action` that returns an element of type `S`
+   */
   def map[S](f: T => S): Action[S] = Action(
     () => this.checkPreconditions,
     () => this.execute().map(f),
     () => this.rollback())
 
-  /*
-    Note that this operator will change the order of operations in the 'execute' phase.
-    First 'other' is executed, then 'self'.
-    The order in the preconditions and rollback phases is preserved.
+  val x = 1 +: List(2)
+
+  /**
+   * Return an `Action` that applies the function in this to the value in `other` and returns the
+   * resulting value. Note that this operator changes the order of operations in the 'execute' phase.
+   * Since the function argument needs to be calculated before it can be applied to the function,
+   * the `other` is executed first, followed by this `Action`. The order in precondition evaluation
+   * and rollback is however preserved!
+   *
+   * A mnemonic for `applyLeft` vs `applyRight` is: the ''left'' or ''right'' signifies on which
+   * side of the operator the ''function'' is
+   *
+   * @param other the `Action` containing the value to be applied to this function
+   * @param ev the evidence that `T` is a function `S => R`
+   * @tparam S the return type of the `other` action and the input type of the function in this `Action`
+   * @tparam R the return type of this operator
+   * @return an `Action` that applies the value on the right to the function on the left
    */
-  // <*>
   def applyLeft[S, R](other: Action[S])(implicit ev: T <:< (S => R)): Action[R] = combineWith(other)((f, t) => f(t))
 
-  // <**>
+  /**
+   * Return an `Action` that applies the function in `other` to the value in this action and returns
+   * the resulting value.
+   *
+   * A mnemonic for `applyLeft` vs `applyRight` is: the ''left'' or ''right'' signifies on which
+   * side of the operator the ''function'' is
+   *
+   * @param other the `Action` containing the value to be applied to this function
+   * @tparam S the return type of this operator
+   * @return an `Action` that applies the value on the left to the function on the right
+   */
   def applyRight[S](other: Action[T => S]): Action[S] = combineWith(other)((t, f) => f(t))
 
-  // <*
+  /**
+   * Create an `Action` that sequentially executes this and `other` actions and returns the
+   * output of this action afterwards. The result of `other` is discarded.
+   *
+   * @param other the other action
+   * @tparam S the return type of `other`
+   * @return an `Action` that executes both this and `other` and returns the result of this
+   */
   def thenAnd[S](other: Action[S]): Action[T] = combineWith(other)((t, _) => t)
 
-  // *>
+  /**
+   * Create an `Action` that sequentially executes this and `other` actions and returns the
+   * output of the `other` action afterwards. The result of this is discarded.
+   *
+   * @param other the other action
+   * @tparam S the return type of `other` and this operator
+   * @return an `Action` that executes both this and `other` and returns the result of `other`
+   */
   def andThen[S](other: Action[S]): Action[S] = combineWith(other)((_, s) => s)
 
-  // liftA2
+  /**
+   * Create an `Action` that executes both this and `other` actions and combines the output
+   * of both actions using the combinator `f`.
+   *
+   * @param other the other action
+   * @param f the combinator function
+   * @tparam S the return type of `other`
+   * @tparam R the return type of this operator
+   * @return an `Action` that executes both this and `other` and returns their combined result
+   */
   def combineWith[S, R](other: Action[S])(f: (T, S) => R): Action[R] = Action.CombinedAction(this, other)(f)
 }
 
 object Action {
   def apply[T](precondition: () => Try[Unit] = () => Success(()),
-            action: () => Try[T],
-            undo: () => Try[Unit] = () => Success(())): Action[T] = new Action[T] {
+               action: () => Try[T],
+               undo: () => Try[Unit] = () => Success(())): Action[T] = new Action[T] {
     override protected def checkPreconditions: Try[Unit] = precondition()
     override protected def execute(): Try[T] = action()
     override protected def rollback(): Try[Unit] = undo()
   }
 
+  /**
+   * Lift a value into an `Action`. Note that only the `execute` is affected by this and that the
+   * preconditions and rollback always return a `Success`.
+   *
+   * @param a the value to be lifted
+   * @tparam A the type of `Action`
+   * @return the `Action` in which the value is lifted
+   */
   def from[A](a: A): Action[A] = Action(action = () => Success(a))
 
   case class CombinedAction[X, Y, Z](left: Action[X], right: Action[Y])(f: (X, Y) => Z) extends Action[Z] {
@@ -176,11 +237,11 @@ object Action {
     override def innerExecute(): Try[Z] = execute()
     override def innerRollback(): Try[Unit] = rollback()
 
-    override def checkPreconditions: Try[Unit] = {
+    override protected def checkPreconditions: Try[Unit] = {
       List(left, right).map(_.innerCheckPreconditions).collectResults.map(_ => ())
     }
 
-    override def execute(): Try[Z] = {
+    override protected def execute(): Try[Z] = {
       for {
         t <- left.innerExecute()
         _ = pastLeft = true
@@ -188,7 +249,7 @@ object Action {
       } yield f(t, s)
     }
 
-    override def rollback(): Try[Unit] = {
+    override protected  def rollback(): Try[Unit] = {
       (if (pastLeft) List(right, left) else List(left))
         .map(_.innerRollback())
         .collectResults
