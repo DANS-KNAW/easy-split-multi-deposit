@@ -110,9 +110,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   }
 
   "execute" should "generate the properties file and write the properties in it" in {
-    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).execute()) {
-      case Success(f) => f("dm@test.org")
-    }
+    AddPropertiesToDeposit(1, (datasetID, dataset)).execute().map(f => f("dm@test.org")) shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(datasetID)
     props should exist

@@ -25,9 +25,8 @@ import resource._
 import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
-import nl.knaw.dans.lib.error.TraversableTryExtensions
 
-case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action[String => Unit] {
+case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action[DatamanagerEmailaddress => Unit] {
 
   val (datasetID, dataset) = entry
 
@@ -36,7 +35,7 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
   override def checkPreconditions: Try[Unit] = validateDepositor(row, datasetID, dataset)
 
   override def execute(): Try[String => Unit] = Try {
-    (datamanagerEmailaddress: String) => writeProperties(row, datasetID, dataset, datamanagerEmailaddress).get
+    (datamanagerEmailaddress: DatamanagerEmailaddress) => writeProperties(row, datasetID, dataset, datamanagerEmailaddress).get
   }
 }
 object AddPropertiesToDeposit {

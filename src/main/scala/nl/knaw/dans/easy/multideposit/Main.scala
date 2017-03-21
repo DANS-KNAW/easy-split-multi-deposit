@@ -43,32 +43,6 @@ object Main extends DebugEnhancedLogging {
       .flatMap(getActions(_).reduce(_ andThen _).run())
   }
 
-//  def getAllActions(datasets: Datasets)(implicit settings: Settings): Action[Unit] = {
-//    logger.info("Compiling list of actions to perform ...")
-//
-//    val retrieveDatamanagerAction = RetrieveDatamanagerAction()
-//    val datasetActions = datasets.map {
-//      case entry@(datasetID, dataset) =>
-//        val row = dataset.getRowNumber
-//        logger.debug(s"Getting actions for dataset $datasetID ...")
-//
-//        CreateStagingDir(row, datasetID)
-//          .andThen(AddBagToDeposit(row, entry))
-//          .andThen(AddDatasetMetadataToDeposit(row, entry))
-//          .andThen(AddFileMetadataToDeposit(row, entry))
-//          .andThen(retrieveDatamanagerAction)
-//          .applyRight(AddPropertiesToDeposit(row, entry))
-//          .andThen(SetDepositPermissions(row, datasetID))
-//          .andThen(getFileActions(dataset).reduce(_ andThen _))
-//    }.reduce(_ andThen _)
-//    val createSpringfieldAction = CreateSpringfieldActions(-1, datasets)
-//    val moveActions = datasets.map {
-//      case (datasetID, dataset) => MoveDepositToOutputDir(dataset.getRowNumber, datasetID): Action[Unit]
-//    }.reduce(_ andThen _)
-//
-//    datasetActions.andThen(createSpringfieldAction).andThen(moveActions)
-//  }
-
   def getActions(datasets: Datasets)(implicit settings: Settings): ListBuffer[Action[Unit]] = {
     logger.info("Compiling list of actions to perform ...")
 

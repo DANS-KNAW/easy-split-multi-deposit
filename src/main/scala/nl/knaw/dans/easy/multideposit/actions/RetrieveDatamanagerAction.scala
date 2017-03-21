@@ -1,26 +1,24 @@
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.{ Action, ActionException, Dataset, DatasetID, Settings }
+import nl.knaw.dans.easy.multideposit.{ Action, ActionException, DatamanagerEmailaddress, Settings }
 
 import scala.util.{ Failure, Success, Try }
 
-case class RetrieveDatamanagerAction(implicit settings: Settings) extends Action[String] {
+case class RetrieveDatamanagerAction(implicit settings: Settings) extends Action[DatamanagerEmailaddress] {
 
-  private lazy val datamanagerEmailaddress = RetrieveDatamanagerAction.getDatamanagerMailadres
+  private lazy val datamanagerEmailaddress = getDatamanagerMailadres
 
   override def checkPreconditions: Try[Unit] = {
     datamanagerEmailaddress.map(_ => ())
   }
 
   override def execute(): Try[String] = datamanagerEmailaddress
-}
 
-object RetrieveDatamanagerAction {
   /**
    * Tries to retrieve the email address of the datamanager
    * Also used for validation: checks if the datamanager is an active archivist with an email address
    */
-  def getDatamanagerMailadres(implicit settings: Settings): Try[String] = {
+  private def getDatamanagerMailadres(implicit settings: Settings): Try[String] = {
     val row = -1
     // Note that the datamanager 'precondition' is checked when datamanagerEmailaddress is evaluated the first time
     val datamanagerId = settings.datamanager

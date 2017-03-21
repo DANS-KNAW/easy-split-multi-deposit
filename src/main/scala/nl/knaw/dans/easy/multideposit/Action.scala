@@ -72,7 +72,7 @@ trait Action[+T] extends DebugEnhancedLogging {
    * @return `Success` if the full execution was successful, `Failure` otherwise
    */
   def run(): Try[T] = {
-    def runFailed(t: Throwable): Try[T] = {
+    def reportFailure(t: Throwable): Try[T] = {
       Failure(ActionRunFailedException(
         report = generateReport(
           header = "Errors in Multi-Deposit Instructions file:",
@@ -95,15 +95,15 @@ trait Action[+T] extends DebugEnhancedLogging {
       t <- innerExecute().recoverWith {
         case e1@CompositeException(es) =>
           rollback() match {
-            case Success(_) => runFailed(e1)
-            case Failure(CompositeException(es2)) => runFailed(CompositeException(es ++ es2))
-            case Failure(e2) => runFailed(CompositeException(es ++ List(e2)))
+            case Success(_) => reportFailure(e1)
+            case Failure(CompositeException(es2)) => reportFailure(CompositeException(es ++ es2))
+            case Failure(e2) => reportFailure(CompositeException(es ++ List(e2)))
           }
         case NonFatal(e1) =>
           rollback() match {
-            case Success(_) => runFailed(e1)
-            case Failure(CompositeException(es2)) => runFailed(CompositeException(List(e1) ++ es2))
-            case Failure(e2) => runFailed(CompositeException(List(e1, e2)))
+            case Success(_) => reportFailure(e1)
+            case Failure(CompositeException(es2)) => reportFailure(CompositeException(List(e1) ++ es2))
+            case Failure(e2) => reportFailure(CompositeException(List(e1, e2)))
           }
       }
     } yield t

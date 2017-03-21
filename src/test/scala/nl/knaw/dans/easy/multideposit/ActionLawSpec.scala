@@ -49,7 +49,7 @@ class ActionLawSpec extends PropSpec with PropertyChecks with Matchers with Insi
   // pure id <*> v == v
   property("action - applicative identity") {
     forAll { a: Action[Int] =>
-      a.applyRight(Action.from[Int => Int](identity)) should equalAction(a)
+      Action.from[Int => Int](identity).applyLeft(a) should equalAction(a)
     }
   }
 
