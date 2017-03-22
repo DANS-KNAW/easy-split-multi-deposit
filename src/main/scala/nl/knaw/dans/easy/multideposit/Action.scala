@@ -135,10 +135,10 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
    * @return an `Action` that composes these two actions sequentially
    */
   def combine[S](other: Action[T, S]): Action[A, S] = new Action[A, S] {
-    private var pastLeft = false
+    private var pastSelf = false
 
     override def run(a: A): Try[S] = {
-      pastLeft = false
+      pastSelf = false
       super.run(a)
     }
 
@@ -153,13 +153,13 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
     override protected def execute(a: A): Try[S] = {
       for {
         t <- self.innerExecute(a)
-        _ = pastLeft = true
+        _ = pastSelf = true
         s <- other.innerExecute(t)
       } yield s
     }
 
     override protected def rollback(): Try[Unit] = {
-      (if (pastLeft) List(other, self) else List(self))
+      (if (pastSelf) List(other, self) else List(self))
         .map(_.innerRollback())
         .collectResults
         .map(_ => ())

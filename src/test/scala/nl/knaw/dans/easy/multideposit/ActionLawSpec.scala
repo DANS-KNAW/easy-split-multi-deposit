@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit
 
+import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ Inside, Matchers, PropSpec }
@@ -23,9 +24,29 @@ import scala.util.Try
 
 class ActionLawSpec extends PropSpec with PropertyChecks with Matchers with Inside with CustomMatchers {
 
+  implicit def arbAction[T, S](implicit ts: Arbitrary[T => Try[S]]): Arbitrary[Action[T, S]] = {
+    Arbitrary(for {
+      pre <- arbitrary[Try[Unit]]
+      exe <- arbitrary[T => Try[S]]
+      undo <- arbitrary[Try[Unit]]
+    } yield Action[T, S](() => pre, t => exe(t), () => undo))
+  }
+
   property("action - category composition") {
     forAll { (i: Int, f: Int => Try[String], g: String => Try[Long]) =>
       Action(action = f).combine(Action(action = g)).run(i) shouldBe Action[Int, Long](action = f(_).flatMap(g)).run(i)
+    }
+  }
+
+  property("action - semigroup associativity") {
+    forAll { (i: Int, a1: Action[Int, String], a2: Action[String, Long], a3: Action[Long, Double]) =>
+      a1.combine(a2).combine(a3).run(i) shouldBe a1.combine(a2.combine(a3)).run(i)
+    }
+  }
+
+  property("action - semigroup combined") {
+    forAll { (i: Int, a1: Action[Int, String], a2: Action[String, Long], a3: Action[Long, Double], a4: Action[Double, String]) =>
+      a1.combine(a2).combine(a3.combine(a4)).run(i) shouldBe a1.combine(a2).combine(a3).combine(a4).run(i)
     }
   }
 }
