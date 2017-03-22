@@ -26,7 +26,7 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll, PrivateMethodTester }
 import scala.collection.mutable
 import scala.util.{ Failure, Success }
 
-class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll with MockFactory with PrivateMethodTester {
+class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll with MockFactory {
 
   val ldapMock: Ldap = mock[Ldap]
   implicit val settings = Settings(

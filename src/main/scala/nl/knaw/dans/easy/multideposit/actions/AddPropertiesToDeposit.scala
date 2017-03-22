@@ -34,7 +34,7 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
 
   override def checkPreconditions: Try[Unit] = validateDepositor(row, datasetID, dataset)
 
-  override def execute(): Try[String => Unit] = Try {
+  override def execute(): Try[DatamanagerEmailaddress => Unit] = Try {
     (datamanagerEmailaddress: DatamanagerEmailaddress) => writeProperties(row, datasetID, dataset, datamanagerEmailaddress).get
   }
 }
@@ -67,7 +67,7 @@ object AddPropertiesToDeposit {
       .getOrElse(Failure(ActionException(row, """The column "DEPOSITOR_ID" is not present""")))
   }
 
-  def writeProperties(row: Int, datasetID: DatasetID, dataset: Dataset, emailaddress: String)(implicit settings: Settings): Try[Unit] = {
+  def writeProperties(row: Int, datasetID: DatasetID, dataset: Dataset, emailaddress: DatamanagerEmailaddress)(implicit settings: Settings): Try[Unit] = {
     val props = new Properties {
       // Make sure we get sorted output, which is better readable than random
       override def keys(): ju.Enumeration[AnyRef] = Collections.enumeration(new ju.TreeSet[Object](super.keySet()))
@@ -80,7 +80,7 @@ object AddPropertiesToDeposit {
       }
   }
 
-  def addProperties(properties: Properties, dataset: Dataset, datamanager: String, emailaddress: String): Try[Unit] = {
+  def addProperties(properties: Properties, dataset: Dataset, datamanager: String, emailaddress: DatamanagerEmailaddress): Try[Unit] = {
     for {
       depositorUserID <- dataset.get("DEPOSITOR_ID")
         .flatMap(_.headOption)

@@ -27,13 +27,13 @@ case class RetrieveDatamanagerAction(implicit settings: Settings) extends Action
     datamanagerEmailaddress.map(_ => ())
   }
 
-  override def execute(): Try[String] = datamanagerEmailaddress
+  override def execute(): Try[DatamanagerEmailaddress] = datamanagerEmailaddress
 
   /**
    * Tries to retrieve the email address of the datamanager
    * Also used for validation: checks if the datamanager is an active archivist with an email address
    */
-  private def getDatamanagerMailadres(implicit settings: Settings): Try[String] = {
+  private def getDatamanagerMailadres(implicit settings: Settings): Try[DatamanagerEmailaddress] = {
     val row = -1
     // Note that the datamanager 'precondition' is checked when datamanagerEmailaddress is evaluated the first time
     val datamanagerId = settings.datamanager
