@@ -55,7 +55,7 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
   }
 
   def mockLdapForDatamanager(attrs: Attributes): Unit = {
-    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects ("dm", *) returning Success(Seq(attrs))
+    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects ("dm", *) once() returning Success(Seq(attrs))
   }
 
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
@@ -107,5 +107,16 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
     inside(RetrieveDatamanagerAction().execute()) {
       case Success(mail) => mail shouldBe "dm@test.org"
     }
+  }
+
+  it should "only compute the datamanager email once, eventhough some methods were called twice"  in {
+    // this call makes sure ldap is only called once
+    mockLdapForDatamanager(correctDatamanagerAttrs)
+    val action = RetrieveDatamanagerAction()
+
+    action.checkPreconditions shouldBe a[Success[_]]
+    action.execute() shouldBe a[Success[_]]
+    action.checkPreconditions shouldBe a[Success[_]]
+    action.execute() shouldBe a[Success[_]]
   }
 }

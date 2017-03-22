@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import nl.knaw.dans.easy.multideposit.Action.CombinedAction
-
 import scala.util.{ Failure, Success, Try }
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -25,11 +23,9 @@ import scala.annotation.tailrec
 import scala.util.control.NonFatal
 
 /*
-  To future developers: this class is an Applicative Functor. It satisfies the law as defined in
-    - https://wiki.haskell.org/Typeclassopedia#Laws
-    - https://wiki.haskell.org/Typeclassopedia#Laws_2.
+  To future developers: this class is a Category. It should satisfy the law of composition.
  */
-trait Action[+T] extends DebugEnhancedLogging {
+trait Action[-A, +T] extends DebugEnhancedLogging { self =>
 
   private def logPreconditions(): Unit = {
     logger.info(s"Checking preconditions of ${getClass.getSimpleName} ...")
@@ -41,7 +37,7 @@ trait Action[+T] extends DebugEnhancedLogging {
     logger.info(s"An error occurred. Rolling back action ${getClass.getSimpleName} ...")
   }
   protected[Action] def innerCheckPreconditions: Try[Unit] = Try(logPreconditions()).flatMap(_ => checkPreconditions)
-  protected[Action] def innerExecute(): Try[T] = Try(logExecute()).flatMap(_ => execute())
+  protected[Action] def innerExecute(a: A): Try[T] = Try(logExecute()).flatMap(_ => execute(a))
   protected[Action] def innerRollback(): Try[Unit] = Try(logRollback()).flatMap(_ => rollback())
 
   /**
@@ -52,11 +48,12 @@ trait Action[+T] extends DebugEnhancedLogging {
   protected def checkPreconditions: Try[Unit] = Success(())
 
   /**
-   * Exectue the action.
+   * Exectue the action given an input `a`.
    *
+   * @param a the action's input
    * @return `Success` if the execution was successful, `Failure` otherwise
    */
-  protected def execute(): Try[T]
+  protected def execute(a: A): Try[T]
 
   /**
    * Cleans up results of a previous call to run so that a new call to run will not fail because of those results.
@@ -67,13 +64,14 @@ trait Action[+T] extends DebugEnhancedLogging {
 
   /**
    * Run an action. First the precondition is checked. If it fails a `PreconditionsFailedException`
-   * with a report is returned. Else, if the precondition succeed, the action is executed.
+   * with a report is returned. Else, if the precondition succeed, the action is executed given the input `a`.
    * If this fails, the action is rolled back and a `ActionRunFailedException` with a report is returned.
    * If the execution was successful, `Success` is returned
    *
+   * @param a the action's input
    * @return `Success` if the full execution was successful, `Failure` otherwise
    */
-  def run(): Try[T] = {
+  def run(a: A): Try[T] = {
     def reportFailure(t: Throwable): Try[T] = {
       Failure(ActionRunFailedException(
         report = generateReport(
@@ -94,7 +92,7 @@ trait Action[+T] extends DebugEnhancedLogging {
               footer = "Due to these errors in the preconditions, nothing was done."),
             cause = e))
       }
-      t <- innerExecute().recoverWith {
+      t <- innerExecute(a).recoverWith {
         case e1@CompositeException(es) =>
           rollback() match {
             case Success(_) => reportFailure(e1)
@@ -129,131 +127,57 @@ trait Action[+T] extends DebugEnhancedLogging {
   }
 
   /**
-   * Return an `Action` that applies `f` to the output of this `execute`.
+   * Sequentially composes two `Action`s by running their `execute` methods one after the other.
+   * In this, the input of `other` is the output of this `Action`.
    *
-   * @param f the transformation function to be applied
-   * @tparam S the output type
-   * @return an `Action` that returns an element of type `S`
+   * @param other the `Action` to combine this `Action` with
+   * @tparam S the output type of the second `Action`
+   * @return an `Action` that composes these two actions sequentially
    */
-  def map[S](f: T => S): Action[S] = Action(
-    () => this.checkPreconditions,
-    () => this.execute().map(f),
-    () => this.rollback())
-
-  val x = 1 +: List(2)
-
-  /**
-   * Return an `Action` that applies the function in this to the value in `other` and returns the
-   * resulting value. Note that this operator changes the order of operations in the 'execute' phase.
-   * Since the function argument needs to be calculated before it can be applied to the function,
-   * the `other` is executed first, followed by this `Action`. The order in precondition evaluation
-   * and rollback is however preserved!
-   *
-   * A mnemonic for `applyLeft` vs `applyRight` is: the ''left'' or ''right'' signifies on which
-   * side of the operator the ''function'' is
-   *
-   * @param other the `Action` containing the value to be applied to this function
-   * @param ev the evidence that `T` is a function `S => R`
-   * @tparam S the return type of the `other` action and the input type of the function in this `Action`
-   * @tparam R the return type of this operator
-   * @return an `Action` that applies the value on the right to the function on the left
-   */
-  def applyLeft[S, R](other: Action[S])(implicit ev: T <:< (S => R)): Action[R] = combineWith(other)((f, t) => f(t))
-
-  /**
-   * Return an `Action` that applies the function in `other` to the value in this action and returns
-   * the resulting value.
-   *
-   * A mnemonic for `applyLeft` vs `applyRight` is: the ''left'' or ''right'' signifies on which
-   * side of the operator the ''function'' is
-   *
-   * @param other the `Action` containing the value to be applied to this function
-   * @tparam S the return type of this operator
-   * @return an `Action` that applies the value on the left to the function on the right
-   */
-  def applyRight[S](other: Action[T => S]): Action[S] = combineWith(other)((t, f) => f(t))
-
-  /**
-   * Create an `Action` that sequentially executes this and `other` actions and returns the
-   * output of this action afterwards. The result of `other` is discarded.
-   *
-   * @param other the other action
-   * @tparam S the return type of `other`
-   * @return an `Action` that executes both this and `other` and returns the result of this
-   */
-  def thenAnd[S](other: Action[S]): Action[T] = combineWith(other)((t, _) => t)
-
-  /**
-   * Create an `Action` that sequentially executes this and `other` actions and returns the
-   * output of the `other` action afterwards. The result of this is discarded.
-   *
-   * @param other the other action
-   * @tparam S the return type of `other` and this operator
-   * @return an `Action` that executes both this and `other` and returns the result of `other`
-   */
-  def andThen[S](other: Action[S]): Action[S] = combineWith(other)((_, s) => s)
-
-  /**
-   * Create an `Action` that executes both this and `other` actions and combines the output
-   * of both actions using the combinator `f`.
-   *
-   * @param other the other action
-   * @param f the combinator function
-   * @tparam S the return type of `other`
-   * @tparam R the return type of this operator
-   * @return an `Action` that executes both this and `other` and returns their combined result
-   */
-  def combineWith[S, R](other: Action[S])(f: (T, S) => R): Action[R] = Action.CombinedAction(this, other)(f)
-}
-
-object Action {
-  def apply[T](precondition: () => Try[Unit] = () => Success(()),
-               action: () => Try[T],
-               undo: () => Try[Unit] = () => Success(())): Action[T] = new Action[T] {
-    override protected def checkPreconditions: Try[Unit] = precondition()
-    override protected def execute(): Try[T] = action()
-    override protected def rollback(): Try[Unit] = undo()
-  }
-
-  /**
-   * Lift a value into an `Action`. Note that only the `execute` is affected by this and that the
-   * preconditions and rollback always return a `Success`.
-   *
-   * @param a the value to be lifted
-   * @tparam A the type of `Action`
-   * @return the `Action` in which the value is lifted
-   */
-  def from[A](a: A): Action[A] = Action(action = () => Success(a))
-
-  case class CombinedAction[X, Y, Z](left: Action[X], right: Action[Y])(f: (X, Y) => Z) extends Action[Z] {
+  def combine[S](other: Action[T, S]): Action[A, S] = new Action[A, S] {
     private var pastLeft = false
 
-    override def run(): Try[Z] = {
+    override def run(a: A): Try[S] = {
       pastLeft = false
-      super.run()
+      super.run(a)
     }
 
     override def innerCheckPreconditions: Try[Unit] = checkPreconditions
-    override def innerExecute(): Try[Z] = execute()
+    override def innerExecute(a: A): Try[S] = execute(a)
     override def innerRollback(): Try[Unit] = rollback()
 
     override protected def checkPreconditions: Try[Unit] = {
-      List(left, right).map(_.innerCheckPreconditions).collectResults.map(_ => ())
+      List(self, other).map(_.innerCheckPreconditions).collectResults.map(_ => ())
     }
 
-    override protected def execute(): Try[Z] = {
+    override protected def execute(a: A): Try[S] = {
       for {
-        t <- left.innerExecute()
+        t <- self.innerExecute(a)
         _ = pastLeft = true
-        s <- right.innerExecute()
-      } yield f(t, s)
+        s <- other.innerExecute(t)
+      } yield s
     }
 
-    override protected  def rollback(): Try[Unit] = {
-      (if (pastLeft) List(right, left) else List(left))
+    override protected def rollback(): Try[Unit] = {
+      (if (pastLeft) List(other, self) else List(self))
         .map(_.innerRollback())
         .collectResults
         .map(_ => ())
     }
   }
+}
+
+object Action {
+  def apply[A, T](precondition: () => Try[Unit] = () => Success(()),
+                  action: A => Try[T],
+                  undo: () => Try[Unit] = () => Success(())): Action[A, T] = new Action[A, T] {
+    override protected def checkPreconditions: Try[Unit] = precondition()
+    override protected def execute(a: A): Try[T] = action(a)
+    override protected def rollback(): Try[Unit] = undo()
+  }
+}
+
+trait UnitAction[+T] extends Action[Unit, T] {
+  protected def execute(u: Unit): Try[T] = execute()
+  protected def execute(): Try[T]
 }

@@ -17,8 +17,7 @@ package nl.knaw.dans.easy.multideposit
 
 import java.io.File
 
-import nl.knaw.dans.easy.multideposit.Main._
-import nl.knaw.dans.easy.multideposit.actions.{ CreateSpringfieldActions, _ }
+import nl.knaw.dans.easy.multideposit.Main.extractFileParameters
 
 import scala.language.reflectiveCalls
 
@@ -29,61 +28,6 @@ class MainSpec extends UnitSpec {
     stagingDir = new File(testDir, "dd"),
     springfieldInbox = new File(testDir, "sfi")
   )
-
-  val retrieveDatamanagerAction = RetrieveDatamanagerAction()
-  val generalActions = Seq(
-    CreateSpringfieldActions(-1, testDatasets),
-    MoveDepositToOutputDir(2, testDatasets.head._1),
-    MoveDepositToOutputDir(2, testDatasets.tail.head._1))
-
-  val dataset1Actions = new {
-    val entry @ (datasetID, dataset) = testDatasets.head
-    val datasetActions = Seq(
-      CreateStagingDir(2, datasetID),
-      AddBagToDeposit(2, entry),
-      AddDatasetMetadataToDeposit(2, entry),
-      AddFileMetadataToDeposit(2, entry),
-      Action.CombinedAction(retrieveDatamanagerAction, AddPropertiesToDeposit(2, entry))((s, f) => f(s)),
-      SetDepositPermissions(2, datasetID))
-    val fileActions = Seq(CopyToSpringfieldInbox(2, "videos/centaur.mpg"))
-  }
-
-  val dataset2Actions = new {
-    val entry @ (datasetID, dataset) = testDatasets.tail.head
-    val datasetActions = Seq(
-      CreateStagingDir(2, datasetID),
-      AddBagToDeposit(2, entry),
-      AddDatasetMetadataToDeposit(2, entry),
-      AddFileMetadataToDeposit(2, entry),
-      Action.CombinedAction(retrieveDatamanagerAction, AddPropertiesToDeposit(2, entry))((s, f) => f(s)),
-      SetDepositPermissions(2, datasetID))
-    val fileActions = Seq(CopyToSpringfieldInbox(4, "videos/centaur.mpg"))
-  }
-
-  "getActions" should "return all actions to be performed given the collection of datasets" in {
-    getActions(testDatasets) should {
-      have size 17 and
-        contain allElementsOf generalActions and
-        contain allElementsOf dataset1Actions.datasetActions and
-        contain allElementsOf dataset1Actions.fileActions and
-        contain allElementsOf dataset2Actions.datasetActions and
-        contain allElementsOf dataset2Actions.fileActions
-    }
-  }
-
-  "getFileActions" should "return an action for each FileParameters object that is an A/V file" in {
-    import dataset1Actions._
-    getFileActions(dataset) should {
-      have size 1 and contain theSameElementsInOrderAs fileActions
-    }
-  }
-
-  it should "do the same for testDataset2" in {
-    import dataset2Actions._
-    getFileActions(dataset) should {
-      have size 1 and contain theSameElementsInOrderAs fileActions
-    }
-  }
 
   "extractFileParameters" should "only yield the FileParameters where not all fields are empty" in {
     extractFileParameters(testDataset1) should {

@@ -33,7 +33,7 @@ import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
-case class AddBagToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action[Unit] {
+case class AddBagToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends UnitAction[Unit] {
 
   val (datasetID, dataset) = entry
 

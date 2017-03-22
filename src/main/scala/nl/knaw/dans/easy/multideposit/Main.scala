@@ -18,8 +18,8 @@ package nl.knaw.dans.easy.multideposit
 import nl.knaw.dans.easy.multideposit.actions._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.collection.mutable.ListBuffer
-import scala.util.Try
+import scala.language.postfixOps
+import scala.util.{ Failure, Try }
 
 object Main extends DebugEnhancedLogging {
 
@@ -40,39 +40,46 @@ object Main extends DebugEnhancedLogging {
 
   def run(implicit settings: Settings): Try[Unit] = {
     MultiDepositParser.parse(multiDepositInstructionsFile)
-      .flatMap(getActions(_).reduce(_ andThen _).run())
+      .flatMap(getActions(_).map(_.run(())).getOrElse(Failure(new Exception)))
   }
 
-  def getActions(datasets: Datasets)(implicit settings: Settings): ListBuffer[Action[Unit]] = {
+  def getActions(datasets: Datasets)(implicit settings: Settings): Option[Action[Unit, Unit]] = {
     logger.info("Compiling list of actions to perform ...")
 
     val retrieveDatamanagerAction = RetrieveDatamanagerAction()
-    val datasetActions = datasets.flatMap {
+    val datasetActions = datasets.map {
       case entry@(datasetID, dataset) =>
         val row = dataset.getRowNumber
         logger.debug(s"Getting actions for dataset $datasetID ...")
 
-        Seq(CreateStagingDir(row, datasetID),
-          AddBagToDeposit(row, entry),
-          AddDatasetMetadataToDeposit(row, entry),
-          AddFileMetadataToDeposit(row, entry),
-          retrieveDatamanagerAction.applyRight(AddPropertiesToDeposit(row, entry)),
-          SetDepositPermissions(row, datasetID)) ++ getFileActions(dataset)
-    }
+        val acts = CreateStagingDir(row, datasetID)
+          .combine(AddBagToDeposit(row, entry))
+          .combine(AddDatasetMetadataToDeposit(row, entry))
+          .combine(AddFileMetadataToDeposit(row, entry))
+          .combine(retrieveDatamanagerAction)
+          .combine(AddPropertiesToDeposit(row, entry))
+          .combine(SetDepositPermissions(row, datasetID))
+
+        getFileActions(dataset).fold(acts)(acts combine)
+    }.reduceOption(_ combine _)
     val createSpringfieldAction = CreateSpringfieldActions(-1, datasets)
     val moveActions = datasets.map {
-      case (datasetID, dataset) => MoveDepositToOutputDir(dataset.getRowNumber, datasetID)
-    }
+      case (datasetID, dataset) => MoveDepositToOutputDir(dataset.getRowNumber, datasetID): Action[Unit, Unit]
+    }.reduceOption(_ combine _)
 
-    datasetActions += createSpringfieldAction ++= moveActions
+    for {
+      dsAct <- datasetActions
+      mvAct <- moveActions
+    } yield dsAct combine createSpringfieldAction combine mvAct
   }
 
-  def getFileActions(dataset: Dataset)(implicit settings: Settings): Seq[Action[Unit]] = {
+  def getFileActions(dataset: Dataset)(implicit settings: Settings): Option[Action[Unit, Unit]] = {
     extractFileParameters(dataset)
       .collect {
         case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo)) if isThisAudioVideo matches "(?i)yes" =>
-          CopyToSpringfieldInbox(row, fileMd)
+          CopyToSpringfieldInbox(row, fileMd): Action[Unit, Unit]
       }
+      .reduceOption(_ combine _)
   }
 
   def extractFileParameters(dataset: Dataset): Seq[FileParameters] = {

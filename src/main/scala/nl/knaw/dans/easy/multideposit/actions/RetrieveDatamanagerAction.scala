@@ -15,11 +15,11 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.{ Action, ActionException, DatamanagerEmailaddress, Settings }
+import nl.knaw.dans.easy.multideposit.{ UnitAction, ActionException, DatamanagerEmailaddress, Settings }
 
 import scala.util.{ Failure, Success, Try }
 
-case class RetrieveDatamanagerAction(implicit settings: Settings) extends Action[DatamanagerEmailaddress] {
+case class RetrieveDatamanagerAction(implicit settings: Settings) extends UnitAction[DatamanagerEmailaddress] {
 
   private lazy val datamanagerEmailaddress = getDatamanagerMailadres
 

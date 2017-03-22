@@ -26,7 +26,7 @@ import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
-case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action[DatamanagerEmailaddress => Unit] {
+case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action[DatamanagerEmailaddress, Unit] {
 
   val (datasetID, dataset) = entry
 
@@ -34,8 +34,8 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
 
   override def checkPreconditions: Try[Unit] = validateDepositor(row, datasetID, dataset)
 
-  override def execute(): Try[DatamanagerEmailaddress => Unit] = Try {
-    (datamanagerEmailaddress: DatamanagerEmailaddress) => writeProperties(row, datasetID, dataset, datamanagerEmailaddress).get
+  override def execute(datamanagerEmailaddress: DatamanagerEmailaddress): Try[Unit] = {
+    writeProperties(row, datasetID, dataset, datamanagerEmailaddress)
   }
 }
 object AddPropertiesToDeposit {

@@ -16,12 +16,11 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
-import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
+import javax.naming.directory.Attributes
 
 import nl.knaw.dans.easy.multideposit.{ ActionException, Settings, UnitSpec, _ }
-import nl.knaw.dans.lib.error.CompositeException
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll, PrivateMethodTester }
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
 import scala.collection.mutable
 import scala.util.{ Failure, Success }
@@ -110,7 +109,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   }
 
   "execute" should "generate the properties file and write the properties in it" in {
-    AddPropertiesToDeposit(1, (datasetID, dataset)).execute().map(f => f("dm@test.org")) shouldBe a[Success[_]]
+    AddPropertiesToDeposit(1, (datasetID, dataset)).execute("dm@test.org") shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(datasetID)
     props should exist
