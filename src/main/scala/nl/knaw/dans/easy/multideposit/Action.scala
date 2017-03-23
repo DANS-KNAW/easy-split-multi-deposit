@@ -75,7 +75,7 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
     def reportFailure(t: Throwable): Try[T] = {
       Failure(ActionRunFailedException(
         report = generateReport(
-          header = "Error during processing:",
+          header = "Errors during processing:",
           throwable = t,
           footer = "The actions that were already performed, were rolled back."),
         cause = t
