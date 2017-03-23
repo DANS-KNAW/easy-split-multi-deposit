@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
-import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
+import nl.knaw.dans.easy.multideposit.{ UnitAction, Settings, _ }
 import nl.knaw.dans.lib.error.TraversableTryExtensions
 import org.apache.tika.Tika
 
@@ -26,7 +26,7 @@ import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
-case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
+case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends UnitAction[Unit] {
 
   val (datasetID, dataset) = entry
 

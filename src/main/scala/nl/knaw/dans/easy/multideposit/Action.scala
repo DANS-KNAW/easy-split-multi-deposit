@@ -19,18 +19,13 @@ import scala.util.{ Failure, Success, Try }
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.collection.mutable
+import scala.annotation.tailrec
 import scala.util.control.NonFatal
 
-/**
- * An action to be performed by Process SIP. It provides three methods that can be invoked to verify
- * the feasibility of the action, to perform the action and - if necessary - to roll back the action.
- */
 /*
-  To future developers: this class is a semigroup. It satisfies the associativity law as defined
-  in https://wiki.haskell.org/Typeclassopedia#Laws_4.
+  To future developers: this class is a Category. It should satisfy the law of composition.
  */
-trait Action extends DebugEnhancedLogging {
+trait Action[-A, +T] extends DebugEnhancedLogging { self =>
 
   private def logPreconditions(): Unit = {
     logger.info(s"Checking preconditions of ${getClass.getSimpleName} ...")
@@ -41,9 +36,9 @@ trait Action extends DebugEnhancedLogging {
   private def logRollback(): Unit = {
     logger.info(s"An error occurred. Rolling back action ${getClass.getSimpleName} ...")
   }
-  private[Action] def innerCheckPreconditions: Try[Unit] = Try(logPreconditions()).flatMap(_ => checkPreconditions)
-  private[Action] def innerExecute(): Try[Unit] = Try(logExecute()).flatMap(_ => execute())
-  private[Action] def innerRollback(): Try[Unit] = Try(logRollback()).flatMap(_ => rollback())
+  protected[Action] def innerCheckPreconditions: Try[Unit] = Try(logPreconditions()).flatMap(_ => checkPreconditions)
+  protected[Action] def innerExecute(a: A): Try[T] = Try(logExecute()).flatMap(_ => execute(a))
+  protected[Action] def innerRollback(): Try[Unit] = Try(logRollback()).flatMap(_ => rollback())
 
   /**
    * Verifies whether all preconditions are met for this specific action.
@@ -53,11 +48,12 @@ trait Action extends DebugEnhancedLogging {
   protected def checkPreconditions: Try[Unit] = Success(())
 
   /**
-   * Exectue the action.
+   * Exectue the action given an input `a`.
    *
+   * @param a the action's input
    * @return `Success` if the execution was successful, `Failure` otherwise
    */
-  protected def execute(): Try[Unit]
+  protected def execute(a: A): Try[T]
 
   /**
    * Cleans up results of a previous call to run so that a new call to run will not fail because of those results.
@@ -68,13 +64,24 @@ trait Action extends DebugEnhancedLogging {
 
   /**
    * Run an action. First the precondition is checked. If it fails a `PreconditionsFailedException`
-   * with a report is returned. Else, if the precondition succeed, the action is executed.
+   * with a report is returned. Else, if the precondition succeed, the action is executed given the input `a`.
    * If this fails, the action is rolled back and a `ActionRunFailedException` with a report is returned.
    * If the execution was successful, `Success` is returned
    *
+   * @param a the action's input
    * @return `Success` if the full execution was successful, `Failure` otherwise
    */
-  final def run: Try[Unit] = {
+  def run(a: A): Try[T] = {
+    def reportFailure(t: Throwable): Try[T] = {
+      Failure(ActionRunFailedException(
+        report = generateReport(
+          header = "Errors in Multi-Deposit Instructions file:",
+          throwable = t,
+          footer = "The actions that were already performed, were rolled back."),
+        cause = t
+      ))
+    }
+
     for {
       _ <- innerCheckPreconditions.recoverWith {
         case NonFatal(e) =>
@@ -85,101 +92,92 @@ trait Action extends DebugEnhancedLogging {
               footer = "Due to these errors in the preconditions, nothing was done."),
             cause = e))
       }
-      _ <- innerExecute().recoverWith {
-        case NonFatal(e) =>
-          List(Failure(e), innerRollback())
-            .collectResults
-            .recoverWith {
-              case e: CompositeException => Failure(ActionRunFailedException(
-                report = generateReport(
-                  header = "Failures during the execute phase:",
-                  throwable = e,
-                  footer = "The actions that were already performed, were rolled back."),
-                cause = e))
-            }
+      t <- innerExecute(a).recoverWith {
+        case e1@CompositeException(es) =>
+          rollback() match {
+            case Success(_) => reportFailure(e1)
+            case Failure(CompositeException(es2)) => reportFailure(CompositeException(es ++ es2))
+            case Failure(e2) => reportFailure(CompositeException(es ++ List(e2)))
+          }
+        case NonFatal(e1) =>
+          rollback() match {
+            case Success(_) => reportFailure(e1)
+            case Failure(CompositeException(es2)) => reportFailure(CompositeException(List(e1) ++ es2))
+            case Failure(e2) => reportFailure(CompositeException(List(e1, e2)))
+          }
       }
-    } yield ()
+    } yield t
   }
 
   private def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
-    val report = throwable match {
-      case ActionException(row, msg, _) => s" - row $row: $msg"
-      case CompositeException(throwables) =>
-        throwables.toSeq
-          .collect {
-            case ActionException(row, msg, _) => s" - row $row: $msg"
-            case NonFatal(e) => s" - unexpected error: ${e.getMessage}"
-          }
-          .mkString("\n")
-      case e => s" - unexpected error: ${e.getMessage}"
+
+    @tailrec
+    def report(es: List[Throwable], rpt: List[String] = Nil): List[String] = {
+      es match {
+        case Nil => rpt
+        case ActionException(row, msg, _) :: xs => report(xs, s" - row $row: $msg" :: rpt)
+        case CompositeException(ths) :: xs => report(ths.toList ::: xs, rpt)
+        case NonFatal(ex) :: xs => report(xs, s" - unexpected error: ${ex.getMessage}" :: rpt)
+      }
     }
 
-    header.toOption.map(_ + "\n").getOrElse("") + report + footer.toOption.map("\n" + _).getOrElse("")
+    header.toOption.fold("")(_ + "\n") +
+      report(List(throwable)).reverse.mkString("\n") +
+      footer.toOption.fold("")("\n" + _)
   }
 
   /**
-   * Compose this action with `other` into a new action such that it runs both actions in the correct order.
-   * [[checkPreconditions]] and [[execute]] are run in order, [[rollback]] is run in reversed order.
+   * Sequentially composes two `Action`s by running their `execute` methods one after the other.
+   * In this, the input of `other` is the output of this `Action`.
    *
-   * @param other the second action to be run
-   * @return a composed action
+   * @param other the `Action` to combine this `Action` with
+   * @tparam S the output type of the second `Action`
+   * @return an `Action` that composes these two actions sequentially
    */
-  def compose(other: Action): ComposedAction = {
-    other match {
-      case composedAction: Action#ComposedAction => ComposedAction(this :: composedAction.actions)
-      case action => ComposedAction(this :: action :: Nil)
+  def combine[S](other: Action[T, S]): Action[A, S] = new Action[A, S] {
+    private var pastSelf = false
+
+    override def run(a: A): Try[S] = {
+      pastSelf = false
+      super.run(a)
     }
-  }
 
-  final case class ComposedAction(actions: List[Action]) extends Action {
-    private lazy val executedActions = mutable.Stack[Action]()
-
-    override private[Action] def innerCheckPreconditions: Try[Unit] = checkPreconditions
-    override private[Action] def innerExecute(): Try[Unit] = execute()
-    override private[Action] def innerRollback(): Try[Unit] = rollback()
+    override def innerCheckPreconditions: Try[Unit] = checkPreconditions
+    override def innerExecute(a: A): Try[S] = execute(a)
+    override def innerRollback(): Try[Unit] = rollback()
 
     override protected def checkPreconditions: Try[Unit] = {
-      actions.map(_.innerCheckPreconditions).collectResults.map(_ => ())
+      List(self, other).map(_.innerCheckPreconditions).collectResults.map(_ => ())
     }
 
-    override protected def execute(): Try[Unit] = {
-      actions.foldLeft(Try { () })((res, action) => res.flatMap(_ => {
-        executedActions.push(action)
-        action.innerExecute()
-      }))
+    override protected def execute(a: A): Try[S] = {
+      for {
+        t <- self.innerExecute(a)
+        _ = pastSelf = true
+        s <- other.innerExecute(t)
+      } yield s
     }
 
     override protected def rollback(): Try[Unit] = {
-      Stream.continually(executedActions.nonEmpty)
-        .takeWhile(_ == true)
-        .map(_ => executedActions.pop().innerRollback())
-        .toList
+      (if (pastSelf) List(other, self) else List(self))
+        .map(_.innerRollback())
         .collectResults
         .map(_ => ())
-    }
-
-    override def compose(other: Action): ComposedAction = {
-      other match {
-        case composedAction: Action#ComposedAction => ComposedAction(actions ++ composedAction.actions)
-        case action => ComposedAction(actions :+ action)
-      }
-    }
-
-    override def equals(obj: Any): Boolean = {
-      obj match {
-        case ca: Action#ComposedAction => this.actions == ca.actions
-        case _ => false
-      }
     }
   }
 }
 
 object Action {
-  def apply(precondition: () => Try[Unit],
-            action: () => Try[Unit],
-            undo: () => Try[Unit]): Action = new Action {
+  def apply[A, T](precondition: () => Try[Unit] = () => Success(()),
+                  action: A => Try[T],
+                  undo: () => Try[Unit] = () => Success(())): Action[A, T] = new Action[A, T] {
     override protected def checkPreconditions: Try[Unit] = precondition()
-    override protected def execute(): Try[Unit] = action()
+    override protected def execute(a: A): Try[T] = action(a)
     override protected def rollback(): Try[Unit] = undo()
   }
+}
+
+trait UnitAction[+T] extends Action[Unit, T] {
+  protected def execute(u: Unit): Try[T] = execute()
+  protected def execute(): Try[T]
 }
