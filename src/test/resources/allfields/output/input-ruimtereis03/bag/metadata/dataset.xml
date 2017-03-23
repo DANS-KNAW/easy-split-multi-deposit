@@ -16,7 +16,7 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.kn
       </dcx-dai:author>
     </dcx-dai:creatorDetails>
     <ddm:created>2016-07-30</ddm:created>
-    <ddm:audience>D30000</ddm:audience>
+    <ddm:audience>D37000</ddm:audience>
     <ddm:accessRights>GROUP_ACCESS</ddm:accessRights>
   </ddm:profile>
   <ddm:dcmiMetadata>
