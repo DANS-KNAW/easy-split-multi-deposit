@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <files xmlns:dcterms="http://purl.org/dc/terms/">
-    <file filepath="data/images/Hubble_01.jpg">
+    <file filepath="data/path/to/images/Hubble_01.jpg">
         <dcterms:format>image/jpeg</dcterms:format>
     </file>
-    <file filepath="data/images/Hubbleshots.jpg">
+    <file filepath="data/path/to/images/Hubbleshots.jpg">
         <dcterms:format>image/jpeg</dcterms:format>
     </file>
     <file filepath="data/hubble-wiki-en.txt">
