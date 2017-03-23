@@ -17,9 +17,9 @@ package nl.knaw.dans.easy.multideposit
 
 import java.io.File
 
-import scala.io.Source
+import org.scalatest.matchers.{ MatchResult, Matcher }
 
-import org.scalatest.matchers.{MatchResult, Matcher}
+import scala.io.Source
 
 /** Does not dump the full file but just the searched content if it is not found.
   *

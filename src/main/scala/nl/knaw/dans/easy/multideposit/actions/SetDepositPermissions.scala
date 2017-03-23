@@ -19,14 +19,14 @@ import java.io.{ File, IOException }
 import java.nio.file._
 import java.nio.file.attribute._
 
-import nl.knaw.dans.easy.multideposit.{ Action, DatasetID, _ }
+import nl.knaw.dans.easy.multideposit.{ UnitAction, DatasetID, _ }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class SetDepositPermissions(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends Action {
+case class SetDepositPermissions(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends UnitAction[Unit] {
 
   def execute(): Try[Unit] = {
     setFilePermissions().recoverWith {

@@ -18,33 +18,35 @@ package nl.knaw.dans.easy.multideposit
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ Matchers, PropSpec }
+import org.scalatest.{ Inside, Matchers, PropSpec }
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.Try
 
-class ActionLawSpec extends PropSpec with PropertyChecks with Matchers {
+class ActionLawSpec extends PropSpec with PropertyChecks with Matchers with Inside with CustomMatchers {
 
-  implicit def arbTry[T](implicit a: Arbitrary[T]): Arbitrary[Try[T]] = {
-    Arbitrary(arbitrary[Option[T]].map(_.map(Success(_)).getOrElse(Failure(new Exception("failure")))))
-  }
-
-  implicit def arbAction: Arbitrary[Action] = {
+  implicit def arbAction[T, S](implicit ts: Arbitrary[T => Try[S]]): Arbitrary[Action[T, S]] = {
     Arbitrary(for {
       pre <- arbitrary[Try[Unit]]
-      exe <- arbitrary[Try[Unit]]
+      exe <- arbitrary[T => Try[S]]
       undo <- arbitrary[Try[Unit]]
-    } yield Action(() => pre, () => exe, () => undo))
+    } yield Action[T, S](() => pre, t => exe(t), () => undo))
+  }
+
+  property("action - category composition") {
+    forAll { (i: Int, f: Int => Try[String], g: String => Try[Long]) =>
+      Action(action = f).combine(Action(action = g)).run(i) shouldBe Action[Int, Long](action = f(_).flatMap(g)).run(i)
+    }
   }
 
   property("action - semigroup associativity") {
-    forAll { (a1: Action, a2: Action, a3: Action) =>
-      a1.compose(a2).compose(a3) shouldBe a1.compose(a2.compose(a3))
+    forAll { (i: Int, a1: Action[Int, String], a2: Action[String, Long], a3: Action[Long, Double]) =>
+      a1.combine(a2).combine(a3).run(i) shouldBe a1.combine(a2.combine(a3)).run(i)
     }
   }
 
   property("action - semigroup combined") {
-    forAll { (a1: Action, a2: Action, a3: Action, a4: Action) =>
-      a1.compose(a2).compose(a3.compose(a4)) shouldBe a1.compose(a2).compose(a3).compose(a4)
+    forAll { (i: Int, a1: Action[Int, String], a2: Action[String, Long], a3: Action[Long, Double], a4: Action[Double, String]) =>
+      a1.combine(a2).combine(a3.combine(a4)).run(i) shouldBe a1.combine(a2).combine(a3).combine(a4).run(i)
     }
   }
 }

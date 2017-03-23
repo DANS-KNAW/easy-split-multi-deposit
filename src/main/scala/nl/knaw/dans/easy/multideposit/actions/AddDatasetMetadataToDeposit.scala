@@ -29,7 +29,7 @@ import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
-case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action {
+case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends UnitAction[Unit] {
 
   val (datasetID, dataset) = entry
 

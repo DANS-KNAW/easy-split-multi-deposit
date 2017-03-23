@@ -17,8 +17,7 @@ package nl.knaw.dans.easy.multideposit
 
 import java.io.File
 
-import nl.knaw.dans.easy.multideposit.Main._
-import nl.knaw.dans.easy.multideposit.actions.{ CreateSpringfieldActions, _ }
+import nl.knaw.dans.easy.multideposit.Main.extractFileParameters
 
 import scala.language.reflectiveCalls
 
@@ -30,81 +29,7 @@ class MainSpec extends UnitSpec {
     springfieldInbox = new File(testDir, "sfi")
   )
 
-  val generalActions = Seq(
-    CreateSpringfieldActions(-1, testDatasets),
-    MoveDepositToOutputDir(2, testDatasets.head._1),
-    MoveDepositToOutputDir(2, testDatasets.tail.head._1))
-
-  val dataset1Actions = new {
-    val entry @ (datasetID, dataset) = testDatasets.head
-    val datasetActions = Seq(
-      CreateStagingDir(2, datasetID),
-      AddBagToDeposit(2, entry),
-      AddDatasetMetadataToDeposit(2, entry),
-      AddFileMetadataToDeposit(2, entry),
-      AddPropertiesToDeposit(2, entry),
-      SetDepositPermissions(2, datasetID))
-    val fileActions = Seq(CopyToSpringfieldInbox(2, "videos/centaur.mpg"))
-  }
-
-  val dataset2Actions = new {
-    val entry @ (datasetID, dataset) = testDatasets.tail.head
-    val datasetActions = Seq(
-      CreateStagingDir(2, datasetID),
-      AddBagToDeposit(2, entry),
-      AddDatasetMetadataToDeposit(2, entry),
-      AddFileMetadataToDeposit(2, entry),
-      AddPropertiesToDeposit(2, entry),
-      SetDepositPermissions(2, datasetID))
-    val fileActions = Seq(CopyToSpringfieldInbox(4, "videos/centaur.mpg"))
-  }
-
-  /*"getActions"*/ignore should "return all actions to be performed given the collection of datasets" in {
-    getActions(testDatasets) should {
-      have size 17 and
-      contain theSameElementsInOrderAs(
-        dataset1Actions.datasetActions ++ dataset1Actions.fileActions ++
-        dataset2Actions.datasetActions ++ dataset2Actions.fileActions ++
-        generalActions
-      )
-    }
-  }
-
-  /*"getGeneralActions"*/ignore should "return a collection of actions that are supposed to run only once for all datasets" in {
-    getGeneralActions(testDatasets) should {
-      have size 3 and contain theSameElementsInOrderAs generalActions
-    }
-  }
-
-  /*"getDatasetActions"*/ignore should "return a collection of actions for the given dataset" in {
-    import dataset1Actions._
-    getDatasetActions(entry) should {
-      have size 7 and contain theSameElementsInOrderAs (datasetActions ++ fileActions)
-    }
-  }
-
-  ignore should "do the same for testDataset2" in {
-    import dataset2Actions._
-    getDatasetActions(entry) should {
-      have size 7 and contain theSameElementsInOrderAs (datasetActions ++ fileActions)
-    }
-  }
-
-  /*"getFileActions"*/ignore should "return an action for each FileParameters object that is an A/V file" in {
-    import dataset1Actions._
-    getFileActions(dataset) should {
-      have size 1 and contain theSameElementsInOrderAs fileActions
-    }
-  }
-
-  ignore should "return an action for each FileParameters object that is an A/V file in testDataset2" in {
-    import dataset2Actions._
-    getFileActions(dataset) should {
-      have size 1 and contain theSameElementsInOrderAs fileActions
-    }
-  }
-
-  /*"extractFileParameters"*/ignore should "only yield the FileParameters where not all fields are empty" in {
+  /*"extractFileParameters"*/ ignore should "only yield the FileParameters where not all fields are empty" in {
     extractFileParameters(testDataset1) should {
       have size 1 and contain theSameElementsInOrderAs testFileParameters1
     }
