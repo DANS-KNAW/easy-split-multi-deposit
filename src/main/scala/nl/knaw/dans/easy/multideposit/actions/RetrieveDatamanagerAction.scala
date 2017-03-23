@@ -15,7 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.{ UnitAction, ActionException, DatamanagerEmailaddress, Settings }
+import javax.naming.directory.Attributes
+
+import nl.knaw.dans.easy.multideposit.{ ActionException, DatamanagerEmailaddress, Settings, UnitAction }
 
 import scala.util.{ Failure, Success, Try }
 
@@ -37,29 +39,38 @@ case class RetrieveDatamanagerAction(implicit settings: Settings) extends UnitAc
     val row = -1
     // Note that the datamanager 'precondition' is checked when datamanagerEmailaddress is evaluated the first time
     val datamanagerId = settings.datamanager
+
+    def getFirstAttrs(attrsSeq: Seq[Attributes]) = {
+      if (attrsSeq.isEmpty) Failure(ActionException(row, s"""The datamanager "$datamanagerId" is unknown"""))
+      else if (attrsSeq.size > 1) Failure(ActionException(row, s"""There appear to be multiple users with id "$datamanagerId""""))
+      else Success(attrsSeq.head)
+    }
+
+    def datamanagerIsActive(attrs: Attributes) = {
+      Option(attrs.get("dansState"))
+        .filter(_.get.toString == "ACTIVE")
+        .map(_ => Success(attrs))
+        .getOrElse(Failure(ActionException(row, s"""The datamanager "$datamanagerId" is not an active user""")))
+    }
+
+    def datamanagerHasArchivistRole(attrs: Attributes) = {
+      Option(attrs.get("easyRoles"))
+        .filter(_.contains("ARCHIVIST"))
+        .map(_ => Success(attrs))
+        .getOrElse(Failure(ActionException(row, s"""The datamanager "$datamanagerId" is not an archivist""")))
+    }
+
+    def getDatamanagerEmail(attrs: Attributes) = {
+      Option(attrs.get("mail"))
+        .filter(_.get().toString.nonEmpty)
+        .map(att => Success(att.get().toString))
+        .getOrElse(Failure(ActionException(row, s"""The datamanager "$datamanagerId" does not have an email address""")))
+    }
+
     settings.ldap.query(datamanagerId)(a => a)
-      .flatMap(attrsSeq => {
-        if (attrsSeq.isEmpty) Failure(ActionException(row, s"""The datamanager "$datamanagerId" is unknown"""))
-        else if (attrsSeq.size > 1) Failure(ActionException(row, s"""There appear to be multiple users with id "$datamanagerId""""))
-        else Success(attrsSeq.head)
-      })
-      .flatMap(attrs => {
-        Option(attrs.get("dansState"))
-          .filter(_.get.toString == "ACTIVE")
-          .map(_ => Success(attrs))
-          .getOrElse(Failure(ActionException(row, s"""The datamanager "$datamanagerId" is not an active user""")))
-      })
-      .flatMap(attrs => {
-        Option(attrs.get("easyRoles"))
-          .filter(_.contains("ARCHIVIST"))
-          .map(_ => Success(attrs))
-          .getOrElse(Failure(ActionException(row, s"""The datamanager "$datamanagerId" is not an archivist""")))
-      })
-      .flatMap(attrs => {
-        Option(attrs.get("mail"))
-          .filter(_.get().toString.nonEmpty)
-          .map(att => Success(att.get().toString))
-          .getOrElse(Failure(ActionException(row, s"""The datamanager "$datamanagerId" does not have an email address""")))
-      })
+      .flatMap(getFirstAttrs)
+      .flatMap(datamanagerIsActive)
+      .flatMap(datamanagerHasArchivistRole)
+      .flatMap(getDatamanagerEmail)
   }
 }

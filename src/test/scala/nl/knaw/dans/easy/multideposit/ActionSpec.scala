@@ -73,7 +73,7 @@ class ActionSpec extends UnitSpec {
 
     inside(action.run(())) {
       case Failure(ActionRunFailedException(report, _)) => report shouldBe
-        """Errors in Multi-Deposit Instructions file:
+        """Errors during processing:
           | - row 1: exe
           |The actions that were already performed, were rolled back.""".stripMargin
     }
@@ -100,7 +100,7 @@ class ActionSpec extends UnitSpec {
 
     inside(action.run(())) {
       case Failure(ActionRunFailedException(report, _)) => report shouldBe
-        """Errors in Multi-Deposit Instructions file:
+        """Errors during processing:
           | - row 1: exe
           | - row 1: undo
           |The actions that were already performed, were rolled back.""".stripMargin
@@ -220,7 +220,7 @@ class ActionSpec extends UnitSpec {
 
     inside(m1.combine(m2).combine(m3).run(())) {
       case Failure(ActionRunFailedException(report, _)) => report shouldBe
-        """Errors in Multi-Deposit Instructions file:
+        """Errors during processing:
           | - row 1: exe
           |The actions that were already performed, were rolled back.""".stripMargin
     }
@@ -245,7 +245,7 @@ class ActionSpec extends UnitSpec {
 
     inside(m1.combine(m2).combine(m3).run(())) {
       case Failure(ActionRunFailedException(report, _)) => report shouldBe
-        """Errors in Multi-Deposit Instructions file:
+        """Errors during processing:
           | - row 2: exe
           |The actions that were already performed, were rolled back.""".stripMargin
     }
@@ -270,7 +270,7 @@ class ActionSpec extends UnitSpec {
 
     inside(m1.combine(m2.combine(m3)).run(())) {
       case Failure(ActionRunFailedException(report, _)) => report shouldBe
-        """Errors in Multi-Deposit Instructions file:
+        """Errors during processing:
           | - row 2: exe
           | - row 2: undo
           | - row 1: undo

@@ -82,15 +82,19 @@ object AddPropertiesToDeposit {
 
   def addProperties(properties: Properties, dataset: Dataset, datamanager: String, emailaddress: DatamanagerEmailaddress): Try[Unit] = {
     for {
-      depositorUserID <- dataset.get("DEPOSITOR_ID")
-        .flatMap(_.headOption)
-        .map(Success(_))
-        .getOrElse(Failure(new IllegalStateException("""The column "DEPOSITOR_ID" is not present""")))
+      depositorUserID <- validateDepositor(dataset)
       _ = properties.setProperty("state.label", "SUBMITTED")
       _ = properties.setProperty("state.description", "Deposit is valid and ready for post-submission processing")
       _ = properties.setProperty("depositor.userId", depositorUserID)
       _ = properties.setProperty("datamanager.userId", datamanager)
       _ = properties.setProperty("datamanager.email", emailaddress)
     } yield ()
+  }
+
+  private def validateDepositor(dataset: Dataset) = {
+    dataset.get("DEPOSITOR_ID")
+      .flatMap(_.headOption)
+      .map(Success(_))
+      .getOrElse(Failure(new IllegalStateException("""The column "DEPOSITOR_ID" is not present""")))
   }
 }

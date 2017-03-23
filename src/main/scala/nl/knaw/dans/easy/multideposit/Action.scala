@@ -75,36 +75,43 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
     def reportFailure(t: Throwable): Try[T] = {
       Failure(ActionRunFailedException(
         report = generateReport(
-          header = "Errors in Multi-Deposit Instructions file:",
+          header = "Errors during processing:",
           throwable = t,
           footer = "The actions that were already performed, were rolled back."),
         cause = t
       ))
     }
 
-    for {
-      _ <- innerCheckPreconditions.recoverWith {
-        case NonFatal(e) =>
-          Failure(PreconditionsFailedException(
-            report = generateReport(
-              header = "Precondition failures:",
-              throwable = e,
-              footer = "Due to these errors in the preconditions, nothing was done."),
-            cause = e))
+    def recoverPreconditions(t: Throwable) = {
+      Failure(PreconditionsFailedException(
+        report = generateReport(
+          header = "Precondition failures:",
+          throwable = t,
+          footer = "Due to these errors in the preconditions, nothing was done."),
+        cause = t))
+    }
+
+    def rollbackComposite(ce: CompositeException) = {
+      rollback() match {
+        case Success(_) => reportFailure(ce)
+        case Failure(CompositeException(es2)) => reportFailure(CompositeException(ce.throwables ++ es2))
+        case Failure(e2) => reportFailure(CompositeException(ce.throwables ++ List(e2)))
       }
+    }
+
+    def rollbackDefault(t: Throwable) = {
+      rollback() match {
+        case Success(_) => reportFailure(t)
+        case Failure(CompositeException(es)) => reportFailure(CompositeException(List(t) ++ es))
+        case Failure(e) => reportFailure(CompositeException(List(t, e)))
+      }
+    }
+
+    for {
+      _ <- innerCheckPreconditions.recoverWith { case NonFatal(e) => recoverPreconditions(e) }
       t <- innerExecute(a).recoverWith {
-        case e1@CompositeException(es) =>
-          rollback() match {
-            case Success(_) => reportFailure(e1)
-            case Failure(CompositeException(es2)) => reportFailure(CompositeException(es ++ es2))
-            case Failure(e2) => reportFailure(CompositeException(es ++ List(e2)))
-          }
-        case NonFatal(e1) =>
-          rollback() match {
-            case Success(_) => reportFailure(e1)
-            case Failure(CompositeException(es2)) => reportFailure(CompositeException(List(e1) ++ es2))
-            case Failure(e2) => reportFailure(CompositeException(List(e1, e2)))
-          }
+        case ce: CompositeException => rollbackComposite(ce)
+        case NonFatal(e) => rollbackDefault(e)
       }
     } yield t
   }
@@ -127,8 +134,20 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
   }
 
   /**
-   * Sequentially composes two `Action`s by running their `execute` methods one after the other.
-   * In this, the input of `other` is the output of this `Action`.
+   * Sequentially composes two `Action`s by running their `execute` methods one after the other,
+   * where the input of `other` is the output of this `Action`.
+   *
+   * Combining two `Action`s means that the composed `Action` will do the following:
+   *
+   *   - run `checkPreconditions` for this
+   *   - run `checkPreconditions` for other
+   *   - if any of these fails, terminate running and report the failures
+   *   - if all preconditions succeed, continue with:
+   *   - run `execute` for this with the input from `run(a: A)` as its input
+   *   - on failure of the previous step: call `rollback` on this `Action`, terminate running and return/report the error
+   *   - run `execute` for other with the output from `this.execute` as its input
+   *   - on failure of the previous step: call `rollback` on other and this `Action` (in this order!); terminate running and return/report the error
+   *   - return the output of calling `other.execute` as the result of this composed `Action`
    *
    * @param other the `Action` to combine this `Action` with
    * @tparam S the output type of the second `Action`
