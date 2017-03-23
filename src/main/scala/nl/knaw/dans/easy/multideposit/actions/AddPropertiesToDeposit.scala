@@ -18,7 +18,6 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.{util => ju}
 import java.util.{Collections, Properties}
 
-import nl.knaw.dans.easy.multideposit.actions.AddPropertiesToDeposit._
 import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
 import resource._
 
@@ -35,18 +34,29 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
   override def checkPreconditions: Try[Unit] = validateDepositor(row, datasetID, dataset)
 
   override def execute(datamanagerEmailaddress: DatamanagerEmailaddress): Try[Unit] = {
-    writeProperties(row, datasetID, dataset, datamanagerEmailaddress)
+    getDepositorID(dataset).map(writeProperties(_, datamanagerEmailaddress))
   }
-}
-object AddPropertiesToDeposit {
 
   /**
    * Checks whether there is only one unique DEPOSITOR_ID set in the `Dataset` (there can be multiple values but the must all be equal!).
    */
-  def validateDepositor(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
+  private def validateDepositor(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     // TODO a for-comprehension over monad-transformers would be nice here...
     // see https://github.com/rvanheest/Experiments/tree/master/src/main/scala/experiments/transformers
     // TODO check that only one depositorID is given, rather than multiple that are the same
+    def depositorIsActive(id: String) = {
+      settings.ldap.query(id)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
+        .flatMap {
+          case Seq() => Failure(ActionException(row, s"""DepositorID "$id" is unknown"""))
+          case Seq(head) => Success(head)
+          case _ => Failure(ActionException(row, s"""There appear to be multiple users with id "$id""""))
+        }
+        .flatMap {
+          case true => Success(())
+          case false => Failure(ActionException(row, s"""The depositor "$id" is not an active user"""))
+        }
+    }
+
     dataset.get("DEPOSITOR_ID")
       .map(_.filterNot(_.isBlank).toSet)
       .map(uniqueIDs => {
@@ -54,48 +64,57 @@ object AddPropertiesToDeposit {
         else if (uniqueIDs.size < 1) Failure(ActionException(row, "No depositorID found"))
         else Success(uniqueIDs.head)
       })
-      .map(_.flatMap(id => {
-        settings.ldap
-          .query(id)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
-          .flatMap(seq => if (seq.isEmpty) Failure(ActionException(row, s"""DepositorID "$id" is unknown"""))
-                          else if (seq.size > 1) Failure(ActionException(row, s"""There appear to be multiple users with id "$id""""))
-                          else Success(seq.head))
-          .flatMap {
-            case true => Success(())
-            case false => Failure(ActionException(row, s"""The depositor "$id" is not an active user"""))
-          }
-      }))
+      .map(_.flatMap(depositorIsActive))
       .getOrElse(Failure(ActionException(row, """The column "DEPOSITOR_ID" is not present""")))
   }
 
-  def writeProperties(row: Int, datasetID: DatasetID, dataset: Dataset, emailaddress: DatamanagerEmailaddress)(implicit settings: Settings): Try[Unit] = {
+  private def writeProperties(depositorUserID: String, emailaddress: DatamanagerEmailaddress)(implicit settings: Settings): Try[Unit] = {
     val props = new Properties {
       // Make sure we get sorted output, which is better readable than random
       override def keys(): ju.Enumeration[AnyRef] = Collections.enumeration(new ju.TreeSet[Object](super.keySet()))
     }
 
-    addProperties(props, dataset, settings.datamanager, emailaddress)
+    Try { addProperties(props, depositorUserID, settings.datamanager, emailaddress) }
       .flatMap(_ => Using.fileWriter(encoding)(stagingPropertiesFile(datasetID)).map(out => props.store(out, "")).tried)
       .recoverWith {
         case NonFatal(e) => Failure(ActionException(row, s"Could not write properties to file: $e", e))
       }
   }
 
-  def addProperties(properties: Properties, dataset: Dataset, datamanager: String, emailaddress: DatamanagerEmailaddress): Try[Unit] = {
-    for {
-      depositorUserID <- validateDepositor(dataset)
-      _ = properties.setProperty("state.label", "SUBMITTED")
-      _ = properties.setProperty("state.description", "Deposit is valid and ready for post-submission processing")
-      _ = properties.setProperty("depositor.userId", depositorUserID)
-      _ = properties.setProperty("datamanager.userId", datamanager)
-      _ = properties.setProperty("datamanager.email", emailaddress)
-    } yield ()
+  private def addProperties(properties: Properties, depositorUserID: String, datamanager: String, emailaddress: DatamanagerEmailaddress): Unit = {
+    val sf = getSpringfieldData
+    val props: Map[String, Option[String]] = Map(
+      "state.label" -> Some("SUBMITTED"),
+      "state.description" -> Some("Deposit is valid and ready for post-submission processing"),
+      "depositor.userId" -> Some(depositorUserID),
+      "datamanager.userId" -> Some(datamanager),
+      "datamanager.email" -> Some(emailaddress),
+      "springfield.domain" -> Some(sf.domain),
+      "springfield.user" -> sf.user,
+      "springfield.collection" -> sf.collection
+    )
+
+    for ((key, value) <- props.collect { case (k, Some(v)) => (k, v) }) {
+      properties.setProperty(key, value)
+    }
   }
 
-  private def validateDepositor(dataset: Dataset) = {
+  private def getDepositorID(dataset: Dataset): Try[String] = {
     dataset.get("DEPOSITOR_ID")
       .flatMap(_.headOption)
       .map(Success(_))
       .getOrElse(Failure(new IllegalStateException("""The column "DEPOSITOR_ID" is not present""")))
   }
+
+  private def getSpringfieldData: SpringfieldData = {
+    val user = dataset.findValue("SF_USER")
+    val collection = dataset.findValue("SF_COLLECTION")
+    dataset.findValue("SF_DOMAIN")
+      .map(SpringfieldData(collection, user, _))
+      .getOrElse(SpringfieldData(collection, user))
+  }
+
+  private case class SpringfieldData(collection: Option[String],
+                                     user: Option[String],
+                                     domain: String = "dans")
 }

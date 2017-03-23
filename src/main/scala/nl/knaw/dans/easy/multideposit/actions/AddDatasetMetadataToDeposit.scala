@@ -509,6 +509,20 @@ object validators {
     }
   }
 
+  def checkColumnsAreEmpty(row: Int, dataset: Dataset, keys: String*): Try[Unit] = {
+    val existentOrNonBlankColumns = keys.map(key => key -> dataset.get(key))
+      .filter { // filter the ones that do exist or are all NOT blank
+        case (_, Some(column)) => column.exists(!_.isBlank)
+        case (_, None) => false
+      }
+      .map { case (key, _) => key }
+
+    existentOrNonBlankColumns.size match {
+      case 0 => Success(())
+      case _ => Failure(ActionException(row, s"Values found for these columns: ${ existentOrNonBlankColumns.mkString("[", ", ", "]") }"))
+    }
+  }
+
   def checkAccessRights(row: Int, datasetRow: DatasetRow): Try[Unit] = {
     (datasetRow.get("DDM_ACCESSRIGHTS"), datasetRow.get("DDM_AUDIENCE")) match {
       case (Some("GROUP_ACCESS"), Some("D37000")) => Success(Unit)

@@ -140,6 +140,43 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     }
   }
 
+  it should "succeed if the dataset contains no A/V files and the SF_* fields are not present" in {
+    val datasetID = "ruimtereis02"
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", "")
+    )
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail if the dataset contains no A/V files and any of the SF_* fields are present" in {
+    val datasetID = "ruimtereis02"
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_COLLECTION" -> List("collection", "")
+    )
+    inside(new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) =>
+        message should {
+          include("Values found for these columns: [SF_COLLECTION]") and
+            include("these columns should be empty because there are no audio/video")
+        }
+    }
+  }
+
+  it should "fail if the dataset contains no A/V files and all SF_* fields are present but only contain empty values" in {
+    val datasetID = "ruimtereis02"
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("", ""),
+      "SF_USER" -> List("", ""),
+      "SF_COLLECTION" -> List("", "")
+    )
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
   "execute" should "write the file metadata to an xml file" in {
     val dataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),

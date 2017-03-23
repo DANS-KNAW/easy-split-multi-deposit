@@ -58,6 +58,7 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
     dataset += "AV_FILE_TITLE" -> List("flyby of centaur", "", "")
     dataset += "AV_SUBTITLES" -> List("ruimtereis01/reisverslag/centaur.srt", "", "")
     dataset += "AV_SUBTITLES_LANGUAGE" -> List("en")
+    dataset += "DEPOSITOR_ID" -> List("ruimtereiziger1", "", "")
   }
 
   def testDataset2: Dataset = {

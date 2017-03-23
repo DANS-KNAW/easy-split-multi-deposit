@@ -281,6 +281,13 @@ package object multideposit {
       dataset("ROW").head.toInt // first occurrence of dataset, assuming it is not empty
     }
 
+    def findValue(key: MultiDepositKey): Option[String] = {
+      for {
+        values <- dataset.get(key)
+        value <- values.find(!_.isBlank)
+      } yield value
+    }
+
     /**
      * Retrieves the value of a certain parameter from the dataset on a certain row.
      * If either the key is not present, the specified row does not exist or the value `blank`

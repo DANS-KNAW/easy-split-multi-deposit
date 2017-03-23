@@ -59,9 +59,15 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
           .recoverWith {
             case ActionException(r, msg, cause) => Failure(ActionException(r,
               s"$msg\ncause: these columns should contain values because audio/video files are " +
-                s"found:\n${ avFiles.map { case (file, _) => s" - $file" }.mkString("\n") }", cause))
+                s"found:\n${ avFiles.map { case (file, _) => s" - $file" }.mkString("\n") }"))
           }
-      else Success(())
+      else
+        checkColumnsAreEmpty(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
+          .recoverWith {
+            case ActionException(r, msg, cause) => Failure(ActionException(r,
+              s"$msg\ncause: these columns should be empty because there are no audio/video " +
+                s"files found in this dataset"))
+          }
     }
 
     mimetypeMap.flatMap(checkSFColumnsIfDatasetContainsAVFiles)

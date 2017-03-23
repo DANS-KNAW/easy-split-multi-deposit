@@ -123,4 +123,23 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     content should include ("datamanager.email=dm@test.org")
     content should include ("datamanager.userId=dm")
   }
+
+  it should "generate the properties file with springfield fields and write the properties in it" in {
+    AddPropertiesToDeposit(1, (datasetID, testDataset1)).execute("dm@test.org") shouldBe a[Success[_]]
+
+    val props = stagingPropertiesFile(datasetID)
+    props should exist
+
+    val content = props.read()
+    content should include ("state.label")
+    content should include ("state.description")
+
+    content should include ("depositor.userId=ruimtereiziger1")
+
+    content should include ("datamanager.email=dm@test.org")
+    content should include ("datamanager.userId=dm")
+    content should include ("springfield.domain=dans")
+    content should include ("springfield.user=janvanmansum")
+    content should include ("springfield.collection=Jans-test-files")
+  }
 }
