@@ -177,6 +177,16 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
+  it should "create an empty list of mimetypes if the dataset directory corresponding with the datasetId does not exist" in {
+    val datasetID = "ruimtereis03"
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", "")
+    )
+    multiDepositDir(datasetID) should not (exist)
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
   "execute" should "write the file metadata to an xml file" in {
     val dataset = mutable.HashMap(
       "DATASET" -> List(datasetID, datasetID),

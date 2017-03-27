@@ -23,7 +23,7 @@ import nl.knaw.dans.lib.error.TraversableTryExtensions
 import org.apache.tika.Tika
 
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Try }
 import scala.xml.Elem
 
 case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends UnitAction[Unit] {
@@ -33,11 +33,16 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
   // TODO @rvanheest move the mimetype computation to a separate action once the new
   // parameterized version of Action is installed?
   lazy val mimetypeMap: Try[List[(File, String)]] = Try {
-    val files = multiDepositDir(datasetID).listRecursively
+    val datasetDir = multiDepositDir(datasetID)
+    if (datasetDir.exists()) {
+      val files = datasetDir.listRecursively
 
-    files.map(getMimeType)
-      .collectResults
-      .map(files.zip(_))
+      files.map(getMimeType)
+        .collectResults
+        .map(files.zip(_))
+    }
+    else // this means the dataset does not contain any data
+      Try { List.empty }
   }.flatten
 
   /**
@@ -57,14 +62,14 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
       if (avFiles.nonEmpty)
         checkColumnsAreNonEmpty(row, dataset, "SF_USER", "SF_COLLECTION")
           .recoverWith {
-            case ActionException(r, msg, cause) => Failure(ActionException(r,
+            case ActionException(r, msg, _) => Failure(ActionException(r,
               s"$msg\ncause: these columns should contain values because audio/video files are " +
                 s"found:\n${ avFiles.map { case (file, _) => s" - $file" }.mkString("\n") }"))
           }
       else
         checkColumnsAreEmpty(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
           .recoverWith {
-            case ActionException(r, msg, cause) => Failure(ActionException(r,
+            case ActionException(r, msg, _) => Failure(ActionException(r,
               s"$msg\ncause: these columns should be empty because there are no audio/video " +
                 s"files found in this dataset"))
           }
