@@ -24,7 +24,7 @@ import org.joda.time.DateTime
 import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
-import scala.xml.Elem
+import scala.xml.{ Elem, NodeSeq }
 
 case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends UnitAction[Unit] {
 
@@ -139,6 +139,7 @@ object AddDatasetMetadataToDeposit {
       {profileElems(dataset, "DDM_CREATED")}
       {profileElems(dataset, "DDM_AUDIENCE")}
       {profileElems(dataset, "DDM_ACCESSRIGHTS")}
+      {createSurrogateRelation(dataset).getOrElse(NodeSeq.Empty)}
     </ddm:profile>
     // @formatter:on
   }
@@ -360,7 +361,7 @@ object AddDatasetMetadataToDeposit {
     // @formatter:off
     <ddm:dcmiMetadata>
       {dataset.filter(isMetaData _ tupled).flatMap(simpleMetadataEntryToXML _ tupled)}
-      {createRelations(dataset) ++ createSurrogateRelation(dataset) }
+      {createRelations(dataset)}
       {createContributors(dataset)}
       {createSubject(dataset)}
       {createSpatialPoints(dataset)}

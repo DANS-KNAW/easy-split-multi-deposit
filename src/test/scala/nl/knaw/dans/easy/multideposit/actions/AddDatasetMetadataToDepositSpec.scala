@@ -24,7 +24,8 @@ import org.scalatest.BeforeAndAfterAll
 
 import scala.collection.mutable
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, Utility }
+import scala.xml.transform.{ RewriteRule, RuleTransformer }
+import scala.xml._
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
@@ -560,6 +561,27 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     verify(datasetToXml(dataset), expectedXml)
   }
 
+  it should "return the expected xml with streaming surrogate if it is an A/V dataset" in {
+    object XmlTransform extends RewriteRule {
+      override def transform(n: Node): Seq[Node] =
+        n match {
+          case Elem(prefix, "profile", attribs, scope, children @ _*) =>
+            Elem(prefix, "profile", attribs, scope, false, children ++
+              <ddm:relation scheme="STREAMING_SURROGATE_RELATION">
+                /domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$presentation-placeholder
+              </ddm:relation> :_*)
+          case other => other
+        }
+    }
+    val ds = dataset ++= List(
+      "SF_DOMAIN" -> List("randomdomainname"),
+      "SF_USER" -> List("randomusername"),
+      "SF_COLLECTION" -> List("randomcollectionname"))
+    val xml = new RuleTransformer(XmlTransform).transform(expectedXml)
+    xml should have size 1
+    verify(datasetToXml(ds), xml.head)
+  }
+
   it should "return xml on reading from the sip-demo csv" in {
     inside(toXml("/spacetravel/instructions.csv")) {
       case Success(xmls) => xmls should have size 2
@@ -611,7 +633,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
   }
 
-  "createDcmiMetadata" should "return the expected spatial Point elements" in {
+  it should "return the expected spatial Point elements" in {
     val dataset = new Dataset() +=
       "DCT_SPATIAL" -> List("here", "there", "", "") +=
       "DCX_SPATIAL_SCHEME" -> List("degrees", "RD", "", "") +=
@@ -725,20 +747,20 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
   }
 
-  it should "return the expected streaming surrogate relation" in {
+  "createProfile" should "return the expected streaming surrogate relation" in {
     val dataset = new Dataset() +=
       "SF_DOMAIN" -> List("randomdomainname") +=
       "SF_USER" -> List("randomusername") +=
       "SF_COLLECTION" -> List("randomcollectionname")
     val expectedXml = <ddm>
-      <ddm:dcmiMetadata>
+      <ddm:profile>
         <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$presentation-placeholder</ddm:relation>
-      </ddm:dcmiMetadata>
+      </ddm:profile>
     </ddm>
-    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
+    verify(<ddm>{AddDatasetMetadataToDeposit.createProfile(dataset)}</ddm>, expectedXml)
   }
 
-  def verify(actualXml: Elem, expectedXml: Elem): Unit = {
+  def verify(actualXml: Node, expectedXml: Node): Unit = {
     Utility.trim(actualXml).toString() shouldBe Utility.trim(expectedXml).toString()
   }
 }
