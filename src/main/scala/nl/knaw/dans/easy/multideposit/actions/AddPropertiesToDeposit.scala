@@ -41,9 +41,6 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
    * Checks whether there is only one unique DEPOSITOR_ID set in the `Dataset` (there can be multiple values but the must all be equal!).
    */
   private def validateDepositor(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
-    // TODO a for-comprehension over monad-transformers would be nice here...
-    // see https://github.com/rvanheest/Experiments/tree/master/src/main/scala/experiments/transformers
-    // TODO check that only one depositorID is given, rather than multiple that are the same
     def depositorIsActive(id: String) = {
       settings.ldap.query(id)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
         .flatMap {
@@ -58,13 +55,17 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
     }
 
     dataset.get("DEPOSITOR_ID")
-      .map(_.filterNot(_.isBlank).toSet)
-      .map(uniqueIDs => {
-        if (uniqueIDs.size > 1) Failure(ActionException(row, s"""There are multiple distinct depositorIDs in dataset "$datasetID": $uniqueIDs""".stripMargin))
-        else if (uniqueIDs.size < 1) Failure(ActionException(row, "No depositorID found"))
-        else Success(uniqueIDs.head)
+      .map(mdValues => {
+        val depIds = mdValues.filterNot(_.isBlank).toSet
+        val depIdsSize = depIds.size
+
+        if (depIdsSize > 1)
+          Failure(ActionException(row, s"""There are multiple distinct depositorIDs in dataset "$datasetID": $depIds""".stripMargin))
+        else if (depIdsSize < 1)
+          Failure(ActionException(row, "No depositorID found"))
+        else
+          depositorIsActive(depIds.head)
       })
-      .map(_.flatMap(depositorIsActive))
       .getOrElse(Failure(ActionException(row, """The column "DEPOSITOR_ID" is not present""")))
   }
 
