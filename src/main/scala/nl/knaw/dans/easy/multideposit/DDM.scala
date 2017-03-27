@@ -67,7 +67,6 @@ object DDM {
       "DCX_SPATIAL_EAST" -> "",
       "DCX_SPATIAL_WEST" -> "")
 
-  // TODO not sure about the values of this Dictionary
   val composedRelationFields: Dictionary =
     Map("DCX_RELATION_QUALIFIER" -> "",
       "DCX_RELATION_TITLE" -> "",

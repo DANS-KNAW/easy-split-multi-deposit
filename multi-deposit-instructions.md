@@ -63,7 +63,7 @@ The supported metadata elements are subdivided into the following groups:
 * Fields that specify the relation to a streaming surrogate on the Springfield
   platform: `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, `SF_SUBTITLES`
 * The use of `DC_CREATOR` and `DC_CONTRIBUTOR` is deprecated in favor of the new
-`DCX_CREATOR_*` and `DCX_CONTRIBUTOR_*` fields.
+  `DCX_CREATOR_*` and `DCX_CONTRIBUTOR_*` fields.
 
 The following elements are required: `DC_TITLE`, `DC_DESCRIPTION`, `DCX_CREATOR_*`
 (at least both the subfields `DCX_CREATOR_INITIALS` and `DCX_CREATOR_SURNAME` *or*
@@ -107,24 +107,28 @@ The metadata elements starting with `SF_` are used to create a Streaming Surroga
 a audio or video presentation contained in the dataset:
 
 * `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, together specify a 
-  presentation in Springfield that must be linked to from EASY. The link is created
+  presentation in Springfield that must be linked to by EASY. The link is created
   by adding a `dc:relation` metadata value to the dataset metadata. This relation
   is marked as having the `STREAMING_SURROGATE_RELATION` scheme and contains the
-  URL of said Streaming Surrogate in Springfield. These fields may only be used if
+  URL of the Streaming Surrogate in Springfield. These fields may only be used if
   all of them are specified. Since the `SF_PRESENTATION` is not yet defined at this point in time,
-  a placeholder called '_presentation-placeholder_' is put in its place.
-* Files marked with `FILE_AUDIO_VIDEO` = "Yes" (see below) are added to this presentation
-  through the Springfield Inbox and an entry in the Springfield Actions file that 
-  will be created by `process-sip`.
-* `SF_SUBTITLES` specifies a file that contains the subtitles for the presentation 
-  specified.
+  a placeholder called '_$presentation-placeholder_' is put in its place.
+* All files in a dataset that are identified as audio/video (using mimetype detection) are added
+  to this presentation by identifying them as such (and providing extra metadata) in `files.xml`.
+* The data provided in `SF_DOMAIN`, `SF_USER` and `SF_COLLECTION` are stored for further processing
+  in the `deposit.properties` file.
+* `SF_ACCESSIBILITY` provides a way to override the file-accessibility from the default
+   `DDM_ACCESSRIGHTS` for all A/V file.
+* The columns `AV_FILE`, `AV_FILE_TITLE`, `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` are used to
+  provide metadata specific to audio/video files. For a path to a A/V file in `AV_FILE`, the user
+  can specify the a title in `AV_FILE_TITLE` and one or more combinations of subtitles and the
+  corresponding language tag in `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` respectively.
 
 
 3. File Processing Instructions
 -------------------------------
 
-### Default Processing
-By default, files in the Multi-Deposit Directory are only processed if they are located in
+Files in the Multi-Deposit Directory are only processed if they are located in
 a sub-directory that has a matching `DATASET`-value in the MDI file.
 
 For example, let us assume that there is a Multi-Deposit at the directory
@@ -139,10 +143,14 @@ Directory is as follows:
                              +- dataset-1
                              |      |
                              |      +- subdir-x
-                             |            |
-                             |            +- file-y
-                             |            |
-                             |            +- file-z
+                             |      |     |
+                             |      |     +- file-y
+                             |      |     |
+                             |      |     +- file-z
+                             |      |     |
+                             |      |     +- video1.mpeg
+                             |      |
+                             |      +- video02.mpeg
                              |
                              +- dataset-2
                              |
@@ -159,8 +167,8 @@ Directory is as follows:
 Now if the MDI file contains "dataset-1" as a value for the `DATASET` field
 for one of the described datasets then the program will look and find a matching
 data files directory at `/uploads/customer-1/deposit-2016-01-01/dataset-1`. The
-*default* behavior now is to use the files in this directory as the payload for
-the target deposit. The relative paths in "dataset-1" will be preserved.
+files in this directory are considered to be the payload for the target deposit.
+The relative paths in "dataset-1" will be preserved.
 
 The resulting deposit will have the following location and lay-out:
 
@@ -179,10 +187,14 @@ The resulting deposit will have the following location and lay-out:
                                           +- data
                                           |    |
                                           |    +- subdir-x
-                                          |         |
-                                          |         +- file-y
-                                          |         |
-                                          |         +- file-z
+                                          |    |    |
+                                          |    |    +- file-y
+                                          |    |    |
+                                          |    |    +- file-z
+                                          |    |    |
+                                          |    |    +- video1.mpeg
+                                          |    |
+                                          |    +- video2.mpeg
                                           |
                                           +- metadata
                                                |
@@ -192,30 +204,6 @@ The resulting deposit will have the following location and lay-out:
                                
 Note that to create a unique deposit-directory the Multi-Deposit Directory name is 
 combined with the `DATASET` value.
-
-### Non-default Processing
-
-#### Non-default File Item Path
-By default the File Item path in the Dataset will be the same as the relative path 
-from the SIP-subdirectory with the matching `DATASET` name (see above). It is possible
-to specify a different path for specific files. The following columns are used for this:
-
-`FILE_SIP`
-:   The relative path of the file in the SIP Directory. If this path points to a 
-    directory `FILE_DATASET` will also be assumed to be indended as a directory name.
-    The whole directory tree starting at `FILE_SIP` is then created in the Dataset
-    at the path specified in `FILE_DATASET`.
-
-`FILE_DATASET`
-:   The relative path of the File Item in the Dataset to be created. (Or a Folder Item, 
-    if `FILE_SIP` points to a directory (see previous item)).	
-
-#### Non-default Storage
-By default the data files from the SIP are staged for ingest into the default EASY
-storage, which is managed by Fedora. It is possible to specify an alternative AIP-store
-
-<!-- TO DO re-specify this -->
-
 
 [LibreOffice]: https://www.libreoffice.org/
 [Dublin Core elements]: http://www.dublincore.org/documents/dces/
