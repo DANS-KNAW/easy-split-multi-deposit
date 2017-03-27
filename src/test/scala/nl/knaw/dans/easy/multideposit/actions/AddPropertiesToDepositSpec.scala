@@ -142,4 +142,28 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     content should include ("springfield.user=janvanmansum")
     content should include ("springfield.collection=Jans-test-files")
   }
+
+  it should "generate the properties file without springfield fields whenever the springfield columns are empty" in {
+    val dataset = testDataset2 ++= Map(
+      "SF_DOMAIN" -> List.fill(5)(""),
+      "SF_USER" -> List.fill(5)(""),
+      "SF_COLLECTION" -> List.fill(5)("")
+    )
+    AddPropertiesToDeposit(1, (datasetID, dataset)).execute("dm@test.org") shouldBe a[Success[_]]
+
+    val props = stagingPropertiesFile(datasetID)
+    props should exist
+
+    val content = props.read()
+    content should include ("state.label")
+    content should include ("state.description")
+
+    content should include ("depositor.userId=ruimtereiziger2")
+
+    content should include ("datamanager.email=dm@test.org")
+    content should include ("datamanager.userId=dm")
+    content should not include "springfield.domain"
+    content should not include "springfield.user"
+    content should not include "springfield.collection"
+  }
 }

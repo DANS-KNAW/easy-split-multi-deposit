@@ -89,9 +89,9 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
       "depositor.userId" -> Some(depositorUserID),
       "datamanager.userId" -> Some(datamanager),
       "datamanager.email" -> Some(emailaddress),
-      "springfield.domain" -> Some(sf.domain),
-      "springfield.user" -> sf.user,
-      "springfield.collection" -> sf.collection
+      "springfield.domain" -> sf.map(_.domain),
+      "springfield.user" -> sf.map(_.user),
+      "springfield.collection" -> sf.map(_.collection)
     )
 
     for ((key, value) <- props.collect { case (k, Some(v)) => (k, v) }) {
@@ -106,15 +106,21 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
       .getOrElse(Failure(new IllegalStateException("""The column "DEPOSITOR_ID" is not present""")))
   }
 
-  private def getSpringfieldData: SpringfieldData = {
-    val user = dataset.findValue("SF_USER")
-    val collection = dataset.findValue("SF_COLLECTION")
-    dataset.findValue("SF_DOMAIN")
-      .map(SpringfieldData(collection, user, _))
-      .getOrElse(SpringfieldData(collection, user))
+  /**
+   * @return Retrieve the springfield data from the dataset iff the springfield data is present
+   */
+  private def getSpringfieldData: Option[SpringfieldData] = {
+    for {
+      user <- dataset.findValue("SF_USER")
+      collection <- dataset.findValue("SF_COLLECTION")
+    } yield {
+      dataset.findValue("SF_DOMAIN")
+        .map(SpringfieldData(collection, user, _))
+        .getOrElse(SpringfieldData(collection, user))
+    }
   }
 
-  private case class SpringfieldData(collection: Option[String],
-                                     user: Option[String],
+  private case class SpringfieldData(collection: String,
+                                     user: String,
                                      domain: String = "dans")
 }

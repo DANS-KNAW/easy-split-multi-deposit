@@ -80,6 +80,7 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
     dataset += "DC_IDENTIFIER" -> List("id1234", "", "", "", "")
     dataset += "DC_SOURCE" -> List("", "", "", "", "")
     dataset += "DC_LANGUAGE" -> List("", "", "", "", "")
+    dataset += "DEPOSITOR_ID" -> List("ruimtereiziger2", "", "")
   }
 
   def testDatasets: Datasets = ListBuffer(("dataset-1", testDataset1), ("dataset-2", testDataset2))
