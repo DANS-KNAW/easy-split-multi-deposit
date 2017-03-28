@@ -194,9 +194,9 @@ object AddDatasetMetadataToDeposit {
 
   def isOrganization(authorFields: Iterable[(MultiDepositKey, String)]): Boolean = {
     val othersEmpty = authorFields
-      .filterNot(field => organizationKeys.contains(field._1))
-      .forall(_._2 == "")
-    val hasOrganization = authorFields.toList.exists(field => organizationKeys.contains(field._1))
+      .filterNot { case (authorKey, _) => organizationKeys.contains(authorKey) }
+      .forall { case (_, value) => value.isBlank }
+    val hasOrganization = authorFields.exists { case (authorKey, _) => organizationKeys.contains(authorKey) }
     othersEmpty && hasOrganization
   }
 
