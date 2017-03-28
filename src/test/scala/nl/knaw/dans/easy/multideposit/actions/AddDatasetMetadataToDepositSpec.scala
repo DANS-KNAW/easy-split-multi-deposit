@@ -68,7 +68,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/"
   xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/"
   xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/"
-  xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.knaw.nl/schemas/md/2012/11/ddm.xsd">
+  xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.knaw.nl/schemas/md/2017/ddm.xsd">
     <ddm:profile>
       <dc:title>dataset title</dc:title>
       <dcterms:description>omschr1</dcterms:description>
