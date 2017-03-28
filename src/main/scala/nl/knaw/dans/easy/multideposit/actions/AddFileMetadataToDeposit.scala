@@ -87,19 +87,21 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
   }
 
   private def datasetToFileXml: Try[Elem] = {
-    mimetypeMap
-      .map(_.map {
-        case (file, mimetype) =>
-          val filepath = multiDepositDir(datasetID).toPath.relativize(file.toPath).toFile
-          pathXml(filepath, mimetype)
-      })
-      .map {
-        case Nil => <files xmlns:dcterms="http://purl.org/dc/terms/"/>
-        case files =>
-          // @formatter:off
-          <files xmlns:dcterms="http://purl.org/dc/terms/">{files}</files>
-          // @formatter:on
-      }
+    mimetypeMap.map(fileXmls(_) match {
+      case Nil => <files xmlns:dcterms="http://purl.org/dc/terms/"/>
+      case files =>
+        // @formatter:off
+        <files xmlns:dcterms="http://purl.org/dc/terms/">{files}</files>
+        // @formatter:on
+    })
+  }
+
+  private def fileXmls(filesAndMimetypes: List[(File, String)]) = {
+    filesAndMimetypes.map {
+      case (file, mimetype) =>
+        val filepath = multiDepositDir(datasetID).toPath.relativize(file.toPath).toFile
+        pathXml(filepath, mimetype)
+    }
   }
 
   private def pathXml(filepath: File, mimetype: String): Elem = {
