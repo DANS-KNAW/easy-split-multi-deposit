@@ -78,7 +78,7 @@
         <dependency>
             <groupId>nl.knaw.dans.easy</groupId>
             <artifactId>ddm</artifactId>
-            <version>333.x-SNAPSHOT</version>
+            <version>3.0</version>
         </dependency>
 
         <!-- BagIt -->
