@@ -22,7 +22,7 @@ object Headers {
   val audioVideoHeaders = List("AV_FILE", "AV_FILE_TITLE", "AV_SUBTITLES", "AV_SUBTITLES_LANGUAGE")
   val administrativeHeaders = List("DEPOSITOR_ID")
 
-  val validHeaders: List[DatasetID] = {
+  val validHeaders: List[String] = {
     val ddmHeaders = List(
       profileFields,
       metadataFields,
