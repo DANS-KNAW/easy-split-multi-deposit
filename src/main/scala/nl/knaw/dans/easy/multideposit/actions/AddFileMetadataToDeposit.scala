@@ -32,7 +32,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
 
   // TODO @rvanheest move the mimetype computation to a separate action once the new
   // parameterized version of Action is installed?
-  lazy val mimetypeMap: Try[List[(File, String)]] = Try {
+  lazy val mimetypeMap: Try[List[(File, MimeType)]] = Try {
     val datasetDir = multiDepositDir(datasetID)
     if (datasetDir.exists()) {
       val files = datasetDir.listRecursively
@@ -54,7 +54,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
   override def checkPreconditions: Try[Unit] = {
     import validators._
 
-    def checkSFColumnsIfDatasetContainsAVFiles(mimetypes: List[(File, String)]): Try[Unit] = {
+    def checkSFColumnsIfDatasetContainsAVFiles(mimetypes: List[(File, MimeType)]): Try[Unit] = {
       val avFiles = mimetypes.filter {
         case (_, mimetype) => (mimetype startsWith "video") || (mimetype startsWith "audio")
       }
@@ -96,7 +96,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
     })
   }
 
-  private def fileXmls(filesAndMimetypes: List[(File, String)]) = {
+  private def fileXmls(filesAndMimetypes: List[(File, MimeType)]) = {
     filesAndMimetypes.map {
       case (file, mimetype) =>
         val filepath = multiDepositDir(datasetID).toPath.relativize(file.toPath).toFile
@@ -104,7 +104,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
     }
   }
 
-  private def pathXml(filepath: File, mimetype: String): Elem = {
+  private def pathXml(filepath: File, mimetype: MimeType): Elem = {
     // @formatter:off
     <file filepath={s"data/$filepath"}>
       <dcterms:format>{mimetype}</dcterms:format>
@@ -115,6 +115,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
 
 object AddFileMetadataToDeposit {
   private val tika = new Tika
+  type MimeType = String
 
   /**
    * Identify the mimeType of a file.
@@ -122,7 +123,7 @@ object AddFileMetadataToDeposit {
    * @param file the file to identify
    * @return the mimeType of the file if the identification was successful; `Failure` otherwise
    */
-  def getMimeType(file: File): Try[String] = Try {
+  def getMimeType(file: File): Try[MimeType] = Try {
     tika.detect(file)
   }
 }
