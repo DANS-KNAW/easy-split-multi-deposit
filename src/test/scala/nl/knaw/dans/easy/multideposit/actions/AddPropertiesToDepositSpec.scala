@@ -114,14 +114,13 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     val props = stagingPropertiesFile(datasetID)
     props should exist
 
-    val content = props.read()
-    content should include ("state.label")
-    content should include ("state.description")
-
-    content should include ("depositor.userId=dp1")
-
-    content should include ("datamanager.email=dm@test.org")
-    content should include ("datamanager.userId=dm")
+    props.read() should {
+      include("state.label") and
+        include("state.description") and
+        include("depositor.userId=dp1") and
+        include("datamanager.email=dm@test.org") and
+        include("datamanager.userId=dm")
+    }
   }
 
   it should "generate the properties file with springfield fields and write the properties in it" in {
@@ -130,17 +129,16 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     val props = stagingPropertiesFile(datasetID)
     props should exist
 
-    val content = props.read()
-    content should include ("state.label")
-    content should include ("state.description")
-
-    content should include ("depositor.userId=ruimtereiziger1")
-
-    content should include ("datamanager.email=dm@test.org")
-    content should include ("datamanager.userId=dm")
-    content should include ("springfield.domain=dans")
-    content should include ("springfield.user=janvanmansum")
-    content should include ("springfield.collection=Jans-test-files")
+    props.read() should {
+      include("state.label") and
+        include("state.description") and
+        include("depositor.userId=ruimtereiziger1") and
+        include("datamanager.email=dm@test.org") and
+        include("datamanager.userId=dm") and
+        include("springfield.domain=dans") and
+        include("springfield.user=janvanmansum") and
+        include("springfield.collection=Jans-test-files")
+    }
   }
 
   it should "generate the properties file without springfield fields whenever the springfield columns are empty" in {
@@ -154,16 +152,15 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     val props = stagingPropertiesFile(datasetID)
     props should exist
 
-    val content = props.read()
-    content should include ("state.label")
-    content should include ("state.description")
-
-    content should include ("depositor.userId=ruimtereiziger2")
-
-    content should include ("datamanager.email=dm@test.org")
-    content should include ("datamanager.userId=dm")
-    content should not include "springfield.domain"
-    content should not include "springfield.user"
-    content should not include "springfield.collection"
+    props.read() should {
+      include("state.label") and
+        include("state.description") and
+        include("depositor.userId=ruimtereiziger2") and
+        include("datamanager.email=dm@test.org") and
+        include("datamanager.userId=dm") and
+        not include "springfield.domain" and
+        not include "springfield.user" and
+        not include "springfield.collection"
+    }
   }
 }

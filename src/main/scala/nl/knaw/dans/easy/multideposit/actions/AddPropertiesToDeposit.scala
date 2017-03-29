@@ -108,7 +108,7 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
   }
 
   /**
-   * @return Retrieve the springfield data from the dataset iff the springfield data is present
+   * @return Retrieve the springfield data from the dataset if the springfield data is present
    */
   private def getSpringfieldData: Option[SpringfieldData] = {
     for {
