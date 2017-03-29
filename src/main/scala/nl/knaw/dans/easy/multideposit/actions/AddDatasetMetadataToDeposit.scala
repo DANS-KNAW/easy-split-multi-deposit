@@ -64,7 +64,7 @@ object AddDatasetMetadataToDeposit {
     List(
       checkColumnHasOnlyOneValue(row, dataset, "DDM_CREATED"),
       checkColumnHasOnlyOneValue(row, dataset, "DDM_ACCESSRIGHTS"),
-      checkColumnHasOnlyOneValue(row, dataset, "DDM_AVAILABLE"),
+      checkColumnHasAtMostOneValue(row, dataset, "DDM_AVAILABLE"),
       checkColumnsHaveAtMostOneRowWithValues(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
     )
   }
@@ -488,6 +488,20 @@ object validators {
         case _ => Failure(ActionException(row, s"More than one value is defined for $key"))
       }
       .getOrElse(Failure(ActionException(row, s"The column $key is not present in this instructions file")))
+  }
+
+  /**
+   * Check if a column in the dataset contains at most one non-blank value.
+   * If the column is not present, a `Success` is returned as well.
+   */
+  def checkColumnHasAtMostOneValue(row: Int, dataset: Dataset, key: String): Try[Unit] = {
+    dataset.get(key)
+      .map(_.filterNot(_.isBlank).size)
+      .map {
+        case 0 | 1 => Success(())
+        case _ => Failure(ActionException(row, s"More than one value is defined for $key"))
+      }
+      .getOrElse(Success(()))
   }
 
   def checkColumnsHaveAtMostOneRowWithValues(row: Int, dataset: Dataset, keys: String*): Try[Unit] = {

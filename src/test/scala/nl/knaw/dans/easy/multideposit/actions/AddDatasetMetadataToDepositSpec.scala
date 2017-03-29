@@ -111,8 +111,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   private def basicDataset: Dataset = mutable.HashMap(
     "DATASET" -> List(datasetID, datasetID),
     "DDM_CREATED" -> List("2017-07-30", ""),
-    "DDM_ACCESSRIGHTS" -> List("OPEN_ACCESS", ""),
-    "DDM_AVAILABLE" -> List("2017-07-31", ""))
+    "DDM_ACCESSRIGHTS" -> List("OPEN_ACCESS", ""))
 
  "checkPreconditions" should "succeed with correctly corresponding access rights and audience" in {
    val validDataset = basicDataset -= "DDM_ACCESSRIGHTS" ++= List(
@@ -471,7 +470,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "fail when the DDM_AVAILABLE column contains a wrong format" in {
-    val dataset = basicDataset -= "DDM_AVAILABLE" ++= List(
+    val dataset = basicDataset ++= List(
       "DDM_AVAILABLE" -> List("01-01-2017", "")
     )
     inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
@@ -481,30 +480,8 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       }
   }
 
-  it should "fail when the DDM_AVAILABLE column is not defined" in {
-    val dataset = basicDataset -= "DDM_AVAILABLE"
-
-    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
-      case Failure(CompositeException(es)) =>
-        val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "The column DDM_AVAILABLE is not present in this instructions file"
-    }
-  }
-
-  it should "fail when the DDM_AVAILABLE column contains no non-blank values" in {
-    val dataset = basicDataset -= "DDM_AVAILABLE" ++= List(
-      "DDM_AVAILABLE" -> List("  ", " ")
-    )
-
-    inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
-      case Failure(CompositeException(es)) =>
-        val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "No value defined for DDM_AVAILABLE"
-    }
-  }
-
   it should "fail when the DDM_AVAILABLE column contains multiple non-blank values" in {
-    val dataset = basicDataset -= "DDM_AVAILABLE" ++= List(
+    val dataset = basicDataset ++= List(
       "DDM_AVAILABLE" -> List("2017-07-30", "2016-07-30")
     )
 
@@ -516,14 +493,14 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "succeed when the DDM_AVAILABLE column contains only one non-blank value but also other blank values" in {
-    val dataset = basicDataset -= "DDM_AVAILABLE" ++= List(
+    val dataset = basicDataset ++= List(
       "DDM_AVAILABLE" -> List("    ", "2017-07-30")
     )
     new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
   it should "fail when the DDM_AVAILABLE column contains only one value that does not represent a date" in {
-    val dataset = basicDataset -= "DDM_AVAILABLE" ++= List(
+    val dataset = basicDataset ++= List(
       "DDM_AVAILABLE" -> List("foobar", "")
     )
     inside(new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
@@ -534,7 +511,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "succeed when the DDM_AVAILABLE column contains only one value with a different formatting" in {
-    val dataset = basicDataset -= "DDM_AVAILABLE" ++= List(
+    val dataset = basicDataset ++= List(
       "DDM_AVAILABLE" -> List("2017-07-30T09:00:34.921+02:00", "")
     )
     new AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
