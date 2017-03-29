@@ -15,6 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.io.File
+
+import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
@@ -38,7 +41,9 @@ case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(im
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-    (datasetRowValidations(row, dataset) ++ datasetColumnValidations(row, dataset))
+    (datasetRowValidations(row, dataset) ++
+      datasetColumnValidations(row, dataset) ++
+      datasetValidations(row, dataset))
       .collectResults
       .map(_ => ())
   }
@@ -47,21 +52,34 @@ case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(im
 }
 object AddDatasetMetadataToDeposit {
 
+  def datasetValidations(row: Int, dataset: Dataset): Seq[Try[Unit]] = {
+    import validators._
+    List(
+      checkDependendColumns(row, dataset, "AV_FILE", List("SF_COLLECTION", "SF_USER"))
+    )
+  }
+
   def datasetColumnValidations(row: Int, dataset: Dataset): Seq[Try[Unit]] = {
     import validators._
     List(
       checkColumnHasOnlyOneValue(row, dataset, "DDM_CREATED"),
+      checkColumnHasOnlyOneValue(row, dataset, "DDM_ACCESSRIGHTS"),
+      checkColumnHasOnlyOneValue(row, dataset, "DDM_AVAILABLE"),
       checkColumnsHaveAtMostOneRowWithValues(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
     )
   }
 
-  def datasetRowValidations(row: Int, dataset: Dataset): Seq[Try[Unit]] = {
+  def datasetRowValidations(row: Int, dataset: Dataset)(implicit settings: Settings): Seq[Try[Unit]] = {
     import validators._
     dataset.toRows.flatMap(rowVals => {
       List(
         // date created format
         checkDateFormatting(row, rowVals, "DDM_CREATED"),
         checkDateFormatting(row, rowVals, "DDM_AVAILABLE"),
+
+        // file path exists
+        checkFileExists(row, rowVals, "AV_FILE"),
+        checkFileExists(row, rowVals, "AV_SUBTITLES"),
 
         // only valid chars allowed
         checkValidChars(row, rowVals, "SF_COLLECTION"),
@@ -85,11 +103,16 @@ object AddDatasetMetadataToDeposit {
         checkRequiredWithGroup(row, rowVals,
           List("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME"),
           List("DCX_CONTRIBUTOR_TITLES", "DCX_CONTRIBUTOR_INSERTIONS", "DCX_CONTRIBUTOR_DAI")),
+        // if AV_FILE_TITLE and/or AV_SUBTITLES are given, AV_FILE must be present as well
+        checkRequiredWithGroup(row, rowVals, List("AV_FILE"), List("AV_FILE_TITLE", "AV_SUBTITLES", "AV_SUBTITLES_LANGUAGE")),
+        checkRequiredWithGroup(row, rowVals, List("AV_SUBTITLES"), List("AV_SUBTITLES_LANGUAGE")),
 
         // check allowed value(s)
         // scheme
         checkValueIsOneOf(row, rowVals, "DCT_TEMPORAL_SCHEME", "abr:ABRperiode"),
         checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", "abr:ABRcomplex"),
+        checkValueIsOneOf(row, rowVals, "DDM_ACCESSRIGHTS", AccessCategory.values().map(_.toString): _*),
+        checkValueIsOneOf(row, rowVals, "SF_ACCESSIBILITY", FileAccessRights.values.map(_.toString).toList: _*),
 
         checkAccessRights(row, rowVals),
 
@@ -123,7 +146,7 @@ object AddDatasetMetadataToDeposit {
       xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/"
       xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/"
       xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/"
-      xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.knaw.nl/schemas/md/2012/11/ddm.xsd">
+      xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.knaw.nl/schemas/md/2016/ddm.xsd">
       {createProfile(dataset)}
       {createMetadata(dataset)}
     </ddm:DDM>
@@ -474,6 +497,34 @@ object validators {
     }
   }
 
+  def checkColumnsAreNonEmpty(row: Int, dataset: Dataset, keys: String*): Try[Unit] = {
+    val nonExistentOrBlankColumns = keys.map(key => key -> dataset.get(key))
+      .filter { // filter the ones that are all blank or do not exist
+        case (_, Some(column)) => column.forall(_.isBlank)
+        case (_, None) => true
+      }
+      .map { case (key, _) => key }
+
+    nonExistentOrBlankColumns.size match {
+      case 0 => Success(())
+      case _ => Failure(ActionException(row, s"No values found for these columns: ${ nonExistentOrBlankColumns.mkString("[", ", ", "]") }"))
+    }
+  }
+
+  def checkColumnsAreEmpty(row: Int, dataset: Dataset, keys: String*): Try[Unit] = {
+    val existentOrNonBlankColumns = keys.map(key => key -> dataset.get(key))
+      .filter { // filter the ones that do exist or are all NOT blank
+        case (_, Some(column)) => column.exists(!_.isBlank)
+        case (_, None) => false
+      }
+      .map { case (key, _) => key }
+
+    existentOrNonBlankColumns.size match {
+      case 0 => Success(())
+      case _ => Failure(ActionException(row, s"Values found for these columns: ${ existentOrNonBlankColumns.mkString("[", ", ", "]") }"))
+    }
+  }
+
   def checkAccessRights(row: Int, datasetRow: DatasetRow): Try[Unit] = {
     (datasetRow.get("DDM_ACCESSRIGHTS"), datasetRow.get("DDM_AUDIENCE")) match {
       case (Some("GROUP_ACCESS"), Some("D37000")) => Success(Unit)
@@ -487,6 +538,36 @@ object validators {
     datasetRow.get(key)
       .map(date => Try { DateTime.parse(date) }.map(_ => ()).recoverWith {
         case _: IllegalArgumentException => Failure(ActionException(row, s"$key '$date' does not represent a date"))
+      })
+      .getOrElse(Success(()))
+  }
+
+  def checkFileExists(row: Int, datasetRow: DatasetRow, key: String)(implicit settings: Settings): Try[Unit] = {
+    datasetRow.get(key)
+      .map(path => Try { new File(settings.multidepositDir, path) }
+        .flatMap {
+          case file if file.exists() => Success(())
+          case _ => Failure(ActionException(row, s"$key '$path' does not exist"))
+        })
+      .getOrElse(Success(()))
+  }
+
+  /**
+   * If the column ''key'' contains non-blank values, the ''required'' columns must contain
+   * non-blank values as well
+   */
+  def checkDependendColumns(row: Int, dataset: Dataset, key: String, required: List[String]): Try[Unit] = {
+    dataset.get(key)
+      .filterNot(values => values.isEmpty || values.forall(_.isBlank))
+      .map(_ => {
+        val sfEmpty = required.filter(dataset.get(_)
+          .forall(values => values.isEmpty || values.forall(_.isBlank)))
+
+        if (sfEmpty.isEmpty)
+          Success(())
+        else
+          Failure(ActionException(row, s"The column $key contains values, but the column(s) " +
+            s"${ sfEmpty.mkString("[", ", ", "]") } do not"))
       })
       .getOrElse(Success(()))
   }

@@ -78,11 +78,7 @@ object MultiDepositParser extends DebugEnhancedLogging {
    */
   // TODO valid headers listing as sub-command???
   def validateDatasetHeaders(headers: List[String]): Try[Unit] = {
-    val fileHeaders = List("FILE_SIP", "FILE_DATASET", "FILE_AUDIO_VIDEO", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_SUBTITLES")
-    val springfieldHeaders = List("SF_DOMAIN", "SF_USER", "SF_COLLECTION", "SF_SUBTITLES")
-    val administrativeHeaders = List("DEPOSITOR_ID")
-
-    val validHeaders = "DATASET" :: fileHeaders ++ springfieldHeaders ++ administrativeHeaders ++ DDM.allFields
+    val validHeaders = Headers.validHeaders
     val invalidHeaders = headers.filterNot(validHeaders.contains)
     if (invalidHeaders.isEmpty) Success(Unit)
     else Failure(ActionException(0, s"SIP Instructions file contains unknown headers: ${invalidHeaders.mkString(", ")}. "

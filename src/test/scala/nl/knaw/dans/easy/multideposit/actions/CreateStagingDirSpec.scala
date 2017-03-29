@@ -30,8 +30,6 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAf
   )
   val datasetID = "ds1"
 
-  override def beforeAll: Unit = testDir.mkdirs
-
   before {
     // create depositDir base directory
     val baseDir = settings.stagingDir
@@ -45,8 +43,6 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAf
     baseDir.deleteDirectory()
     baseDir shouldNot exist
   }
-
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if the output directories do not yet exist" in {
     // directories do not exist before

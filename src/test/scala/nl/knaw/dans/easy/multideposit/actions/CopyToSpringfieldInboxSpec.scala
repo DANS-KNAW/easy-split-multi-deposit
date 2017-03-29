@@ -22,14 +22,12 @@ import org.scalatest.BeforeAndAfterAll
 
 import scala.util.{Failure, Success}
 
-class CopyToSpringfieldInboxSpec extends UnitSpec with BeforeAndAfterAll {
+class CopyToSpringfieldInboxSpec extends UnitSpec {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     springfieldInbox = new File(testDir, "springFieldInbox")
   )
-
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   def createFile(fileName: MultiDepositKey): Unit = {
     val file = multiDepositDir(fileName)

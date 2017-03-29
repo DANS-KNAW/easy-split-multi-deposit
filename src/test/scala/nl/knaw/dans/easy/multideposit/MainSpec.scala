@@ -29,28 +29,28 @@ class MainSpec extends UnitSpec {
     springfieldInbox = new File(testDir, "sfi")
   )
 
-  "extractFileParameters" should "only yield the FileParameters where not all fields are empty" in {
+  /*"extractFileParameters"*/ ignore should "only yield the FileParameters where not all fields are empty" in {
     extractFileParameters(testDataset1) should {
       have size 1 and contain theSameElementsInOrderAs testFileParameters1
     }
   }
 
-  it should "do the same for testDataset2" in {
+  ignore should "only yield the FileParameters where not all fields are empty in testDataset2" in {
     extractFileParameters(testDataset2) should {
       have size 3 and contain theSameElementsInOrderAs testFileParameters2
     }
   }
 
-  it should "return Nil when the dataset is empty" in {
+  ignore should "return Nil when the dataset is empty" in {
     extractFileParameters(new Dataset) shouldBe empty
   }
 
-  it should "return the fileParameters without row number when these are not supplied" in {
+  ignore should "return the fileParameters without row number when these are not supplied" in {
     val res = FileParameters(None, Option("videos/centaur.mpg"), Option("footage/centaur.mpg"), Option("http://zandbak11.dans.knaw.nl/webdav"), None, Option("Yes"))
     extractFileParameters(testDataset1 -= "ROW") should contain only res
   }
 
-  it should "return Nil when ALL extracted fields are removed from the dataset" in {
+  ignore should "return Nil when ALL extracted fields are removed from the dataset" in {
     val ds = new Dataset ++=
       testDataset1 --=
       List("ROW", "FILE_SIP", "FILE_DATASET", "FILE_STORAGE_SERVICE", "FILE_STORAGE_PATH", "FILE_AUDIO_VIDEO")
