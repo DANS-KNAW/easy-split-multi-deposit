@@ -24,7 +24,6 @@ import org.scalatest.BeforeAndAfterAll
 
 import scala.collection.mutable
 import scala.util.{ Failure, Success, Try }
-import scala.xml.transform.{ RewriteRule, RuleTransformer }
 import scala.xml._
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
@@ -1003,43 +1002,10 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     verify(datasetToXml(dataset), expectedXml)
   }
 
-<<<<<<< HEAD
-  it should "return the expected xml with streaming surrogate if it is an A/V dataset" in {
-    object XmlTransform extends RewriteRule {
-      override def transform(n: Node): Seq[Node] =
-        n match {
-          case Elem(prefix, "profile", attribs, scope, children @ _*) =>
-            Elem(prefix, "profile", attribs, scope, false, children ++
-              <ddm:relation scheme="STREAMING_SURROGATE_RELATION">
-                /domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$presentation-placeholder
-              </ddm:relation> :_*)
-          case other => other
-        }
-    }
-    val ds = dataset ++= List(
-      "SF_DOMAIN" -> List("randomdomainname"),
-      "SF_USER" -> List("randomusername"),
-      "SF_COLLECTION" -> List("randomcollectionname"))
-    val xml = new RuleTransformer(XmlTransform).transform(expectedXml)
-    xml should have size 1
-    verify(datasetToXml(ds), xml.head)
-  }
-
-  it should "return xml on reading from the sip-demo csv" in {
-    inside(toXml("/spacetravel/instructions.csv")) {
-      case Success(xmls) => xmls should have size 2
-    }
-  }
-
-  it should "return xml on reading from the sip001 csv" in {
-    inside(toXml("/sip001/instructions.csv")) {
-      case Success(xmls) => xmls should have size 2
-=======
   it should "return xml on reading from the allfields input instructions csv" in {
     val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
     inside(MultiDepositParser.parse(csv).map(_.map { case (_, ds) => datasetToXml(ds) })) {
       case Success(xmls) => xmls should have size 3
->>>>>>> master
     }
   }
 

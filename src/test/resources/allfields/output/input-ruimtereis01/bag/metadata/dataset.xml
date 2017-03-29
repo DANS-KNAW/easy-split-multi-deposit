@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ddm:DDM 
-xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.knaw.nl/schemas/md/2016/ddm.xsd" xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/" xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/" xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/" xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/" xmlns:dcx="http://easy.dans.knaw.nl/schemas/dcx/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dct="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/">
+xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd" xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/" xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/" xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/" xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/" xmlns:dcx="http://easy.dans.knaw.nl/schemas/dcx/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dct="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/">
   <ddm:profile>
     <dc:title>Reis naar Centaur-planetoïde</dc:title>
     <dc:title>Trip to Centaur asteroid</dc:title>
@@ -19,6 +19,9 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.kn
     <ddm:created>2015-05-19</ddm:created>
     <ddm:audience>D30000</ddm:audience>
     <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
+    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">
+      /domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$presentation-placeholder
+    </ddm:relation>
   </ddm:profile>
   <ddm:dcmiMetadata>
     <dcterms:publisher>dans</dcterms:publisher>
@@ -41,9 +44,6 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.kn
     <dcterms:replaces>dummy</dcterms:replaces>
     <dcterms:isRequiredBy>blabla</dcterms:isRequiredBy>
     <dc:relation>http://x</dc:relation>
-    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">
-      /domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$presentation-placeholder
-    </ddm:relation>
     <dcx-dai:contributorDetails>
       <dcx-dai:author>
         <dcx-dai:initials>A.S.</dcx-dai:initials>
@@ -73,8 +73,8 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.kn
     <dcx-gml:spatial>
       <boundedBy xmlns="http://www.opengis.net/gml">
         <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
-          <lowerCorner>1 3</lowerCorner>
-          <upperCorner>2 4</upperCorner>
+          <lowerCorner>4 2</lowerCorner>
+          <upperCorner>3 1</upperCorner>
         </Envelope>
       </boundedBy>
     </dcx-gml:spatial>
