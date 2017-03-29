@@ -19,7 +19,6 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
   </ddm:profile>
   <ddm:dcmiMetadata>
     <dcterms:rightsHolder>unknown person</dcterms:rightsHolder>
-    <ddm:available>2015-07-31</ddm:available>
     <dc:subject>empty space</dc:subject>
   </ddm:dcmiMetadata>
 </ddm:DDM>

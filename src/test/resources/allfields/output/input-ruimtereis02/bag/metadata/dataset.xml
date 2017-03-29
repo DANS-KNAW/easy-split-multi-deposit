@@ -44,7 +44,6 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dcterms:rightsHolder>richard</dcterms:rightsHolder>
     <dcterms:rightsHolder>joke</dcterms:rightsHolder>
     <dcterms:rightsHolder>vesa</dcterms:rightsHolder>
-    <ddm:available>2016-07-30</ddm:available>
     <dc:format>image/jpeg</dc:format>
     <dc:format>text/plain</dc:format>
     <dc:source>http://scholar.google.com</dc:source>
