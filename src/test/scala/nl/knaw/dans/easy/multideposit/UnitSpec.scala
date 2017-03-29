@@ -21,9 +21,19 @@ import org.scalatest._
 
 import scala.collection.mutable.ListBuffer
 
-abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest {
+abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest with BeforeAndAfterAll {
 
   val testDir = new File(s"target/test/${getClass.getSimpleName}")
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    testDir.mkdirs()
+  }
+
+  override def afterAll: Unit = {
+    super.beforeAll()
+    testDir.getParentFile.deleteDirectory()
+  }
 
   def testDataset1: Dataset = {
     val dataset = new Dataset
@@ -44,13 +54,11 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
     dataset += "SF_DOMAIN" -> List("dans", "", "")
     dataset += "SF_USER" -> List("janvanmansum", "", "")
     dataset += "SF_COLLECTION" -> List("Jans-test-files", "", "")
-    dataset += "SF_PRESENTATION" -> List("centaur", "", "")
-    dataset += "FILE_SIP" -> List("videos/centaur.mpg", "", "")
-    dataset += "FILE_DATASET" -> List("footage/centaur.mpg", "", "")
-    dataset += "FILE_STORAGE_SERVICE" -> List("http://zandbak11.dans.knaw.nl/webdav", "", "")
-    dataset += "FILE_STORAGE_PATH" -> List("", "", "")
-    dataset += "FILE_AUDIO_VIDEO" -> List("Yes", "", "")
-    dataset += "FILE_SUBTITLES" -> List("", "", "")
+    dataset += "AV_FILE" -> List("ruimtereis01/reisverslag/centaur.mpg", "", "")
+    dataset += "AV_FILE_TITLE" -> List("flyby of centaur", "", "")
+    dataset += "AV_SUBTITLES" -> List("ruimtereis01/reisverslag/centaur.srt", "", "")
+    dataset += "AV_SUBTITLES_LANGUAGE" -> List("en")
+    dataset += "DEPOSITOR_ID" -> List("ruimtereiziger1", "", "")
   }
 
   def testDataset2: Dataset = {
@@ -72,16 +80,7 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
     dataset += "DC_IDENTIFIER" -> List("id1234", "", "", "", "")
     dataset += "DC_SOURCE" -> List("", "", "", "", "")
     dataset += "DC_LANGUAGE" -> List("", "", "", "", "")
-    dataset += "SF_DOMAIN" -> List("dans", "", "", "", "")
-    dataset += "SF_USER" -> List("project1", "", "", "", "")
-    dataset += "SF_COLLECTION" -> List("coll1", "", "", "", "")
-    dataset += "SF_PRESENTATION" -> List("presentation1", "", "", "", "")
-    dataset += "FILE_SUBTITLES" -> List("", "", "", "", "")
-    dataset += "FILE_SIP" -> List("dataset-2/no-default-processing.txt", "dataset-2/some/dir/path/no-default-processing-2.txt", "videos/centaur.mpg", "", "")
-    dataset += "FILE_DATASET" -> List("some/other/dir/path/non-default-1.txt", "some/other/dir/path/non-default-2.txt", "", "", "")
-    dataset += "FILE_STORAGE_SERVICE" -> List("", "", "", "", "")
-    dataset += "FILE_STORAGE_PATH" -> List("", "", "", "", "")
-    dataset += "FILE_AUDIO_VIDEO" -> List("", "", "Yes", "", "")
+    dataset += "DEPOSITOR_ID" -> List("ruimtereiziger2", "", "")
   }
 
   def testDatasets: Datasets = ListBuffer(("dataset-1", testDataset1), ("dataset-2", testDataset2))
@@ -92,9 +91,9 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
   }
 
   def testFileParameters2: List[FileParameters] = {
-    FileParameters(Some(2), Some("dataset-2/no-default-processing.txt"), Some("some/other/dir/path/non-default-1.txt"), None, None, None) ::
-    FileParameters(Some(3), Some("dataset-2/some/dir/path/no-default-processing-2.txt"), Some("some/other/dir/path/non-default-2.txt"), None, None, None) ::
-    FileParameters(Some(4), Some("videos/centaur.mpg"), None, None, None, Some("Yes")) ::
+//    FileParameters(Some(2), Some("dataset-2/no-default-processing.txt"), Some("some/other/dir/path/non-default-1.txt"), None, None, None) ::
+//    FileParameters(Some(3), Some("dataset-2/some/dir/path/no-default-processing-2.txt"), Some("some/other/dir/path/non-default-2.txt"), None, None, None) ::
+//    FileParameters(Some(4), Some("videos/centaur.mpg"), None, None, None, Some("Yes")) ::
     Nil
   }
 }

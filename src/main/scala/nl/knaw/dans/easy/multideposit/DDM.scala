@@ -67,7 +67,6 @@ object DDM {
       "DCX_SPATIAL_EAST" -> "",
       "DCX_SPATIAL_WEST" -> "")
 
-  // TODO not sure about the values of this Dictionary
   val composedRelationFields: Dictionary =
     Map("DCX_RELATION_QUALIFIER" -> "",
       "DCX_RELATION_TITLE" -> "",
@@ -82,8 +81,4 @@ object DDM {
       "DC_SUBJECT_SCHEME" -> "")
 
   val organizationKeys = Set("DCX_CREATOR_ORGANIZATION", "DCX_CONTRIBUTOR_ORGANIZATION")
-
-  val allFields: List[DatasetID] = "ROW" :: "DATASET" ::
-    List(profileFields, metadataFields, composedCreatorFields, composedContributorFields, composedSpatialPointFields, composedSpatialBoxFields, composedRelationFields, composedTemporalFields, composedSubjectFields)
-      .flatMap(_.keySet)
 }

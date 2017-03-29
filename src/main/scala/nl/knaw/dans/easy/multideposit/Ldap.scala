@@ -39,10 +39,8 @@ case class LdapImpl(ctx: LdapContext) extends Ldap {
 
   def query[T](depositorID: String)(f: Attributes => T): Try[Seq[T]] = Try {
     val searchFilter = s"(&(objectClass=easyUser)(uid=$depositorID))"
-    val searchControls = {
-      val sc = new SearchControls()
-      sc.setSearchScope(SearchControls.SUBTREE_SCOPE)
-      sc
+    val searchControls = new SearchControls() {
+      setSearchScope(SearchControls.SUBTREE_SCOPE)
     }
 
     ctx.search("dc=dans,dc=knaw,dc=nl", searchFilter, searchControls)

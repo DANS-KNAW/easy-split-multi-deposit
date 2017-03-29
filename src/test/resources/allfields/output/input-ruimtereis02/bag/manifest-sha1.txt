@@ -1,0 +1,4 @@
+8b83492027fcf56812311db8282d4ef6398988a5  data/path/to/images/Hubble_01.jpg
+3b933e486bba548a8e2138d3ef32f338f52b1cbc  data/path/to/images/Hubbleshots.jpg
+bcdbec82bae7c880279b58a3be365a09723149cc  data/hubble-wiki-en.txt
+06105b5c00b2309fd1187c91fb48dcc61a94829d  data/hubble-wiki-nl.txt

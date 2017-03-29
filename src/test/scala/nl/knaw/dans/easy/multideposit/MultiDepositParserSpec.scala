@@ -24,9 +24,7 @@ import org.scalatest.BeforeAndAfterAll
 import scala.collection.mutable.ListBuffer
 import scala.util.{ Failure, Success }
 
-class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
-
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
+class MultiDepositParserSpec extends UnitSpec {
 
   "validateDatasetHeaders" should "succeed when given an empty list" in {
     val headers = Nil
@@ -35,13 +33,13 @@ class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "succeed when given a subset of the valid headers" in {
-    val headers = List("DATASET", "FILE_STORAGE_PATH")
+    val headers = List("DATASET", "AV_FILE_TITLE")
 
     validateDatasetHeaders(headers) shouldBe a[Success[_]]
   }
 
   it should "fail when the input contains invalid headers" in {
-    val headers = List("FILE_SIP", "dataset")
+    val headers = List("dataset", "AV_FILE_TITLE") // note, dataset should be capatilized
 
     val validate = validateDatasetHeaders(headers)
 
@@ -63,7 +61,7 @@ class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
 
   it should "fail without DATASET in instructions file?" in {
     val csv = new File(testDir, "instructions.csv")
-    csv.write("SF_COLLECTION,FILE_AUDIO_VIDEO\nx,y")
+    csv.write("SF_COLLECTION,AV_FILE_TITLE\nx,y")
 
     inside(parse(csv)) {
       case Failure(e) => e.getMessage should include ("No dataset ID found")
@@ -72,22 +70,22 @@ class MultiDepositParserSpec extends UnitSpec with BeforeAndAfterAll {
 
   it should "not complain about an invalid combination in instructions file?" in {
     val csv = new File(testDir, "instructions.csv")
-    csv.write("DATASET,FILE_SIP\ndataset1,x\ndataset1,y")
+    csv.write("DATASET,AV_FILE_TITLE\ndataset1,x\ndataset1,y")
 
     inside(parse(csv)) {
       case Success(ListBuffer((id, ds))) =>
         id shouldBe "dataset1"
         ds should contain ("ROW" -> List("2", "3"))
         ds should contain ("DATASET" -> List("dataset1", "dataset1"))
-        ds should contain ("FILE_SIP" -> List("x", "y"))
+        ds should contain ("AV_FILE_TITLE" -> List("x", "y"))
     }
   }
 
-  it should "succeed with Roundtrip_MD/spacetravel" in {
-    val csv = new File(getClass.getResource("/spacetravel/instructions.csv").toURI)
+  it should "succeed with allfields/input/spacetravel" in {
+    val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
 
     inside(parse(csv).map(_.map(_._1))) {
-      case Success(ids) => ids should contain allOf ("ruimtereis01", "ruimtereis02")
+      case Success(ids) => ids should contain allOf ("ruimtereis01", "ruimtereis02", "ruimtereis03")
     }
   }
 

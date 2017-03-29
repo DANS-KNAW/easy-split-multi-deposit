@@ -1,4 +1,4 @@
-DATASET,DDM_CREATED,DC_TITLE,DC_DESCRIPTION,DDM_AUDIENCE,DDM_ACCESSRIGHTS,DCX_CREATOR_TITLES,DCX_CREATOR_INITIALS,DCX_CREATOR_SURNAME,DCX_CREATOR_ORGANIZATION,DC_SUBJECT,DC_FORMAT,DC_LANGUAGE,SF_DOMAIN,SF_USER,SF_COLLECTION,FILE_SIP,FILE_DATASET,FILE_STORAGE_SERVICE,FILE_STORAGE_PATH,FILE_AUDIO_VIDEO,FILE_SUBTITLES
-ruimtereis01,2015-05-19,Reis naar Centaur-planetoïde,Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.,D30000,OPEN_ACCESS,Captain,J.T.,Kirk,United Federation of Planets,astronomie,video/mpeg,NL,dans,janvanmansum,Jans-test-files,videos/centaur.mpg,footage/centaur.mpg,http://zandbak11.dans.knaw.nl/webdav,,Yes,
-ruimtereis01,,Trip to Centaur asteroid,A two day mission to boldly go where no man has gone before,,,,,,,ruimtevaart,text/plain,encoding=UTF-8,,,,,,,,,
-ruimtereis01,,,,,,,,,,planetoïden,,,,,,,,,,,
+DATASET,DDM_CREATED,DC_TITLE,DC_DESCRIPTION,DDM_AUDIENCE,DDM_ACCESSRIGHTS,DCX_CREATOR_TITLES,DCX_CREATOR_INITIALS,DCX_CREATOR_SURNAME,DCX_CREATOR_ORGANIZATION,DC_SUBJECT,DC_FORMAT,DC_LANGUAGE,SF_DOMAIN,SF_USER,SF_COLLECTION,AV_FILE
+ruimtereis01,2015-05-19,Reis naar Centaur-planetoïde,Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.,D30000,OPEN_ACCESS,Captain,J.T.,Kirk,United Federation of Planets,astronomie,video/mpeg,NL,dans,janvanmansum,Jans-test-files,videos/centaur.mpg
+ruimtereis01,,Trip to Centaur asteroid,A two day mission to boldly go where no man has gone before,,,,,,,ruimtevaart,text/plain,encoding=UTF-8,,,,
+ruimtereis01,,,,,,,,,,planetoïden,,,,,

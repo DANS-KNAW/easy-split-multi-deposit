@@ -18,25 +18,22 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.{ File, FileNotFoundException }
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
+import org.scalatest.BeforeAndAfter
 
 import scala.collection.mutable
 import scala.util.{ Failure, Success }
-import scala.xml.Utility
+import scala.xml.{ Utility, XML }
 
-class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
+class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),
     stagingDir = new File(testDir, "sd")
   )
   val datasetID = "ruimtereis01"
-  val dataset = mutable.HashMap(
-    "DATASET" -> List(datasetID, datasetID),
-    "FILE_SIP" -> List("ruimtereis01/reisverslag/deel01.txt", "")
-  )
+
   before {
-    new File(getClass.getResource("/spacetravel").toURI)
+    new File(getClass.getResource("/allfields/input").toURI)
       .copyDir(settings.multidepositDir)
     new File(getClass.getResource("/mimetypes").toURI)
       .copyDir(new File(testDir, "mimetypes"))
@@ -46,24 +43,155 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
     settings.stagingDir.deleteDirectory()
   }
 
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
-
-  "preconditions check with existing SIP files" should "succeed" in {
+  "checkPreconditions" should "succeed if the dataset contains the SF_* fields in case a A/V file is found" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", "")
+    )
     new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
   }
 
-  "preconditions check with non-existing SIP files" should "fail" in {
-    val invalidDataset = mutable.HashMap(
-      "DATASET" -> List(datasetID, datasetID, datasetID),
-      "FILE_SIP" -> List("ruimtereis01/reisverslag/deel01.txt", "", "non-existing-file-path")
+  it should "succeed if the dataset does not contain the SF_DOMAIN (which is optional)" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", "")
     )
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
 
-    inside(new AddFileMetadataToDeposit(1, (datasetID, invalidDataset)).checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include(s"""for dataset "$datasetID": [non-existing-file-path]""")
+  it should "succeed if the dataset only contains empty values for the SF_DOMAIN (which is optional)" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "SF_DOMAIN" -> List("", ""),
+      "SF_USER" -> List("user", ""),
+      "SF_COLLECTION" -> List("collection", "")
+    )
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail if the dataset contains A/V files but the SF_* fields are all blank" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "SF_DOMAIN" -> List("", ""),
+      "SF_USER" -> List("", ""),
+      "SF_COLLECTION" -> List("", "")
+    )
+    inside(new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) =>
+        message should {
+          include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
+            include("reisverslag/centaur.mpg") and
+            include("path/to/a/random/video/hubble.mpg") and
+            include("path/to/a/random/sound/chicken.mp3")
+        }
     }
   }
 
+  it should "fail if the dataset contains A/V files but the SF_* fields are not all non-blank" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "SF_DOMAIN" -> List("domain", ""),
+      "SF_USER" -> List("", ""),
+      "SF_COLLECTION" -> List("", "")
+    )
+    inside(new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) =>
+        message should {
+          include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
+            include("reisverslag/centaur.mpg") and
+            include("path/to/a/random/video/hubble.mpg") and
+            include("path/to/a/random/sound/chicken.mp3")
+        }
+    }
+  }
+
+  it should "fail if the dataset contains A/V files but the SF_* fields are not present" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID)
+    )
+    inside(new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) =>
+        message should {
+          include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
+            include("reisverslag/centaur.mpg") and
+            include("path/to/a/random/video/hubble.mpg") and
+            include("path/to/a/random/sound/chicken.mp3")
+        }
+    }
+  }
+
+  it should "fail if the dataset contains A/V files but the SF_* fields are not all present" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_COLLECTION" -> List("collection", "")
+    )
+    inside(new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) =>
+        message should {
+          include("No values found for these columns: [SF_USER]") and
+            include("reisverslag/centaur.mpg") and
+            include("path/to/a/random/video/hubble.mpg") and
+            include("path/to/a/random/sound/chicken.mp3")
+        }
+    }
+  }
+
+  it should "succeed if the dataset contains no A/V files and the SF_* fields are not present" in {
+    val datasetID = "ruimtereis02"
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", "")
+    )
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "fail if the dataset contains no A/V files and any of the SF_* fields are present" in {
+    val datasetID = "ruimtereis02"
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_COLLECTION" -> List("collection", "")
+    )
+    inside(new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) =>
+        message should {
+          include("Values found for these columns: [SF_COLLECTION]") and
+            include("these columns should be empty because there are no audio/video")
+        }
+    }
+  }
+
+  it should "fail if the dataset contains no A/V files and all SF_* fields are present but only contain empty values" in {
+    val datasetID = "ruimtereis02"
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", ""),
+      "SF_DOMAIN" -> List("", ""),
+      "SF_USER" -> List("", ""),
+      "SF_COLLECTION" -> List("", "")
+    )
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
+  it should "create an empty list of mimetypes if the dataset directory corresponding with the datasetId does not exist" in {
+    val datasetID = "ruimtereis03"
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "DDM_CREATED" -> List("2017-07-30", "")
+    )
+    multiDepositDir(datasetID) should not (exist)
+    new AddFileMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
+  }
+
   "execute" should "write the file metadata to an xml file" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "AV_FILE" -> List("ruimtereis01/reisverslag/centaur.mpg", "")
+    )
     val action = new AddFileMetadataToDeposit(1, (datasetID, dataset))
     val metadataDir = stagingBagMetadataDir(datasetID)
 
@@ -73,33 +201,29 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
     stagingFileMetadataFile(datasetID) should exist
   }
 
-  "datasetToFileXml" should "produce the xml for all the files" in {
-    inside(AddFileMetadataToDeposit.datasetToFileXml("ruimtereis01")) {
-      case Success(xml) => xml.child.map(Utility.trim) should (
-        have length 5 and
-          contain allOf(
-          <file filepath="data/ruimtereis01_verklaring.txt"><dcterms:format>text/plain</dcterms:format></file>,
-          <file filepath="data/reisverslag/deel01.docx"><dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format></file>,
-          <file filepath="data/reisverslag/deel01.txt"><dcterms:format>text/plain</dcterms:format></file>,
-          <file filepath="data/reisverslag/deel02.txt"><dcterms:format>text/plain</dcterms:format></file>,
-          <file filepath="data/reisverslag/deel03.txt"><dcterms:format>text/plain</dcterms:format></file>
-        ))
-    }
-  }
+  it should "produce the xml for all the files" in {
+    val dataset = mutable.HashMap(
+      "DATASET" -> List(datasetID, datasetID),
+      "AV_FILE" -> List("ruimtereis01/reisverslag/centaur.mpg", "")
+    )
+    AddFileMetadataToDeposit(1, (datasetID, dataset)).execute() shouldBe a[Success[_]]
 
-  "xmlPerPath" should "create the correct filepath " in {
-    val res = <file filepath="data/ruimtereis01_verklaring.txt">
-      <dcterms:format>text/plain</dcterms:format>
-    </file>
-
-    inside(AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "ruimtereis01_verklaring.txt"))) {
-      case Success(xml) => Utility.trim(xml) shouldBe Utility.trim(res)
-    }
-  }
-
-  it should "fail if the file does not exist" in {
-    inside(AddFileMetadataToDeposit.xmlPerPath(multiDepositDir(datasetID))(new File(multiDepositDir(datasetID), "reisverslag/deel01.doc"))) {
-      case Failure(e: FileNotFoundException) => e.getMessage should include ("reisverslag/deel01.doc")
+    Utility.trim(XML.loadFile(stagingFileMetadataFile(datasetID)))
+      .child
+      .map(node => (node \@ "filepath", node.child.filter(_.label == "format").head.text)) should {
+      have length 10 and
+        contain allOf(
+        ("data/ruimtereis01_verklaring.txt", "text/plain"),
+        ("data/reisverslag/deel01.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+        ("data/reisverslag/deel01.txt", "text/plain"),
+        ("data/reisverslag/deel02.txt", "text/plain"),
+        ("data/reisverslag/deel03.txt", "text/plain"),
+        ("data/path/to/a/random/video/hubble.mpg", "video/mpeg"),
+        ("data/path/to/a/random/sound/chicken.mp3", "audio/mpeg"),
+        ("data/reisverslag/centaur.mpg", "video/mpeg"),
+        ("data/reisverslag/centaur.srt", "text/plain"),
+        ("data/reisverslag/centaur-nederlands.srt", "text/plain")
+      )
     }
   }
 
@@ -160,6 +284,12 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Bef
   it should "give the correct mimetype if the file is hidden" in {
     inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/.file-hidden-pdf"))) {
       case Success(mimetype) => mimetype shouldBe "application/pdf"
+    }
+  }
+
+  it should "fail if the file does not exist" in {
+    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-does-not-exist.doc"))) {
+      case Failure(e: FileNotFoundException) => e.getMessage should include ("mimetypes/file-does-not-exist.doc")
     }
   }
 }
