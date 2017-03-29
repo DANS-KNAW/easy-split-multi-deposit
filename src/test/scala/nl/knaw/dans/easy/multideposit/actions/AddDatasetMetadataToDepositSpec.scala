@@ -52,7 +52,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     "DC_TYPE" -> List("random test data", "", "", "") +=
     "DC_SOURCE" -> List("", "", "", "") +=
     "DDM_ACCESSRIGHTS" -> List("NONE", "", "", "") +=
-    "DDM_AVAILABLE" -> List("nope", "", "", "") +=
+    "DDM_AVAILABLE" -> List("1992-07-31", "", "", "") +=
     "DDM_AUDIENCE" -> List("everyone", "nobody", "some people", "people with yellow hear")
 
   val expectedXml: Elem = <ddm:DDM
@@ -87,6 +87,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         </dcx-dai:organization>
       </dcx-dai:creatorDetails>
       <ddm:created>1992-07-30</ddm:created>
+      <ddm:available>1992-07-31</ddm:available>
       <ddm:audience>everyone</ddm:audience>
       <ddm:audience>nobody</ddm:audience>
       <ddm:audience>some people</ddm:audience>
@@ -94,7 +95,6 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       <ddm:accessRights>NONE</ddm:accessRights>
     </ddm:profile>
     <ddm:dcmiMetadata>
-      <ddm:available>nope</ddm:available>
       <dcterms:alternative>foobar</dcterms:alternative>
       <dcterms:type>random test data</dcterms:type>
     </ddm:dcmiMetadata>
