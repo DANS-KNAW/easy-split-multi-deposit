@@ -24,7 +24,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import scala.collection.mutable
 import scala.util.{ Failure, Success, Try }
-import scala.xml._
+import scala.xml.{ Elem, Node, Utility }
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
@@ -1162,17 +1162,17 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
   }
 
-  "createProfile" should "return the expected streaming surrogate relation" in {
+  it should "return the expected streaming surrogate relation" in {
     val dataset = new Dataset() +=
       "SF_DOMAIN" -> List("randomdomainname") +=
       "SF_USER" -> List("randomusername") +=
       "SF_COLLECTION" -> List("randomcollectionname")
     val expectedXml = <ddm>
-      <ddm:profile>
+      <ddm:dcmiMetadata>
         <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$presentation-placeholder</ddm:relation>
-      </ddm:profile>
+      </ddm:dcmiMetadata>
     </ddm>
-    verify(<ddm>{AddDatasetMetadataToDeposit.createProfile(dataset)}</ddm>, expectedXml)
+    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
   }
 
   def verify(actualXml: Node, expectedXml: Node): Unit = {

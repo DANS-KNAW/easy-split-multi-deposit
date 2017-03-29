@@ -19,9 +19,6 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <ddm:created>2015-05-19</ddm:created>
     <ddm:audience>D30000</ddm:audience>
     <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
-    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">
-      /domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$presentation-placeholder
-    </ddm:relation>
   </ddm:profile>
   <ddm:dcmiMetadata>
     <dcterms:publisher>dans</dcterms:publisher>
@@ -44,6 +41,9 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dcterms:replaces>dummy</dcterms:replaces>
     <dcterms:isRequiredBy>blabla</dcterms:isRequiredBy>
     <dc:relation>http://x</dc:relation>
+    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">
+      /domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$presentation-placeholder
+    </ddm:relation>
     <dcx-dai:contributorDetails>
       <dcx-dai:author>
         <dcx-dai:initials>A.S.</dcx-dai:initials>
