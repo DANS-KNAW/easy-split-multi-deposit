@@ -120,9 +120,13 @@ a audio or video presentation contained in the dataset:
 * `SF_ACCESSIBILITY` provides a way to override the file-accessibility from the default
    `DDM_ACCESSRIGHTS` for all A/V file.
 * The columns `AV_FILE`, `AV_FILE_TITLE`, `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` are used to
-  provide metadata specific to audio/video files. For a path to a A/V file in `AV_FILE`, the user
-  can specify the a title in `AV_FILE_TITLE` and one or more combinations of subtitles and the
-  corresponding language tag in `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` respectively.
+  provide extra metadata specific to audio/video files. For a path to a A/V file in `AV_FILE`,
+  the user can specify the a title in `AV_FILE_TITLE` and one or more combinations of subtitles
+  and the corresponding language tag in `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` respectively.
+* The information found in the `AV_*` columns is put into `files.xml` to better describe the file
+  at hand. The `AV_FILE_TITLE` relation is put inside a `dcterms:title` element; the `AV_SUBTITLE`
+  and `AV_SUBTITLE_LANGUAGE` are declared in a `dcterms:relation` and its `xml:lang` attribute
+  respectively.
 
 
 3. File Processing Instructions

@@ -63,6 +63,8 @@ object AddDatasetMetadataToDeposit {
     import validators._
     List(
       checkColumnHasOnlyOneValue(row, dataset, "DDM_CREATED"),
+      checkColumnHasOnlyOneValue(row, dataset, "DDM_ACCESSRIGHTS"),
+      checkColumnHasOnlyOneValue(row, dataset, "DDM_AVAILABLE"),
       checkColumnsHaveAtMostOneRowWithValues(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
     )
   }

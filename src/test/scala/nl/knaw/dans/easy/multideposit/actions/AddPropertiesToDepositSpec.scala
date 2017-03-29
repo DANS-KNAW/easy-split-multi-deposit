@@ -114,14 +114,54 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     val props = stagingPropertiesFile(datasetID)
     props should exist
 
-    val content = props.read()
-    content should include ("state.label")
-    content should include ("state.description")
+    props.read() should {
+      include("state.label") and
+        include("state.description") and
+        include("depositor.userId=dp1") and
+        include("datamanager.email=dm@test.org") and
+        include("datamanager.userId=dm")
+    }
+  }
 
-    content should include ("depositor.userId=dp1")
+  it should "generate the properties file with springfield fields and write the properties in it" in {
+    AddPropertiesToDeposit(1, (datasetID, testDataset1)).execute("dm@test.org") shouldBe a[Success[_]]
 
-    content should include ("datamanager.email=dm@test.org")
-    content should include ("datamanager.userId=dm")
+    val props = stagingPropertiesFile(datasetID)
+    props should exist
+
+    props.read() should {
+      include("state.label") and
+        include("state.description") and
+        include("depositor.userId=ruimtereiziger1") and
+        include("datamanager.email=dm@test.org") and
+        include("datamanager.userId=dm") and
+        include("springfield.domain=dans") and
+        include("springfield.user=janvanmansum") and
+        include("springfield.collection=Jans-test-files")
+    }
+  }
+
+  it should "generate the properties file without springfield fields whenever the springfield columns are empty" in {
+    val dataset = testDataset2 ++= Map(
+      "SF_DOMAIN" -> List.fill(5)(""),
+      "SF_USER" -> List.fill(5)(""),
+      "SF_COLLECTION" -> List.fill(5)("")
+    )
+    AddPropertiesToDeposit(1, (datasetID, dataset)).execute("dm@test.org") shouldBe a[Success[_]]
+
+    val props = stagingPropertiesFile(datasetID)
+    props should exist
+
+    props.read() should {
+      include("state.label") and
+        include("state.description") and
+        include("depositor.userId=ruimtereiziger2") and
+        include("datamanager.email=dm@test.org") and
+        include("datamanager.userId=dm") and
+        not include "springfield.domain" and
+        not include "springfield.user" and
+        not include "springfield.collection"
+    }
   }
 
   it should "generate the properties file with springfield fields and write the properties in it" in {

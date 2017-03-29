@@ -96,7 +96,7 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
     })
   }
 
-  private def fileXmls(filesAndMimetypes: List[(File, MimeType)]) = {
+  private def fileXmls(filesAndMimetypes: List[(File, MimeType)]): Seq[Elem] = {
     filesAndMimetypes.map {
       case (file, mimetype) =>
         val filepath = multiDepositDir(datasetID).toPath.relativize(file.toPath).toFile
