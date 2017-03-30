@@ -71,7 +71,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
     generated should {
       include("subtitles=\"videos/some.txt\"") and
         include("src=\"videos/some.mpg\"") and
-        include("target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder\"")
+        include("target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/$sdo-id\"")
     }
   }
 
@@ -86,7 +86,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
     generated should {
       include("subtitles=\"videos/some.txt\"") and
         include("src=\"videos/some.mpg\"") and
-        include("target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder\"")
+        include("target=\"/domain/dans/user/someDeveloper/collection/scala/presentation/$sdo-id\"")
     }
   }
 
@@ -98,7 +98,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
     toXML(datasets()).map(_.get).map(Utility.trim).value shouldBe
       Utility.trim {
         <actions>
-          <add target="/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder">
+          <add target="/domain/dans/user/someDeveloper/collection/scala/presentation/$sdo-id">
             <video src="videos/some.mpg" target="0" subtitles="videos/some.txt"/>
           </add>
         </actions>
@@ -155,7 +155,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
   it should "return a filled map when given the correct input with a single row in the dataset" in {
     extractVideos(testDataset) should {
       have size 1 and
-        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder" ->
+        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/$sdo-id" ->
           List(Video("0", Some("videos/some.mpg"), Some("videos/some.txt"))))
     }
   }
@@ -175,7 +175,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
 
     extractVideos(testDataset2) should {
       have size 1 and
-        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder" ->
+        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/$sdo-id" ->
           List(Video("0", Some("videos/some.mpg"), Some("videos/some.txt"))))
     }
   }
@@ -194,7 +194,7 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
 
     extractVideos(testDataset3) should {
       have size 1 and
-        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder" ->
+        contain("/domain/dans/user/someDeveloper/collection/scala/presentation/$sdo-id" ->
           List(Video("0", Some("videos/some.mpg"), Some("videos/some.txt")),
             Video("1", Some("audio/herrie.mp3"), None)))
     }
@@ -221,6 +221,6 @@ class CreateSpringfieldActionsSpec extends UnitSpec {
   }
 
   it should "yield the path when given a correct dataset" in {
-    getSpringfieldPath(testDataset, 0).value shouldBe "/domain/dans/user/someDeveloper/collection/scala/presentation/$presentation-placeholder"
+    getSpringfieldPath(testDataset, 0).value shouldBe "/domain/dans/user/someDeveloper/collection/scala/presentation/$sdo-id"
   }
 }

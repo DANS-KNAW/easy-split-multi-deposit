@@ -85,7 +85,7 @@ object CreateSpringfieldActions {
       domain <- dataset.getValue("SF_DOMAIN")(i)
       user <- dataset.getValue("SF_USER")(i)
       collection <- dataset.getValue("SF_COLLECTION")(i)
-    } yield s"/domain/$domain/user/$user/collection/$collection/presentation/$$presentation-placeholder"
+    } yield s"/domain/$domain/user/$user/collection/$collection/presentation/$$sdo-id"
   }
 
   def createAddElement(target: SpringfieldPath, videos: List[Video]): Try[Elem] = {
