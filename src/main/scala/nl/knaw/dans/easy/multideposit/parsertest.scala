@@ -50,10 +50,10 @@ object parsertest extends App {
                      descriptions: List[String],
                      creators: List[Creator],
                      created: DateTime,
+                     available: DateTime = DateTime.now(),
                      audiences: List[String], // or List[enum values]?
                      accessright: List[AccessCategory]) // only one allowed? not yet in validation
-  case class Metadata(available: DateTime, // only one allowed? not yet in validation
-                      alternatives: List[String],
+  case class Metadata(alternatives: List[String],
                       publishers: List[String],
                       types: List[String],
                       formats: List[String],
