@@ -15,15 +15,15 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.{util => ju}
-import java.util.{Collections, Properties}
+import java.{ util => ju }
+import java.util.{ Collections, Properties, UUID }
 
-import nl.knaw.dans.easy.multideposit.{Action, Settings, _}
+import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
 import resource._
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends Action[DatamanagerEmailaddress, Unit] {
 
@@ -85,6 +85,7 @@ case class AddPropertiesToDeposit(row: Int, entry: (DatasetID, Dataset))(implici
   private def addProperties(properties: Properties, depositorUserID: String, datamanager: String, emailaddress: DatamanagerEmailaddress): Unit = {
     val sf = getSpringfieldData
     val props: Map[String, Option[String]] = Map(
+      "bag-store.bag-id" -> Some(UUID.randomUUID().toString),
       "state.label" -> Some("SUBMITTED"),
       "state.description" -> Some("Deposit is valid and ready for post-submission processing"),
       "depositor.userId" -> Some(depositorUserID),

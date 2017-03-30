@@ -137,7 +137,8 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
         include("datamanager.userId=dm") and
         include("springfield.domain=dans") and
         include("springfield.user=janvanmansum") and
-        include("springfield.collection=Jans-test-files")
+        include("springfield.collection=Jans-test-files") and
+        include regex "bag-store.bag-id=[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"
     }
   }
 
@@ -160,7 +161,8 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
         include("datamanager.userId=dm") and
         not include "springfield.domain" and
         not include "springfield.user" and
-        not include "springfield.collection"
+        not include "springfield.collection" and
+        include regex "bag-store.bag-id=[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"
     }
   }
 

@@ -112,7 +112,7 @@ a audio or video presentation contained in the dataset:
   is marked as having the `STREAMING_SURROGATE_RELATION` scheme and contains the
   URL of the Streaming Surrogate in Springfield. These fields may only be used if
   all of them are specified. Since the `SF_PRESENTATION` is not yet defined at this point in time,
-  a placeholder called '_$presentation-placeholder_' is put in its place.
+  a placeholder called '_$sdo-id_' is put in its place.
 * All files in a dataset that are identified as audio/video (using mimetype detection) are added
   to this presentation by identifying them as such (and providing extra metadata) in `files.xml`.
 * The data provided in `SF_DOMAIN`, `SF_USER` and `SF_COLLECTION` are stored for further processing
