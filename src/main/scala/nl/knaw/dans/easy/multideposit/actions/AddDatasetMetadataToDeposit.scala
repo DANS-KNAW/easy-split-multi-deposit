@@ -23,11 +23,12 @@ import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
 import nl.knaw.dans.lib.error.TraversableTryExtensions
 import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, NodeSeq }
+import scala.xml.Elem
 
 case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends UnitAction[Unit] {
 
@@ -160,7 +161,7 @@ object AddDatasetMetadataToDeposit {
       {profileElems(dataset, "DC_DESCRIPTION")}
       {createCreators(dataset)}
       {profileElems(dataset, "DDM_CREATED")}
-      {optionalProfileElem(dataset, "DDM_AVAILABLE").getOrElse(NodeSeq.Empty)}
+      {createAvailable(dataset)}
       {profileElems(dataset, "DDM_AUDIENCE")}
       {profileElems(dataset, "DDM_ACCESSRIGHTS")}
     </ddm:profile>
@@ -171,16 +172,18 @@ object AddDatasetMetadataToDeposit {
     elemsFromKeyValues(key, dataset.getOrElse(key, List()))
   }
 
-  def optionalProfileElem(dataset: Dataset, key: MultiDepositKey): Option[Elem] = {
-    for {
-      values <- dataset.get(key)
-      value <- values.find(!_.isBlank)
-    } yield elem(profileFields.getOrElse(key, key))(value)
-  }
-
   def elemsFromKeyValues(key: MultiDepositKey, values: MultiDepositValues): Seq[Elem] = {
     values.filter(_.nonEmpty)
       .map(elem(profileFields.getOrElse(key, key)))
+  }
+
+  def createAvailable(dataset: Dataset): Elem = {
+    val key = "DDM_AVAILABLE"
+    lazy val ddmKey = profileFields.getOrElse(key, key)
+    dataset.get(key)
+      .flatMap(_.find(!_.isBlank))
+      .map(elem(ddmKey))
+      .getOrElse(elem(ddmKey)(DateTime.now().toString(ISODateTimeFormat.date())))
   }
 
   def createCreators(dataset: Dataset): Seq[Elem] = {

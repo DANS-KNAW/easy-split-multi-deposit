@@ -32,6 +32,7 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
       </dcx-dai:author>
     </dcx-dai:creatorDetails>
     <ddm:created>2015-05-13</ddm:created>
+    <ddm:available>2017-03-30</ddm:available>
     <ddm:audience>D30000</ddm:audience>
     <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
   </ddm:profile>
