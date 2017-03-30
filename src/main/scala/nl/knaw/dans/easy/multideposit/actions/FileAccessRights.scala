@@ -15,9 +15,12 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import nl.knaw.dans.common.lang.dataset.AccessCategory
+import nl.knaw.dans.common.lang.dataset.AccessCategory._
+
 /**
  * Enumeration of the file properties VisibleTo and AccessibleTo
- * Partially copied from easy-stage-file-item
+ * Copied from easy-stage-file-item
  */
 // TODO move this enum to the DDM library
 object FileAccessRights extends Enumeration {
@@ -30,4 +33,39 @@ object FileAccessRights extends Enumeration {
   RESTRICTED_GROUP, // a user belonging to the same group as the dataset
   NONE // none of the above
   = Value
+
+  private val rightsMap = Map[AccessCategory, FileAccessRights.Value](
+    // https://github.com/DANS-KNAW/easy-app/blob/1080eff457/lib/easy-business/src/main/java/nl/knaw/dans/easy/domain/model/AccessibleTo.java#L23-L37
+    // the legacy code lacks OPEN_ACCESS, ACCESS_ELSEWHERE, FREELY_AVAILABLE
+    ANONYMOUS_ACCESS -> ANONYMOUS,
+    OPEN_ACCESS_FOR_REGISTERED_USERS -> KNOWN,
+    GROUP_ACCESS -> RESTRICTED_GROUP,
+    REQUEST_PERMISSION -> RESTRICTED_REQUEST,
+    OPEN_ACCESS -> ANONYMOUS,
+    // deprecated keys
+    NO_ACCESS -> NONE, // used by Excel2EasyMetadataXMLTask.java for invalid values in some spread-sheet cell
+    ACCESS_ELSEWHERE -> NONE,
+    FREELY_AVAILABLE -> ANONYMOUS // used for thumbnails in EASY-v1
+  )
+
+  // map should be exhaustive
+  require(AccessCategory.values().toSet == rightsMap.keySet)
+
+  /**
+   *
+   * @param s toString value of the desired category
+   * @return
+   */
+  def valueOf(s: String): Option[FileAccessRights.Value] =
+    FileAccessRights.values.find(v => v.toString == s)
+
+  /** gets the default category of users that have download permission for files in a new dataset,
+   * an archivist may decide differently
+   *
+   * @param datasetAccesCategory from the EMD of the dataset
+   * @return
+   */
+  def accessibleTo(datasetAccesCategory: AccessCategory): FileAccessRights.Value =
+    rightsMap(datasetAccesCategory)
 }
+
