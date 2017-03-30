@@ -1146,7 +1146,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       "SF_COLLECTION" -> List("randomcollectionname")
     val expectedXml = <ddm>
       <ddm:dcmiMetadata>
-        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$presentation-placeholder</ddm:relation>
+        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
       </ddm:dcmiMetadata>
     </ddm>
     verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
