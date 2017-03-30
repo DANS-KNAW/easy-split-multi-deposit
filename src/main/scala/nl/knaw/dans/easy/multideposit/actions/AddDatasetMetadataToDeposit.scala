@@ -23,6 +23,7 @@ import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
 import nl.knaw.dans.lib.error.TraversableTryExtensions
 import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
@@ -64,7 +65,7 @@ object AddDatasetMetadataToDeposit {
     List(
       checkColumnHasOnlyOneValue(row, dataset, "DDM_CREATED"),
       checkColumnHasOnlyOneValue(row, dataset, "DDM_ACCESSRIGHTS"),
-      checkColumnHasOnlyOneValue(row, dataset, "DDM_AVAILABLE"),
+      checkColumnHasAtMostOneValue(row, dataset, "DDM_AVAILABLE"),
       checkColumnsHaveAtMostOneRowWithValues(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
     )
   }
@@ -146,7 +147,7 @@ object AddDatasetMetadataToDeposit {
       xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/"
       xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/"
       xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/"
-      xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ http://easy.dans.knaw.nl/schemas/md/2016/ddm.xsd">
+      xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
       {createProfile(dataset)}
       {createMetadata(dataset)}
     </ddm:DDM>
@@ -160,6 +161,7 @@ object AddDatasetMetadataToDeposit {
       {profileElems(dataset, "DC_DESCRIPTION")}
       {createCreators(dataset)}
       {profileElems(dataset, "DDM_CREATED")}
+      {createAvailable(dataset)}
       {profileElems(dataset, "DDM_AUDIENCE")}
       {profileElems(dataset, "DDM_ACCESSRIGHTS")}
     </ddm:profile>
@@ -173,6 +175,15 @@ object AddDatasetMetadataToDeposit {
   def elemsFromKeyValues(key: MultiDepositKey, values: MultiDepositValues): Seq[Elem] = {
     values.filter(_.nonEmpty)
       .map(elem(profileFields.getOrElse(key, key)))
+  }
+
+  def createAvailable(dataset: Dataset): Elem = {
+    val key = "DDM_AVAILABLE"
+    lazy val ddmKey = profileFields.getOrElse(key, key)
+    dataset.get(key)
+      .flatMap(_.find(!_.isBlank))
+      .map(elem(ddmKey))
+      .getOrElse(elem(ddmKey)(DateTime.now().toString(ISODateTimeFormat.date())))
   }
 
   def createCreators(dataset: Dataset): Seq[Elem] = {
@@ -488,6 +499,20 @@ object validators {
         case _ => Failure(ActionException(row, s"More than one value is defined for $key"))
       }
       .getOrElse(Failure(ActionException(row, s"The column $key is not present in this instructions file")))
+  }
+
+  /**
+   * Check if a column in the dataset contains at most one non-blank value.
+   * If the column is not present, a `Success` is returned as well.
+   */
+  def checkColumnHasAtMostOneValue(row: Int, dataset: Dataset, key: String): Try[Unit] = {
+    dataset.get(key)
+      .map(_.filterNot(_.isBlank).size)
+      .map {
+        case 0 | 1 => Success(())
+        case _ => Failure(ActionException(row, s"More than one value is defined for $key"))
+      }
+      .getOrElse(Success(()))
   }
 
   def checkColumnsHaveAtMostOneRowWithValues(row: Int, dataset: Dataset, keys: String*): Try[Unit] = {
