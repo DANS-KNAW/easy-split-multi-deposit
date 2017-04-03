@@ -378,13 +378,36 @@ object AddDatasetMetadataToDeposit {
   }
 
   def createSurrogateRelation(dataset: Dataset): Option[Elem] = {
-    CreateSpringfieldActions.getSpringfieldPath(dataset, 0)
-      .map(path =>
+    getSpringfieldData(dataset)
+      .map(data =>
         // @formatter:off
-        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">{path}</ddm:relation>
+        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">{
+          s"/domain/${data.domain}/user/${data.user}/collection/${data.collection}/presentation/$$sdo-id"
+        }</ddm:relation>)
         // @formatter:on
-      )
   }
+
+  /**
+   * @return Retrieve the springfield data from the dataset if the springfield data is present
+   */
+  // TODO copied from AddPropertiesToDeposit; how can we remove this duplication?
+  // suggestion: make Dataset into an object structure that is created in the parser.
+  // this way the correct SpringfieldData object is already in the dataset.
+  private def getSpringfieldData(dataset: Dataset): Option[SpringfieldData] = {
+    for {
+      user <- dataset.findValue("SF_USER")
+      collection <- dataset.findValue("SF_COLLECTION")
+    } yield {
+      dataset.findValue("SF_DOMAIN")
+        .map(SpringfieldData(collection, user, _))
+        .getOrElse(SpringfieldData(collection, user))
+    }
+  }
+
+  // TODO copied from AddPropertiesToDeposit
+  private case class SpringfieldData(collection: String,
+                                     user: String,
+                                     domain: String = "dans")
 
   def createMetadata(dataset: Dataset): Elem = {
     def isMetaData(key: MultiDepositKey, values: MultiDepositValues): Boolean = {
