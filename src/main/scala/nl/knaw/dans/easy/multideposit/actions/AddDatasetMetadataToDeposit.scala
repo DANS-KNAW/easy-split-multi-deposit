@@ -405,6 +405,10 @@ object AddDatasetMetadataToDeposit {
   }
 
   // TODO copied from AddPropertiesToDeposit
+  // TODO make the default domain a constant in package.scala as we migrate this into
+  // the desired object structure and remove this copy. REMINDER: also use this constant
+  // in the tests "return a path with the default domain when no domain is specified" and
+  // "return a path with the default domain when the given domain is blank"
   private case class SpringfieldData(collection: String,
                                      user: String,
                                      domain: String = "dans")

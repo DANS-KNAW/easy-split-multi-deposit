@@ -1151,7 +1151,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
-  it should "not return a path when the given an empty dataset" in {
+  it should "not return a path when given an empty dataset" in {
     val dataset = new Dataset()
     AddDatasetMetadataToDeposit.createSurrogateRelation(dataset) shouldBe empty
   }

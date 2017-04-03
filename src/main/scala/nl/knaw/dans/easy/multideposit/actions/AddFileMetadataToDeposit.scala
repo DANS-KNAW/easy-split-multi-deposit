@@ -58,11 +58,14 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
         row.get("AV_SUBTITLES"),
         row.get("AV_SUBTITLES_LANGUAGE")
       ))
-      .collect { case (file, title, sub, subLang) if file.exists(!_.isBlank) => (resolve(file.get), title, sub.map(resolve), subLang) }
+      .collect {
+        case (maybeFile, maybeTitle, maybeSub, maybeSubLang) if maybeFile.exists(!_.isBlank) =>
+          (resolve(maybeFile.get), maybeTitle, maybeSub.map(resolve), maybeSubLang)
+      }
       .groupBy { case (file, _, _, _) => file }
       .map { case (file, instr) =>
         val optTitle = instr.collectFirst { case (_, Some(title), _, _) => title }
-        val subtitles = instr.collect { case (_, _, Some(sub), subLang) => Subtitle(sub, subLang) }
+        val subtitles = instr.collect { case (_, _, Some(sub), maybeSubLang) => Subtitle(sub, maybeSubLang) }
         file -> FileInstruction(file, optTitle, subtitles)
       }
   }

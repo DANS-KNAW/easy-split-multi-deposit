@@ -91,12 +91,12 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
     name = "staging-dir",
     short = 's',
     descr = "A directory in which the deposit directories are created, after which they will be " +
-      "moved to the 'deposit-dir'. If not specified, the value of 'staging-dir' in " +
+      "moved to the 'output-deposit-dir'. If not specified, the value of 'staging-dir' in " +
       "'application.properties' is used.",
     default = Some(new File(props.getString("staging-dir"))))
 
   val outputDepositDir: ScallopOption[File] = trailArg[File](
-    name = "deposit-dir",
+    name = "output-deposit-dir",
     required = true,
     descr = "A directory to which the deposit directories are moved after the staging has been " +
       "completed successfully. The deposit directory layout is described in the easy-sword2 " +
