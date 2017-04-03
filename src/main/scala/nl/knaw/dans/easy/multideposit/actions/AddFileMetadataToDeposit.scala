@@ -20,10 +20,9 @@ import java.io.File
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitAction, _ }
-import nl.knaw.dans.lib.error.TraversableTryExtensions
+import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import org.apache.tika.Tika
 
-import scala.collection.immutable
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
@@ -48,12 +47,6 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
                             accessibleTo: FileAccessRights.UserCategory,
                             subtitles: Seq[Subtitle]) extends FileMetadata(filepath, mimeType)
 
-  private lazy val avAccessibility = {
-    dataset.findValue("SF_ACCESSIBILITY")
-      .flatMap(FileAccessRights.valueOf)
-      .getOrElse(FileAccessRights.accessibleTo(AccessCategory.valueOf(dataset.findValue("DDM_ACCESSRIGHTS").get)))
-  }
-
   private lazy val fileInstructions: Map[File, FileInstruction] = {
     def resolve(filepath: String): File = new File(settings.multidepositDir, filepath).getAbsoluteFile
 
@@ -65,29 +58,25 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
         row.get("AV_SUBTITLES"),
         row.get("AV_SUBTITLES_LANGUAGE")
       ))
-      .collect { case (file, title, sub, subLang) if file.exists(!_.isBlank) => (file.get, title, sub, subLang) }
+      .collect { case (file, title, sub, subLang) if file.exists(!_.isBlank) => (resolve(file.get), title, sub.map(resolve), subLang) }
       .groupBy { case (file, _, _, _) => file }
       .map { case (file, instr) =>
-        val f = resolve(file)
         val optTitle = instr.collectFirst { case (_, Some(title), _, _) => title }
-        val subtitles = instr.collect { case (_, _, Some(sub), subLang) => Subtitle(resolve(sub), subLang) }
-        f -> FileInstruction(f, optTitle, subtitles)
+        val subtitles = instr.collect { case (_, _, Some(sub), subLang) => Subtitle(sub, subLang) }
+        file -> FileInstruction(file, optTitle, subtitles)
       }
   }
 
-  private lazy val fileMetadata: Try[Seq[FileMetadata]] = Try {
-    val datasetDir = multiDepositDir(datasetID)
-    if (datasetDir.exists()) {
-      datasetDir.listRecursively
-        .map(file => getFileMetadata(file.getAbsoluteFile))
-        .collectResults
-    }
-    else // this means the dataset does not contain any data
-      Try { List.empty }
-  }.flatten
+  private lazy val avAccessibility: FileAccessRights.Value = {
+    dataset.findValue("SF_ACCESSIBILITY")
+      .flatMap(FileAccessRights.valueOf)
+      .orElse(dataset.findValue("DDM_ACCESSRIGHTS")
+        .map(v => FileAccessRights.accessibleTo(AccessCategory.valueOf(v))))
+      .getOrElse(throw ActionException(row, "No value found for either SF_ACCESSIBILITY or DDM_ACCESSRIGHTS"))
+  }
 
   private def getFileMetadata(file: File): Try[FileMetadata] = {
-    def mkFileMetadata(m: MimeType, voca: AudioVideo) = {
+    def mkFileMetadata(m: MimeType, voca: AudioVideo): AVFileMetadata = {
       fileInstructions.get(file) match {
         case Some(FileInstruction(_, optTitle, subtitles)) =>
           val title = optTitle.getOrElse(file.getName)
@@ -103,6 +92,26 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
       case mimeType => new FileMetadata(file, mimeType)
     }
   }
+
+  private lazy val fileMetadata: Try[Seq[FileMetadata]] = Try {
+    val datasetDir = multiDepositDir(datasetID)
+    if (datasetDir.exists()) {
+      datasetDir.listRecursively
+        .map(file => getFileMetadata(file.getAbsoluteFile))
+        .collectResults
+        .recoverWith {
+          case CompositeException(es) =>
+            // filter duplicate messages
+            Failure(CompositeException(es.foldRight(List.empty[Throwable])((t, ts) => {
+              val msg = t.getMessage
+              ts.find(_.getMessage == msg).fold(t :: ts)(_ => ts)
+            })))
+          case e => Failure(e)
+        }
+    }
+    else // this means the dataset does not contain any data
+      Success { List.empty }
+  }.flatten
 
   /**
    * Verifies whether all preconditions are met for this specific action.
