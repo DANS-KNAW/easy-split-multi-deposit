@@ -32,7 +32,6 @@ touch $TEMPDIR/easy-split-multi-deposit.log
 mkdir $TEMPDIR/input
 cp -r src/test/resources/allfields/input $TEMPDIR/input/allfields
 mkdir $TEMPDIR/output/
-mkdir $TEMPDIR/springfield-inbox
 mkdir $TEMPDIR/staging
 chmod -R 777 $TEMPDIR
 

@@ -46,7 +46,6 @@ package object multideposit {
                             audioVideo: Option[String])
   case class DepositPermissions(permissions: String, group: String)
   case class Settings(multidepositDir: File = null,
-                      springfieldInbox: File = null,
                       stagingDir: File = null,
                       outputDepositDir: File = null,
                       datamanager: String = null,
@@ -54,7 +53,6 @@ package object multideposit {
                       ldap: Ldap = null) {
     override def toString: String =
       s"Settings(multideposit-dir=$multidepositDir, " +
-        s"springfield-inbox=$springfieldInbox, " +
         s"staging-dir=$stagingDir, " +
         s"output-deposit-dir=$outputDepositDir" +
         s"datamanager=$datamanager, " +
@@ -371,7 +369,6 @@ package object multideposit {
   val datasetMetadataFileName = "dataset.xml"
   val fileMetadataFileName = "files.xml"
   val propsFileName = "deposit.properties"
-  val springfieldActionsFileName = "springfield-actions.xml"
 
   private def datasetDir(datasetID: DatasetID)(implicit settings: Settings): String = {
     s"${settings.multidepositDir.getName}-$datasetID"
@@ -415,14 +412,6 @@ package object multideposit {
   // stagingDir/mdDir-datasetID/bag/metadata/files.xml
   def stagingFileMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
     new File(stagingBagMetadataDir(datasetID), fileMetadataFileName)
-  }
-  // sfiDir/<fileMd>
-  def springfieldInboxDir(fileMd: String)(implicit settings: Settings): File = {
-    new File(settings.springfieldInbox, fileMd)
-  }
-  // sfiDir/springfield-actions.xml
-  def springfieldInboxActionsFile(implicit settings: Settings): File = {
-    springfieldInboxDir(springfieldActionsFileName)
   }
   // outputDepositDir/mdDir-datasetID/
   def outputDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
