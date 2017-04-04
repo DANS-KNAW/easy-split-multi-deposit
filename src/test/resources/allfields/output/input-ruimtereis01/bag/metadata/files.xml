@@ -8,7 +8,7 @@
   </file>
   <file filepath="data/path/to/a/random/video/hubble.mpg">
     <dcterms:type>http://schema.org/VideoObject</dcterms:type>
-    <dcterms:format>video/mpeg</dcterms:format> <!-- (te bepalen adhv het bestand) -->
+    <dcterms:format>video/mpeg</dcterms:format>
     <dcterms:title>hubble.mpg</dcterms:title>
     <dcterms:accessRights>RESTRICTED_GROUP</dcterms:accessRights>
   </file>

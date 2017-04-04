@@ -45,7 +45,8 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
                             vocabulary: AudioVideo,
                             title: String,
                             accessibleTo: FileAccessRights.UserCategory,
-                            subtitles: Seq[Subtitle]) extends FileMetadata(filepath, mimeType)
+                            subtitles: Seq[Subtitle]
+                           ) extends FileMetadata(filepath, mimeType)
 
   private lazy val fileInstructions: Map[File, FileInstruction] = {
     def resolve(filepath: String): File = new File(settings.multidepositDir, filepath).getAbsoluteFile
