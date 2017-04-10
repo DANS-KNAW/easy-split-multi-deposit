@@ -52,17 +52,14 @@ object Main extends DebugEnhancedLogging {
         val row = dataset.getRowNumber
         logger.debug(s"Getting actions for dataset $datasetID ...")
 
-        val acts = CreateStagingDir(row, datasetID)
+        CreateStagingDir(row, datasetID)
           .combine(AddBagToDeposit(row, entry))
           .combine(AddDatasetMetadataToDeposit(row, entry))
           .combine(AddFileMetadataToDeposit(row, entry))
           .combine(retrieveDatamanagerAction)
           .combine(AddPropertiesToDeposit(row, entry))
           .combine(SetDepositPermissions(row, datasetID))
-
-        getFileActions(dataset).fold(acts)(acts combine)
     }.reduceOption(_ combine _)
-    val createSpringfieldAction = CreateSpringfieldActions(-1, datasets)
     val moveActions = datasets.map {
       case (datasetID, dataset) => MoveDepositToOutputDir(dataset.getRowNumber, datasetID): Action[Unit, Unit]
     }.reduceOption(_ combine _)
@@ -70,40 +67,6 @@ object Main extends DebugEnhancedLogging {
     for {
       dsAct <- datasetActions
       mvAct <- moveActions
-    } yield dsAct combine createSpringfieldAction combine mvAct
-  }
-
-  def getFileActions(dataset: Dataset)(implicit settings: Settings): Option[Action[Unit, Unit]] = {
-    extractFileParameters(dataset)
-      .collect {
-        case FileParameters(Some(row), Some(fileMd), _, _, _, Some(isThisAudioVideo)) if isThisAudioVideo matches "(?i)yes" =>
-          CopyToSpringfieldInbox(row, fileMd): Action[Unit, Unit]
-      }
-      .reduceOption(_ combine _)
-  }
-
-  def extractFileParameters(dataset: Dataset): Seq[FileParameters] = {
-    dataset.toRows
-      .map(row => {
-        def valueAt(key: String): Option[String] = {
-          row.get(key).flatMap(_.toOption)
-        }
-        def intAt(key: String): Option[Int] = {
-          row.get(key).flatMap(_.toIntOption)
-        }
-
-        FileParameters(
-          row = intAt("ROW"),
-          sip = valueAt("FILE_SIP"),
-          dataset = valueAt("FILE_DATASET"),
-          storageService = valueAt("FILE_STORAGE_SERVICE"),
-          storagePath = valueAt("FILE_STORAGE_PATH"),
-          audioVideo = valueAt("FILE_AUDIO_VIDEO")
-        )
-      })
-      .filter {
-        case FileParameters(_, None, None, None, None, None) => false
-        case _ => true
-      }
+    } yield dsAct combine mvAct
   }
 }

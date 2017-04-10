@@ -17,32 +17,104 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 
+import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitAction, _ }
-import nl.knaw.dans.lib.error.TraversableTryExtensions
+import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import org.apache.tika.Tika
 
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Try }
+import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
 case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends UnitAction[Unit] {
 
   val (datasetID, dataset) = entry
 
-  // TODO @rvanheest move the mimetype computation to a separate action once the new
-  // parameterized version of Action is installed?
-  lazy val mimetypeMap: Try[List[(File, MimeType)]] = Try {
+  case class FileInstruction(file: File, title: Option[String], subtitles: Seq[Subtitle])
+
+  sealed abstract class AudioVideo(val vocabulary: String)
+  case object Audio extends AudioVideo("http://schema.org/AudioObject")
+  case object Video extends AudioVideo("http://schema.org/VideoObject")
+
+  case class Subtitle(filepath: File, language: Option[String])
+
+  class FileMetadata(val filepath: File, val mimeType: MimeType)
+  case class AVFileMetadata(override val filepath: File,
+                            override val mimeType: MimeType,
+                            vocabulary: AudioVideo,
+                            title: String,
+                            accessibleTo: FileAccessRights.UserCategory,
+                            subtitles: Seq[Subtitle]
+                           ) extends FileMetadata(filepath, mimeType)
+
+  private lazy val fileInstructions: Map[File, FileInstruction] = {
+    def resolve(filepath: String): File = new File(settings.multidepositDir, filepath).getAbsoluteFile
+
+    dataset.getColumns("AV_FILE", "AV_FILE_TITLE", "AV_SUBTITLES", "AV_SUBTITLES_LANGUAGE")
+      .toRows
+      .map(row => (
+        row.get("AV_FILE"),
+        row.get("AV_FILE_TITLE"),
+        row.get("AV_SUBTITLES"),
+        row.get("AV_SUBTITLES_LANGUAGE")
+      ))
+      .collect {
+        case (optFile, optTitle, optSub, optSubLang) if optFile.exists(!_.isBlank) =>
+          (resolve(optFile.get), optTitle, optSub.map(resolve), optSubLang)
+      }
+      .groupBy { case (file, _, _, _) => file }
+      .map { case (file, instr) =>
+        val optTitle = instr.collectFirst { case (_, Some(title), _, _) => title }
+        val subtitles = instr.collect { case (_, _, Some(sub), optSubLang) => Subtitle(sub, optSubLang) }
+        file -> FileInstruction(file, optTitle, subtitles)
+      }
+  }
+
+  private lazy val avAccessibility: FileAccessRights.Value = {
+    dataset.findValue("SF_ACCESSIBILITY")
+      .flatMap(FileAccessRights.valueOf)
+      .orElse(dataset.findValue("DDM_ACCESSRIGHTS")
+        .map(v => FileAccessRights.accessibleTo(AccessCategory.valueOf(v))))
+      .getOrElse(throw ActionException(row, "No value found for either SF_ACCESSIBILITY or DDM_ACCESSRIGHTS"))
+  }
+
+  private def getFileMetadata(file: File): Try[FileMetadata] = {
+    def mkFileMetadata(m: MimeType, voca: AudioVideo): AVFileMetadata = {
+      fileInstructions.get(file) match {
+        case Some(FileInstruction(_, optTitle, subtitles)) =>
+          val title = optTitle.getOrElse(file.getName)
+          AVFileMetadata(file, m, voca, title, avAccessibility, subtitles)
+        case None =>
+          AVFileMetadata(file, m, voca, file.getName, avAccessibility, Seq.empty)
+      }
+    }
+
+    getMimeType(file).map {
+      case mimeType if mimeType startsWith "audio" => mkFileMetadata(mimeType, Audio)
+      case mimeType if mimeType startsWith "video" => mkFileMetadata(mimeType, Video)
+      case mimeType => new FileMetadata(file, mimeType)
+    }
+  }
+
+  private lazy val fileMetadata: Try[Seq[FileMetadata]] = Try {
     val datasetDir = multiDepositDir(datasetID)
     if (datasetDir.exists()) {
-      val files = datasetDir.listRecursively
-
-      files.map(getMimeType)
+      datasetDir.listRecursively
+        .map(file => getFileMetadata(file.getAbsoluteFile))
         .collectResults
-        .map(files.zip(_))
+        .recoverWith {
+          case CompositeException(es) =>
+            // filter duplicate messages
+            Failure(CompositeException(es.foldRight(List.empty[Throwable])((t, ts) => {
+              val msg = t.getMessage
+              ts.find(_.getMessage == msg).fold(t :: ts)(_ => ts)
+            })))
+          case e => Failure(e)
+        }
     }
     else // this means the dataset does not contain any data
-      Try { List.empty }
+      Success { List.empty }
   }.flatten
 
   /**
@@ -54,28 +126,26 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
   override def checkPreconditions: Try[Unit] = {
     import validators._
 
-    def checkSFColumnsIfDatasetContainsAVFiles(mimetypes: List[(File, MimeType)]): Try[Unit] = {
-      val avFiles = mimetypes.filter {
-        case (_, mimetype) => (mimetype startsWith "video") || (mimetype startsWith "audio")
-      }
+    def checkSFColumnsIfDatasetContainsAVFiles(mimetypes: Seq[FileMetadata]): Try[Unit] = {
+      val avFiles = mimetypes.filter(fmd => (fmd.mimeType startsWith "video") || (fmd.mimeType startsWith "audio"))
 
       if (avFiles.nonEmpty)
         checkColumnsAreNonEmpty(row, dataset, "SF_USER", "SF_COLLECTION")
           .recoverWith {
             case ActionException(r, msg, _) => Failure(ActionException(r,
               s"$msg\ncause: these columns should contain values because audio/video files are " +
-                s"found:\n${ avFiles.map { case (file, _) => s" - $file" }.mkString("\n") }"))
+                s"found:\n${ avFiles.map(fmd => s" - ${fmd.filepath}").mkString("\n") }"))
           }
       else
         checkColumnsAreEmpty(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
           .recoverWith {
             case ActionException(r, msg, _) => Failure(ActionException(r,
               s"$msg\ncause: these columns should be empty because there are no audio/video " +
-                s"files found in this dataset"))
+                "files found in this dataset"))
           }
     }
 
-    mimetypeMap.flatMap(checkSFColumnsIfDatasetContainsAVFiles)
+    fileMetadata.flatMap(checkSFColumnsIfDatasetContainsAVFiles)
   }
 
   override def execute(): Try[Unit] = {
@@ -86,8 +156,8 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
       }
   }
 
-  private def datasetToFileXml: Try[Elem] = {
-    mimetypeMap.map(fileXmls(_) match {
+  def datasetToFileXml: Try[Elem] = {
+    fileMetadata.map(fileXmls(_) match {
       case Nil => <files xmlns:dcterms="http://purl.org/dc/terms/"/>
       case files =>
         // @formatter:off
@@ -96,20 +166,49 @@ case class AddFileMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(impli
     })
   }
 
-  private def fileXmls(filesAndMimetypes: List[(File, MimeType)]): Seq[Elem] = {
-    filesAndMimetypes.map {
-      case (file, mimetype) =>
-        val filepath = multiDepositDir(datasetID).toPath.relativize(file.toPath).toFile
-        pathXml(filepath, mimetype)
+  private def fileXmls(fmds: Seq[FileMetadata]): Seq[Elem] = {
+    fmds.map {
+      case av: AVFileMetadata => avFileXml(av)
+      case fmd: FileMetadata => fileXml(fmd)
     }
   }
 
-  private def pathXml(filepath: File, mimetype: MimeType): Elem = {
+  private def fileXml(fmd: FileMetadata): Elem = {
     // @formatter:off
-    <file filepath={s"data/$filepath"}>
-      <dcterms:format>{mimetype}</dcterms:format>
+    <file filepath={s"data/${formatFilePath(fmd.filepath)}"}>
+      <dcterms:format>{fmd.mimeType}</dcterms:format>
     </file>
     // @formatter:on
+  }
+
+  private def avFileXml(fmd: AVFileMetadata): Elem = {
+    // @formatter:off
+    <file filepath={s"data/${formatFilePath(fmd.filepath)}"}>
+      <dcterms:type>{fmd.vocabulary.vocabulary}</dcterms:type>
+      <dcterms:format>{fmd.mimeType}</dcterms:format>
+      <dcterms:title>{fmd.title}</dcterms:title>
+      <dcterms:accessRights>{fmd.accessibleTo}</dcterms:accessRights>
+      {fmd.subtitles.map(subtitleXml)}
+    </file>
+    // @formatter:on
+  }
+
+  private def subtitleXml(subtitle: Subtitle): Elem = {
+    val filepath = formatFilePath(subtitle.filepath)
+
+    // @formatter:off
+    subtitle.language
+      .map(lang => <dcterms:relation xml:lang={lang}>{s"data/$filepath"}</dcterms:relation>)
+      .getOrElse(<dcterms:relation>{s"data/$filepath"}</dcterms:relation>)
+    // @formatter:on
+  }
+
+  private def formatFilePath(file: File): File = {
+    multiDepositDir(datasetID)
+      .getAbsoluteFile
+      .toPath
+      .relativize(file.toPath)
+      .toFile
   }
 }
 

@@ -23,8 +23,6 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.configuration.PropertiesConfiguration
 import org.rogach.scallop.{ScallopConf, ScallopOption}
 
-import scala.util.{Failure, Success, Try}
-
 object CommandLineOptions extends DebugEnhancedLogging {
 
   def parse(args: Array[String]): Settings = {
@@ -41,7 +39,6 @@ object CommandLineOptions extends DebugEnhancedLogging {
 
     val settings = Settings(
       multidepositDir = opts.multiDepositDir(),
-      springfieldInbox = opts.springfieldInbox(),
       stagingDir = opts.stagingDir(),
       outputDepositDir = opts.outputDepositDir(),
       datamanager = opts.datamanager(),
@@ -71,7 +68,7 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
   printedName = "easy-split-multi-deposit"
   version(s"$printedName ${Version()}")
   val description = "Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive"
-  val synopsis = s"""$printedName.sh [{--springfield-inbox|-s} <dir>] [{--staging-dir|-d} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>"""
+  val synopsis = s"""$printedName.sh [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>"""
   banner(s"""
            |  $description
            |  Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
@@ -90,23 +87,16 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
       + "This must be a valid path to a directory containing a file named "
       + s"'$instructionsFileName' in RFC4180 format.")
 
-  val springfieldInbox: ScallopOption[File] = opt[File](
-    name = "springfield-inbox",
-    short = 's',
-    descr = "The inbox directory of a Springfield Streaming Media Platform installation. " +
-      "If not specified the value of 'springfield-inbox' in 'application.properties' is used.",
-    default = Some(new File(props.getString("springfield-inbox"))))
-
   val stagingDir: ScallopOption[File] = opt[File](
     name = "staging-dir",
-    short = 'd', // TODO make this 's' once the springfieldInbox argument has been removed
+    short = 's',
     descr = "A directory in which the deposit directories are created, after which they will be " +
-      "moved to the 'deposit-dir'. If not specified, the value of 'staging-dir' in " +
+      "moved to the 'output-deposit-dir'. If not specified, the value of 'staging-dir' in " +
       "'application.properties' is used.",
     default = Some(new File(props.getString("staging-dir"))))
 
   val outputDepositDir: ScallopOption[File] = trailArg[File](
-    name = "deposit-dir",
+    name = "output-deposit-dir",
     required = true,
     descr = "A directory to which the deposit directories are moved after the staging has been " +
       "completed successfully. The deposit directory layout is described in the easy-sword2 " +
@@ -126,9 +116,6 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
     else
       Right(())
   })
-
-  validateFileExists(springfieldInbox)
-  validateFileIsDirectory(springfieldInbox)
 
   validateFileExists(outputDepositDir)
   validateFileIsDirectory(outputDepositDir)

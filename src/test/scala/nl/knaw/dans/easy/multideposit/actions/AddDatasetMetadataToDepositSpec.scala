@@ -1139,17 +1139,74 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
   }
 
-  it should "return the expected streaming surrogate relation" in {
+  "createSurrogateRelation" should "return the expected streaming surrogate relation" in {
     val dataset = new Dataset() +=
       "SF_DOMAIN" -> List("randomdomainname") +=
       "SF_USER" -> List("randomusername") +=
       "SF_COLLECTION" -> List("randomcollectionname")
-    val expectedXml = <ddm>
-      <ddm:dcmiMetadata>
-        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
-      </ddm:dcmiMetadata>
-    </ddm>
-    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(dataset)}</ddm>, expectedXml)
+    val expectedXml = <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
+
+    inside(AddDatasetMetadataToDeposit.createSurrogateRelation(dataset)) {
+      case Some(xml) => verify(xml, expectedXml)
+    }
+  }
+
+  it should "not return a path when given an empty dataset" in {
+    val dataset = new Dataset()
+    AddDatasetMetadataToDeposit.createSurrogateRelation(dataset) shouldBe empty
+  }
+
+  it should "return a path with the default domain when no domain is specified" in {
+    val dataset = new Dataset() +=
+      "SF_USER" -> List("randomusername") +=
+      "SF_COLLECTION" -> List("randomcollectionname")
+    val expectedXml = <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
+
+    inside(AddDatasetMetadataToDeposit.createSurrogateRelation(dataset)) {
+      case Some(xml) => verify(xml, expectedXml)
+    }
+  }
+
+  it should "return a path with the default domain when the given domain is blank" in {
+    val dataset = new Dataset() +=
+      "SF_DOMAIN" -> List("") +=
+      "SF_USER" -> List("randomusername") +=
+      "SF_COLLECTION" -> List("randomcollectionname")
+    val expectedXml = <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
+
+    inside(AddDatasetMetadataToDeposit.createSurrogateRelation(dataset)) {
+      case Some(xml) => verify(xml, expectedXml)
+    }
+  }
+
+  it should "not return a path when no user is specified" in {
+    val dataset = new Dataset() +=
+      "SF_DOMAIN" -> List("randomdomainname") +=
+      "SF_COLLECTION" -> List("randomcollectionname")
+    AddDatasetMetadataToDeposit.createSurrogateRelation(dataset) shouldBe empty
+  }
+
+  it should "not return a path when the user is blank" in {
+    val dataset = new Dataset() +=
+      "SF_DOMAIN" -> List("randomdomainname") +=
+      "SF_USER" -> List("") +=
+      "SF_COLLECTION" -> List("randomcollectionname")
+    AddDatasetMetadataToDeposit.createSurrogateRelation(dataset) shouldBe empty
+  }
+
+  it should "not return a path when no collection is specified" in {
+    val dataset = new Dataset() +=
+      "SF_DOMAIN" -> List("randomdomainname") +=
+      "SF_USER" -> List("randomusername")
+    AddDatasetMetadataToDeposit.createSurrogateRelation(dataset) shouldBe empty
+  }
+
+  it should "not return a path when the collection is blank" in {
+    val dataset = new Dataset() +=
+      "SF_DOMAIN" -> List("randomdomainname") +=
+      "SF_USER" -> List("randomusername") +=
+      "SF_COLLECTION" -> List("")
+    AddDatasetMetadataToDeposit.createSurrogateRelation(dataset) shouldBe empty
   }
 
   def verify(actualXml: Node, expectedXml: Node): Unit = {
