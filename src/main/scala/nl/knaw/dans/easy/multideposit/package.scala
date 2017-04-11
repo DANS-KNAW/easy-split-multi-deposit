@@ -19,6 +19,7 @@ import java.io.{ File, IOException }
 import java.nio.charset.Charset
 import java.util.Properties
 
+import nl.knaw.dans.lib.error._
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.apache.commons.lang.StringUtils
 
@@ -137,6 +138,18 @@ package object multideposit {
           return failure
         }
         case x => x
+      }
+    }
+
+    def combine[S, R](other: Try[S])(implicit ev: T <:< (S => R)): Try[R] = {
+      (t, other) match {
+        case (Success(f), Success(s)) => Try { f(s) }
+        case (Success(_), Failure(e)) => Failure(e)
+        case (Failure(e), Success(_)) => Failure(e)
+        case (Failure(CompositeException(es1)), Failure(CompositeException(es2))) => Failure(CompositeException(es1 ++ es2))
+        case (Failure(CompositeException(es1)), Failure(e2)) => Failure(CompositeException(es1 ++ List(e2)))
+        case (Failure(e1), Failure(CompositeException(es2))) => Failure(CompositeException(List(e1) ++ es2))
+        case (Failure((e1)), Failure((e2))) => Failure(CompositeException(List(e1, e2)))
       }
     }
   }
