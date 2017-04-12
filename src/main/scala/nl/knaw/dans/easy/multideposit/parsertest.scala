@@ -291,7 +291,7 @@ object parsertest extends App {
 
       (maybeX, maybeY, maybeScheme) match {
         case (Some(x), Some(y), scheme) => Some(Success(SpatialPoint(x, y, scheme)))
-        case (None, None, None) => None
+        case (None, None, _) => None
         case _ => Some(Failure(ActionException(rowNum, "In a spatial point both DCX_SPATIAL_X and DCX_SPATIAL_Y should be filled in per row")))
       }
     }
@@ -309,7 +309,7 @@ object parsertest extends App {
 
       (west, east, south, north, maybeScheme) match {
         case (Some(w), Some(e), Some(s), Some(n), scheme) => Some(Success(SpatialBox(n, s, e, w, scheme)))
-        case (None, None, None, None, None) => None
+        case (None, None, None, None, _) => None
         case _ => Some(Failure(ActionException(rowNum, "In a spatial box all of DCX_SPATIAL_WEST, DCX_SPATIAL_EAST, DCX_SPATIAL_NORTH and DCX_SPATIAL_WEST should be filled in per row")))
       }
     }
@@ -319,7 +319,7 @@ object parsertest extends App {
 
   def extractTemporals(view: DatasetRowView, rowNum: Int): Try[List[Temporal]] = {
     def extractTemporal(row: DatasetRow): Option[Try[Temporal]] = {
-      val subject = row.get("DC_SUBJECT").filterNot(_.isBlank)
+      val subject = row.get("DCT_TEMPORAL").filterNot(_.isBlank)
       val scheme = row.get("DCT_TEMPORAL_SCHEME").filterNot(_.isBlank)
 
       (subject, scheme) match {
@@ -339,28 +339,21 @@ object parsertest extends App {
       rows.flatMap(_.get(name).filterNot(_.isBlank)).toList
     }
 
-    val alternatives: List[String] = extract("DCT_ALTERNATIVE")
-    val publishers: List[String] = extract("DC_PUBLISHER")
-    val types: List[String] = extract("DC_TYPE")
-    val formats: List[String] = extract("DC_FORMAT")
-    val identifiers: List[String] = extract("DC_IDENTIFIER")
-    val sources: List[String] = extract("DC_SOURCE")
-    val languages: List[String] = extract("DC_LANGUAGE")
-    val spatials: List[String] = extract("DCT_SPATIAL")
-    val rightsholders: List[String] = extract("DCT_RIGHTSHOLDER")
-    val relations: Try[List[Relation]] = extractRelations(rows, rowNum)
-    val contributors: Try[List[Contributor]] = extractContributors(rows, rowNum)
-    val subjects: Try[List[Subject]] = extractSubjects(rows, rowNum)
-    val spatialPoints: Try[List[SpatialPoint]] = extractSpatialPoints(rows, rowNum)
-    val spatialBoxes: Try[List[SpatialBox]] = extractSpatialBoxes(rows, rowNum)
-    val temporals: Try[List[Temporal]] = extractTemporals(rows, rowNum)
-
-    Try { (Metadata(alternatives, publishers, types, formats, identifiers, sources, languages, spatials, rightsholders, _, _, _, _, _, _)).curried }
-      .combine(relations)
-      .combine(contributors)
-      .combine(subjects)
-      .combine(spatialPoints)
-      .combine(spatialBoxes)
-      .combine(temporals)
+    Try { (Metadata(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _)).curried }
+      .map(_(extract("DCT_ALTERNATIVE")))
+      .map(_(extract("DC_PUBLISHER")))
+      .map(_(extract("DC_TYPE")))
+      .map(_(extract("DC_FORMAT")))
+      .map(_(extract("DC_IDENTIFIER")))
+      .map(_(extract("DC_SOURCE")))
+      .map(_(extract("DC_LANGUAGE")))
+      .map(_(extract("DCT_SPATIAL")))
+      .map(_(extract("DCT_RIGHTSHOLDER")))
+      .combine(extractRelations(rows, rowNum))
+      .combine(extractContributors(rows, rowNum))
+      .combine(extractSubjects(rows, rowNum))
+      .combine(extractSpatialPoints(rows, rowNum))
+      .combine(extractSpatialBoxes(rows, rowNum))
+      .combine(extractTemporals(rows, rowNum))
   }
 }
