@@ -31,14 +31,14 @@ object parsertest extends App {
                            organization: Option[String],
                            dai: Option[String]) extends Creator
 
-  sealed abstract class Contributer
-  case class ContributerOrganization(organization: String) extends Contributer
-  case class ContributerPerson(titles: Option[String],
+  sealed abstract class Contributor
+  case class ContributorOrganization(organization: String) extends Contributor
+  case class ContributorPerson(titles: Option[String],
                                initials: String,
                                insertions: Option[String],
                                surname: String,
                                organization: Option[String],
-                               dai: Option[String]) extends Contributer
+                               dai: Option[String]) extends Contributor
 
   sealed abstract class Relation
   case class QualifiedLinkRelation(qualifier: String, link: String) extends Relation
@@ -46,11 +46,11 @@ object parsertest extends App {
   case class LinkRelation(link: String) extends Relation
   case class TitleRelation(title: String) extends Relation
 
-  case class Subject(subject: String, scheme: Option[String])
-  case class Temporal(temporal: String, scheme: Option[String])
+  case class Subject(scheme: Option[String], subject: String = "")
+  case class Temporal(scheme: Option[String], temporal: String = "")
 
-  case class SpatialPoint(x: String, y: String, scheme: String)
-  case class SpatialBox(north: String, south: String, east: String, west: String, scheme: String)
+  case class SpatialPoint(x: String, y: String, scheme: Option[String])
+  case class SpatialBox(north: String, south: String, east: String, west: String, scheme: Option[String])
 
   case class Springfield(domain: String, user: String, collection: String)
   case class Subtitles(path: String, language: Option[String])
@@ -73,7 +73,7 @@ object parsertest extends App {
                       spatials: List[String],
                       rightsholder: List[String],
                       relations: List[Relation],
-                      contributers: List[Contributer],
+                      contributors: List[Contributor],
                       subjects: List[Subject],
                       spatialPoints: List[SpatialPoint],
                       spatialBoxes: List[SpatialBox],
@@ -143,6 +143,9 @@ object parsertest extends App {
 
     val profile: Try[Profile] = extractProfile(rows, rowNum)
     println(s"  profile: $profile")
+
+    val metadata = extractMetadata(rows, rowNum)
+    println(s"  metadata: $metadata")
   }
 
   def extractRow(view: DatasetRowView, row: Int, name: String): Try[NonEmptyList[String]] = {
@@ -217,5 +220,147 @@ object parsertest extends App {
       .combine(dateAvailable.map(_.getOrElse(DateTime.now())))
       .combine(audiences)
       .combine(accessRight)
+  }
+
+  def extractRelations(view: DatasetRowView, rowNum: Int): Try[List[Relation]] = {
+    def extractRelation(row: DatasetRow): Option[Try[Relation]] = {
+      val qualifier = row.get("DCX_RELATION_QUALIFIER").filterNot(_.isBlank)
+      val link = row.get("DCX_RELATION_LINK").filterNot(_.isBlank)
+      val title = row.get("DCX_RELATION_TITLE").filterNot(_.isBlank)
+
+      (qualifier, link, title) match {
+        case (Some(_), Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] can be filled in per row")))
+        case (Some(q), Some(l), None) => Some(Success(QualifiedLinkRelation(q, l)))
+        case (Some(q), None, Some(t)) => Some(Success(QualifiedTitleRelation(q, t)))
+        case (Some(_), None, None) => Some(Failure(ActionException(rowNum, "At least one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be filled in per row")))
+        case (None, Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] can be filled in per row")))
+        case (None, Some(l), None) => Some(Success(LinkRelation(l)))
+        case (None, None, Some(t)) => Some(Success(TitleRelation(t)))
+        case (None, None, None) => None
+      }
+    }
+
+    view.flatMap(extractRelation).collectResults.map(_.toList)
+  }
+
+  // TODO partial duplicate of extractCreators
+  def extractContributors(view: DatasetRowView, rowNum: Int): Try[List[Contributor]] = {
+    def extractContributor(row: DatasetRow): Option[Try[Contributor]] = {
+      val titles = row.get("DCX_CONTRIBUTOR_TITLES").filterNot(_.isBlank)
+      val initials = row.get("DCX_CONTRIBUTOR_INITIALS").filterNot(_.isBlank)
+      val insertions = row.get("DCX_CONTRIBUTOR_INSERTIONS").filterNot(_.isBlank)
+      val surname = row.get("DCX_CONTRIBUTOR_SURNAME").filterNot(_.isBlank)
+      val organization = row.get("DCX_CONTRIBUTOR_ORGANIZATION").filterNot(_.isBlank)
+      val dai = row.get("DCX_CONTRIBUTOR_DAI").filterNot(_.isBlank)
+
+      (titles, initials, insertions, surname, organization, dai) match {
+        case (None, None, None, None, None, None) => None
+        case (None, None, None, None, Some(org), None) => Some(Success(ContributorOrganization(org)))
+        case (_, Some(init), _, Some(sur), _, _) => Some(Success(ContributorPerson(titles, init, insertions, sur, organization, dai)))
+        case (_, Some(_), _, None, _, _) => Some(Failure(ActionException(rowNum, s"Missing value for: DCX_CREATOR_SURNAME")))
+        case (_, None, _, Some(_), _, _) => Some(Failure(ActionException(rowNum, s"Missing value for: DCX_CREATOR_INITIALS")))
+        case (_, None, _, None, _, _) => Some(Failure(ActionException(rowNum, s"Missing values for: [DCX_CREATOR_INITIALS, DCX_CREATOR_SURNAME]")))
+      }
+    }
+
+    view.flatMap(extractContributor).collectResults.map(_.toList)
+  }
+
+  def extractSubjects(view: DatasetRowView, rowNum: Int): Try[List[Subject]] = {
+    def extractSubject(row: DatasetRow): Option[Try[Subject]] = {
+      val subject = row.get("DC_SUBJECT").filterNot(_.isBlank)
+      val scheme = row.get("DC_SUBJECT_SCHEME").filterNot(_.isBlank)
+
+      (subject, scheme) match {
+        case (Some(sub), Some(sch)) if sch == "abr:ABRcomplex" => Some(Success(Subject(Some(sch), sub)))
+        case (Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'")))
+        case (Some(sub), None) => Some(Success(Subject(None, sub)))
+        case (None, sch@Some(_)) => Some(Success(Subject(sch)))
+        case (None, None) => None
+      }
+    }
+
+    view.flatMap(extractSubject).collectResults.map(_.toList)
+  }
+
+  def extractSpatialPoints(view: DatasetRowView, rowNum: Int): Try[List[SpatialPoint]] = {
+    def extractSpatialPoint(row: DatasetRow): Option[Try[SpatialPoint]] = {
+      val maybeX = row.get("DCX_SPATIAL_X").filterNot(_.isBlank)
+      val maybeY = row.get("DCX_SPATIAL_Y").filterNot(_.isBlank)
+      val maybeScheme = row.get("DCX_SPATIAL_SCHEME").filterNot(_.isBlank)
+
+      (maybeX, maybeY, maybeScheme) match {
+        case (Some(x), Some(y), scheme) => Some(Success(SpatialPoint(x, y, scheme)))
+        case (None, None, None) => None
+        case _ => Some(Failure(ActionException(rowNum, "In a spatial point both DCX_SPATIAL_X and DCX_SPATIAL_Y should be filled in per row")))
+      }
+    }
+
+    view.flatMap(extractSpatialPoint).collectResults.map(_.toList)
+  }
+
+  def extractSpatialBoxes(view: DatasetRowView, rowNum: Int): Try[List[SpatialBox]] = {
+    def extractSpatialBox(row: DatasetRow): Option[Try[SpatialBox]] = {
+      val west = row.get("DCX_SPATIAL_WEST").filterNot(_.isBlank)
+      val east = row.get("DCX_SPATIAL_EAST").filterNot(_.isBlank)
+      val south = row.get("DCX_SPATIAL_SOUTH").filterNot(_.isBlank)
+      val north = row.get("DCX_SPATIAL_NORTH").filterNot(_.isBlank)
+      val maybeScheme = row.get("DCX_SPATIAL_SCHEME").filterNot(_.isBlank)
+
+      (west, east, south, north, maybeScheme) match {
+        case (Some(w), Some(e), Some(s), Some(n), scheme) => Some(Success(SpatialBox(n, s, e, w, scheme)))
+        case (None, None, None, None, None) => None
+        case _ => Some(Failure(ActionException(rowNum, "In a spatial box all of DCX_SPATIAL_WEST, DCX_SPATIAL_EAST, DCX_SPATIAL_NORTH and DCX_SPATIAL_WEST should be filled in per row")))
+      }
+    }
+
+    view.flatMap(extractSpatialBox).collectResults.map(_.toList)
+  }
+
+  def extractTemporals(view: DatasetRowView, rowNum: Int): Try[List[Temporal]] = {
+    def extractTemporal(row: DatasetRow): Option[Try[Temporal]] = {
+      val subject = row.get("DC_SUBJECT").filterNot(_.isBlank)
+      val scheme = row.get("DCT_TEMPORAL_SCHEME").filterNot(_.isBlank)
+
+      (subject, scheme) match {
+        case (Some(sub), Some(sch)) if sch == "abr:ABRperiode" => Some(Success(Temporal(Some(sch), sub)))
+        case (Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'")))
+        case (Some(sub), None) => Some(Success(Temporal(None, sub)))
+        case (None, sch@Some(_)) => Some(Success(Temporal(sch)))
+        case (None, None) => None
+      }
+    }
+
+    view.flatMap(extractTemporal).collectResults.map(_.toList)
+  }
+
+  def extractMetadata(rows: DatasetRowView, rowNum: Int): Try[Metadata] = {
+    def extract(name: String): List[String] = {
+      rows.flatMap(_.get(name).filterNot(_.isBlank)).toList
+    }
+
+    val alternatives: List[String] = extract("DCT_ALTERNATIVE")
+    val publishers: List[String] = extract("DC_PUBLISHER")
+    val types: List[String] = extract("DC_TYPE")
+    val formats: List[String] = extract("DC_FORMAT")
+    val identifiers: List[String] = extract("DC_IDENTIFIER")
+    val sources: List[String] = extract("DC_SOURCE")
+    val languages: List[String] = extract("DC_LANGUAGE")
+    val spatials: List[String] = extract("DCT_SPATIAL")
+    val rightsholders: List[String] = extract("DCT_RIGHTSHOLDER")
+    val relations: Try[List[Relation]] = extractRelations(rows, rowNum)
+    val contributors: Try[List[Contributor]] = extractContributors(rows, rowNum)
+    val subjects: Try[List[Subject]] = extractSubjects(rows, rowNum)
+    val spatialPoints: Try[List[SpatialPoint]] = extractSpatialPoints(rows, rowNum)
+    val spatialBoxes: Try[List[SpatialBox]] = extractSpatialBoxes(rows, rowNum)
+    val temporals: Try[List[Temporal]] = extractTemporals(rows, rowNum)
+
+    Try { (Metadata(alternatives, publishers, types, formats, identifiers, sources, languages, spatials, rightsholders, _, _, _, _, _, _)).curried }
+      .combine(relations)
+      .combine(contributors)
+      .combine(subjects)
+      .combine(spatialPoints)
+      .combine(spatialBoxes)
+      .combine(temporals)
   }
 }
