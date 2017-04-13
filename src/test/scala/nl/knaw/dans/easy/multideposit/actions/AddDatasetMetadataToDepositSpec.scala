@@ -982,8 +982,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     )
     inside(AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
       case Failure(CompositeException(es)) =>
-        val ActionException(_, message, _) :: Nil = es.toList
-        message shouldBe "More than one value is defined for SF_ACCESSIBILITY"
+        es.toList.map(_.getMessage) should contain ("More than one value is defined for SF_ACCESSIBILITY")
     }
   }
 
