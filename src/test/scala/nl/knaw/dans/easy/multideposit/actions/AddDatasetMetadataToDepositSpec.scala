@@ -965,6 +965,28 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     }
   }
 
+  it should "fail with multiple access rights" in {
+    val dataset = basicDataset ++= List(
+      "SF_ACCESSIBILITY" -> List("ANONYMOUS", "RESTRICTED_REQUEST")
+    )
+    inside(AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "More than one value is defined for SF_ACCESSIBILITY"
+    }
+  }
+
+  it should "fail with multiple access rights where not all are valid" in {
+    val dataset = basicDataset ++= List(
+      "SF_ACCESSIBILITY" -> List("ANONYMOUS", "incorrect_access")
+    )
+    inside(AddDatasetMetadataToDeposit(1, (datasetID, dataset)).checkPreconditions) {
+      case Failure(CompositeException(es)) =>
+        val ActionException(_, message, _) :: Nil = es.toList
+        message shouldBe "More than one value is defined for SF_ACCESSIBILITY"
+    }
+  }
+
   "execute" should "write the metadata to a file at the correct place" in {
     val file = stagingDatasetMetadataFile(datasetID)
 
