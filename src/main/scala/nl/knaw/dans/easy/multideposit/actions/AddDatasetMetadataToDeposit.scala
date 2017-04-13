@@ -66,6 +66,7 @@ object AddDatasetMetadataToDeposit {
       checkColumnHasOnlyOneValue(row, dataset, "DDM_CREATED"),
       checkColumnHasOnlyOneValue(row, dataset, "DDM_ACCESSRIGHTS"),
       checkColumnHasAtMostOneValue(row, dataset, "DDM_AVAILABLE"),
+      checkColumnHasAtMostOneValue(row, dataset, "SF_ACCESSIBILITY"),
       checkColumnsHaveAtMostOneRowWithValues(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
     )
   }
