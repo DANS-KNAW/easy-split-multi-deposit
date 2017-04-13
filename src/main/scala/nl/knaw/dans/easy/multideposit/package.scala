@@ -73,6 +73,10 @@ package object multideposit {
     }
   }
 
+  implicit class DatasetRowFind(val row: parsertest.DatasetRow) extends AnyVal {
+    def find(name: String): Option[String] = row.get(name).filterNot(_.isBlank)
+  }
+
   implicit class StringExtensions(val s: String) extends AnyVal {
     /**
      * Checks whether the `String` is blank
