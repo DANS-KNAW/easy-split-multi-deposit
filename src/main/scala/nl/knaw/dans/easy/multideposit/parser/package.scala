@@ -12,6 +12,7 @@ package object parser {
 
   // inspired by http://stackoverflow.com/questions/28223692/what-is-the-optimal-way-not-using-scalaz-to-type-require-a-non-empty-list
   type NonEmptyList[A] = ::[A]
+
   implicit def listToNEL[A](list: List[A]): ::[A] = {
     assert(list.nonEmpty)
     ::(list.head, list.tail)

@@ -103,35 +103,65 @@ object MultiDepositParser extends App {
     val depositorId: Try[String] = extractNEL(rows, rowNum, "DEPOSITOR_ID")
       .flatMap {
         case depositorIds if depositorIds.toSet.size > 1 =>
-          Failure(ActionException(rowNum, s"""There are multiple distinct depositorIDs in dataset "$datasetId": ${depositorIds.toSet.mkString("[", ", ", "]")}""".stripMargin))
+          Failure(ActionException(rowNum, "There are multiple distinct depositorIDs in dataset " +
+            s"'$datasetId': ${ depositorIds.toSet.mkString("[", ", ", "]") }"))
         case depId :: _ => Success(depId)
       }
 
     Try { (Dataset(_, _, _, _, _, _)).curried }
-      .map(_(datasetId))
-      .map(_(rowNum))
+      .map(_ (datasetId))
+      .map(_ (rowNum))
       .combine(depositorId)
       .combine(extractProfile(rows, rowNum))
       .combine(extractMetadata(rows))
       .combine(extractAudioVideo(rows, rowNum))
   }
 
-  def creator(rowNum: => Int)(row: DatasetRow): Option[Try[Creator]] = {
-    val titles = row.find("DCX_CREATOR_TITLES")
-    val initials = row.find("DCX_CREATOR_INITIALS")
-    val insertions = row.find("DCX_CREATOR_INSERTIONS")
-    val surname = row.find("DCX_CREATOR_SURNAME")
-    val organization = row.find("DCX_CREATOR_ORGANIZATION")
-    val dai = row.find("DCX_CREATOR_DAI")
+  def extractProfile(rows: DatasetRows, rowNum: Int): Try[Profile] = {
+    // TODO validate DDM_AUDIENCE and DDM_ACCESSRIGHTS as in AddDatasetMetadataToDeposit.checkAccessRights
+    Try((Profile(_, _, _, _, _, _, _)).curried)
+      .combine(extractNEL(rows, rowNum, "DC_TITLE"))
+      .combine(extractNEL(rows, rowNum, "DC_DESCRIPTION"))
+      .combine(extractNEL(rows)(creator))
+      .combine(extractList(rows)(date("DDM_CREATED")).flatMap(exactlyOne(rowNum, "DDM_CREATED")))
+      .combine(extractList(rows)(date("DDM_AVAILABLE")).flatMap(atMostOne(rowNum, "DDM_AVAILABLE")).map(_.getOrElse(DateTime.now())))
+      .combine(extractNEL(rows, rowNum, "DDM_AUDIENCE"))
+      .combine(extractList(rows)(accessCategory).flatMap(exactlyOne(rowNum, "DDM_ACCESSRIGHTS")))
+  }
 
-    (titles, initials, insertions, surname, organization, dai) match {
-      case (None, None, None, None, None, None) => None
-      case (None, None, None, None, Some(org), None) => Some(Success(CreatorOrganization(org)))
-      case (_, Some(init), _, Some(sur), _, _) => Some(Success(CreatorPerson(titles, init, insertions, sur, organization, dai)))
-      case (_, Some(_), _, None, _, _) => Some(Failure(ActionException(rowNum, s"Missing value for: DCX_CREATOR_SURNAME")))
-      case (_, None, _, Some(_), _, _) => Some(Failure(ActionException(rowNum, s"Missing value for: DCX_CREATOR_INITIALS")))
-      case (_, None, _, None, _, _) => Some(Failure(ActionException(rowNum, s"Missing values for: [DCX_CREATOR_INITIALS, DCX_CREATOR_SURNAME]")))
+  def extractMetadata(rows: DatasetRows): Try[Metadata] = {
+    Try { (Metadata(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _)).curried }
+      .map(_ (extractList(rows, "DCT_ALTERNATIVE")))
+      .map(_ (extractList(rows, "DC_PUBLISHER")))
+      .map(_ (extractList(rows, "DC_TYPE")))
+      .map(_ (extractList(rows, "DC_FORMAT")))
+      .map(_ (extractList(rows, "DC_IDENTIFIER")))
+      .map(_ (extractList(rows, "DC_SOURCE")))
+      .map(_ (extractList(rows, "DC_LANGUAGE")))
+      .map(_ (extractList(rows, "DCT_SPATIAL")))
+      .map(_ (extractList(rows, "DCT_RIGHTSHOLDER")))
+      .combine(extractList(rows)(relation))
+      .combine(extractList(rows)(contributor))
+      .combine(extractList(rows)(subject))
+      .combine(extractList(rows)(spatialPoint))
+      .combine(extractList(rows)(spatialBox))
+      .combine(extractList(rows)(temporal))
+  }
+
+  def extractAudioVideo(rows: DatasetRows, rowNum: Int): Try[Option[AudioVideo]] = {
+    Try {
+      ((springf: Option[Springfield], acc: Option[FileAccessRights.Value], avFiles: Map[File, List[AVFile]]) => {
+        (springf, acc, avFiles) match {
+          case (Some(s), a, fs) => Success(Some(AudioVideo(s, a, fs)))
+          case (None, _, fs) if fs.isEmpty => Success(None)
+          case (None, _, _) => Failure(ActionException(rowNum, "The column 'AV_FILE' contains values, but the columns [SF_COLLECTION, SF_USER] do not"))
+        }
+      }).curried
     }
+      .combine(extractList(rows)(springfield).flatMap(atMostOne(rowNum, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")))
+      .combine(extractList(rows)(fileAccessRight).flatMap(atMostOne(rowNum, "SF_ACCESSIBILITY")))
+      .combine(extractList(rows)(avFile).map(_.groupBy(_.file)))
+      .flatten
   }
 
   def date(columnName: String)(rowNum: => Int)(row: DatasetRow): Option[Try[DateTime]] = {
@@ -149,32 +179,21 @@ object MultiDepositParser extends App {
         })
   }
 
-  def extractProfile(rows: DatasetRows, rowNum: Int): Try[Profile] = {
-    // TODO validate DDM_AUDIENCE and DDM_ACCESSRIGHTS as in AddDatasetMetadataToDeposit.checkAccessRights
-    Try((Profile(_, _, _, _, _, _, _)).curried)
-      .combine(extractNEL(rows, rowNum, "DC_TITLE"))
-      .combine(extractNEL(rows, rowNum, "DC_DESCRIPTION"))
-      .combine(extractNEL(rows)(creator))
-      .combine(extractList(rows)(date("DDM_CREATED")).flatMap(exactlyOne(rowNum, "DDM_CREATED")))
-      .combine(extractList(rows)(date("DDM_AVAILABLE")).flatMap(atMostOne(rowNum, "DDM_AVAILABLE")).map(_.getOrElse(DateTime.now())))
-      .combine(extractNEL(rows, rowNum, "DDM_AUDIENCE"))
-      .combine(extractList(rows)(accessCategory).flatMap(exactlyOne(rowNum, "DDM_ACCESSRIGHTS")))
-  }
+  def creator(rowNum: => Int)(row: DatasetRow): Option[Try[Creator]] = {
+    val titles = row.find("DCX_CREATOR_TITLES")
+    val initials = row.find("DCX_CREATOR_INITIALS")
+    val insertions = row.find("DCX_CREATOR_INSERTIONS")
+    val surname = row.find("DCX_CREATOR_SURNAME")
+    val organization = row.find("DCX_CREATOR_ORGANIZATION")
+    val dai = row.find("DCX_CREATOR_DAI")
 
-  def relation(rowNum: => Int)(row: DatasetRow): Option[Try[Relation]] = {
-    val qualifier = row.find("DCX_RELATION_QUALIFIER")
-    val link = row.find("DCX_RELATION_LINK")
-    val title = row.find("DCX_RELATION_TITLE")
-
-    (qualifier, link, title) match {
-      case (Some(_), Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] can be filled in per row")))
-      case (Some(q), Some(l), None) => Some(Success(QualifiedLinkRelation(q, l)))
-      case (Some(q), None, Some(t)) => Some(Success(QualifiedTitleRelation(q, t)))
-      case (Some(_), None, None) => Some(Failure(ActionException(rowNum, "At least one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be filled in per row")))
-      case (None, Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] can be filled in per row")))
-      case (None, Some(l), None) => Some(Success(LinkRelation(l)))
-      case (None, None, Some(t)) => Some(Success(TitleRelation(t)))
-      case (None, None, None) => None
+    (titles, initials, insertions, surname, organization, dai) match {
+      case (None, None, None, None, None, None) => None
+      case (None, None, None, None, Some(org), None) => Some(Success(CreatorOrganization(org)))
+      case (_, Some(init), _, Some(sur), _, _) => Some(Success(CreatorPerson(titles, init, insertions, sur, organization, dai)))
+      case (_, Some(_), _, None, _, _) => Some(Failure(ActionException(rowNum, s"Missing value for: DCX_CREATOR_SURNAME")))
+      case (_, None, _, Some(_), _, _) => Some(Failure(ActionException(rowNum, s"Missing value for: DCX_CREATOR_INITIALS")))
+      case (_, None, _, None, _, _) => Some(Failure(ActionException(rowNum, s"Missing values for: [DCX_CREATOR_INITIALS, DCX_CREATOR_SURNAME]")))
     }
   }
 
@@ -197,6 +216,23 @@ object MultiDepositParser extends App {
     }
   }
 
+  def relation(rowNum: => Int)(row: DatasetRow): Option[Try[Relation]] = {
+    val qualifier = row.find("DCX_RELATION_QUALIFIER")
+    val link = row.find("DCX_RELATION_LINK")
+    val title = row.find("DCX_RELATION_TITLE")
+
+    (qualifier, link, title) match {
+      case (Some(_), Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] can be filled in per row")))
+      case (Some(q), Some(l), None) => Some(Success(QualifiedLinkRelation(q, l)))
+      case (Some(q), None, Some(t)) => Some(Success(QualifiedTitleRelation(q, t)))
+      case (Some(_), None, None) => Some(Failure(ActionException(rowNum, "At least one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be filled in per row")))
+      case (None, Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] can be filled in per row")))
+      case (None, Some(l), None) => Some(Success(LinkRelation(l)))
+      case (None, None, Some(t)) => Some(Success(TitleRelation(t)))
+      case (None, None, None) => None
+    }
+  }
+
   def subject(rowNum: => Int)(row: DatasetRow): Option[Try[Subject]] = {
     val subject = row.find("DC_SUBJECT")
     val scheme = row.find("DC_SUBJECT_SCHEME")
@@ -205,7 +241,20 @@ object MultiDepositParser extends App {
       case (Some(sub), Some(sch)) if sch == "abr:ABRcomplex" => Some(Success(Subject(Some(sch), sub)))
       case (Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'")))
       case (Some(sub), None) => Some(Success(Subject(None, sub)))
-      case (None, sch@Some(_)) => Some(Success(Subject(sch)))
+      case (None, sch @ Some(_)) => Some(Success(Subject(sch)))
+      case (None, None) => None
+    }
+  }
+
+  def temporal(rowNum: => Int)(row: DatasetRow): Option[Try[Temporal]] = {
+    val subject = row.find("DCT_TEMPORAL")
+    val scheme = row.find("DCT_TEMPORAL_SCHEME")
+
+    (subject, scheme) match {
+      case (Some(sub), Some(sch)) if sch == "abr:ABRperiode" => Some(Success(Temporal(Some(sch), sub)))
+      case (Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'")))
+      case (Some(sub), None) => Some(Success(Temporal(None, sub)))
+      case (None, sch @ Some(_)) => Some(Success(Temporal(sch)))
       case (None, None) => None
     }
   }
@@ -234,38 +283,6 @@ object MultiDepositParser extends App {
       case (None, None, None, None, _) => None
       case _ => Some(Failure(ActionException(rowNum, "In a spatial box all of DCX_SPATIAL_WEST, DCX_SPATIAL_EAST, DCX_SPATIAL_NORTH and DCX_SPATIAL_WEST should be filled in per row")))
     }
-  }
-
-  def temporal(rowNum: => Int)(row: DatasetRow): Option[Try[Temporal]] = {
-    val subject = row.find("DCT_TEMPORAL")
-    val scheme = row.find("DCT_TEMPORAL_SCHEME")
-
-    (subject, scheme) match {
-      case (Some(sub), Some(sch)) if sch == "abr:ABRperiode" => Some(Success(Temporal(Some(sch), sub)))
-      case (Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'")))
-      case (Some(sub), None) => Some(Success(Temporal(None, sub)))
-      case (None, sch@Some(_)) => Some(Success(Temporal(sch)))
-      case (None, None) => None
-    }
-  }
-
-  def extractMetadata(rows: DatasetRows): Try[Metadata] = {
-    Try { (Metadata(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _)).curried }
-      .map(_(extractList(rows, "DCT_ALTERNATIVE")))
-      .map(_(extractList(rows, "DC_PUBLISHER")))
-      .map(_(extractList(rows, "DC_TYPE")))
-      .map(_(extractList(rows, "DC_FORMAT")))
-      .map(_(extractList(rows, "DC_IDENTIFIER")))
-      .map(_(extractList(rows, "DC_SOURCE")))
-      .map(_(extractList(rows, "DC_LANGUAGE")))
-      .map(_(extractList(rows, "DCT_SPATIAL")))
-      .map(_(extractList(rows, "DCT_RIGHTSHOLDER")))
-      .combine(extractList(rows)(relation))
-      .combine(extractList(rows)(contributor))
-      .combine(extractList(rows)(subject))
-      .combine(extractList(rows)(spatialPoint))
-      .combine(extractList(rows)(spatialBox))
-      .combine(extractList(rows)(temporal))
   }
 
   // TODO if A/V files are in the dataset, Springfield must be defined
@@ -305,21 +322,5 @@ object MultiDepositParser extends App {
       .map(acc => FileAccessRights.valueOf(acc)
         .map(Success(_))
         .getOrElse(Failure(ActionException(rowNum, s"Value '$acc' is not a valid file access right"))))
-  }
-
-  def extractAudioVideo(rows: DatasetRows, rowNum: Int): Try[Option[AudioVideo]] = {
-    Try {
-      ((springf: Option[Springfield], acc: Option[FileAccessRights.Value], avFiles: Map[File, List[AVFile]]) => {
-        (springf, acc, avFiles) match {
-          case (Some(s), a, fs) => Success(Some(AudioVideo(s, a, fs)))
-          case (None, _, fs) if fs.isEmpty => Success(None)
-          case (None, _, _) => Failure(ActionException(rowNum, "The column 'AV_FILE' contains values, but the columns [SF_COLLECTION, SF_USER] do not"))
-        }
-      }).curried
-    }
-      .combine(extractList(rows)(springfield).flatMap(atMostOne(rowNum, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")))
-      .combine(extractList(rows)(fileAccessRight).flatMap(atMostOne(rowNum, "SF_ACCESSIBILITY")))
-      .combine(extractList(rows)(avFile).map(_.groupBy(_.file)))
-      .flatten
   }
 }
