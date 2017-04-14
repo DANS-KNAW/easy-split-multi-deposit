@@ -20,7 +20,7 @@ import java.nio.file.{ FileSystemException, Files }
 import java.nio.file.attribute.{ PosixFileAttributes, PosixFilePermission, UserPrincipalNotFoundException }
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
+import org.scalatest.BeforeAndAfter
 
 import scala.util.{ Failure, Success }
 

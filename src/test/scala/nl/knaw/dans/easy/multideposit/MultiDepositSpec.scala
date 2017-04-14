@@ -15,24 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import org.scalatest.BeforeAndAfter
-
 import scala.util.Try
 
-class MultiDepositSpec extends UnitSpec with BeforeAndAfter {
-
-  val dataset1 = new Dataset
-  val dataset2 = new Dataset
-
-  before {
-    dataset1 ++= testDataset1
-    dataset2 ++= testDataset2
-  }
-
-  after {
-    dataset1.clear
-    dataset2.clear
-  }
+class MultiDepositSpec extends UnitSpec {
 
   "StringToOption.toOption" should "yield an Option.empty when given an empty String" in {
     "".toOption shouldBe empty
@@ -68,21 +53,5 @@ class MultiDepositSpec extends UnitSpec with BeforeAndAfter {
 
   it should "return the onError value when provided with a failure" in {
     Try[String](throw new Exception).onError(_ => "foobar") shouldBe "foobar"
-  }
-
-  "DatasetExtensions.getValue" should "return the correct value when provided with the correct parameters" in {
-    dataset1.getValue("ROW")(0).value shouldBe "2"
-  }
-
-  it should "return None when the key is not in the dataset" in {
-    dataset1.getValue("ROW!")(0) shouldBe empty
-  }
-
-  it should "return None when the row is not in the dataset" in {
-    dataset1.getValue("ROW")(10) shouldBe empty
-  }
-
-  it should "return None when value is blank" in {
-    dataset1.getValue("DDM_CREATED")(1) shouldBe empty
   }
 }

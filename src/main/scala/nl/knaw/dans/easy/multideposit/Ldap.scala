@@ -27,18 +27,18 @@ trait Ldap extends AutoCloseable {
    * Queries LDAP for the user data corresponding to the given `depositorID` and transforms it
    * into an instance of type `T` using the function `f`.
    *
-   * @param depositorID the identifier related to the depositor
+   * @param userId the identifier related to the depositor
    * @param f function that transforms an `Attributes` object to an instance of type `T`
    * @tparam T the result type of the transformer function
    * @return `Success` if the query succeeds, `Failure` otherwise
    */
-  def query[T](depositorID: String)(f: Attributes => T): Try[Seq[T]]
+  def query[T](userId: String)(f: Attributes => T): Try[Seq[T]]
 }
 
 case class LdapImpl(ctx: LdapContext) extends Ldap {
 
-  def query[T](depositorID: String)(f: Attributes => T): Try[Seq[T]] = Try {
-    val searchFilter = s"(&(objectClass=easyUser)(uid=$depositorID))"
+  def query[T](userId: String)(f: Attributes => T): Try[Seq[T]] = Try {
+    val searchFilter = s"(&(objectClass=easyUser)(uid=$userId))"
     val searchControls = new SearchControls() {
       setSearchScope(SearchControls.SUBTREE_SCOPE)
     }

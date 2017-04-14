@@ -19,37 +19,25 @@ import java.io.{ File, IOException }
 import java.nio.charset.Charset
 import java.util.Properties
 
+import nl.knaw.dans.easy.multideposit.parser.DatasetID
 import nl.knaw.dans.lib.error._
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.apache.commons.lang.StringUtils
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
-import scala.collection.immutable.IndexedSeq
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, PrettyPrinter }
 
 package object multideposit {
 
-  type DatasetID = String
-  type MultiDepositKey = String
-  type MultiDepositValues = List[String]
-  type Dataset = mutable.HashMap[MultiDepositKey, MultiDepositValues]
-  type Datasets = ListBuffer[(DatasetID, Dataset)]
-  def Datasets: Datasets = ListBuffer.empty
-
-  type DatasetRow = mutable.HashMap[MultiDepositKey, String]
+  type Datamanager = String
   type DatamanagerEmailaddress = String
 
-  case class FileParameters(row: Option[Int], sip: Option[String], dataset: Option[String],
-                            storageService: Option[String], storagePath: Option[String],
-                            audioVideo: Option[String])
   case class DepositPermissions(permissions: String, group: String)
   case class Settings(multidepositDir: File = null,
                       stagingDir: File = null,
                       outputDepositDir: File = null,
-                      datamanager: String = null,
+                      datamanager: Datamanager = null,
                       depositPermissions: DepositPermissions = null,
                       ldap: Ldap = null) {
     override def toString: String =
@@ -285,93 +273,6 @@ package object multideposit {
      * @return a ``List`` of ``java.io.File`` with the files
      */
     def listRecursively: List[File] = FileUtils.listFiles(file, null, true).toList
-  }
-
-  implicit class DatasetExtensions(val dataset: Dataset) extends AnyVal {
-    def getRowNumber: Int = {
-      dataset("ROW").head.toInt // first occurrence of dataset, assuming it is not empty
-    }
-
-    def findValue(key: MultiDepositKey): Option[String] = {
-      for {
-        values <- dataset.get(key)
-        value <- values.find(!_.isBlank)
-      } yield value
-    }
-
-    /**
-     * Retrieves the value of a certain parameter from the dataset on a certain row.
-     * If either the key is not present, the specified row does not exist or the value `blank`
-     * (according to org.apache.commons.lang.StringUtils.isBlank), then Option.empty
-     * is returned.
-     *
-     * @param key the key under which the value is stored in the dataset
-     * @param row the row on which the value occurs
-     * @return the value belonging to the (key, row) pair if present, else Option.empty
-     */
-    def getValue(key: MultiDepositKey)(row: Int): Option[String] = {
-      for {
-        values <- dataset.get(key)
-        value <- Try(values(row)).toOption
-        value2 <- value.toOption
-      } yield value2
-    }
-
-    /**
-     * Turns a map of key-column pairs into a filtered sequence of maps:
-     * a map of key-value pairs per row, only those rows with a value for at least one of the desired columns.
-     *
-     * @param desiredColumns the keys of these key-value pairs specify the desired column keys
-     * (the values specifying the DDM equivalent are ignored)
-     * @return A sequence of maps, each map containing key-value pairs of a row.
-     * Values are neither null nor blank, rows are not empty.
-     * The keyset of each map is a non-empty subset of the keyset of dictionary.
-     */
-    def rowsWithValuesFor(desiredColumns: DDM.Dictionary): IndexedSeq[DatasetRow] =
-      dataset.getColumnsIn(desiredColumns).toRows.filter(_.nonEmpty)
-
-    def rowsWithValuesFor(desiredColumns: String*): IndexedSeq[DatasetRow] =
-      dataset.getColumns(desiredColumns: _*).toRows.filter(_.nonEmpty)
-
-    /**
-     * Turns a map of key-column pairs into a filtered sequence of maps:
-     * a map of key-value pairs per row and, those rows with a value for each desired column.
-     * Rows with values for some but not all desired columns are ignored.
-     *
-     * @param desiredColumns the keys of these key-value pairs specify the desired column keys
-     * (the values specifying the DDM equivalent are ignored)
-     * @return A sequence of maps, each map containing key-value pairs of a row.
-     * Values are neither null nor blank, rows are not empty,
-     * The keyset of each map equals the keyset of dictionary.
-     */
-    def rowsWithValuesForAllOf(desiredColumns: DDM.Dictionary): IndexedSeq[DatasetRow] =
-      dataset.getColumnsIn(desiredColumns).toRows.filter(_.size == desiredColumns.size)
-
-    /**
-     * Filters a map of key-column pairs.
-     *
-     * @param desiredColumns the keys of these key-value pairs specify the desired column keys
-     * (the values specifying the DDM equivalent are ignored)
-     * @return A map with those key-column pairs for which the key is in keyset of the dictionary.
-     */
-    def getColumnsIn(desiredColumns: DDM.Dictionary): Dataset =
-      dataset.filter(kvs => desiredColumns.contains(kvs._1))
-
-    def getColumns(columns: String*): Dataset =
-      dataset.filter(kvs => columns.contains(kvs._1))
-
-    /**
-     * Turns a map of key-column pairs into a sequence of maps: one map of key-value pairs per row.
-     *
-     * @return A sequence of maps, each map containing key-value pairs of a row.
-     * Values are neither null nor blank, a row may be empty.
-     */
-    def toRows: IndexedSeq[DatasetRow] =
-      dataset.values.headOption
-        .map(_.indices
-          .map(i => dataset.map { case (key, values) => (key, values(i)) })
-          .map(_.filter(kv => kv._2 != null && !kv._2.isBlank)))
-        .getOrElse(IndexedSeq())
   }
 
   val encoding = Charsets.UTF_8

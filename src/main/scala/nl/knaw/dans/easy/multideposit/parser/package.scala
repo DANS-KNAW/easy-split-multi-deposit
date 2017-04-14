@@ -6,6 +6,7 @@ package object parser {
 
   type MultiDepositKey = String
   type DatasetID = String
+  type DepositorId = String
 
   type DatasetRow = Map[MultiDepositKey, String]
   type DatasetRows = Seq[DatasetRow]
@@ -19,6 +20,6 @@ package object parser {
   }
 
   implicit class DatasetRowFind(val row: DatasetRow) extends AnyVal {
-    def find(name: String): Option[String] = row.get(name).filterNot(_.isBlank)
+    def find(name: MultiDepositKey): Option[String] = row.get(name).filterNot(_.isBlank)
   }
 }

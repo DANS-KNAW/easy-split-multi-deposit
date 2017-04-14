@@ -19,7 +19,8 @@ import java.io.{ File, IOException }
 import java.nio.file._
 import java.nio.file.attribute._
 
-import nl.knaw.dans.easy.multideposit.{ UnitAction, DatasetID, _ }
+import nl.knaw.dans.easy.multideposit.parser.DatasetID
+import nl.knaw.dans.easy.multideposit.{ UnitAction, _ }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.postfixOps

@@ -15,11 +15,10 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.{ Action, DatasetID, Settings, _ }
+import nl.knaw.dans.easy.multideposit.parser.DatasetID
+import nl.knaw.dans.easy.multideposit.{ Settings, _ }
 import nl.knaw.dans.lib.error.CompositeException
-import org.apache.commons.io.FileExistsException
 
-import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
 case class MoveDepositToOutputDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends UnitAction[Unit] {

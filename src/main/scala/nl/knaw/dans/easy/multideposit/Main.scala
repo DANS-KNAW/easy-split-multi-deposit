@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.multideposit
 
 import nl.knaw.dans.easy.multideposit.actions._
+import nl.knaw.dans.easy.multideposit.parser.{ MultiDepositParser, Dataset }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.postfixOps
@@ -43,26 +44,22 @@ object Main extends DebugEnhancedLogging {
       .flatMap(getActions(_).map(_.run(())).getOrElse(Failure(new Exception)))
   }
 
-  def getActions(datasets: Datasets)(implicit settings: Settings): Option[Action[Unit, Unit]] = {
+  def getActions(datasets: Seq[Dataset])(implicit settings: Settings): Option[Action[Unit, Unit]] = {
     logger.info("Compiling list of actions to perform ...")
 
     val retrieveDatamanagerAction = RetrieveDatamanagerAction()
-    val datasetActions = datasets.map {
-      case entry@(datasetID, dataset) =>
-        val row = dataset.getRowNumber
-        logger.debug(s"Getting actions for dataset $datasetID ...")
+    val datasetActions = datasets.map(dataset => {
+      logger.debug(s"Getting actions for dataset ${ dataset.datasetId } ...")
 
-        CreateStagingDir(row, datasetID)
-          .combine(AddBagToDeposit(row, entry))
-          .combine(AddDatasetMetadataToDeposit(row, entry))
-          .combine(AddFileMetadataToDeposit(row, entry))
-          .combine(retrieveDatamanagerAction)
-          .combine(AddPropertiesToDeposit(row, entry))
-          .combine(SetDepositPermissions(row, datasetID))
-    }.reduceOption(_ combine _)
-    val moveActions = datasets.map {
-      case (datasetID, dataset) => MoveDepositToOutputDir(dataset.getRowNumber, datasetID): Action[Unit, Unit]
-    }.reduceOption(_ combine _)
+      CreateStagingDir(dataset.row, dataset.datasetId)
+        .combine(AddBagToDeposit(dataset))
+        .combine(AddDatasetMetadataToDeposit(dataset))
+        .combine(AddFileMetadataToDeposit(dataset))
+        .combine(retrieveDatamanagerAction)
+        .combine(AddPropertiesToDeposit(dataset))
+        .combine(SetDepositPermissions(dataset.row, dataset.datasetId))
+    }).reduceOption(_ combine _)
+    val moveActions = datasets.map(dataset => MoveDepositToOutputDir(dataset.row, dataset.datasetId): Action[Unit, Unit]).reduceOption(_ combine _)
 
     for {
       dsAct <- datasetActions

@@ -17,12 +17,12 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.File
 
-import nl.knaw.dans.easy.multideposit.{Settings, UnitSpec, _}
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
+import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
+import org.scalatest.BeforeAndAfter
 
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
-class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
+class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md"),

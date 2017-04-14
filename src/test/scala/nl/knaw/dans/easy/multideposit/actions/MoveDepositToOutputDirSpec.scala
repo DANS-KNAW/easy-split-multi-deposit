@@ -58,7 +58,7 @@ class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter with Befor
     }
   }
 
-  override def afterAll(): Unit = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "verify that the deposit does not yet exist in the outputDepositDir" in {
     MoveDepositToOutputDir(1, "ruimtereis01").checkPreconditions shouldBe a[Success[_]]
