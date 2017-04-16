@@ -9,11 +9,9 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dcx-dai:creatorDetails>
       <dcx-dai:author>
         <dcx-dai:titles>Captain</dcx-dai:titles>
-        <dcx-dai:surname>Kirk</dcx-dai:surname>
         <dcx-dai:initials>J.T.</dcx-dai:initials>
-        <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">United Federation of Planets</dcx-dai:name>
-        </dcx-dai:organization>
+        <dcx-dai:surname>Kirk</dcx-dai:surname>
+        <dcx-dai:name xml:lang="en">United Federation of Planets</dcx-dai:name>
       </dcx-dai:author>
     </dcx-dai:creatorDetails>
     <ddm:created>2015-05-19</ddm:created>
@@ -22,44 +20,40 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
   </ddm:profile>
   <ddm:dcmiMetadata>
+    <dcterms:alternative>Gewoon een stukje steen in de ruimte?</dcterms:alternative>
     <dcterms:publisher>dans</dcterms:publisher>
     <dcterms:publisher>knaw</dcterms:publisher>
-    <dc:identifier>ds1</dc:identifier>
-    <dc:language>NL</dc:language>
-    <dc:language>encoding=UTF-8</dc:language>
-    <dcterms:rightsHolder>jan</dcterms:rightsHolder>
-    <dcterms:rightsHolder>eko</dcterms:rightsHolder>
-    <dcterms:rightsHolder>linda</dcterms:rightsHolder>
+    <dcterms:type>random test data</dcterms:type>
     <dc:format>video/mpeg</dc:format>
     <dc:format>text/plain</dc:format>
     <dc:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dc:format>
+    <dc:identifier>ds1</dc:identifier>
+    <dc:source>whatever</dc:source>
+    <dc:language>NL</dc:language>
+    <dc:language>encoding=UTF-8</dc:language>
     <dcterms:spatial>here</dcterms:spatial>
     <dcterms:spatial>there</dcterms:spatial>
-    <dcterms:alternative>Gewoon een stukje steen in de ruimte?</dcterms:alternative>
-    <dc:source>whatever</dc:source>
-    <dcterms:type>random test data</dcterms:type>
+    <dcterms:rightsHolder>jan</dcterms:rightsHolder>
+    <dcterms:rightsHolder>eko</dcterms:rightsHolder>
+    <dcterms:rightsHolder>linda</dcterms:rightsHolder>
     <dcterms:replaces>dummy</dcterms:replaces>
     <dcterms:isRequiredBy>blabla</dcterms:isRequiredBy>
     <dc:relation>http://x</dc:relation>
-    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">
-      /domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$sdo-id
-    </ddm:relation>
+    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$sdo-id</ddm:relation>
     <dcx-dai:contributorDetails>
       <dcx-dai:author>
+        <dcx-dai:titles>Prof. Dr. Mr. Ir.</dcx-dai:titles>
         <dcx-dai:initials>A.S.</dcx-dai:initials>
         <dcx-dai:surname>Terix</dcx-dai:surname>
         <dcx-dai:DAI>info:eu-repo/dai/nl/123456789X</dcx-dai:DAI>
-        <dcx-dai:titles>Prof. Dr. Mr. Ir.</dcx-dai:titles>
-        <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">Gallië</dcx-dai:name>
-        </dcx-dai:organization>
+        <dcx-dai:name xml:lang="en">Gallië</dcx-dai:name>
       </dcx-dai:author>
     </dcx-dai:contributorDetails>
     <dcx-dai:contributorDetails>
       <dcx-dai:author>
         <dcx-dai:initials>O.</dcx-dai:initials>
-        <dcx-dai:surname>Belix</dcx-dai:surname>
         <dcx-dai:insertions>van</dcx-dai:insertions>
+        <dcx-dai:surname>Belix</dcx-dai:surname>
       </dcx-dai:author>
     </dcx-dai:contributorDetails>
     <dc:subject>astronomie</dc:subject>
