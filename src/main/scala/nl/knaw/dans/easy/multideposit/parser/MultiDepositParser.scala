@@ -70,16 +70,25 @@ class MultiDepositParser(implicit settings: Settings) extends App {
       Success(Unit)
   }
 
-  // TODO add check for empty DATASET cells
   def parse(file: File): Try[Seq[Dataset]] = {
     for {
       (headers, content) <- read(file)
-      result <- content.groupBy(_ (headers.indexOf("DATASET")))
+      datasetIdIndex = headers.indexOf("DATASET")
+      _ <- detectEmptyDatasetCells(content.map(_(datasetIdIndex)))
+      result <- content.groupBy(_ (datasetIdIndex))
         .mapValues(_.map(headers.zip(_).filterNot { case (_, value) => value.isBlank }.toMap))
         .map((extractDataset _).tupled)
         .toSeq
         .collectResults
     } yield result
+  }
+
+  def detectEmptyDatasetCells(datasetIds: List[String]): Try[Unit] = {
+    datasetIds.zipWithIndex
+      .collect { case (s, i) if s.isBlank => i + 2 }
+      .map(index => Failure(ActionException(index, s"Row $index does not have a datasetId in column DATASET")): Try[Unit])
+      .collectResults
+      .map(_ => ())
   }
 
   def getRowNum(row: DatasetRow): Int = row("ROW").toInt
@@ -145,7 +154,6 @@ class MultiDepositParser(implicit settings: Settings) extends App {
   def extractDataset(datasetId: DatasetID, rows: DatasetRows): Try[Dataset] = {
     val rowNum = rows.map(getRowNum).min
 
-    // TODO depositorIsActive in preconditions of AddPropertiesToDeposit
     val depositorId = extractNEL(rows, rowNum, "DEPOSITOR_ID")
       .flatMap {
         case depositorIds if depositorIds.toSet.size > 1 =>
@@ -164,7 +172,6 @@ class MultiDepositParser(implicit settings: Settings) extends App {
   }
 
   def extractProfile(rows: DatasetRows, rowNum: Int): Try[Profile] = {
-    // TODO validate DDM_AUDIENCE and DDM_ACCESSRIGHTS as in AddDatasetMetadataToDeposit.checkAccessRights
     Try { Profile.curried }
       .combine(extractNEL(rows, rowNum, "DC_TITLE"))
       .combine(extractNEL(rows, rowNum, "DC_DESCRIPTION"))
@@ -272,7 +279,6 @@ class MultiDepositParser(implicit settings: Settings) extends App {
     }
   }
 
-  // TODO partial duplicate of creators
   def contributor(rowNum: => Int)(row: DatasetRow): Option[Try[Contributor]] = {
     val titles = row.find("DCX_CONTRIBUTOR_TITLES")
     val initials = row.find("DCX_CONTRIBUTOR_INITIALS")
@@ -357,7 +363,6 @@ class MultiDepositParser(implicit settings: Settings) extends App {
     }
   }
 
-  // TODO if A/V files are in the dataset, Springfield must be defined
   def springfield(rowNum: => Int)(row: DatasetRow): Option[Try[Springfield]] = {
     val domain = row.find("SF_DOMAIN")
     val user = row.find("SF_USER")

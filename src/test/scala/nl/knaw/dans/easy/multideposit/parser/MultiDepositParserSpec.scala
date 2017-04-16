@@ -231,6 +231,24 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     }
   }
 
+  "detectEmptyDatasetCells" should "succeed when no elements in the input are empty" in {
+    val dsIds = List("ds1", "ds1", "ds2", "ds2", "ds2", "ds3")
+
+    detectEmptyDatasetCells(dsIds) shouldBe a[Success[_]]
+  }
+
+  it should "fail when any number of elements in the input are blank" in {
+    val dsIds = List("ds1", "", "ds2", "ds2", "   ", "ds3")
+
+    inside(detectEmptyDatasetCells(dsIds)) {
+      case Failure(CompositeException(es)) =>
+        val e1 :: e2 :: Nil = es.toList
+
+        e1 should have message "Row 3 does not have a datasetId in column DATASET"
+        e2 should have message "Row 6 does not have a datasetId in column DATASET"
+    }
+  }
+
   "getRowNum" should "extract the row number from the dataset row" in {
     val row = Map("ROW" -> "2", "TEST" -> "abc")
 
