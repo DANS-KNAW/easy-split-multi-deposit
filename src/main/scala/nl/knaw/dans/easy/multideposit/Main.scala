@@ -40,8 +40,10 @@ object Main extends DebugEnhancedLogging {
   }
 
   def run(implicit settings: Settings): Try[Unit] = {
-    MultiDepositParser.parse(multiDepositInstructionsFile)
-      .flatMap(getActions(_).map(_.run(())).getOrElse(Failure(new Exception)))
+    for {
+      datasets <- (new MultiDepositParser).parse(multiDepositInstructionsFile)
+      _ <- getActions(datasets).map(_.run(())).getOrElse(Failure(new Exception("no actions were defined")))
+    } yield ()
   }
 
   def getActions(datasets: Seq[Dataset])(implicit settings: Settings): Option[Action[Unit, Unit]] = {

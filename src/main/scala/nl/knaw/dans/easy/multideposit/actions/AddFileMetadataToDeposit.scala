@@ -103,7 +103,7 @@ case class AddFileMetadataToDeposit(dataset: Dataset)(implicit settings: Setting
         case (true, false) | (false, true) => Success(())
         case (true, true) =>
           Failure(ActionException(dataset.row,
-            "No values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]\n" +
+            "Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]\n" +
               "cause: these columns should be empty because there are no audio/video files " +
               "found in this dataset"))
         case (false, false) =>

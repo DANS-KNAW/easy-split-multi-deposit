@@ -23,7 +23,6 @@ import nl.knaw.dans.easy.multideposit.{ ActionException, Settings, UnitSpec, _ }
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
-import scala.collection.mutable
 import scala.util.{ Failure, Success }
 
 class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll with MockFactory {
@@ -36,9 +35,6 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     ldap = ldapMock
   )
   val datasetID = "ds1"
-  val dataset = mutable.HashMap(
-    "DEPOSITOR_ID" -> List("dp1", "", "", "")
-  )
 
   def mockLdapForDepositor(b: Boolean): Unit = {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(b))
@@ -119,13 +115,13 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   "execute" should "generate the properties file and write the properties in it" in {
     AddPropertiesToDeposit(testDataset1.copy(audioVideo = AudioVideo())).execute("dm@test.org") shouldBe a[Success[_]]
 
-    val props = stagingPropertiesFile(datasetID)
+    val props = stagingPropertiesFile(testDataset1.datasetId)
     props should exist
 
     props.read() should {
       include("state.label") and
         include("state.description") and
-        include("depositor.userId=dp1") and
+        include(s"depositor.userId=${testDataset1.depositorId}") and
         include("datamanager.email=dm@test.org") and
         include("datamanager.userId=dm") and
         not include "springfield.domain" and
@@ -137,7 +133,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   it should "generate the properties file with springfield fields and write the properties in it" in {
     AddPropertiesToDeposit(testDataset1).execute("dm@test.org") shouldBe a[Success[_]]
 
-    val props = stagingPropertiesFile(datasetID)
+    val props = stagingPropertiesFile(testDataset1.datasetId)
     props should exist
 
     props.read() should {

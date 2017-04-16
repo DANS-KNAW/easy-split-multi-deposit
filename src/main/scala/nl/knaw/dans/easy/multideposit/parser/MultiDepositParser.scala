@@ -1,10 +1,25 @@
+/**
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package nl.knaw.dans.easy.multideposit.parser
 
 import java.io.File
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.actions.FileAccessRights
-import nl.knaw.dans.easy.multideposit.{ ActionException, Settings, StringExtensions, encoding }
+import nl.knaw.dans.easy.multideposit.{ ActionException, EmptyInstructionsFileException, Headers, Settings, StringExtensions, encoding }
 import nl.knaw.dans.lib.error._
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
 import org.joda.time.DateTime
@@ -14,31 +29,48 @@ import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 import scala.util.{ Failure, Success, Try }
 
-object MultiDepositParser extends App {
-
-  val settings = Settings(multidepositDir = new File("src/test/resources/allfields/input/"))
-  val instructionsFile: File = new File("src/test/resources/allfields/input/instructions.csv")
-  parse(instructionsFile).foreach(_.foreach(println))
+class MultiDepositParser(implicit settings: Settings) extends App {
 
   def read(file: File): Try[(List[MultiDepositKey], List[List[String]])] = {
     managed(CSVParser.parse(file, encoding, CSVFormat.RFC4180))
       .map(parse)
       .tried
-      .map {
-        case Nil => throw new Exception("not expected to happen")
-        case head :: Nil => ("ROW" :: head, Nil) // TODO probably this line is not needed!
-        case head :: rows => ("ROW" :: head, rows.zipWithIndex.map { case (row, index) => (index + 2).toString :: row })
+      .flatMap {
+        case Nil => Failure(EmptyInstructionsFileException(file))
+        case headers :: rows =>
+          validateDatasetHeaders(headers)
+            .map(_ => ("ROW" :: headers, rows.zipWithIndex.collect {
+              case (row, index) if row.nonEmpty => (index + 2).toString :: row
+            }))
       }
   }
 
-  def parse(parser: CSVParser): List[List[String]] = {
-    for {
-      record <- parser.getRecords.asScala.toList
-      if record.size() > 0
-      if !record.get(0).isBlank
-    } yield record.asScala.toList.map(_.trim)
+  private def parse(parser: CSVParser): List[List[String]] = {
+    parser.getRecords.asScala.toList
+      .map(_.asScala.toList.map(_.trim))
+      .map {
+        case "" :: Nil => Nil // blank line
+        case xs => xs
+      }
   }
 
+  private def validateDatasetHeaders(headers: List[MultiDepositKey]): Try[Unit] = {
+    val validHeaders = Headers.validHeaders
+    val invalidHeaders = headers.filterNot(validHeaders.contains)
+    lazy val uniqueHeaders = headers.toSet.toList
+
+    if (invalidHeaders.nonEmpty)
+      Failure(ActionException(0, "SIP Instructions file contains unknown headers: " +
+        s"${ invalidHeaders.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
+        s"consult the documentation for the list of valid headers."))
+    else if (headers.size != uniqueHeaders.size)
+      Failure(ActionException(0, "SIP Instructions file contains duplicate headers: " +
+        s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
+    else
+      Success(Unit)
+  }
+
+  // TODO add check for empty DATASET cells
   def parse(file: File): Try[Seq[Dataset]] = {
     for {
       (headers, content) <- read(file)
@@ -99,7 +131,15 @@ object MultiDepositParser extends App {
   def checkValidChars(rowNum: => Int, column: => MultiDepositKey, value: String): Try[String] = {
     val invalidCharacters = "[^a-zA-Z0-9_-]".r.findAllIn(value).toSet
     if (invalidCharacters.isEmpty) Success(value)
-    else Failure(ActionException(rowNum, s"The column '$column' contains the following invalid characters: ${ invalidCharacters.map(s => s"'$s'").mkString("{", ", ", "}") }"))
+    else Failure(ActionException(rowNum, s"The column '$column' contains the following invalid characters: ${ invalidCharacters.mkString("{", ", ", "}") }"))
+  }
+
+  def missingRequired[T](rowNum: Int, row: DatasetRow, required: Set[String]): Failure[T] = {
+    val blankRequired = row.collect { case (key, value) if value.isBlank && required.contains(key) => key }
+    val missingColumns = required.diff(row.keySet)
+    val missing = blankRequired.toSet ++ missingColumns
+    require(missing.nonEmpty, "the list of missing elements is supposed to be non-empty")
+    Failure(ActionException(rowNum, s"Missing value(s) for: ${missing.mkString("[", ", ", "]")}"))
   }
 
   def extractDataset(datasetId: DatasetID, rows: DatasetRows): Try[Dataset] = {
@@ -114,7 +154,7 @@ object MultiDepositParser extends App {
         case depId :: _ => Success(depId)
       }
 
-    Try { (Dataset(_, _, _, _, _, _)).curried }
+    Try { Dataset.curried }
       .combine(checkValidChars(rowNum, "DATASET", datasetId))
       .map(_ (rowNum))
       .combine(depositorId)
@@ -125,10 +165,14 @@ object MultiDepositParser extends App {
 
   def extractProfile(rows: DatasetRows, rowNum: Int): Try[Profile] = {
     // TODO validate DDM_AUDIENCE and DDM_ACCESSRIGHTS as in AddDatasetMetadataToDeposit.checkAccessRights
-    Try((Profile(_, _, _, _, _, _, _)).curried)
+    Try { Profile.curried }
       .combine(extractNEL(rows, rowNum, "DC_TITLE"))
       .combine(extractNEL(rows, rowNum, "DC_DESCRIPTION"))
-      .combine(extractNEL(rows)(creator))
+      .combine(extractList(rows)(creator)
+        .flatMap {
+          case Seq() => Failure(ActionException(rowNum, "There should be at least one non-empty value for the creator fields"))
+          case xs => Success(listToNEL(xs))
+        })
       .combine(extractList(rows)(date("DDM_CREATED"))
         .flatMap(exactlyOne(rowNum, List("DDM_CREATED"))))
       .combine(extractList(rows)(date("DDM_AVAILABLE"))
@@ -138,15 +182,15 @@ object MultiDepositParser extends App {
       .combine(extractList(rows)(accessCategory)
         .flatMap(exactlyOne(rowNum, List("DDM_ACCESSRIGHTS"))))
       .flatMap {
-        case Profile(_, _, _, _, _, audiences, AccessCategory.GROUP_ACCESS) if audiences.exists(_ != "D37000") =>
-          Failure(ActionException(rowNum, s"When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE " +
-            s"should be D37000 (Archaeology), but it is: ${ audiences.mkString("[", ", ", "]") }"))
+        case Profile(_, _, _, _, _, audiences, AccessCategory.GROUP_ACCESS) if !audiences.contains("D37000") =>
+          Failure(ActionException(rowNum, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE " +
+            s"should be D37000 (Archaeology), but it contains: ${ audiences.mkString("[", ", ", "]") }"))
         case profile => Success(profile)
       }
   }
 
   def extractMetadata(rows: DatasetRows): Try[Metadata] = {
-    Try { (Metadata(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _)).curried }
+    Try { Metadata.curried }
       .map(_ (extractList(rows, "DCT_ALTERNATIVE")))
       .map(_ (extractList(rows, "DC_PUBLISHER")))
       .map(_ (extractList(rows, "DC_TYPE")))
@@ -207,8 +251,8 @@ object MultiDepositParser extends App {
     row.find("DDM_ACCESSRIGHTS")
       .map(acc => Try { AccessCategory.valueOf(acc) }
         .recoverWith {
-          case e: IllegalArgumentException => Failure(ActionException(rowNum, "DDM_ACCESSRIGHTS " +
-            s"value '$acc' does not represent an accessright", e))
+          case e: IllegalArgumentException => Failure(ActionException(rowNum, s"Value '$acc' is " +
+            s"not a valid accessright", e))
         })
   }
 
@@ -224,9 +268,7 @@ object MultiDepositParser extends App {
       case (None, None, None, None, None, None) => None
       case (None, None, None, None, Some(org), None) => Some(Try { CreatorOrganization(org) })
       case (_, Some(init), _, Some(sur), _, _) => Some(Try { CreatorPerson(titles, init, insertions, sur, organization, dai) })
-      case (_, Some(_), _, None, _, _) => Some(Failure(ActionException(rowNum, s"Missing value for: DCX_CREATOR_SURNAME")))
-      case (_, None, _, Some(_), _, _) => Some(Failure(ActionException(rowNum, s"Missing value for: DCX_CREATOR_INITIALS")))
-      case (_, None, _, None, _, _) => Some(Failure(ActionException(rowNum, s"Missing values for: [DCX_CREATOR_INITIALS, DCX_CREATOR_SURNAME]")))
+      case (_, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME")))
     }
   }
 
@@ -242,10 +284,8 @@ object MultiDepositParser extends App {
     (titles, initials, insertions, surname, organization, dai) match {
       case (None, None, None, None, None, None) => None
       case (None, None, None, None, Some(org), None) => Some(Try { ContributorOrganization(org) })
-      case (_, Some(init), _, Some(sur), _, _) => Some(Try {ContributorPerson(titles, init, insertions, sur, organization, dai) })
-      case (_, Some(_), _, None, _, _) => Some(Failure(ActionException(rowNum, s"Missing value for: DCX_CREATOR_SURNAME")))
-      case (_, None, _, Some(_), _, _) => Some(Failure(ActionException(rowNum, s"Missing value for: DCX_CREATOR_INITIALS")))
-      case (_, None, _, None, _, _) => Some(Failure(ActionException(rowNum, s"Missing values for: [DCX_CREATOR_INITIALS, DCX_CREATOR_SURNAME]")))
+      case (_, Some(init), _, Some(sur), _, _) => Some(Try { ContributorPerson(titles, init, insertions, sur, organization, dai) })
+      case (_, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")))
     }
   }
 
@@ -255,10 +295,10 @@ object MultiDepositParser extends App {
     val title = row.find("DCX_RELATION_TITLE")
 
     (qualifier, link, title) match {
-      case (Some(_), Some(_), Some(_)) | (None, Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] can be filled in per row")))
+      case (Some(_), Some(_), Some(_)) | (None, Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined")))
       case (Some(q), Some(l), None) => Some(Try { QualifiedLinkRelation(q, l) })
       case (Some(q), None, Some(t)) => Some(Try { QualifiedTitleRelation(q, t) })
-      case (Some(_), None, None) => Some(Failure(ActionException(rowNum, "At least one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be filled in per row")))
+      case (Some(_), None, None) => Some(Failure(ActionException(rowNum, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well")))
       case (None, Some(l), None) => Some(Try { LinkRelation(l) })
       case (None, None, Some(t)) => Some(Try { TitleRelation(t) })
       case (None, None, None) => None
@@ -279,13 +319,13 @@ object MultiDepositParser extends App {
   }
 
   def temporal(rowNum: => Int)(row: DatasetRow): Option[Try[Temporal]] = {
-    val subject = row.find("DCT_TEMPORAL")
+    val temporal = row.find("DCT_TEMPORAL")
     val scheme = row.find("DCT_TEMPORAL_SCHEME")
 
-    (subject, scheme) match {
-      case (Some(subj), Some(sch)) if sch == "abr:ABRperiode" => Some(Try { Temporal(subj, Some(sch)) })
+    (temporal, scheme) match {
+      case (Some(temp), Some(sch)) if sch == "abr:ABRperiode" => Some(Try { Temporal(temp, Some(sch)) })
       case (Some(_), Some(_)) => Some(Failure(ActionException(rowNum, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'")))
-      case (Some(subj), None) => Some(Try { Temporal(subj, None) })
+      case (Some(temp), None) => Some(Try { Temporal(temp, None) })
       case (None, Some(_)) => Some(Try { Temporal(scheme = scheme) })
       case (None, None) => None
     }
@@ -299,7 +339,7 @@ object MultiDepositParser extends App {
     (maybeX, maybeY, maybeScheme) match {
       case (Some(x), Some(y), scheme) => Some(Try { SpatialPoint(x, y, scheme) })
       case (None, None, _) => None
-      case _ => Some(Failure(ActionException(rowNum, "In a spatial point both DCX_SPATIAL_X and DCX_SPATIAL_Y should be filled in per row")))
+      case _ => Some(missingRequired(rowNum, row, Set("DCX_SPATIAL_X", "DCX_SPATIAL_Y")))
     }
   }
 
@@ -313,7 +353,7 @@ object MultiDepositParser extends App {
     (west, east, south, north, maybeScheme) match {
       case (Some(w), Some(e), Some(s), Some(n), scheme) => Some(Try { SpatialBox(n, s, e, w, scheme) })
       case (None, None, None, None, _) => None
-      case _ => Some(Failure(ActionException(rowNum, "In a spatial box all of DCX_SPATIAL_WEST, DCX_SPATIAL_EAST, DCX_SPATIAL_NORTH and DCX_SPATIAL_WEST should be filled in per row")))
+      case _ => Some(missingRequired(rowNum, row, Set("DCX_SPATIAL_WEST", "DCX_SPATIAL_EAST", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_NORTH")))
     }
   }
 
@@ -324,10 +364,10 @@ object MultiDepositParser extends App {
     val collection = row.find("SF_COLLECTION")
 
     def springfield(domain: String, user: String, collection: String): Try[Springfield] = {
-      Try { (Springfield(_, _, _)).curried }
+      Try { Springfield.curried }
+        .combine(checkValidChars(rowNum, "SF_DOMAIN", domain))
         .combine(checkValidChars(rowNum, "SF_USER", user))
         .combine(checkValidChars(rowNum, "SF_COLLECTION", collection))
-        .combine(checkValidChars(rowNum, "SF_DOMAIN", domain))
     }
 
     def springfieldWithDefaultDomain(user: String, collection: String): Try[Springfield] = {
@@ -353,9 +393,9 @@ object MultiDepositParser extends App {
 
     (file, title, subtitle, subtitleLang) match {
       case (Some(p), t, Some(sub), subLang) if p.exists() && sub.exists() => Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
-      case (Some(p), _, Some(_), _) if !p.exists() => Some(Failure(ActionException(rowNum, s"AV_FILE '$p' does not exist")))
-      case (Some(_), _, Some(sub), _) if !sub.exists() => Some(Failure(ActionException(rowNum, s"AV_SUBTITLES '$sub' does not exist")))
-      case (Some(_), _, None, Some(_)) => Some(Failure(ActionException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subtitleLang'")))
+      case (Some(p), _, Some(_), _) if !p.exists() => Some(Failure(ActionException(rowNum, s"AV_FILE file '$p' does not exist")))
+      case (Some(_), _, Some(sub), _) if !sub.exists() => Some(Failure(ActionException(rowNum, s"AV_SUBTITLES file '$sub' does not exist")))
+      case (Some(_), _, None, Some(subLang)) => Some(Failure(ActionException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
       case (Some(p), t, None, None) => Some(Success((p, t, None)))
       case (None, None, None, None) => None
       case (None, _, _, _) => Some(Failure(ActionException(rowNum, "No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined")))
@@ -366,6 +406,6 @@ object MultiDepositParser extends App {
     row.find("SF_ACCESSIBILITY")
       .map(acc => FileAccessRights.valueOf(acc)
         .map(Success(_))
-        .getOrElse(Failure(ActionException(rowNum, s"Value '$acc' is not a valid file access right"))))
+        .getOrElse(Failure(ActionException(rowNum, s"Value '$acc' is not a valid file accessright"))))
   }
 }

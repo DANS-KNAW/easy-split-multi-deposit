@@ -51,7 +51,7 @@ package object multideposit {
   case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")
   case class PreconditionsFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
   case class ActionRunFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
-  case class ActionException(row: Int, message: String, cause: Throwable = null) extends RuntimeException(message, cause)
+  case class ActionException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
 
   object Version {
     def apply(): String = {

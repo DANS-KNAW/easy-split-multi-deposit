@@ -127,8 +127,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "return xml on reading from the allfields input instructions csv" in {
+    implicit val s2 = settings.copy(multidepositDir = new File(getClass.getResource("/allfields/input").toURI))
     val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
-    inside(MultiDepositParser.parse(csv).map(_.map(datasetToXml))) {
+    inside(new MultiDepositParser()(s2).parse(csv).map(_.map(datasetToXml))) {
       case Success(xmls) => xmls should have size 3
     }
   }
@@ -164,7 +165,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         SpatialPoint("5", "6", Option("degrees"))),
       spatialBoxes = List(
         SpatialBox("1", "2", "3", "4", Option("RD")),
-        SpatialBox("5", "6", "7", "8"),
+        SpatialBox("5", "6", "7", "8", None),
         SpatialBox("9", "10", "11", "12", Option("degrees"))),
       temporal = List(
         Temporal("1992-2016"),
@@ -256,7 +257,6 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         </dcx-gml:spatial>
         <dcterms:temporal>1992-2016</dcterms:temporal>
         <dcterms:temporal xsi:type="abr:ABRperiode">PALEOV</dcterms:temporal>
-        <dcterms:temporal>2005</dcterms:temporal>
         <dcterms:temporal>some arbitrary text</dcterms:temporal>
       </ddm:dcmiMetadata>
     </ddm>

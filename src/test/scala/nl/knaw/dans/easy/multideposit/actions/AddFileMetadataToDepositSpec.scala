@@ -142,15 +142,15 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
         accessibility = Option(FileAccessRights.RESTRICTED_GROUP),
         avFiles = List(
           AVFile(
-            file = new File("ruimtereis01/reisverslag/centaur.mpg"),
+            file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile,
             title = Option("video about the centaur meteorite"),
             subtitles = List(
-              Subtitles(new File("ruimtereis01/reisverslag/centaur.srt"), Option("en")),
-              Subtitles(new File("ruimtereis01/reisverslag/centaur-nederlands.srt"), Option("nl"))
+              Subtitles(new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.srt").getAbsoluteFile, Option("en")),
+              Subtitles(new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur-nederlands.srt").getAbsoluteFile, Option("nl"))
             )
           ),
           AVFile(
-            file = new File("ruimtereis01/path/to/a/random/sound/chicken.mp3"),
+            file = new File(settings.multidepositDir, "ruimtereis01/path/to/a/random/sound/chicken.mp3").getAbsoluteFile,
             title = Option("our daily wake up call")
           )
         )

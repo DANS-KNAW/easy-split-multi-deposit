@@ -238,7 +238,7 @@ object AddDatasetMetadataToDeposit {
   def createRelation(relation: Relation): Elem = {
     relation match {
       case QualifiedLinkRelation(qualifier, link) => elem(s"dcterms:$qualifier")(link)
-      case QualifiedTitleRelation(qualifier, title) => elem(s"dcterms: $qualifier")(title)
+      case QualifiedTitleRelation(qualifier, title) => elem(s"dcterms:$qualifier")(title)
       case LinkRelation(link) => elem("dc:relation")(link)
       case TitleRelation(title) => elem("dc:relation")(title)
     }
