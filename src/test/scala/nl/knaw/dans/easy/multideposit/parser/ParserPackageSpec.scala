@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import nl.knaw.dans.easy.multideposit.UnitSpec
-import org.scalatest.OptionValues
 
 class ParserPackageSpec extends UnitSpec {
 
