@@ -26,7 +26,7 @@ import gov.loc.repository.bagit.writer.impl.FileSystemWriter
 import gov.loc.repository.bagit.{ Bag, BagFactory }
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
-import nl.knaw.dans.easy.multideposit.parser.{ Dataset, DatasetID }
+import nl.knaw.dans.easy.multideposit.parser.{ Dataset, DatasetId }
 import org.joda.time.format.ISODateTimeFormat
 
 import scala.collection.JavaConverters._
@@ -44,10 +44,10 @@ case class AddBagToDeposit(dataset: Dataset)(implicit settings: Settings) extend
 object AddBagToDeposit {
   // for examples see https://github.com/LibraryOfCongress/bagit-java/issues/18
   //              and http://www.mpcdf.mpg.de/services/data/annotate/downloads -> TacoHarvest
-  def createBag(datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = Try {
-    val inputDir = multiDepositDir(datasetID)
+  def createBag(datasetId: DatasetId, dataset: Dataset)(implicit settings: Settings): Try[Unit] = Try {
+    val inputDir = multiDepositDir(datasetId)
     val inputDirExists = inputDir.exists
-    val outputBagDir = stagingBagDir(datasetID)
+    val outputBagDir = stagingBagDir(datasetId)
 
     val bagFactory = new BagFactory
     val preBag = bagFactory.createPreBag(outputBagDir)

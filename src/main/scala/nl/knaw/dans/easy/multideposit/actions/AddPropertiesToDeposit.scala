@@ -28,8 +28,6 @@ import scala.util.{ Failure, Success, Try }
 
 case class AddPropertiesToDeposit(dataset: Dataset)(implicit settings: Settings) extends Action[DatamanagerEmailaddress, Unit] {
 
-  // TODO administratieve metadata, to be decided
-
   override def checkPreconditions: Try[Unit] = validateDepositor
 
   override def execute(datamanagerEmailaddress: DatamanagerEmailaddress): Try[Unit] = {

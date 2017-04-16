@@ -20,7 +20,7 @@ import java.io.File
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitAction, _ }
 import nl.knaw.dans.easy.multideposit.parser.{ AVFile, Dataset, Subtitles }
-import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
+import nl.knaw.dans.lib.error._
 import org.apache.tika.Tika
 
 import scala.util.control.NonFatal
@@ -75,15 +75,6 @@ case class AddFileMetadataToDeposit(dataset: Dataset)(implicit settings: Setting
       datasetDir.listRecursively
         .map(file => getFileMetadata(file.getAbsoluteFile))
         .collectResults
-        .recoverWith { // TODO do we still need this duplicate removal?
-          case CompositeException(es) =>
-            // filter duplicate messages
-            Failure(CompositeException(es.foldRight(List.empty[Throwable])((t, ts) => {
-              val msg = t.getMessage
-              ts.find(_.getMessage == msg).fold(t :: ts)(_ => ts)
-            })))
-          case e => Failure(e)
-        }
     }
     else // if the dataset does not contain any data
       Success { List.empty }

@@ -20,7 +20,7 @@ import scala.language.implicitConversions
 package object parser {
 
   type MultiDepositKey = String
-  type DatasetID = String
+  type DatasetId = String
   type DepositorId = String
 
   type DatasetRow = Map[MultiDepositKey, String]

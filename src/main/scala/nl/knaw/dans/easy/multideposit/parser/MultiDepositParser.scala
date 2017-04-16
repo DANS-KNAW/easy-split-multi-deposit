@@ -151,7 +151,7 @@ class MultiDepositParser(implicit settings: Settings) extends App {
     Failure(ActionException(rowNum, s"Missing value(s) for: ${missing.mkString("[", ", ", "]")}"))
   }
 
-  def extractDataset(datasetId: DatasetID, rows: DatasetRows): Try[Dataset] = {
+  def extractDataset(datasetId: DatasetId, rows: DatasetRows): Try[Dataset] = {
     val rowNum = rows.map(getRowNum).min
 
     val depositorId = extractNEL(rows, rowNum, "DEPOSITOR_ID")

@@ -21,7 +21,7 @@ import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.actions.FileAccessRights
 import org.joda.time.DateTime
 
-case class Dataset(datasetId: DatasetID,
+case class Dataset(datasetId: DatasetId,
                    row: Int,
                    depositorId: DepositorId,
                    profile: Profile,

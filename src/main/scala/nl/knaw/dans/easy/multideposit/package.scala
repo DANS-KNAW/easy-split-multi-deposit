@@ -19,7 +19,7 @@ import java.io.{ File, IOException }
 import java.nio.charset.Charset
 import java.util.Properties
 
-import nl.knaw.dans.easy.multideposit.parser.DatasetID
+import nl.knaw.dans.easy.multideposit.parser.DatasetId
 import nl.knaw.dans.lib.error._
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.apache.commons.lang.StringUtils
@@ -284,51 +284,51 @@ package object multideposit {
   val fileMetadataFileName = "files.xml"
   val propsFileName = "deposit.properties"
 
-  private def datasetDir(datasetID: DatasetID)(implicit settings: Settings): String = {
-    s"${settings.multidepositDir.getName}-$datasetID"
+  private def datasetDir(datasetId: DatasetId)(implicit settings: Settings): String = {
+    s"${settings.multidepositDir.getName}-$datasetId"
   }
   def multiDepositInstructionsFile(baseDir: File): File = {
     new File(baseDir, instructionsFileName)
   }
 
-  // mdDir/datasetID/
-  def multiDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(settings.multidepositDir, datasetID)
+  // mdDir/datasetId/
+  def multiDepositDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(settings.multidepositDir, datasetId)
   }
   // mdDir/instructions.csv
   def multiDepositInstructionsFile(implicit settings: Settings): File = {
     multiDepositInstructionsFile(settings.multidepositDir)
   }
-  // stagingDir/mdDir-datasetID/
-  def stagingDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(settings.stagingDir, datasetDir(datasetID))
+  // stagingDir/mdDir-datasetId/
+  def stagingDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(settings.stagingDir, datasetDir(datasetId))
   }
-  // stagingDir/mdDir-datasetID/bag/
-  def stagingBagDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingDir(datasetID), bagDirName)
+  // stagingDir/mdDir-datasetId/bag/
+  def stagingBagDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingDir(datasetId), bagDirName)
   }
-  // stagingDir/mdDir-datasetID/bag/data/
-  def stagingBagDataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingBagDir(datasetID), dataDirName)
+  // stagingDir/mdDir-datasetId/bag/data/
+  def stagingBagDataDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingBagDir(datasetId), dataDirName)
   }
-  // stagingDir/mdDir-datasetID/bag/metadata/
-  def stagingBagMetadataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingBagDir(datasetID), metadataDirName)
+  // stagingDir/mdDir-datasetId/bag/metadata/
+  def stagingBagMetadataDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingBagDir(datasetId), metadataDirName)
   }
-  // stagingDir/mdDir-datasetID/deposit.properties
-  def stagingPropertiesFile(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingDir(datasetID), propsFileName)
+  // stagingDir/mdDir-datasetId/deposit.properties
+  def stagingPropertiesFile(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingDir(datasetId), propsFileName)
   }
-  // stagingDir/mdDir-datasetID/bag/metadata/dataset.xml
-  def stagingDatasetMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingBagMetadataDir(datasetID), datasetMetadataFileName)
+  // stagingDir/mdDir-datasetId/bag/metadata/dataset.xml
+  def stagingDatasetMetadataFile(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingBagMetadataDir(datasetId), datasetMetadataFileName)
   }
-  // stagingDir/mdDir-datasetID/bag/metadata/files.xml
-  def stagingFileMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingBagMetadataDir(datasetID), fileMetadataFileName)
+  // stagingDir/mdDir-datasetId/bag/metadata/files.xml
+  def stagingFileMetadataFile(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingBagMetadataDir(datasetId), fileMetadataFileName)
   }
-  // outputDepositDir/mdDir-datasetID/
-  def outputDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(settings.outputDepositDir, datasetDir(datasetID))
+  // outputDepositDir/mdDir-datasetId/
+  def outputDepositDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(settings.outputDepositDir, datasetDir(datasetId))
   }
 }

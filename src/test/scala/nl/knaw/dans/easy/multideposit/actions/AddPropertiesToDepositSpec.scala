@@ -46,42 +46,6 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
 
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
-//  TODO move to MultiDepositParserSpec
-//  "checkPreconditions" should "succeed if the depositorID is in the dataset" in {
-//    mockLdapForDepositor(true)
-//
-//    AddPropertiesToDeposit(1, dataset).checkPreconditions shouldBe a[Success[_]]
-//  }
-//
-//  it should "succeed if the depositorID column contains multiple but equal values" in {
-//    val dataset = mutable.HashMap(
-//      "DEPOSITOR_ID" -> List("dp1", "dp1", "dp1", "dp1")
-//    )
-//    mockLdapForDepositor(true)
-//
-//    AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions shouldBe a[Success[_]]
-//  }
-//
-//  it should "fail when the depositorID column is not in the dataset" in {
-//    val dataset = mutable.HashMap(
-//      "TEST_COLUMN" -> List("abc", "def")
-//    )
-//
-//    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
-//      case Failure(ActionException(_, message, _)) => message should include ("is not present")
-//    }
-//  }
-//
-//  it should "fail when the depositorID column contains multiple different values" in {
-//    val dataset = mutable.HashMap(
-//      "DEPOSITOR_ID" -> List("dp1", "dp1", "dp2", "dp1")
-//    )
-//
-//    inside(AddPropertiesToDeposit(1, (datasetID, dataset)).checkPreconditions) {
-//      case Failure(ActionException(_, message, _)) => message should include ("multiple distinct")
-//    }
-//  }
-
   "checkPreconditions" should "succeed if ldap identifies the depositorId as active" in {
     mockLdapForDepositor(true)
 
@@ -148,29 +112,4 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
         include regex "bag-store.bag-id=[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"
     }
   }
-
-//  TODO move to MultiDepositParserSpec
-//  it should "generate the properties file without springfield fields whenever the springfield columns are empty" in {
-//    val dataset = testDataset2 ++= Map(
-//      "SF_DOMAIN" -> List.fill(5)(""),
-//      "SF_USER" -> List.fill(5)(""),
-//      "SF_COLLECTION" -> List.fill(5)("")
-//    )
-//    AddPropertiesToDeposit(1, (datasetID, dataset)).execute("dm@test.org") shouldBe a[Success[_]]
-//
-//    val props = stagingPropertiesFile(datasetID)
-//    props should exist
-//
-//    props.read() should {
-//      include("state.label") and
-//        include("state.description") and
-//        include("depositor.userId=ruimtereiziger2") and
-//        include("datamanager.email=dm@test.org") and
-//        include("datamanager.userId=dm") and
-//        not include "springfield.domain" and
-//        not include "springfield.user" and
-//        not include "springfield.collection" and
-//        include regex "bag-store.bag-id=[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"
-//    }
-//  }
 }
