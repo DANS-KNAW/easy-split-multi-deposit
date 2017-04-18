@@ -349,7 +349,7 @@ class MultiDepositParser(implicit settings: Settings) extends App {
     }
   }
 
-  def spatialBox(rowNum: => Int)(row: DatasetRow): Option[Try[SpatialBox]] = {
+  def spatialBox(rowNum: => Int)(row: DatasetRow): Option[Try[SpatialBoxx]] = {
     val west = row.find("DCX_SPATIAL_WEST")
     val east = row.find("DCX_SPATIAL_EAST")
     val south = row.find("DCX_SPATIAL_SOUTH")
@@ -357,7 +357,7 @@ class MultiDepositParser(implicit settings: Settings) extends App {
     val maybeScheme = row.find("DCX_SPATIAL_SCHEME")
 
     (west, east, south, north, maybeScheme) match {
-      case (Some(w), Some(e), Some(s), Some(n), scheme) => Some(Try { SpatialBox(n, s, e, w, scheme) })
+      case (Some(w), Some(e), Some(s), Some(n), scheme) => Some(Try { SpatialBoxx(n, s, e, w, scheme) })
       case (None, None, None, None, _) => None
       case _ => Some(missingRequired(rowNum, row, Set("DCX_SPATIAL_WEST", "DCX_SPATIAL_EAST", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_NORTH")))
     }

@@ -674,7 +674,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     contributors = List(ContributorPerson(initials = "A.", surname = "Jones")),
     subjects = List(Subject("IX", Option("abr:ABRcomplex"))),
     spatialPoints = List(SpatialPoint("12", "34", Option("degrees"))),
-    spatialBoxes = List(SpatialBox("45", "34", "23", "12", Option("RD"))),
+    spatialBoxes = List(SpatialBoxx("45", "34", "23", "12", Option("RD"))),
     temporal = List(Temporal("PALEOLB", Option("abr:ABRperiode")))
   )
 
@@ -1279,7 +1279,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     spatialBox(2)(row).value should matchPattern {
-      case Success(SpatialBox("45", "34", "23", "12", Some("RD"))) =>
+      case Success(SpatialBoxx("45", "34", "23", "12", Some("RD"))) =>
     }
   }
 
@@ -1293,7 +1293,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     spatialBox(2)(row).value should matchPattern {
-      case Success(SpatialBox("45", "34", "23", "12", None)) =>
+      case Success(SpatialBoxx("45", "34", "23", "12", None)) =>
     }
   }
 

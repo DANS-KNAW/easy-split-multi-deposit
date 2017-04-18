@@ -181,7 +181,7 @@ object AddDatasetMetadataToDeposit {
      x -->
 
    */
-  def createSpatialBox(box: SpatialBox): Elem = {
+  def createSpatialBox(box: SpatialBoxx): Elem = {
     val srsName = box.scheme.map(createSrsName).getOrElse("")
 
     lazy val xy = (s"${ box.west } ${ box.south }", s"${ box.east } ${ box.north }")
