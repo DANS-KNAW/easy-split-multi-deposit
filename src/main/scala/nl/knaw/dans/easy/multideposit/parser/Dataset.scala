@@ -18,7 +18,6 @@ package nl.knaw.dans.easy.multideposit.parser
 import java.io.File
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit.actions.FileAccessRights
 import org.joda.time.DateTime
 
 case class Dataset(datasetId: DatasetId,

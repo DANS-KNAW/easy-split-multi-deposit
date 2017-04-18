@@ -18,8 +18,7 @@ package nl.knaw.dans.easy.multideposit.parser
 import java.io.File
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit.actions.FileAccessRights
-import nl.knaw.dans.easy.multideposit.{ ActionException, _ }
+import nl.knaw.dans.easy.multideposit.{ ParseException, _ }
 import nl.knaw.dans.lib.error.CompositeException
 import org.joda.time.DateTime
 import org.scalamock.scalatest.MockFactory
@@ -185,7 +184,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     file.write(csv)
 
     inside(read(file)) {
-      case Failure(ActionException(0, msg, _)) =>
+      case Failure(ParseException(0, msg, _)) =>
         msg should include ("unknown headers: [foo]")
     }
   }
@@ -202,7 +201,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     file.write(csv)
 
     inside(read(file)) {
-      case Failure(ActionException(0, msg, _)) =>
+      case Failure(ParseException(0, msg, _)) =>
         msg should include ("duplicate headers: [DEPOSITOR_ID]")
     }
   }
@@ -350,7 +349,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     extractNEL(rows, 2, "QUX") should matchPattern {
-      case Failure(ActionException(2, "There should be at least one non-empty value for QUX", _)) =>
+      case Failure(ParseException(2, "There should be at least one non-empty value for QUX", _)) =>
     }
   }
 
@@ -428,13 +427,13 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
   it should "fail when the input contains more than one value and one columnName is given" in {
     atMostOne(2, List("FOO"))(List("abc", "def")) should matchPattern {
-      case Failure(ActionException(2, "Only one row is allowed to contain a value for the column: 'FOO'", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column: 'FOO'", _)) =>
     }
   }
 
   it should "fail when the input contains more than one value and multiple columnNames are given" in {
     atMostOne(2, List("FOO", "BAR"))(List("abc", "def")) should matchPattern {
-      case Failure(ActionException(2, "Only one row is allowed to contain a value for these columns: [FOO, BAR]", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [FOO, BAR]", _)) =>
     }
   }
 
@@ -444,25 +443,25 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
   it should "fail when the input is empty and one columnName is given" in {
     exactlyOne(2, List("FOO"))(List.empty) should matchPattern {
-      case Failure(ActionException(2, "One row has to contain a value for the column: 'FOO'", _)) =>
+      case Failure(ParseException(2, "One row has to contain a value for the column: 'FOO'", _)) =>
     }
   }
 
   it should "fail when the input is empty and multiple columnNames are given" in {
     exactlyOne(2, List("FOO", "BAR"))(List.empty) should matchPattern {
-      case Failure(ActionException(2, "One row has to contain a value for these columns: [FOO, BAR]", _)) =>
+      case Failure(ParseException(2, "One row has to contain a value for these columns: [FOO, BAR]", _)) =>
     }
   }
 
   it should "fail when the input contains more than one value and one columnName is given" in {
     exactlyOne(2, List("FOO"))(List("abc", "def")) should matchPattern {
-      case Failure(ActionException(2, "Only one row is allowed to contain a value for the column: 'FOO'", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column: 'FOO'", _)) =>
     }
   }
 
   it should "fail when the input contains more than one value and multiple columnNames are given" in {
     exactlyOne(2, List("FOO", "BAR"))(List("abc", "def")) should matchPattern {
-      case Failure(ActionException(2, "Only one row is allowed to contain a value for these columns: [FOO, BAR]", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [FOO, BAR]", _)) =>
     }
   }
 
@@ -472,7 +471,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
   it should "fail when the input contains invalid characters" in {
     checkValidChars(2, "TEST", "#$%") should matchPattern {
-      case Failure(ActionException(2, "The column 'TEST' contains the following invalid characters: {#, $, %}", _)) =>
+      case Failure(ParseException(2, "The column 'TEST' contains the following invalid characters: {#, $, %}", _)) =>
     }
   }
 
@@ -480,7 +479,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     val row = Map("a" -> "1", "b" -> "2", "c" -> "3", "d" -> "")
 
     missingRequired(2, row, Set("a", "b", "c", "d", "e")) should matchPattern {
-      case Failure(ActionException(2, "Missing value(s) for: [d, e]", _)) =>
+      case Failure(ParseException(2, "Missing value(s) for: [d, e]", _)) =>
     }
   }
 
@@ -522,7 +521,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     val rows = datasetCSVRow1 :: (datasetCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) :: datasetCSVRow3 :: Nil
 
     extractDataset("test", rows) should matchPattern {
-      case Failure(ActionException(2, "There are multiple distinct depositorIDs in dataset 'test': [ikke, ikke2]", _)) =>
+      case Failure(ParseException(2, "There are multiple distinct depositorIDs in dataset 'test': [ikke, ikke2]", _)) =>
     }
   }
 
@@ -534,7 +533,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
   it should "fail if the datasetID contains invalid characters" in {
     extractDataset("test#", datasetCSV) should matchPattern {
-      case Failure(ActionException(2, "The column 'DATASET' contains the following invalid characters: {#}", _)) =>
+      case Failure(ParseException(2, "The column 'DATASET' contains the following invalid characters: {#}", _)) =>
     }
   }
 
@@ -605,7 +604,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     val rows = profileCSVRow1 :: Nil
 
     inside(extractProfile(rows, 2)) {
-      case Failure(ActionException(2, msg, _)) =>
+      case Failure(ParseException(2, msg, _)) =>
         msg should {
           include ("DDM_AUDIENCE should be D37000 (Archaeology)") and
             include ("contains: [D30000]")
@@ -757,7 +756,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     ) :: audioVideoCSVRow2 :: audioVideoCSVRow3 :: Nil
 
     extractAudioVideo(rows, 2) should matchPattern {
-      case Failure(ActionException(2, "The column 'AV_FILE' contains values, but the columns [SF_COLLECTION, SF_USER] do not", _)) =>
+      case Failure(ParseException(2, "The column 'AV_FILE' contains values, but the columns [SF_COLLECTION, SF_USER] do not", _)) =>
     }
   }
 
@@ -769,7 +768,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       audioVideoCSVRow3 :: Nil
 
     extractAudioVideo(rows, 2) should matchPattern {
-      case Failure(ActionException(2, "Only one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]", _)) =>
     }
   }
 
@@ -779,7 +778,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       audioVideoCSVRow3 :: Nil
 
     extractAudioVideo(rows, 2) should matchPattern {
-      case Failure(ActionException(2, "Only one row is allowed to contain a value for the column: 'SF_ACCESSIBILITY'", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column: 'SF_ACCESSIBILITY'", _)) =>
     }
   }
 
@@ -790,7 +789,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     inside(extractAudioVideo(rows, 2)) {
       case Failure(CompositeException(es)) =>
-        val ActionException(2, msg, _) :: Nil = es.toList
+        val ParseException(2, msg, _) :: Nil = es.toList
         val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile
         msg shouldBe s"The column 'AV_FILE_TITLE' can only have one value for file '$file'"
     }
@@ -814,7 +813,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     val row = Map("datum" -> "you can't parse me!")
 
     date("datum")(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "datum value 'you can't parse me!' does not represent a date", _)) =>
+      case Failure(ParseException(2, "datum value 'you can't parse me!' does not represent a date", _)) =>
     }
   }
 
@@ -833,7 +832,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
   it should "fail if the DDM_ACCESSRIGHTS value does not correspond to an object in the enum" in {
     val row = Map("DDM_ACCESSRIGHTS" -> "unknown value")
     accessCategory(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Value 'unknown value' is not a valid accessright", _)) =>
+      case Failure(ParseException(2, "Value 'unknown value' is not a valid accessright", _)) =>
     }
   }
 
@@ -904,7 +903,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     creator(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Missing value(s) for: [DCX_CREATOR_INITIALS]", _)) =>
+      case Failure(ParseException(2, "Missing value(s) for: [DCX_CREATOR_INITIALS]", _)) =>
     }
   }
 
@@ -919,7 +918,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     creator(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Missing value(s) for: [DCX_CREATOR_SURNAME]", _)) =>
+      case Failure(ParseException(2, "Missing value(s) for: [DCX_CREATOR_SURNAME]", _)) =>
     }
   }
 
@@ -934,7 +933,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     creator(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Missing value(s) for: [DCX_CREATOR_SURNAME, DCX_CREATOR_INITIALS]", _)) =>
+      case Failure(ParseException(2, "Missing value(s) for: [DCX_CREATOR_SURNAME, DCX_CREATOR_INITIALS]", _)) =>
     }
   }
 
@@ -1005,7 +1004,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     contributor(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_INITIALS]", _)) =>
+      case Failure(ParseException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_INITIALS]", _)) =>
     }
   }
 
@@ -1020,7 +1019,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     contributor(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME]", _)) =>
+      case Failure(ParseException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME]", _)) =>
     }
   }
 
@@ -1035,7 +1034,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     contributor(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME, DCX_CONTRIBUTOR_INITIALS]", _)) =>
+      case Failure(ParseException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME, DCX_CONTRIBUTOR_INITIALS]", _)) =>
     }
   }
 
@@ -1047,7 +1046,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     relation(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined", _)) =>
+      case Failure(ParseException(2, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined", _)) =>
     }
   }
 
@@ -1059,7 +1058,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     relation(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined", _)) =>
+      case Failure(ParseException(2, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined", _)) =>
     }
   }
 
@@ -1095,7 +1094,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     relation(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well", _)) =>
+      case Failure(ParseException(2, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well", _)) =>
     }
   }
 
@@ -1163,7 +1162,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     subject(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'", _)) =>
+      case Failure(ParseException(2, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'", _)) =>
     }
   }
 
@@ -1212,7 +1211,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     temporal(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'", _)) =>
+      case Failure(ParseException(2, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'", _)) =>
     }
   }
 
@@ -1265,7 +1264,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     spatialPoint(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Missing value(s) for: [DCX_SPATIAL_Y]", _)) =>
+      case Failure(ParseException(2, "Missing value(s) for: [DCX_SPATIAL_Y]", _)) =>
     }
   }
 
@@ -1319,7 +1318,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     spatialBox(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Missing value(s) for: [DCX_SPATIAL_NORTH, DCX_SPATIAL_EAST]", _)) =>
+      case Failure(ParseException(2, "Missing value(s) for: [DCX_SPATIAL_NORTH, DCX_SPATIAL_EAST]", _)) =>
     }
   }
 
@@ -1355,7 +1354,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     springfield(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Missing value for: SF_USER",_)) =>
+      case Failure(ParseException(2, "Missing value for: SF_USER",_)) =>
     }
   }
 
@@ -1367,7 +1366,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     springfield(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Missing value for: SF_COLLECTION",_)) =>
+      case Failure(ParseException(2, "Missing value for: SF_COLLECTION",_)) =>
     }
   }
 
@@ -1421,7 +1420,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur2.mpg").getAbsoluteFile
     inside(avFile(2)(row).value) {
-      case Failure(ActionException(2, msg, _)) =>
+      case Failure(ParseException(2, msg, _)) =>
         msg shouldBe s"AV_FILE file '$file' does not exist"
     }
   }
@@ -1436,7 +1435,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur2.mpg").getAbsoluteFile
     inside(avFile(2)(row).value) {
-      case Failure(ActionException(2, msg, _)) =>
+      case Failure(ParseException(2, msg, _)) =>
         msg shouldBe s"AV_FILE file '$file' does not exist"
     }
   }
@@ -1451,7 +1450,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur2.srt").getAbsoluteFile
     inside(avFile(2)(row).value) {
-      case Failure(ActionException(2, msg, _)) =>
+      case Failure(ParseException(2, msg, _)) =>
         msg shouldBe s"AV_SUBTITLES file '$file' does not exist"
     }
   }
@@ -1465,7 +1464,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     inside(avFile(2)(row).value) {
-      case Failure(ActionException(2, msg, _)) =>
+      case Failure(ParseException(2, msg, _)) =>
         msg shouldBe s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: 'en'"
     }
   }
@@ -1519,7 +1518,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     inside(avFile(2)(row).value) {
-      case Failure(ActionException(2, msg, _)) =>
+      case Failure(ParseException(2, msg, _)) =>
         msg should include ("No value is defined for AV_FILE")
     }
   }
@@ -1548,7 +1547,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
   it should "fail if the SF_ACCESSIBILITY value does not correspond to an object in the enum" in {
     val row = Map("SF_ACCESSIBILITY" -> "unknown value")
     fileAccessRight(2)(row).value should matchPattern {
-      case Failure(ActionException(2, "Value 'unknown value' is not a valid file accessright", _)) =>
+      case Failure(ParseException(2, "Value 'unknown value' is not a valid file accessright", _)) =>
     }
   }
 }

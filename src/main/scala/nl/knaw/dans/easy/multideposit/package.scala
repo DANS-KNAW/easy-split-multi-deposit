@@ -52,6 +52,7 @@ package object multideposit {
   case class ParserFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
   case class PreconditionsFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
   case class ActionRunFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
+  case class ParseException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
   case class ActionException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
 
   object Version {

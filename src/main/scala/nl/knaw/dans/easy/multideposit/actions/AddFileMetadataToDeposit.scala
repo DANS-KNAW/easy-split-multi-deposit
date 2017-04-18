@@ -19,7 +19,7 @@ import java.io.File
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitAction, _ }
-import nl.knaw.dans.easy.multideposit.parser.{ AVFile, Dataset, Subtitles }
+import nl.knaw.dans.easy.multideposit.parser.{ AVFile, Dataset, FileAccessRights, Subtitles }
 import nl.knaw.dans.lib.error._
 import org.apache.tika.Tika
 
