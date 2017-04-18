@@ -16,10 +16,13 @@
 package nl.knaw.dans.easy.multideposit
 
 import nl.knaw.dans.easy.multideposit.actions._
-import nl.knaw.dans.easy.multideposit.parser.{ MultiDepositParser, Dataset }
+import nl.knaw.dans.easy.multideposit.parser.{ Dataset, MultiDepositParser }
+import nl.knaw.dans.lib.error.CompositeException
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
+import scala.annotation.tailrec
 import scala.language.postfixOps
+import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
 object Main extends DebugEnhancedLogging {
@@ -39,9 +42,36 @@ object Main extends DebugEnhancedLogging {
     settings.ldap.close()
   }
 
+  private def recoverParsing(t: Throwable): Failure[Nothing] = {
+    Failure(ParserFailedException(
+      report = generateReport(
+        header = "CSV failures:",
+        throwable = t,
+        footer = "Due to these errors in the 'instructions.csv', nothing was done."),
+      cause = t))
+  }
+
+  // TODO temporary fix, please get rid of code duplication with Action.generateReport
+  private def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
+
+    @tailrec
+    def report(es: List[Throwable], rpt: List[String] = Nil): List[String] = {
+      es match {
+        case Nil => rpt
+        case ActionException(row, msg, _) :: xs => report(xs, s" - row $row: $msg" :: rpt)
+        case CompositeException(ths) :: xs => report(ths.toList ::: xs, rpt)
+        case NonFatal(ex) :: xs => report(xs, s" - unexpected error: ${ex.getMessage}" :: rpt)
+      }
+    }
+
+    header.toOption.fold("")(_ + "\n") +
+      report(List(throwable)).reverse.mkString("\n") +
+      footer.toOption.fold("")("\n" + _)
+  }
+
   def run(implicit settings: Settings): Try[Unit] = {
     for {
-      datasets <- (new MultiDepositParser).parse(multiDepositInstructionsFile)
+      datasets <- new MultiDepositParser().parse(multiDepositInstructionsFile).recoverWith { case NonFatal(e) => recoverParsing(e) }
       _ <- getActions(datasets).map(_.run(())).getOrElse(Failure(new Exception("no actions were defined")))
     } yield ()
   }
