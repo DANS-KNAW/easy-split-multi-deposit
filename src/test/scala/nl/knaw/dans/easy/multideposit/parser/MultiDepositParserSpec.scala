@@ -1426,6 +1426,21 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     }
   }
 
+  it should "fail if the value for AV_FILE represents a path that does not exist when AV_SUBTITLES is not defined" in {
+    val row = Map(
+      "AV_FILE" -> "ruimtereis01/reisverslag/centaur2.mpg",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "",
+      "AV_SUBTITLES_LANGUAGE" -> ""
+    )
+
+    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur2.mpg").getAbsoluteFile
+    inside(avFile(2)(row).value) {
+      case Failure(ActionException(2, msg, _)) =>
+        msg shouldBe s"AV_FILE file '$file' does not exist"
+    }
+  }
+
   it should "fail if the value for AV_SUBTITLES represents a path that does not exist" in {
     val row = Map(
       "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",

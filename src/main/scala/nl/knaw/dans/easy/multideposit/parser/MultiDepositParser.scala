@@ -401,7 +401,8 @@ class MultiDepositParser(implicit settings: Settings) extends App {
       case (Some(p), _, Some(_), _) if !p.exists() => Some(Failure(ActionException(rowNum, s"AV_FILE file '$p' does not exist")))
       case (Some(_), _, Some(sub), _) if !sub.exists() => Some(Failure(ActionException(rowNum, s"AV_SUBTITLES file '$sub' does not exist")))
       case (Some(_), _, None, Some(subLang)) => Some(Failure(ActionException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
-      case (Some(p), t, None, None) => Some(Success((p, t, None)))
+      case (Some(p), t, None, None) if p.exists() => Some(Success((p, t, None)))
+      case (Some(p), _, None, None) => Some(Failure(ActionException(rowNum, s"AV_FILE file '$p' does not exist")))
       case (None, None, None, None) => None
       case (None, _, _, _) => Some(Failure(ActionException(rowNum, "No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined")))
     }
