@@ -31,6 +31,7 @@ mkdir -p $TEMPDIR
 touch $TEMPDIR/easy-split-multi-deposit.log
 mkdir $TEMPDIR/input
 cp -r src/test/resources/allfields/input $TEMPDIR/input/allfields
+cp -r src/test/resources/invalidCSV/input $TEMPDIR/input/invalidCSV
 mkdir $TEMPDIR/output/
 mkdir $TEMPDIR/staging
 chmod -R 777 $TEMPDIR
