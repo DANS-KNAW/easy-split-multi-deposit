@@ -21,6 +21,7 @@ import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.actions.FileAccessRights
 import nl.knaw.dans.easy.multideposit.{ ActionException, EmptyInstructionsFileException, Headers, Settings, StringExtensions, encoding }
 import nl.knaw.dans.lib.error._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
 import org.joda.time.DateTime
 import resource._
@@ -29,7 +30,7 @@ import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 import scala.util.{ Failure, Success, Try }
 
-class MultiDepositParser(implicit settings: Settings) extends App {
+class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLogging {
 
   def read(file: File): Try[(List[MultiDepositKey], List[List[String]])] = {
     managed(CSVParser.parse(file, encoding, CSVFormat.RFC4180))
@@ -71,6 +72,7 @@ class MultiDepositParser(implicit settings: Settings) extends App {
   }
 
   def parse(file: File): Try[Seq[Dataset]] = {
+    logger.info(s"Parsing $file")
     for {
       (headers, content) <- read(file)
       datasetIdIndex = headers.indexOf("DATASET")
