@@ -19,36 +19,25 @@ import java.io.{ File, IOException }
 import java.nio.charset.Charset
 import java.util.Properties
 
+import nl.knaw.dans.easy.multideposit.parser.DatasetId
+import nl.knaw.dans.lib.error._
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.apache.commons.lang.StringUtils
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
-import scala.collection.immutable.IndexedSeq
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, PrettyPrinter }
 
 package object multideposit {
 
-  type DatasetID = String
-  type MultiDepositKey = String
-  type MultiDepositValues = List[String]
-  type Dataset = mutable.HashMap[MultiDepositKey, MultiDepositValues]
-  type Datasets = ListBuffer[(DatasetID, Dataset)]
-  def Datasets: Datasets = ListBuffer.empty
-
-  type DatasetRow = mutable.HashMap[MultiDepositKey, String]
+  type Datamanager = String
   type DatamanagerEmailaddress = String
 
-  case class FileParameters(row: Option[Int], sip: Option[String], dataset: Option[String],
-                            storageService: Option[String], storagePath: Option[String],
-                            audioVideo: Option[String])
   case class DepositPermissions(permissions: String, group: String)
   case class Settings(multidepositDir: File = null,
                       stagingDir: File = null,
                       outputDepositDir: File = null,
-                      datamanager: String = null,
+                      datamanager: Datamanager = null,
                       depositPermissions: DepositPermissions = null,
                       ldap: Ldap = null) {
     override def toString: String =
@@ -60,9 +49,11 @@ package object multideposit {
   }
 
   case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")
+  case class ParserFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
   case class PreconditionsFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
   case class ActionRunFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
-  case class ActionException(row: Int, message: String, cause: Throwable = null) extends RuntimeException(message, cause)
+  case class ParseException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
+  case class ActionException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
 
   object Version {
     def apply(): String = {
@@ -137,6 +128,18 @@ package object multideposit {
           return failure
         }
         case x => x
+      }
+    }
+
+    def combine[S, R](other: Try[S])(implicit ev: T <:< (S => R)): Try[R] = {
+      (t, other) match {
+        case (Success(f), Success(s)) => Try { f(s) }
+        case (Success(_), Failure(e)) => Failure(e)
+        case (Failure(e), Success(_)) => Failure(e)
+        case (Failure(CompositeException(es1)), Failure(CompositeException(es2))) => Failure(CompositeException(es1 ++ es2))
+        case (Failure(CompositeException(es1)), Failure(e2)) => Failure(CompositeException(es1 ++ List(e2)))
+        case (Failure(e1), Failure(CompositeException(es2))) => Failure(CompositeException(List(e1) ++ es2))
+        case (Failure((e1)), Failure((e2))) => Failure(CompositeException(List(e1, e2)))
       }
     }
   }
@@ -274,93 +277,6 @@ package object multideposit {
     def listRecursively: List[File] = FileUtils.listFiles(file, null, true).toList
   }
 
-  implicit class DatasetExtensions(val dataset: Dataset) extends AnyVal {
-    def getRowNumber: Int = {
-      dataset("ROW").head.toInt // first occurrence of dataset, assuming it is not empty
-    }
-
-    def findValue(key: MultiDepositKey): Option[String] = {
-      for {
-        values <- dataset.get(key)
-        value <- values.find(!_.isBlank)
-      } yield value
-    }
-
-    /**
-     * Retrieves the value of a certain parameter from the dataset on a certain row.
-     * If either the key is not present, the specified row does not exist or the value `blank`
-     * (according to org.apache.commons.lang.StringUtils.isBlank), then Option.empty
-     * is returned.
-     *
-     * @param key the key under which the value is stored in the dataset
-     * @param row the row on which the value occurs
-     * @return the value belonging to the (key, row) pair if present, else Option.empty
-     */
-    def getValue(key: MultiDepositKey)(row: Int): Option[String] = {
-      for {
-        values <- dataset.get(key)
-        value <- Try(values(row)).toOption
-        value2 <- value.toOption
-      } yield value2
-    }
-
-    /**
-     * Turns a map of key-column pairs into a filtered sequence of maps:
-     * a map of key-value pairs per row, only those rows with a value for at least one of the desired columns.
-     *
-     * @param desiredColumns the keys of these key-value pairs specify the desired column keys
-     * (the values specifying the DDM equivalent are ignored)
-     * @return A sequence of maps, each map containing key-value pairs of a row.
-     * Values are neither null nor blank, rows are not empty.
-     * The keyset of each map is a non-empty subset of the keyset of dictionary.
-     */
-    def rowsWithValuesFor(desiredColumns: DDM.Dictionary): IndexedSeq[DatasetRow] =
-      dataset.getColumnsIn(desiredColumns).toRows.filter(_.nonEmpty)
-
-    def rowsWithValuesFor(desiredColumns: String*): IndexedSeq[DatasetRow] =
-      dataset.getColumns(desiredColumns: _*).toRows.filter(_.nonEmpty)
-
-    /**
-     * Turns a map of key-column pairs into a filtered sequence of maps:
-     * a map of key-value pairs per row and, those rows with a value for each desired column.
-     * Rows with values for some but not all desired columns are ignored.
-     *
-     * @param desiredColumns the keys of these key-value pairs specify the desired column keys
-     * (the values specifying the DDM equivalent are ignored)
-     * @return A sequence of maps, each map containing key-value pairs of a row.
-     * Values are neither null nor blank, rows are not empty,
-     * The keyset of each map equals the keyset of dictionary.
-     */
-    def rowsWithValuesForAllOf(desiredColumns: DDM.Dictionary): IndexedSeq[DatasetRow] =
-      dataset.getColumnsIn(desiredColumns).toRows.filter(_.size == desiredColumns.size)
-
-    /**
-     * Filters a map of key-column pairs.
-     *
-     * @param desiredColumns the keys of these key-value pairs specify the desired column keys
-     * (the values specifying the DDM equivalent are ignored)
-     * @return A map with those key-column pairs for which the key is in keyset of the dictionary.
-     */
-    def getColumnsIn(desiredColumns: DDM.Dictionary): Dataset =
-      dataset.filter(kvs => desiredColumns.contains(kvs._1))
-
-    def getColumns(columns: String*): Dataset =
-      dataset.filter(kvs => columns.contains(kvs._1))
-
-    /**
-     * Turns a map of key-column pairs into a sequence of maps: one map of key-value pairs per row.
-     *
-     * @return A sequence of maps, each map containing key-value pairs of a row.
-     * Values are neither null nor blank, a row may be empty.
-     */
-    def toRows: IndexedSeq[DatasetRow] =
-      dataset.values.headOption
-        .map(_.indices
-          .map(i => dataset.map { case (key, values) => (key, values(i)) })
-          .map(_.filter(kv => kv._2 != null && !kv._2.isBlank)))
-        .getOrElse(IndexedSeq())
-  }
-
   val encoding = Charsets.UTF_8
   val bagDirName = "bag"
   val dataDirName = "data"
@@ -370,51 +286,51 @@ package object multideposit {
   val fileMetadataFileName = "files.xml"
   val propsFileName = "deposit.properties"
 
-  private def datasetDir(datasetID: DatasetID)(implicit settings: Settings): String = {
-    s"${settings.multidepositDir.getName}-$datasetID"
+  private def datasetDir(datasetId: DatasetId)(implicit settings: Settings): String = {
+    s"${settings.multidepositDir.getName}-$datasetId"
   }
   def multiDepositInstructionsFile(baseDir: File): File = {
     new File(baseDir, instructionsFileName)
   }
 
-  // mdDir/datasetID/
-  def multiDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(settings.multidepositDir, datasetID)
+  // mdDir/datasetId/
+  def multiDepositDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(settings.multidepositDir, datasetId)
   }
   // mdDir/instructions.csv
   def multiDepositInstructionsFile(implicit settings: Settings): File = {
     multiDepositInstructionsFile(settings.multidepositDir)
   }
-  // stagingDir/mdDir-datasetID/
-  def stagingDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(settings.stagingDir, datasetDir(datasetID))
+  // stagingDir/mdDir-datasetId/
+  def stagingDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(settings.stagingDir, datasetDir(datasetId))
   }
-  // stagingDir/mdDir-datasetID/bag/
-  def stagingBagDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingDir(datasetID), bagDirName)
+  // stagingDir/mdDir-datasetId/bag/
+  def stagingBagDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingDir(datasetId), bagDirName)
   }
-  // stagingDir/mdDir-datasetID/bag/data/
-  def stagingBagDataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingBagDir(datasetID), dataDirName)
+  // stagingDir/mdDir-datasetId/bag/data/
+  def stagingBagDataDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingBagDir(datasetId), dataDirName)
   }
-  // stagingDir/mdDir-datasetID/bag/metadata/
-  def stagingBagMetadataDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingBagDir(datasetID), metadataDirName)
+  // stagingDir/mdDir-datasetId/bag/metadata/
+  def stagingBagMetadataDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingBagDir(datasetId), metadataDirName)
   }
-  // stagingDir/mdDir-datasetID/deposit.properties
-  def stagingPropertiesFile(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingDir(datasetID), propsFileName)
+  // stagingDir/mdDir-datasetId/deposit.properties
+  def stagingPropertiesFile(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingDir(datasetId), propsFileName)
   }
-  // stagingDir/mdDir-datasetID/bag/metadata/dataset.xml
-  def stagingDatasetMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingBagMetadataDir(datasetID), datasetMetadataFileName)
+  // stagingDir/mdDir-datasetId/bag/metadata/dataset.xml
+  def stagingDatasetMetadataFile(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingBagMetadataDir(datasetId), datasetMetadataFileName)
   }
-  // stagingDir/mdDir-datasetID/bag/metadata/files.xml
-  def stagingFileMetadataFile(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(stagingBagMetadataDir(datasetID), fileMetadataFileName)
+  // stagingDir/mdDir-datasetId/bag/metadata/files.xml
+  def stagingFileMetadataFile(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(stagingBagMetadataDir(datasetId), fileMetadataFileName)
   }
-  // outputDepositDir/mdDir-datasetID/
-  def outputDepositDir(datasetID: DatasetID)(implicit settings: Settings): File = {
-    new File(settings.outputDepositDir, datasetDir(datasetID))
+  // outputDepositDir/mdDir-datasetId/
+  def outputDepositDir(datasetId: DatasetId)(implicit settings: Settings): File = {
+    new File(settings.outputDepositDir, datasetDir(datasetId))
   }
 }

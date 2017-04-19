@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit
 
+import nl.knaw.dans.easy.multideposit.parser.MultiDepositKey
+
 object DDM {
   type Dictionary = Map[MultiDepositKey, String]
 

@@ -102,7 +102,7 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
       "completed successfully. The deposit directory layout is described in the easy-sword2 " +
       "documentation")
 
-  val datamanager: ScallopOption[String] = trailArg[String](
+  val datamanager: ScallopOption[Datamanager] = trailArg[Datamanager](
     name = "datamanager",
     required = true,
     descr = "The username (id) of the datamanger (archivist) performing this deposit")

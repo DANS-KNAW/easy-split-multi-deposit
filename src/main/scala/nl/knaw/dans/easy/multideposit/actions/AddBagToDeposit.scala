@@ -26,30 +26,28 @@ import gov.loc.repository.bagit.writer.impl.FileSystemWriter
 import gov.loc.repository.bagit.{ Bag, BagFactory }
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
-import org.joda.time.DateTime
+import nl.knaw.dans.easy.multideposit.parser.{ Dataset, DatasetId }
 import org.joda.time.format.ISODateTimeFormat
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
-case class AddBagToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends UnitAction[Unit] {
-
-  val (datasetID, dataset) = entry
+case class AddBagToDeposit(dataset: Dataset)(implicit settings: Settings) extends UnitAction[Unit] {
 
   override def execute(): Try[Unit] = {
-    createBag(datasetID, dataset).recoverWith {
-      case NonFatal(e) => Failure(ActionException(row, s"Error occured in creating the bag for $datasetID: ${ e.getMessage }", e))
+    createBag(dataset.datasetId, dataset).recoverWith {
+      case NonFatal(e) => Failure(ActionException(dataset.row, s"Error occured in creating the bag for ${dataset.datasetId}: ${ e.getMessage }", e))
     }
   }
 }
 object AddBagToDeposit {
   // for examples see https://github.com/LibraryOfCongress/bagit-java/issues/18
   //              and http://www.mpcdf.mpg.de/services/data/annotate/downloads -> TacoHarvest
-  def createBag(datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = Try {
-    val inputDir = multiDepositDir(datasetID)
+  def createBag(datasetId: DatasetId, dataset: Dataset)(implicit settings: Settings): Try[Unit] = Try {
+    val inputDir = multiDepositDir(datasetId)
     val inputDirExists = inputDir.exists
-    val outputBagDir = stagingBagDir(datasetID)
+    val outputBagDir = stagingBagDir(datasetId)
 
     val bagFactory = new BagFactory
     val preBag = bagFactory.createPreBag(outputBagDir)
@@ -105,11 +103,7 @@ private class BagInfoCompleter(bagFactory: BagFactory, dataset: Dataset) extends
     val bagInfo = bagPartFactory.createBagInfoTxt(bag.getBagInfoTxt)
 
     // add the CREATED field
-    dataset.get("DDM_CREATED")
-      .flatMap(_.find(s => !s.isBlank))
-      .map(DateTime.parse) // parse should never fail, since it is already validated in AddDatasetMetadataToDeposit
-      .map(_.toString(ISODateTimeFormat.dateTime()))
-      .foreach(bagInfo.put("Created", _))
+    bagInfo.put("Created", dataset.profile.created.toString(ISODateTimeFormat.dateTime()))
 
     // add the new BagInfoTxt to the newBag
     newBag.putBagFile(bagInfo)

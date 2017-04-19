@@ -15,27 +15,26 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.{ Action, DatasetID, Settings, _ }
+import nl.knaw.dans.easy.multideposit.parser.DatasetId
+import nl.knaw.dans.easy.multideposit.{ Settings, _ }
 import nl.knaw.dans.lib.error.CompositeException
-import org.apache.commons.io.FileExistsException
 
-import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class MoveDepositToOutputDir(row: Int, datasetID: DatasetID)(implicit settings: Settings) extends UnitAction[Unit] {
+case class MoveDepositToOutputDir(row: Int, datasetId: DatasetId)(implicit settings: Settings) extends UnitAction[Unit] {
 
-  private val outputDir = outputDepositDir(datasetID)
+  private val outputDir = outputDepositDir(datasetId)
 
   override def checkPreconditions: Try[Unit] = {
     Try { outputDir.exists() }
       .flatMap {
-        case true => Failure(ActionException(row, s"The deposit for dataset $datasetID already exists in $outputDir"))
+        case true => Failure(ActionException(row, s"The deposit for dataset $datasetId already exists in $outputDir"))
         case false => Success(())
       }
   }
 
   def execute(): Try[Unit] = {
-    val stagingDirectory = stagingDir(datasetID)
+    val stagingDirectory = stagingDir(datasetId)
 
     debug(s"moving $stagingDirectory to $outputDir")
 

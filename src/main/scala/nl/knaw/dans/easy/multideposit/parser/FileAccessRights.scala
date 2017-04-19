@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit.actions
+package nl.knaw.dans.easy.multideposit.parser
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.common.lang.dataset.AccessCategory._
@@ -68,4 +68,3 @@ object FileAccessRights extends Enumeration {
   def accessibleTo(datasetAccesCategory: AccessCategory): FileAccessRights.Value =
     rightsMap(datasetAccesCategory)
 }
-

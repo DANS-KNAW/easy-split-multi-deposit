@@ -13,31 +13,30 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dcx-dai:creatorDetails>
       <dcx-dai:author>
         <dcx-dai:titles>Dr</dcx-dai:titles>
-        <dcx-dai:surname>Sagan</dcx-dai:surname>
         <dcx-dai:initials>C</dcx-dai:initials>
-        <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">Cornell University</dcx-dai:name>
-        </dcx-dai:organization>
+        <dcx-dai:surname>Sagan</dcx-dai:surname>
+        <dcx-dai:name xml:lang="en">Cornell University</dcx-dai:name>
       </dcx-dai:author>
     </dcx-dai:creatorDetails>
     <dcx-dai:creatorDetails>
       <dcx-dai:author>
+        <dcx-dai:initials>A.W.M.</dcx-dai:initials>
+        <dcx-dai:insertions>van</dcx-dai:insertions>
         <dcx-dai:surname>tseeH</dcx-dai:surname>
         <dcx-dai:DAI>info:eu-repo/dai/nl/012345678</dcx-dai:DAI>
-        <dcx-dai:insertions>van</dcx-dai:insertions>
-        <dcx-dai:initials>A.W.M.</dcx-dai:initials>
-        <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">WANK/SNAD</dcx-dai:name>
-        </dcx-dai:organization>
+        <dcx-dai:name xml:lang="en">WANK/SNAD</dcx-dai:name>
       </dcx-dai:author>
     </dcx-dai:creatorDetails>
     <ddm:created>2015-05-13</ddm:created>
-    <ddm:available>2017-03-30</ddm:available>
+    <ddm:available>2017-04-17</ddm:available>
     <ddm:audience>D30000</ddm:audience>
     <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
   </ddm:profile>
   <ddm:dcmiMetadata>
+    <dc:format>image/jpeg</dc:format>
+    <dc:format>text/plain</dc:format>
     <dc:identifier>ds2</dc:identifier>
+    <dc:source>http://scholar.google.com</dc:source>
     <dc:language>NL</dc:language>
     <dc:language>EN</dc:language>
     <dcterms:rightsHolder>paul</dcterms:rightsHolder>
@@ -45,9 +44,6 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dcterms:rightsHolder>richard</dcterms:rightsHolder>
     <dcterms:rightsHolder>joke</dcterms:rightsHolder>
     <dcterms:rightsHolder>vesa</dcterms:rightsHolder>
-    <dc:format>image/jpeg</dc:format>
-    <dc:format>text/plain</dc:format>
-    <dc:source>http://scholar.google.com</dc:source>
     <dc:relation>barbapappa</dc:relation>
     <dc:subject>astronomie</dc:subject>
     <dc:subject>telescopen</dc:subject>

@@ -15,121 +15,29 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
-
-import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
-import nl.knaw.dans.lib.error.TraversableTryExtensions
+import nl.knaw.dans.easy.multideposit.parser.{ Dataset, _ }
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Try }
 import scala.xml.Elem
 
-case class AddDatasetMetadataToDeposit(row: Int, entry: (DatasetID, Dataset))(implicit settings: Settings) extends UnitAction[Unit] {
+case class AddDatasetMetadataToDeposit(dataset: Dataset)(implicit settings: Settings) extends UnitAction[Unit] {
 
-  val (datasetID, dataset) = entry
-
-  /**
-   * Verifies whether all preconditions are met for this specific action.
-   * Required metadata fields and some allowed values are checked,
-   * field interdependencies are taken into consideration
-   *
-   * @return `Success` when all preconditions are met, `Failure` otherwise
-   */
-  override def checkPreconditions: Try[Unit] = {
-    (datasetRowValidations(row, dataset) ++
-      datasetColumnValidations(row, dataset) ++
-      datasetValidations(row, dataset))
-      .collectResults
-      .map(_ => ())
-  }
-
-  override def execute(): Try[Unit] = writeDatasetMetadataXml(row, datasetID, dataset)
+  override def execute(): Try[Unit] = writeDatasetMetadataXml(dataset)
 }
 object AddDatasetMetadataToDeposit {
 
-  def datasetValidations(row: Int, dataset: Dataset): Seq[Try[Unit]] = {
-    import validators._
-    List(
-      checkDependendColumns(row, dataset, "AV_FILE", List("SF_COLLECTION", "SF_USER"))
-    )
-  }
-
-  def datasetColumnValidations(row: Int, dataset: Dataset): Seq[Try[Unit]] = {
-    import validators._
-    List(
-      checkColumnHasOnlyOneValue(row, dataset, "DDM_CREATED"),
-      checkColumnHasOnlyOneValue(row, dataset, "DDM_ACCESSRIGHTS"),
-      checkColumnHasAtMostOneValue(row, dataset, "DDM_AVAILABLE"),
-      checkColumnsHaveAtMostOneRowWithValues(row, dataset, "SF_DOMAIN", "SF_USER", "SF_COLLECTION")
-    )
-  }
-
-  def datasetRowValidations(row: Int, dataset: Dataset)(implicit settings: Settings): Seq[Try[Unit]] = {
-    import validators._
-    dataset.toRows.flatMap(rowVals => {
-      List(
-        // date created format
-        checkDateFormatting(row, rowVals, "DDM_CREATED"),
-        checkDateFormatting(row, rowVals, "DDM_AVAILABLE"),
-
-        // file path exists
-        checkFileExists(row, rowVals, "AV_FILE"),
-        checkFileExists(row, rowVals, "AV_SUBTITLES"),
-
-        // only valid chars allowed
-        checkValidChars(row, rowVals, "SF_COLLECTION"),
-        checkValidChars(row, rowVals, "SF_DOMAIN"),
-        checkValidChars(row, rowVals, "SF_USER"),
-        checkValidChars(row, rowVals, "DATASET"),
-
-        // coordinates
-        // point
-        checkAllOrNone(row, rowVals, "DCX_SPATIAL_X", "DCX_SPATIAL_Y"),
-        // box
-        checkAllOrNone(row, rowVals, "DCX_SPATIAL_NORTH", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_EAST", "DCX_SPATIAL_WEST"),
-
-        // persons
-        // note that the DCX_{}_ORGANISATION can have a value independent of the other fields
-        // creator
-        checkRequiredWithGroup(row, rowVals,
-          List("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME"),
-          List("DCX_CREATOR_TITLES", "DCX_CREATOR_INSERTIONS", "DCX_CREATOR_DAI")),
-        // contributor
-        checkRequiredWithGroup(row, rowVals,
-          List("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME"),
-          List("DCX_CONTRIBUTOR_TITLES", "DCX_CONTRIBUTOR_INSERTIONS", "DCX_CONTRIBUTOR_DAI")),
-        // if AV_FILE_TITLE and/or AV_SUBTITLES are given, AV_FILE must be present as well
-        checkRequiredWithGroup(row, rowVals, List("AV_FILE"), List("AV_FILE_TITLE", "AV_SUBTITLES", "AV_SUBTITLES_LANGUAGE")),
-        checkRequiredWithGroup(row, rowVals, List("AV_SUBTITLES"), List("AV_SUBTITLES_LANGUAGE")),
-
-        // check allowed value(s)
-        // scheme
-        checkValueIsOneOf(row, rowVals, "DCT_TEMPORAL_SCHEME", "abr:ABRperiode"),
-        checkValueIsOneOf(row, rowVals, "DC_SUBJECT_SCHEME", "abr:ABRcomplex"),
-        checkValueIsOneOf(row, rowVals, "DDM_ACCESSRIGHTS", AccessCategory.values().map(_.toString): _*),
-        checkValueIsOneOf(row, rowVals, "SF_ACCESSIBILITY", FileAccessRights.values.map(_.toString).toList: _*),
-
-        checkAccessRights(row, rowVals),
-
-        // {link, title} can not be defined both, a qualifier is only allowed if link or title are present
-        rowVals.get("DCX_RELATION_QUALIFIER").filterNot(_.isBlank)
-          .map(_ => checkOneOf(row, rowVals, "DCX_RELATION_LINK", "DCX_RELATION_TITLE"))
-          .getOrElse(checkNotAll(row, rowVals, "DCX_RELATION_LINK", "DCX_RELATION_TITLE"))
-      )
-    })
-  }
-
-  def writeDatasetMetadataXml(row: Int, datasetID: DatasetID, dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
+  def writeDatasetMetadataXml(dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
     Try {
-      stagingDatasetMetadataFile(datasetID).writeXml(datasetToXml(dataset))
+      stagingDatasetMetadataFile(dataset.datasetId).writeXml(datasetToXml(dataset))
     } recoverWith {
-      case NonFatal(e) => Failure(ActionException(row, s"Could not write dataset metadata: $e", e))
+      case NonFatal(e) => Failure(ActionException(dataset.row, s"Could not write dataset metadata: $e", e))
     }
   }
 
@@ -148,135 +56,110 @@ object AddDatasetMetadataToDeposit {
       xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/"
       xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/"
       xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
-      {createProfile(dataset)}
-      {createMetadata(dataset)}
+      {createProfile(dataset.profile)}
+      {createMetadata(dataset.metadata, dataset.audioVideo.springfield)}
     </ddm:DDM>
     // @formatter:on
   }
 
-  def createProfile(dataset: Dataset): Elem = {
+  def createProfile(profile: Profile): Elem = {
     // @formatter:off
     <ddm:profile>
-      {profileElems(dataset, "DC_TITLE")}
-      {profileElems(dataset, "DC_DESCRIPTION")}
-      {createCreators(dataset)}
-      {profileElems(dataset, "DDM_CREATED")}
-      {createAvailable(dataset)}
-      {profileElems(dataset, "DDM_AUDIENCE")}
-      {profileElems(dataset, "DDM_ACCESSRIGHTS")}
+      {profile.titles.map(elemFromKey("DC_TITLE"))}
+      {profile.descriptions.map(elemFromKey("DC_DESCRIPTION"))}
+      {profile.creators.map(createCreator)}
+      {elemFromKey("DDM_CREATED")(date(profile.created))}
+      {elemFromKey("DDM_AVAILABLE")(date(profile.available))}
+      {profile.audiences.map(elemFromKey("DDM_AUDIENCE"))}
+      {elemFromKey("DDM_ACCESSRIGHTS")(profile.accessright.toString)}
     </ddm:profile>
     // @formatter:on
   }
 
-  def profileElems(dataset: Dataset, key: MultiDepositKey): Seq[Elem] = {
-    elemsFromKeyValues(key, dataset.getOrElse(key, List()))
+  def date(dateTime: DateTime): String = {
+    dateTime.toString(ISODateTimeFormat.date())
   }
 
-  def elemsFromKeyValues(key: MultiDepositKey, values: MultiDepositValues): Seq[Elem] = {
-    values.filter(_.nonEmpty)
-      .map(elem(profileFields.getOrElse(key, key)))
-  }
-
-  def createAvailable(dataset: Dataset): Elem = {
-    val key = "DDM_AVAILABLE"
-    lazy val ddmKey = profileFields.getOrElse(key, key)
-    dataset.get(key)
-      .flatMap(_.find(!_.isBlank))
-      .map(elem(ddmKey))
-      .getOrElse(elem(ddmKey)(DateTime.now().toString(ISODateTimeFormat.date())))
-  }
-
-  def createCreators(dataset: Dataset): Seq[Elem] = {
-    dataset.rowsWithValuesFor(composedCreatorFields).map(mdKeyValues =>
-      // @formatter:off
-      <dcx-dai:creatorDetails>{
-        if (isOrganization(mdKeyValues))
+  def createCreator(creator: Creator): Elem = {
+    creator match {
+      case CreatorOrganization(org) =>
+        // @formatter:off
+        <dcx-dai:creatorDetails>
           <dcx-dai:organization>
-            <dcx-dai:name xml:lang="en">{
-              mdKeyValues.find(field => organizationKeys.contains(field._1)).map(_._2).getOrElse("")
-            }</dcx-dai:name>
+            <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>
           </dcx-dai:organization>
-        else
+        </dcx-dai:creatorDetails>
+        // @formatter:on
+      case CreatorPerson(titles, initials, insertions, surname, organization, dai) =>
+        // @formatter:off
+        <dcx-dai:creatorDetails>
           <dcx-dai:author>{
-            mdKeyValues.map(composedEntry(composedCreatorFields))
+            titles.map(ts => <dcx-dai:titles>{ts}</dcx-dai:titles>) ++
+            <dcx-dai:initials>{initials}</dcx-dai:initials> ++
+            insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
+            <dcx-dai:surname>{surname}</dcx-dai:surname> ++
+            dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
+            organization.map(org => <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>)
           }</dcx-dai:author>
-      }</dcx-dai:creatorDetails>
-      // @formatter:off
-    )
-  }
-
-  def isOrganization(authorFields: Iterable[(MultiDepositKey, String)]): Boolean = {
-    val othersEmpty = authorFields
-      .filterNot(field => organizationKeys.contains(field._1))
-      .forall(_._2 == "")
-    val hasOrganization = authorFields.toList.exists(field => organizationKeys.contains(field._1))
-    othersEmpty && hasOrganization
-  }
-
-  def createContributors(dataset: Dataset): Seq[Elem] = {
-    dataset.rowsWithValuesFor(composedContributorFields).map(mdKeyValues =>
-      // @formatter:off
-      <dcx-dai:contributorDetails>{
-        if (isOrganization(mdKeyValues))
-          <dcx-dai:organization>
-            <dcx-dai:name xml:lang="en">{
-              mdKeyValues.find(field => organizationKeys.contains(field._1)).map(_._2).getOrElse("")
-            }</dcx-dai:name>
-          </dcx-dai:organization>
-        else
-          <dcx-dai:author>{
-            mdKeyValues.map(composedEntry(composedContributorFields))
-          }</dcx-dai:author>
-      }</dcx-dai:contributorDetails>
-      // @formatter:on
-    )
-  }
-
-  def composedEntry(dictionary: Dictionary)(entry: (MultiDepositKey, String)): Elem = {
-    val (key, value) = entry
-    if (organizationKeys.contains(key)) {
-      // @formatter:off
-      <dcx-dai:organization>
-        <dcx-dai:name xml:lang="en">{value}</dcx-dai:name>
-      </dcx-dai:organization>
-      // @formatter:on
+        </dcx-dai:creatorDetails>
+        // @formatter:on
     }
-    else elem(dictionary.getOrElse(key, key))(value)
   }
 
-  def createSrsName(fields: DatasetRow): String = {
+  def createContributor(contributor: Contributor): Elem = {
+    contributor match {
+      case ContributorOrganization(org) =>
+        // @formatter:off
+        <dcx-dai:contributorDetails>
+          <dcx-dai:organization>
+            <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>
+          </dcx-dai:organization>
+        </dcx-dai:contributorDetails>
+        // @formatter:on
+      case ContributorPerson(titles, initials, insertions, surname, organization, dai) =>
+        // @formatter:off
+        <dcx-dai:contributorDetails>
+          <dcx-dai:author>{
+            titles.map(ts => <dcx-dai:titles>{ts}</dcx-dai:titles>) ++
+            <dcx-dai:initials>{initials}</dcx-dai:initials> ++
+            insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
+            <dcx-dai:surname>{surname}</dcx-dai:surname> ++
+            dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
+            organization.map(org => <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>)
+          }</dcx-dai:author>
+        </dcx-dai:contributorDetails>
+        // @formatter:on
+    }
+  }
+
+  def createSrsName(scheme: String): String = {
     Map(
       "degrees" -> "http://www.opengis.net/def/crs/EPSG/0/4326",
       "RD" -> "http://www.opengis.net/def/crs/EPSG/0/28992"
-    ).getOrElse(fields.getOrElse("DCX_SPATIAL_SCHEME", ""), "")
+    ).getOrElse(scheme, "")
   }
 
-  def createSpatialPoints(dataset: Dataset): Seq[Elem] = {
-    dataset.rowsWithValuesForAllOf(composedSpatialPointFields).map(mdKeyValues => {
-      val srsName = createSrsName(mdKeyValues)
+  def createSpatialPoint(point: SpatialPoint): Elem = {
+    val srsName = point.scheme.map(createSrsName).getOrElse("")
 
-      val x = mdKeyValues.getOrElse("DCX_SPATIAL_X", "")
-      val y = mdKeyValues.getOrElse("DCX_SPATIAL_Y", "")
+    // coordinate order x, y = longitude (DCX_SPATIAL_X), latitude (DCX_SPATIAL_Y)
+    lazy val xy = s"${point.x} ${point.y}"
+    // coordinate order y, x = latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
+    lazy val yx = s"${point.y} ${point.x}"
 
-      // coordinate order x, y = longitude (DCX_SPATIAL_X), latitude (DCX_SPATIAL_Y)
-      lazy val xy = s"$x $y"
-      // coordinate order y, x = latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
-      lazy val yx = s"$y $x"
+    val pos = srsName match {
+      case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
+      case "http://www.opengis.net/def/crs/EPSG/0/4326" => yx
+      case _ => yx
+    }
 
-      val pos = srsName match {
-        case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
-        case "http://www.opengis.net/def/crs/EPSG/0/4326" => yx
-        case _ => yx
-      }
-
-      // @formatter:off
-      <dcx-gml:spatial srsName={srsName}>
-        <Point xmlns="http://www.opengis.net/gml">
-          <pos>{pos}</pos>
-        </Point>
-      </dcx-gml:spatial>
-      // @formatter:on
-    })
+    // @formatter:off
+    <dcx-gml:spatial srsName={srsName}>
+      <Point xmlns="http://www.opengis.net/gml">
+        <pos>{pos}</pos>
+      </Point>
+    </dcx-gml:spatial>
+    // @formatter:on
   }
 
   /*
@@ -298,54 +181,44 @@ object AddDatasetMetadataToDeposit {
      x -->
 
    */
-  def createSpatialBoxes(dataset: Dataset): Seq[Elem] = {
-    dataset.rowsWithValuesForAllOf(composedSpatialBoxFields).map(mdKeyValues => {
-      val srsName = createSrsName(mdKeyValues)
+  def createSpatialBox(box: SpatialBoxx): Elem = {
+    val srsName = box.scheme.map(createSrsName).getOrElse("")
 
-      lazy val lowerX = mdKeyValues.getOrElse("DCX_SPATIAL_WEST", "")
-      lazy val upperX = mdKeyValues.getOrElse("DCX_SPATIAL_EAST", "")
-      lazy val lowerY = mdKeyValues.getOrElse("DCX_SPATIAL_SOUTH", "")
-      lazy val upperY = mdKeyValues.getOrElse("DCX_SPATIAL_NORTH", "")
-      lazy val xy = (s"$lowerX $lowerY", s"$upperX $upperY")
-      lazy val yx = (s"$lowerY $lowerX", s"$upperY $upperX")
+    lazy val xy = (s"${ box.west } ${ box.south }", s"${ box.east } ${ box.north }")
+    lazy val yx = (s"${ box.south } ${ box.west }", s"${ box.north } ${ box.east }")
 
-      val (lower, upper) = srsName match {
-        case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
-        case "http://www.opengis.net/def/crs/EPSG/0/4326" => yx
-        case _ => yx
-      }
+    val (lower, upper) = srsName match {
+      case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
+      case "http://www.opengis.net/def/crs/EPSG/0/4326" => yx
+      case _ => yx
+    }
 
-      // @formatter:off
-      <dcx-gml:spatial>
-        <boundedBy xmlns="http://www.opengis.net/gml">
-          <Envelope srsName={srsName}>
-            <lowerCorner>{lower}</lowerCorner>
-            <upperCorner>{upper}</upperCorner>
-          </Envelope>
-        </boundedBy>
-      </dcx-gml:spatial>
-      // @formatter:on
-    })
+    // @formatter:off
+    <dcx-gml:spatial>
+      <boundedBy xmlns="http://www.opengis.net/gml">
+        <Envelope srsName={srsName}>
+          <lowerCorner>{lower}</lowerCorner>
+          <upperCorner>{upper}</upperCorner>
+        </Envelope>
+      </boundedBy>
+    </dcx-gml:spatial>
+    // @formatter:on
   }
 
-  def createSchemedMetadata(dataset: Dataset, fields: Dictionary, key: MultiDepositKey, schemeKey: MultiDepositKey): Seq[Elem] = {
-    val xmlKey = fields.getOrElse(key, key)
-    dataset.rowsWithValuesFor(fields).map(mdKeyValues => {
-      val value = mdKeyValues.getOrElse(key, "")
-      mdKeyValues.get(schemeKey)
-        // @formatter:off
-        .map(scheme => <key xsi:type={scheme}>{value}</key>.copy(label = xmlKey))
-        // @formatter:on
-        .getOrElse(elem(xmlKey)(value))
-    })
+  def createTemporal(temporal: Temporal): Elem = {
+    // @formatter:off
+    temporal.scheme
+      .map(scheme => <dcterms:temporal xsi:type={scheme}>{temporal.temporal}</dcterms:temporal>)
+      .getOrElse(<dcterms:temporal>{temporal.temporal}</dcterms:temporal>)
+    // @formatter:on
   }
 
-  def createTemporal(dataset: Dataset): Seq[Elem] = {
-    createSchemedMetadata(dataset, composedTemporalFields, "DCT_TEMPORAL", "DCT_TEMPORAL_SCHEME")
-  }
-
-  def createSubject(dataset: Dataset): Seq[Elem] = {
-    createSchemedMetadata(dataset, composedSubjectFields, "DC_SUBJECT", "DC_SUBJECT_SCHEME")
+  def createSubject(subject: Subject): Elem = {
+    // @formatter:off
+    subject.scheme
+      .map(scheme => <dc:subject xsi:type={scheme}>{subject.subject}</dc:subject>)
+      .getOrElse(<dc:subject>{subject.subject}</dc:subject>)
+    // @formatter:on
   }
 
   /*
@@ -362,265 +235,52 @@ object AddDatasetMetadataToDeposit {
     observation: if the qualifier is present, either DCX_RELATION_LINK or DCX_RELATION_TITLE must be defined
                  if the qualifier is not defined, DCX_RELATION_LINK and DCX_RELATION_TITLE must not both be defined
    */
-  def createRelations(dataset: Dataset): Seq[Elem] = {
-    dataset.rowsWithValuesFor(composedRelationFields).map(row =>
-      (row.get("DCX_RELATION_QUALIFIER"), row.get("DCX_RELATION_LINK"), row.get("DCX_RELATION_TITLE")) match {
-        // @formatter:off
-        case (Some(q), Some(l), _      ) => elem(s"dcterms:$q")(l)
-        case (Some(q), None,    Some(t)) => elem(s"dcterms:$q")(t)
-        case (None,    Some(l), _      ) => elem(s"dc:relation")(l)
-        case (None,    None,    Some(t)) => elem(s"dc:relation")(t)
-        case _                           =>
-          // all other cases are checked not to occur in the preconditions
-          throw new IllegalArgumentException("preconditions should have reported this as an error")
-        // @formatter:on
-      })
-  }
-
-  def createSurrogateRelation(dataset: Dataset): Option[Elem] = {
-    getSpringfieldData(dataset)
-      .map(data =>
-        // @formatter:off
-        <ddm:relation scheme="STREAMING_SURROGATE_RELATION">{
-          s"/domain/${data.domain}/user/${data.user}/collection/${data.collection}/presentation/$$sdo-id"
-        }</ddm:relation>)
-        // @formatter:on
-  }
-
-  /**
-   * @return Retrieve the springfield data from the dataset if the springfield data is present
-   */
-  // TODO copied from AddPropertiesToDeposit; how can we remove this duplication?
-  // suggestion: make Dataset into an object structure that is created in the parser.
-  // this way the correct SpringfieldData object is already in the dataset.
-  private def getSpringfieldData(dataset: Dataset): Option[SpringfieldData] = {
-    for {
-      user <- dataset.findValue("SF_USER")
-      collection <- dataset.findValue("SF_COLLECTION")
-    } yield {
-      dataset.findValue("SF_DOMAIN")
-        .map(SpringfieldData(collection, user, _))
-        .getOrElse(SpringfieldData(collection, user))
+  def createRelation(relation: Relation): Elem = {
+    relation match {
+      case QualifiedLinkRelation(qualifier, link) => elem(s"dcterms:$qualifier")(link)
+      case QualifiedTitleRelation(qualifier, title) => elem(s"dcterms:$qualifier")(title)
+      case LinkRelation(link) => elem("dc:relation")(link)
+      case TitleRelation(title) => elem("dc:relation")(title)
     }
   }
 
-  // TODO copied from AddPropertiesToDeposit
-  // TODO make the default domain a constant in package.scala as we migrate this into
-  // the desired object structure and remove this copy. REMINDER: also use this constant
-  // in the tests "return a path with the default domain when no domain is specified" and
-  // "return a path with the default domain when the given domain is blank"
-  private case class SpringfieldData(collection: String,
-                                     user: String,
-                                     domain: String = "dans")
+  def createSurrogateRelation(springfield: Springfield): Elem = {
+    // @formatter:off
+    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">{
+      s"/domain/${springfield.domain}/user/${springfield.user}/collection/${springfield.collection}/presentation/$$sdo-id"
+    }</ddm:relation>
+    // @formatter:on
+  }
 
-  def createMetadata(dataset: Dataset): Elem = {
-    def isMetaData(key: MultiDepositKey, values: MultiDepositValues): Boolean = {
-      metadataFields.contains(key) && values.nonEmpty
-    }
-
+  def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty): Elem = {
     // @formatter:off
     <ddm:dcmiMetadata>
-      {dataset.filter(isMetaData _ tupled).flatMap(simpleMetadataEntryToXML _ tupled)}
-      {createRelations(dataset) ++ createSurrogateRelation(dataset) }
-      {createContributors(dataset)}
-      {createSubject(dataset)}
-      {createSpatialPoints(dataset)}
-      {createSpatialBoxes(dataset)}
-      {createTemporal(dataset)}
+      {metadata.alternatives.map(elemFromKey("DCT_ALTERNATIVE"))}
+      {metadata.publishers.map(elemFromKey("DC_PUBLISHER"))}
+      {metadata.types.map(elemFromKey("DC_TYPE"))}
+      {metadata.formats.map(elemFromKey("DC_FORMAT"))}
+      {metadata.identifiers.map(elemFromKey("DC_IDENTIFIER"))}
+      {metadata.sources.map(elemFromKey("DC_SOURCE"))}
+      {metadata.languages.map(elemFromKey("DC_LANGUAGE"))}
+      {metadata.spatials.map(elemFromKey("DCT_SPATIAL"))}
+      {metadata.rightsholder.map(elemFromKey("DCT_RIGHTSHOLDER"))}
+      {metadata.relations.map(createRelation) ++ maybeSpringfield.map(createSurrogateRelation) }
+      {metadata.contributors.map(createContributor)}
+      {metadata.subjects.map(createSubject)}
+      {metadata.spatialPoints.map(createSpatialPoint)}
+      {metadata.spatialBoxes.map(createSpatialBox)}
+      {metadata.temporal.map(createTemporal)}
     </ddm:dcmiMetadata>
     // @formatter:on
   }
 
-  def simpleMetadataEntryToXML(key: MultiDepositKey, values: MultiDepositValues): List[Elem] = {
-    values.filter(_.nonEmpty).map(elem(metadataFields.getOrElse(key, key)))
+  def elemFromKey(key: MultiDepositKey): String => Elem = {
+    elem((profileFields ++ metadataFields).getOrElse(key, key))
   }
 
   def elem(key: String)(value: String): Elem = {
     // @formatter:off
     <key>{value}</key>.copy(label=key)
     // @formatter:on
-  }
-}
-
-object validators {
-
-  def checkValidChars(row: Int, datasetRow: DatasetRow, key: String): Try[Unit] = {
-    datasetRow.get(key)
-      .map(value => "[^a-zA-Z0-9_-]".r.findAllIn(value).toSet)
-      .map(illegalCharacters => if (illegalCharacters.isEmpty)
-                                  Success(())
-                                else
-                                  Failure(ActionException(row, s"The column '$key' contains the following invalid characters: ${ illegalCharacters.map(s => s"'$s'").mkString("{ ", ", ", " }") }"))
-      ).getOrElse(Success(()))
-  }
-  /**
-   * Check if either non of the keys have values or all of them have values
-   * If some are missing, mention them in the exception message
-   */
-  def checkAllOrNone(row: Int, datasetRow: DatasetRow, keys: String*): Try[Unit] = {
-    val emptyVals = keys.filter(key => datasetRow.get(key).forall(_.isBlank))
-
-    if (emptyVals.nonEmpty && emptyVals.size < keys.size)
-      Failure(ActionException(row, s"Missing value(s) for: ${ emptyVals.mkString("[", ", ", "]") }"))
-    else
-      Success(())
-  }
-
-  /**
-   * Check if only one of the keys contains a non-blank value
-   */
-  def checkOneOf(row: Int, map: scala.collection.Map[MultiDepositKey, String], keys: String*): Try[Unit] = {
-    if (keys.map(map.get(_).filterNot(_.isBlank)).count(_.isDefined) == 1)
-      Success(())
-    else
-      Failure(ActionException(row, s"Only one of the following columns must contain a value: ${ keys.mkString("[", ", ", "]") }"))
-  }
-
-  /**
-   * Check if not all keys contain non-blank values
-   */
-  def checkNotAll(row: Int, map: scala.collection.Map[MultiDepositKey, String], keys: String*): Try[Unit] = {
-    if (keys.map(map.get(_).filterNot(_.isBlank)).forall(_.isDefined))
-      Failure(ActionException(row, s"The columns ${ keys.mkString("[", ", ", "]") } must not all contain a value at the same time"))
-    else
-      Success(())
-  }
-
-  /**
-   * If any of the keys (optional and required) has a value all required keys should have a value
-   */
-  def checkRequiredWithGroup(row: Int, datasetRow: DatasetRow, requiredKeys: List[String], optionalKeys: List[String]): Try[Unit] = {
-    val emptyOptionalVals = optionalKeys.filter(optionalKey => datasetRow.get(optionalKey).forall(_.isBlank))
-    val emptyRequiredVals = requiredKeys.filter(requiredKey => datasetRow.get(requiredKey).forall(_.isBlank))
-
-    // note that it has values if not all are empty
-    val hasOptionalVals = emptyOptionalVals.size < optionalKeys.size
-    val hasRequiredVals = emptyRequiredVals.size < requiredKeys.size
-
-    if ((hasOptionalVals || hasRequiredVals) && emptyRequiredVals.nonEmpty)
-      Failure(ActionException(row, s"Missing value(s) for: ${ emptyRequiredVals.mkString("[", ", ", "]") }"))
-    else
-      Success(())
-  }
-
-  /**
-   * When it contains something, this should be from a list af allowed values
-   */
-  def checkValueIsOneOf(row: Int, datasetRow: DatasetRow, key: String, allowed: String*): Try[Unit] = {
-    val value = datasetRow.getOrElse(key, "")
-    if (value.isEmpty || allowed.contains(value))
-      Success(Unit)
-    else
-      Failure(ActionException(row, s"Wrong value: $value should be empty or one of: ${ allowed.mkString("[", ", ", "]") }"))
-  }
-
-  /**
-   * Check if a column in the dataset contains only one non-blank value
-   */
-  def checkColumnHasOnlyOneValue(row: Int, dataset: Dataset, key: String): Try[Unit] = {
-    dataset.get(key)
-      .map(_.filterNot(_.isBlank).size)
-      .map {
-        case 0 => Failure(ActionException(row, s"No value defined for $key"))
-        case 1 => Success(())
-        case _ => Failure(ActionException(row, s"More than one value is defined for $key"))
-      }
-      .getOrElse(Failure(ActionException(row, s"The column $key is not present in this instructions file")))
-  }
-
-  /**
-   * Check if a column in the dataset contains at most one non-blank value.
-   * If the column is not present, a `Success` is returned as well.
-   */
-  def checkColumnHasAtMostOneValue(row: Int, dataset: Dataset, key: String): Try[Unit] = {
-    dataset.get(key)
-      .map(_.filterNot(_.isBlank).size)
-      .map {
-        case 0 | 1 => Success(())
-        case _ => Failure(ActionException(row, s"More than one value is defined for $key"))
-      }
-      .getOrElse(Success(()))
-  }
-
-  def checkColumnsHaveAtMostOneRowWithValues(row: Int, dataset: Dataset, keys: String*): Try[Unit] = {
-    dataset.rowsWithValuesFor(keys: _*).size match {
-      case 0 | 1 => Success(())
-      case _ => Failure(ActionException(row, s"Only one row can contain values for all these columns: ${ keys.mkString("[", ", ", "]") }"))
-    }
-  }
-
-  def checkColumnsAreNonEmpty(row: Int, dataset: Dataset, keys: String*): Try[Unit] = {
-    val nonExistentOrBlankColumns = keys.map(key => key -> dataset.get(key))
-      .filter { // filter the ones that are all blank or do not exist
-        case (_, Some(column)) => column.forall(_.isBlank)
-        case (_, None) => true
-      }
-      .map { case (key, _) => key }
-
-    nonExistentOrBlankColumns.size match {
-      case 0 => Success(())
-      case _ => Failure(ActionException(row, s"No values found for these columns: ${ nonExistentOrBlankColumns.mkString("[", ", ", "]") }"))
-    }
-  }
-
-  def checkColumnsAreEmpty(row: Int, dataset: Dataset, keys: String*): Try[Unit] = {
-    val existentOrNonBlankColumns = keys.map(key => key -> dataset.get(key))
-      .filter { // filter the ones that do exist or are all NOT blank
-        case (_, Some(column)) => column.exists(!_.isBlank)
-        case (_, None) => false
-      }
-      .map { case (key, _) => key }
-
-    existentOrNonBlankColumns.size match {
-      case 0 => Success(())
-      case _ => Failure(ActionException(row, s"Values found for these columns: ${ existentOrNonBlankColumns.mkString("[", ", ", "]") }"))
-    }
-  }
-
-  def checkAccessRights(row: Int, datasetRow: DatasetRow): Try[Unit] = {
-    (datasetRow.get("DDM_ACCESSRIGHTS"), datasetRow.get("DDM_AUDIENCE")) match {
-      case (Some("GROUP_ACCESS"), Some("D37000")) => Success(Unit)
-      case (Some("GROUP_ACCESS"), Some(code)) => Failure(ActionException(row, s"When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is: $code"))
-      case (Some("GROUP_ACCESS"), None) => Failure(ActionException(row, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is not defined"))
-      case (_, _) => Success(())
-    }
-  }
-
-  def checkDateFormatting(row: Int, datasetRow: DatasetRow, key: String): Try[Unit] = {
-    datasetRow.get(key)
-      .map(date => Try { DateTime.parse(date) }.map(_ => ()).recoverWith {
-        case _: IllegalArgumentException => Failure(ActionException(row, s"$key '$date' does not represent a date"))
-      })
-      .getOrElse(Success(()))
-  }
-
-  def checkFileExists(row: Int, datasetRow: DatasetRow, key: String)(implicit settings: Settings): Try[Unit] = {
-    datasetRow.get(key)
-      .map(path => Try { new File(settings.multidepositDir, path) }
-        .flatMap {
-          case file if file.exists() => Success(())
-          case _ => Failure(ActionException(row, s"$key '$path' does not exist"))
-        })
-      .getOrElse(Success(()))
-  }
-
-  /**
-   * If the column ''key'' contains non-blank values, the ''required'' columns must contain
-   * non-blank values as well
-   */
-  def checkDependendColumns(row: Int, dataset: Dataset, key: String, required: List[String]): Try[Unit] = {
-    dataset.get(key)
-      .filterNot(values => values.isEmpty || values.forall(_.isBlank))
-      .map(_ => {
-        val sfEmpty = required.filter(dataset.get(_)
-          .forall(values => values.isEmpty || values.forall(_.isBlank)))
-
-        if (sfEmpty.isEmpty)
-          Success(())
-        else
-          Failure(ActionException(row, s"The column $key contains values, but the column(s) " +
-            s"${ sfEmpty.mkString("[", ", ", "]") } do not"))
-      })
-      .getOrElse(Success(()))
   }
 }

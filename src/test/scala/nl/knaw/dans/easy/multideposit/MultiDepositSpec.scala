@@ -15,24 +15,11 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import org.scalatest.BeforeAndAfter
+import nl.knaw.dans.lib.error._
 
-import scala.util.Try
+import scala.util.{ Failure, Try }
 
-class MultiDepositSpec extends UnitSpec with BeforeAndAfter {
-
-  val dataset1 = new Dataset
-  val dataset2 = new Dataset
-
-  before {
-    dataset1 ++= testDataset1
-    dataset2 ++= testDataset2
-  }
-
-  after {
-    dataset1.clear
-    dataset2.clear
-  }
+class MultiDepositSpec extends UnitSpec {
 
   "StringToOption.toOption" should "yield an Option.empty when given an empty String" in {
     "".toOption shouldBe empty
@@ -70,19 +57,70 @@ class MultiDepositSpec extends UnitSpec with BeforeAndAfter {
     Try[String](throw new Exception).onError(_ => "foobar") shouldBe "foobar"
   }
 
-  "DatasetExtensions.getValue" should "return the correct value when provided with the correct parameters" in {
-    dataset1.getValue("ROW")(0).value shouldBe "2"
+  "TryExceptionHandling.combine" should "apply the function in the left Try to the value in the right Try" in {
+    Try { (i: Int) => i + 1 } combine Try { 1 } shouldBe Try { 2 }
   }
 
-  it should "return None when the key is not in the dataset" in {
-    dataset1.getValue("ROW!")(0) shouldBe empty
+  it should "fail if the function throws an exception" in {
+    val err = new IllegalArgumentException("foo")
+    Try { (_: Int) => throw err } combine Try { 1 } should matchPattern { case Failure(`err`) => }
   }
 
-  it should "return None when the row is not in the dataset" in {
-    dataset1.getValue("ROW")(10) shouldBe empty
+  it should "fail if the left Try is a Failure" in {
+    val err = new IllegalArgumentException("foo")
+    Try { throw err } combine Try { 1 } should matchPattern { case Failure(`err`) => }
   }
 
-  it should "return None when value is blank" in {
-    dataset1.getValue("DDM_CREATED")(1) shouldBe empty
+  it should "fail if the right Try is a Failure" in {
+    val err = new IllegalArgumentException("foo")
+    Try { (i: Int) => i + 1 } combine Try { throw err } should matchPattern { case Failure(`err`) => }
+  }
+
+  it should "fail if both sides are 'normal' exceptions" in {
+    val err1 = new IllegalArgumentException("foo")
+    val err2 = new IllegalArgumentException("bar")
+    inside(Try { throw err1 } combine Try { throw err2 }) {
+      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly (err1, err2)
+    }
+  }
+
+  it should "fail if both sides are CompositeExceptions" in {
+    val err1 = new IllegalArgumentException("foo")
+    val err2 = new IllegalArgumentException("bar")
+    val err3 = new IllegalArgumentException("baz")
+    val err4 = new IllegalArgumentException("qux")
+
+    val left = List[Try[Int => Int]](Failure(err1), Failure(err2)).collectResults.map(_.head)
+    val right = List[Try[Int]](Failure(err3), Failure(err4)).collectResults.map(_.head)
+
+    inside(left combine right) {
+      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly (err1, err2, err3, err4)
+    }
+  }
+
+  it should "fail if the left side is a CompositeException" in {
+    val err1 = new IllegalArgumentException("foo")
+    val err2 = new IllegalArgumentException("bar")
+    val err3 = new IllegalArgumentException("baz")
+
+    val left = List[Try[Int => Int]](Failure(err1), Failure(err2)).collectResults.map(_.head)
+    val right = Failure(err3)
+
+    inside(left combine right) {
+      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly (err1, err2, err3)
+    }
+  }
+
+  it should "fail if the right side is a CompositeException" in {
+    val err1 = new IllegalArgumentException("foo")
+    val err2 = new IllegalArgumentException("bar")
+    val err3 = new IllegalArgumentException("baz")
+
+    val left = Failure(err1)
+    val right = List[Try[Int]](Failure(err2), Failure(err3)).collectResults.map(_.head)
+
+    inside(left combine right) {
+      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly (err1, err2, err3)
+    }
   }
 }
