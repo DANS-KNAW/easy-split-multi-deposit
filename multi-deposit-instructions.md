@@ -186,7 +186,7 @@ The resulting deposit will have the following location and lay-out:
                                           | 
                                           +- baginfo.txt
                                           |
-                                          +- <manifest-files>* (multiple manifist files, not elaborated here)
+                                          +- <manifest-files>* (multiple manifest files, not elaborated here)
                                           |
                                           +- data
                                           |    |
@@ -202,7 +202,7 @@ The resulting deposit will have the following location and lay-out:
                                           |
                                           +- metadata
                                                |
-                                               +- datasets.xml
+                                               +- dataset.xml
                                                |
                                                +- files.xml
                                
