@@ -24,10 +24,10 @@ import scala.util.Try
 trait Ldap extends AutoCloseable {
 
   /**
-   * Queries LDAP for the user data corresponding to the given `depositorID` and transforms it
+   * Queries LDAP for the user data corresponding to the given `userId` and transforms it
    * into an instance of type `T` using the function `f`.
    *
-   * @param userId the identifier related to the depositor
+   * @param userId the identifier related to the user
    * @param f function that transforms an `Attributes` object to an instance of type `T`
    * @tparam T the result type of the transformer function
    * @return `Success` if the query succeeds, `Failure` otherwise
