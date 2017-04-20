@@ -34,6 +34,9 @@ class IntegrationSpec extends UnitSpec with BeforeAndAfter with MockFactory {
   }
 
   "allfields" should "succeed in transforming the input into a bag" in {
+    // this test does not work on travis, because we don't know the group that we can use for this
+    assume(System.getProperty("user.name") != "travis")
+
     val ldap = mock[Ldap]
     implicit val settings = Settings(
       multidepositDir = allfields,
