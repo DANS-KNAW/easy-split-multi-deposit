@@ -25,8 +25,8 @@ import scala.util.{ Failure, Success }
 
 class IntegrationSpec extends UnitSpec with BeforeAndAfter with MockFactory {
 
-  private val allfields = new File(testDir, "md/allfields")
-  private val invalidCSV = new File(testDir, "md/invalidCSV")
+  private val allfields = new File(testDir, "md/allfields").getAbsoluteFile
+  private val invalidCSV = new File(testDir, "md/invalidCSV").getAbsoluteFile
 
   before {
     new File(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
@@ -40,8 +40,8 @@ class IntegrationSpec extends UnitSpec with BeforeAndAfter with MockFactory {
     val ldap = mock[Ldap]
     implicit val settings = Settings(
       multidepositDir = allfields,
-      stagingDir = new File(testDir, "sd"),
-      outputDepositDir = new File(testDir, "od"),
+      stagingDir = new File(testDir, "sd").getAbsoluteFile,
+      outputDepositDir = new File(testDir, "od").getAbsoluteFile,
       datamanager = "easyadmin",
       depositPermissions = DepositPermissions("rwxrwx---", "admin"),
       ldap = ldap

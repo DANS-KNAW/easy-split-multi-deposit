@@ -33,7 +33,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
   }
 
   private implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md")
+    multidepositDir = new File(testDir, "md").getAbsoluteFile
   )
   private val parser = new MultiDepositParser
   import parser._

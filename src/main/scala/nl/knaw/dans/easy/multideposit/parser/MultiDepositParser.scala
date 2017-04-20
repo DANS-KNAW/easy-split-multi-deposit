@@ -430,9 +430,9 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   }
 
   def avFile(rowNum: => Int)(row: DatasetRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
-    val file = row.find("AV_FILE").map(new File(settings.multidepositDir, _).getAbsoluteFile)
+    val file = row.find("AV_FILE").map(new File(settings.multidepositDir, _))
     val title = row.find("AV_FILE_TITLE")
-    val subtitle = row.find("AV_SUBTITLES").map(new File(settings.multidepositDir, _).getAbsoluteFile)
+    val subtitle = row.find("AV_SUBTITLES").map(new File(settings.multidepositDir, _))
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, title, subtitle, subtitleLang) match {
