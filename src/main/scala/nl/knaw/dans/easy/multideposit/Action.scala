@@ -130,7 +130,7 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
     }
 
     header.toOption.fold("")(_ + "\n") +
-      report(List(throwable)).reverse.mkString("\n") +
+      report(List(throwable)).distinct.reverse.mkString("\n") +
       footer.toOption.fold("")("\n" + _)
   }
 
