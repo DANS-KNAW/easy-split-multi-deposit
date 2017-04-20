@@ -425,13 +425,17 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     atMostOne(2, List("FOO", "BAR"))(List("abc")) should matchPattern { case Success(Some("abc")) => }
   }
 
-  it should "fail when the input contains more than one value and one columnName is given" in {
+  it should "succeed when the input contains multiple equal value" in {
+    atMostOne(2, List("FOO"))(List.fill(5)("abc")) should matchPattern { case Success(Some("abc")) =>}
+  }
+
+  it should "fail when the input contains more than one distinct value and one columnName is given" in {
     atMostOne(2, List("FOO"))(List("abc", "def")) should matchPattern {
       case Failure(ParseException(2, "Only one row is allowed to contain a value for the column: 'FOO'", _)) =>
     }
   }
 
-  it should "fail when the input contains more than one value and multiple columnNames are given" in {
+  it should "fail when the input contains more than one distinct value and multiple columnNames are given" in {
     atMostOne(2, List("FOO", "BAR"))(List("abc", "def")) should matchPattern {
       case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [FOO, BAR]", _)) =>
     }
@@ -439,6 +443,10 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
   "exactlyOne" should "succeed when the input contains exactly one value" in {
     exactlyOne(2, List("FOO", "BAR"))(List("abc")) should matchPattern { case Success("abc") => }
+  }
+
+  it should "succeed when the input contains exactly one distinct value" in {
+    exactlyOne(2, List("FOO"))(List.fill(5)("abc")) should matchPattern { case Success("abc") => }
   }
 
   it should "fail when the input is empty and one columnName is given" in {
@@ -1381,7 +1389,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       case Failure(CompositeException(es)) =>
         val e1 :: e2 :: e3 :: Nil = es.toList
         e1 should have message "The column 'SF_DOMAIN' contains the following invalid characters: {@, ï, ç, æ}"
-        e2 should have message "The column 'SF_USER' contains the following invalid characters: {%, &, !, @, #, $}"
+        e2 should have message "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"
         e3 should have message "The column 'SF_COLLECTION' contains the following invalid characters: {*}"
     }
   }

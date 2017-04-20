@@ -59,7 +59,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   private def validateDatasetHeaders(headers: List[MultiDepositKey]): Try[Unit] = {
     val validHeaders = Headers.validHeaders
     val invalidHeaders = headers.filterNot(validHeaders.contains)
-    lazy val uniqueHeaders = headers.toSet.toList
+    lazy val uniqueHeaders = headers.distinct
 
     if (invalidHeaders.nonEmpty)
       Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
@@ -152,7 +152,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   }
 
   def atMostOne[T](rowNum: => Int, columnNames: => NonEmptyList[MultiDepositKey])(values: List[T]): Try[Option[T]] = {
-    values match {
+    values.distinct match {
       case Nil => Success(None)
       case t :: Nil => Success(Some(t))
       case _ if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
@@ -163,7 +163,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   }
 
   def exactlyOne[T](rowNum: => Int, columnNames: => NonEmptyList[MultiDepositKey])(values: List[T]): Try[T] = {
-    values match {
+    values.distinct match {
       case t :: Nil => Success(t)
       case Nil if columnNames.size == 1 => Failure(ParseException(rowNum, "One row has to contain " +
         s"a value for the column: '${ columnNames.head }'"))
@@ -177,7 +177,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   }
 
   def checkValidChars(rowNum: => Int, column: => MultiDepositKey, value: String): Try[String] = {
-    val invalidCharacters = "[^a-zA-Z0-9_-]".r.findAllIn(value).toSet
+    val invalidCharacters = "[^a-zA-Z0-9_-]".r.findAllIn(value).toSeq.distinct
     if (invalidCharacters.isEmpty) Success(value)
     else Failure(ParseException(rowNum, s"The column '$column' contains the following invalid characters: ${ invalidCharacters.mkString("{", ", ", "}") }"))
   }
@@ -195,9 +195,9 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
 
     val depositorId = extractNEL(rows, rowNum, "DEPOSITOR_ID")
       .flatMap {
-        case depositorIds if depositorIds.toSet.size > 1 =>
+        case depositorIds if depositorIds.distinct.size > 1 =>
           Failure(ParseException(rowNum, "There are multiple distinct depositorIDs in dataset " +
-            s"'$datasetId': ${ depositorIds.toSet.mkString("[", ", ", "]") }"))
+            s"'$datasetId': ${ depositorIds.distinct.mkString("[", ", ", "]") }"))
         case depId :: _ => Success(depId)
       }
 
