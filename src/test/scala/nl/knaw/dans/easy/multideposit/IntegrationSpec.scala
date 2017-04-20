@@ -39,7 +39,7 @@ class IntegrationSpec extends UnitSpec with BeforeAndAfter with MockFactory {
       multidepositDir = allfields,
       stagingDir = new File(testDir, "sd"),
       outputDepositDir = new File(testDir, "od"),
-      datamanager = "me",
+      datamanager = "easyadmin",
       depositPermissions = DepositPermissions("rwxrwx---", "admin"),
       ldap = ldap
     )
@@ -52,7 +52,7 @@ class IntegrationSpec extends UnitSpec with BeforeAndAfter with MockFactory {
           add("USER")
           add("ARCHIVIST")
         })
-        put("mail", "dm@test.org")
+        put("mail", "FILL.IN.YOUR@VALID-EMAIL.NL")
       }
     }
 
@@ -62,6 +62,8 @@ class IntegrationSpec extends UnitSpec with BeforeAndAfter with MockFactory {
     Main.run shouldBe a[Success[_]]
 
     for (bagName <- Seq("ruimtereis01", "ruimtereis02", "ruimtereis03")) {
+      // TODO I'm not happy with this way of testing the content of each file, especially with ignoring specific lines,
+      // but I'm in a hurry, so I'll think of a better way later
       val bag = new File(settings.outputDepositDir, s"allfields-$bagName/bag")
       val expBag = new File(expectedOutputDir, s"input-$bagName/bag")
 
@@ -82,12 +84,16 @@ class IntegrationSpec extends UnitSpec with BeforeAndAfter with MockFactory {
       tagManifest.read().lines.toSeq should contain allElementsOf expTagManifest.read().lines.filterNot(_ contains "bag-info.txt").filterNot(_ contains "manifest-sha1.txt").toSeq
 
       val datasetXml = new File(bag, "metadata/dataset.xml")
-      val expDatasetXml = new File(bag, "metadata/dataset.xml")
-      datasetXml.read().lines.toSeq should contain allElementsOf expDatasetXml.read().lines.toSeq
+      val expDatasetXml = new File(expBag, "metadata/dataset.xml")
+      datasetXml.read().lines.filterNot(_ contains "ddm:available").mkString("\n") shouldBe expDatasetXml.read().lines.filterNot(_ contains "ddm:available").mkString("\n")
 
       val filesXml = new File(bag, "metadata/files.xml")
-      val expFilesXml = new File(bag, "metadata/files.xml")
-      filesXml.read().lines.toSeq should contain allElementsOf expFilesXml.read().lines.toSeq
+      val expFilesXml = new File(expBag, "metadata/files.xml")
+      filesXml.read() shouldBe expFilesXml.read()
+
+      val props = new File(settings.outputDepositDir, s"allfields-$bagName/deposit.properties")
+      val expProps = new File(expectedOutputDir, s"input-$bagName/deposit.properties")
+      props.read().lines.toSeq should contain allElementsOf expProps.read().lines.filterNot(_ startsWith "#").filterNot(_ contains "bag-store.bag-id").toSeq
     }
   }
 

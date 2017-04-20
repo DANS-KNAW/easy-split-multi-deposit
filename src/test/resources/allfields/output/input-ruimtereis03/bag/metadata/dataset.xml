@@ -8,7 +8,9 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
       <dcx-dai:author>
         <dcx-dai:initials>Donald</dcx-dai:initials>
         <dcx-dai:surname>Duck</dcx-dai:surname>
-        <dcx-dai:name xml:lang="en">Duckstad</dcx-dai:name>
+        <dcx-dai:organization>
+          <dcx-dai:name xml:lang="en">Duckstad</dcx-dai:name>
+        </dcx-dai:organization>
       </dcx-dai:author>
     </dcx-dai:creatorDetails>
     <ddm:created>2016-07-30</ddm:created>

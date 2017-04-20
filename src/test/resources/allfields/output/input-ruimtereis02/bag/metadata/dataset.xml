@@ -15,7 +15,9 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
         <dcx-dai:titles>Dr</dcx-dai:titles>
         <dcx-dai:initials>C</dcx-dai:initials>
         <dcx-dai:surname>Sagan</dcx-dai:surname>
-        <dcx-dai:name xml:lang="en">Cornell University</dcx-dai:name>
+        <dcx-dai:organization>
+          <dcx-dai:name xml:lang="en">Cornell University</dcx-dai:name>
+        </dcx-dai:organization>
       </dcx-dai:author>
     </dcx-dai:creatorDetails>
     <dcx-dai:creatorDetails>
@@ -24,7 +26,9 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
         <dcx-dai:insertions>van</dcx-dai:insertions>
         <dcx-dai:surname>tseeH</dcx-dai:surname>
         <dcx-dai:DAI>info:eu-repo/dai/nl/012345678</dcx-dai:DAI>
-        <dcx-dai:name xml:lang="en">WANK/SNAD</dcx-dai:name>
+        <dcx-dai:organization>
+          <dcx-dai:name xml:lang="en">WANK/SNAD</dcx-dai:name>
+        </dcx-dai:organization>
       </dcx-dai:author>
     </dcx-dai:creatorDetails>
     <ddm:created>2015-05-13</ddm:created>
