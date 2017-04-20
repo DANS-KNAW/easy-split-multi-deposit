@@ -69,7 +69,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       Failure(ParseException(0, "SIP Instructions file contains duplicate headers: " +
         s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
     else
-      Success(Unit)
+      Success(())
   }
 
   private def recoverParsing(t: Throwable): Failure[Nothing] = {
@@ -77,7 +77,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       report = generateReport(
         header = "CSV failures:",
         throwable = t,
-        footer = "Due to these errors in the 'instructions.csv', nothing was done."),
+        footer = "Due to these errors in the 'instructions.csv' nothing was done."),
       cause = t))
   }
 
@@ -85,17 +85,25 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   private def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
 
     @tailrec
-    def report(es: List[Throwable], rpt: List[String] = Nil): List[String] = {
+    def flattenException(es: List[Throwable], result: List[Throwable] = Nil): List[Throwable] = {
       es match {
-        case Nil => rpt
-        case ParseException(row, msg, _) :: xs => report(xs, s" - row $row: $msg" :: rpt)
-        case CompositeException(ths) :: xs => report(ths.toList ::: xs, rpt)
-        case NonFatal(ex) :: xs => report(xs, s" - unexpected error: ${ex.getMessage}" :: rpt)
+        case Nil => result
+        case CompositeException(ths) :: exs => flattenException(ths.toList ::: exs, result)
+        case NonFatal(ex) :: exs => flattenException(exs, ex :: result)
       }
     }
 
     header.toOption.fold("")(_ + "\n") +
-      report(List(throwable)).reverse.mkString("\n") +
+      flattenException(List(throwable))
+        .sortBy {
+          case ParseException(row, _, _) => row
+          case _ => -1
+        }
+        .map {
+          case ParseException(row, msg, _) => s" - row $row: $msg"
+          case e => s" - unexpected: ${e.getMessage}"
+        }
+        .mkString("\n") +
       footer.toOption.fold("")("\n" + _)
   }
 
