@@ -122,6 +122,7 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
     def report(es: List[Throwable], rpt: List[String] = Nil): List[String] = {
       es match {
         case Nil => rpt
+        case ActionException(-1, msg, _) :: xs => report(xs, s" - cmd line: $msg" :: rpt)
         case ActionException(row, msg, _) :: xs => report(xs, s" - row $row: $msg" :: rpt)
         case CompositeException(ths) :: xs => report(ths.toList ::: xs, rpt)
         case NonFatal(ex) :: xs => report(xs, s" - unexpected error: ${ex.getMessage}" :: rpt)

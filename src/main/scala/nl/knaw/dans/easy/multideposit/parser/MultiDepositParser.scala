@@ -73,17 +73,6 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   }
 
   private def recoverParsing(t: Throwable): Failure[Nothing] = {
-    Failure(ParserFailedException(
-      report = generateReport(
-        header = "CSV failures:",
-        throwable = t,
-        footer = "Due to these errors in the 'instructions.csv' nothing was done."),
-      cause = t))
-  }
-
-  // TODO temporary fix, please get rid of code duplication with Action.generateReport
-  private def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
-
     @tailrec
     def flattenException(es: List[Throwable], result: List[Throwable] = Nil): List[Throwable] = {
       es match {
@@ -93,18 +82,27 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       }
     }
 
-    header.toOption.fold("")(_ + "\n") +
-      flattenException(List(throwable))
-        .sortBy {
-          case ParseException(row, _, _) => row
-          case _ => -1
-        }
-        .map {
-          case ParseException(row, msg, _) => s" - row $row: $msg"
-          case e => s" - unexpected: ${e.getMessage}"
-        }
-        .mkString("\n") +
-      footer.toOption.fold("")("\n" + _)
+    def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
+      header.toOption.fold("")(_ + "\n") +
+        flattenException(List(throwable))
+          .sortBy {
+            case ParseException(row, _, _) => row
+            case _ => -1
+          }
+          .map {
+            case ParseException(row, msg, _) => s" - row $row: $msg"
+            case e => s" - unexpected: ${e.getMessage}"
+          }
+          .mkString("\n") +
+        footer.toOption.fold("")("\n" + _)
+    }
+
+    Failure(ParserFailedException(
+      report = generateReport(
+        header = "CSV failures:",
+        throwable = t,
+        footer = "Due to these errors in the 'instructions.csv' nothing was done."),
+      cause = t))
   }
 
   def parse(file: File): Try[Seq[Dataset]] = {
