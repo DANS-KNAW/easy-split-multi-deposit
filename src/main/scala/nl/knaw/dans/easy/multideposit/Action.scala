@@ -28,13 +28,13 @@ import scala.util.control.NonFatal
 trait Action[-A, +T] extends DebugEnhancedLogging { self =>
 
   private def logPreconditions(): Unit = {
-    logger.info(s"Checking preconditions of ${getClass.getSimpleName} ...")
+    logger.info(s"Checking preconditions of ${ getClass.getSimpleName } ...")
   }
   private def logExecute(): Unit = {
-    logger.info(s"Executing action of ${getClass.getSimpleName} ...")
+    logger.info(s"Executing action of ${ getClass.getSimpleName } ...")
   }
   private def logRollback(): Unit = {
-    logger.info(s"An error occurred. Rolling back action ${getClass.getSimpleName} ...")
+    logger.info(s"An error occurred. Rolling back action ${ getClass.getSimpleName}  ...")
   }
   protected[Action] def innerCheckPreconditions: Try[Unit] = Try(logPreconditions()).flatMap(_ => checkPreconditions)
   protected[Action] def innerExecute(a: A): Try[T] = Try(logExecute()).flatMap(_ => execute(a))

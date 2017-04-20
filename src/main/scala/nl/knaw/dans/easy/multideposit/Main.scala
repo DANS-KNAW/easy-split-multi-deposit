@@ -33,7 +33,7 @@ object Main extends DebugEnhancedLogging {
         logger.error(e.getMessage)
         logger.debug(e.getMessage, e)
       }
-      .ifSuccess(_ => logger.info("Finished successfully!"))
+      .ifSuccess(_ => logger.info(s"Finished successfully! The output can be found in ${ settings.outputDepositDir }."))
 
     logger.debug("closing ldap")
     settings.ldap.close()
