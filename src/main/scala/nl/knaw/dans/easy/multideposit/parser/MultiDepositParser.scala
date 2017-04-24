@@ -155,10 +155,10 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     values.distinct match {
       case Nil => Success(None)
       case t :: Nil => Success(Some(t))
-      case _ if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
-        s"to contain a value for the column: '${ columnNames.head }'"))
-      case _ => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
-        s"these columns: ${ columnNames.mkString("[", ", ", "]") }"))
+      case ts if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
+        s"to contain a value for the column '${ columnNames.head }'. Found: ${ ts.mkString("[", ", ", "]") }"))
+      case ts => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
+        s"these columns: ${ columnNames.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
     }
   }
 
@@ -169,10 +169,10 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
         s"a value for the column: '${ columnNames.head }'"))
       case Nil => Failure(ParseException(rowNum, "One row has to contain a value for these " +
         s"columns: ${ columnNames.mkString("[", ", ", "]") }"))
-      case _ if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
-        s"to contain a value for the column: '${ columnNames.head }'"))
-      case _ => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
-        s"these columns: ${ columnNames.mkString("[", ", ", "]") }"))
+      case ts if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
+        s"to contain a value for the column '${ columnNames.head }'. Found: ${ ts.mkString("[", ", ", "]") }"))
+      case ts => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
+        s"these columns: ${ columnNames.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
     }
   }
 
@@ -193,13 +193,15 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   def extractDataset(datasetId: DatasetId, rows: DatasetRows): Try[Dataset] = {
     val rowNum = rows.map(getRowNum).min
 
-    val depositorId = extractNEL(rows, rowNum, "DEPOSITOR_ID")
-      .flatMap {
-        case depositorIds if depositorIds.distinct.size > 1 =>
-          Failure(ParseException(rowNum, "There are multiple distinct depositorIDs in dataset " +
-            s"'$datasetId': ${ depositorIds.distinct.mkString("[", ", ", "]") }"))
-        case depId :: _ => Success(depId)
-      }
+    val depositorId = extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID")))
+
+//    val depositorId = extractNEL(rows, rowNum, "DEPOSITOR_ID")
+//      .flatMap {
+//        case depositorIds if depositorIds.distinct.size > 1 =>
+//          Failure(ParseException(rowNum, "There are multiple distinct depositorIDs in dataset " +
+//            s"'$datasetId': ${ depositorIds.distinct.mkString("[", ", ", "]") }"))
+//        case depId :: _ => Success(depId)
+//      }
 
     Try { Dataset.curried }
       .combine(checkValidChars(rowNum, "DATASET", datasetId))
@@ -265,7 +267,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       }).curried
     }
       .combine(extractList(rows)(springfield)
-        .flatMap(atMostOne(rowNum, List("SF_DOMAIN", "SF_USER", "SF_COLLECTION"))))
+        .flatMap(ss => atMostOne(rowNum, List("SF_DOMAIN", "SF_USER", "SF_COLLECTION"))(ss.map { case Springfield(d, u, c) => (d, u, c) }).map(_.map(Springfield.tupled))))
       .combine(extractList(rows)(fileAccessRight)
         .flatMap(atMostOne(rowNum, List("SF_ACCESSIBILITY"))))
       .combine(extractList(rows)(avFile)

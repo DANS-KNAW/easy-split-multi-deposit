@@ -111,9 +111,9 @@ class IntegrationSpec extends UnitSpec with BeforeAndAfter with MockFactory {
           "CSV failures:",
           s" - row 2: AV_FILE file '${settings.multidepositDir.getAbsolutePath}/ruimtereis01/path/to/audiofile/that/does/not/exist.mp3' does not exist",
           " - row 2: Missing value for: SF_USER",
-          " - row 2: Only one row is allowed to contain a value for the column: 'DDM_ACCESSRIGHTS'",
+          " - row 2: Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'. Found: [OPEN_ACCESS, GROUP_ACCESS]",
           " - row 2: DDM_CREATED value 'invalid-date' does not represent a date",
-          " - row 2: There are multiple distinct depositorIDs in dataset 'ruimtereis01': [user001, invalid-user]",
+          " - row 2: Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [user001, invalid-user]",
           " - row 3: No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined",
           " - row 3: DDM_AVAILABLE value 'invalid-date' does not represent a date",
           "Due to these errors in the 'instructions.csv', nothing was done."
