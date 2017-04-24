@@ -602,9 +602,9 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       case Failure(CompositeException(es)) =>
         val e1 :: e2 :: e3 :: Nil = es.toList
 
-        e1 should have message "Only one row is allowed to contain a value for the column 'DDM_CREATED'. Found: [2016-07-30T00:00:00.000+02:00, 2015-07-30T00:00:00.000+02:00]"
-        e2 should have message "Only one row is allowed to contain a value for the column 'DDM_AVAILABLE'. Found: [2016-07-31T00:00:00.000+02:00, 2015-07-31T00:00:00.000+02:00]"
-        e3 should have message "Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'. Found: [GROUP_ACCESS, NO_ACCESS]"
+        e1.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_CREATED'")
+        e2.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_AVAILABLE'")
+        e3.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'")
     }
   }
 

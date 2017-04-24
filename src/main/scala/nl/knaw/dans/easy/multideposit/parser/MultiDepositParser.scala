@@ -193,20 +193,10 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   def extractDataset(datasetId: DatasetId, rows: DatasetRows): Try[Dataset] = {
     val rowNum = rows.map(getRowNum).min
 
-    val depositorId = extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID")))
-
-//    val depositorId = extractNEL(rows, rowNum, "DEPOSITOR_ID")
-//      .flatMap {
-//        case depositorIds if depositorIds.distinct.size > 1 =>
-//          Failure(ParseException(rowNum, "There are multiple distinct depositorIDs in dataset " +
-//            s"'$datasetId': ${ depositorIds.distinct.mkString("[", ", ", "]") }"))
-//        case depId :: _ => Success(depId)
-//      }
-
     Try { Dataset.curried }
       .combine(checkValidChars(rowNum, "DATASET", datasetId))
       .map(_ (rowNum))
-      .combine(depositorId)
+      .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
       .combine(extractProfile(rows, rowNum))
       .combine(extractMetadata(rows))
       .combine(extractAudioVideo(rows, rowNum))
