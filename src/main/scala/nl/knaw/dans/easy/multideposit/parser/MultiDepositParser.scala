@@ -101,7 +101,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       report = generateReport(
         header = "CSV failures:",
         throwable = t,
-        footer = "Due to these errors in the 'instructions.csv' nothing was done."),
+        footer = "Due to these errors in the 'instructions.csv', nothing was done."),
       cause = t))
   }
 
