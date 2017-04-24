@@ -116,7 +116,7 @@ class IntegrationSpec extends UnitSpec with BeforeAndAfter with MockFactory {
           " - row 2: There are multiple distinct depositorIDs in dataset 'ruimtereis01': [user001, invalid-user]",
           " - row 3: No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined",
           " - row 3: DDM_AVAILABLE value 'invalid-date' does not represent a date",
-          "Due to these errors in the 'instructions.csv' nothing was done."
+          "Due to these errors in the 'instructions.csv', nothing was done."
         )
     }
   }
