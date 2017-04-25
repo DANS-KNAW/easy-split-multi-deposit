@@ -16,9 +16,10 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import java.io.File
+import java.util.Locale
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit.{ ParseException, EmptyInstructionsFileException, Headers, ParserFailedException, Settings, StringExtensions, encoding }
+import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
@@ -235,7 +236,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       .map(_ (extractList(rows, "DC_FORMAT")))
       .map(_ (extractList(rows, "DC_IDENTIFIER")))
       .map(_ (extractList(rows, "DC_SOURCE")))
-      .map(_ (extractList(rows, "DC_LANGUAGE")))
+      .combine(extractList(rows)(iso639_2Language("DC_LANGUAGE")))
       .map(_ (extractList(rows, "DCT_SPATIAL")))
       .map(_ (extractList(rows, "DCT_RIGHTSHOLDER")))
       .combine(extractList(rows)(relation))
@@ -292,6 +293,22 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
           case e: IllegalArgumentException => Failure(ParseException(rowNum, s"Value '$acc' is " +
             s"not a valid accessright", e))
         })
+  }
+
+  private lazy val iso639_2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
+
+  def iso639_2Language(columnName: MultiDepositKey)(rowNum: => Int)(row: DatasetRow): Option[Try[String]] = {
+    row.find(columnName)
+      .map(lang => {
+        // Most ISO 639-2/T languages are contained in the iso639_2Languages Set.
+        // However, some of them are not and need to be checked using the second predicate.
+        // The latter also allows to check ISO 639-2/B language codes.
+        lazy val b1 = iso639_2Languages.contains(lang)
+        lazy val b2 = new Locale(lang).getDisplayLanguage != lang
+
+        if (b1 || b2) Success(lang)
+        else Failure(ParseException(rowNum, s"Value '$lang' is not a valid value for $columnName"))
+      })
   }
 
   def creator(rowNum: => Int)(row: DatasetRow): Option[Try[Creator]] = {

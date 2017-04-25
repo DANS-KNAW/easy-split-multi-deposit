@@ -22,10 +22,11 @@ import nl.knaw.dans.easy.multideposit.{ ParseException, _ }
 import nl.knaw.dans.lib.error.CompositeException
 import org.joda.time.DateTime
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.prop.TableDrivenPropertyChecks
 
 import scala.util.{ Failure, Success }
 
-class MultiDepositParserSpec extends UnitSpec with MockFactory {
+class MultiDepositParserSpec extends UnitSpec with MockFactory with TableDrivenPropertyChecks {
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -628,7 +629,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       "DC_FORMAT" -> "format1",
       "DC_IDENTIFIER" -> "id1",
       "DC_SOURCE" -> "src1",
-      "DC_LANGUAGE" -> "lang1",
+      "DC_LANGUAGE" -> "dut",
       "DCT_SPATIAL" -> "spat1",
       "DCT_RIGHTSHOLDER" -> "right1",
       // relation
@@ -655,7 +656,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       "DC_FORMAT" -> "format2",
       "DC_IDENTIFIER" -> "id2",
       "DC_SOURCE" -> "src2",
-      "DC_LANGUAGE" -> "lang2",
+      "DC_LANGUAGE" -> "nld",
       "DCT_SPATIAL" -> "spat2",
       "DCT_RIGHTSHOLDER" -> "right2",
       // spatialBox
@@ -674,7 +675,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     formats = List("format1", "format2"),
     identifiers = List("id1", "id2"),
     sources = List("src1", "src2"),
-    languages = List("lang1", "lang2"),
+    languages = List("dut", "nld"),
     spatials = List("spat1", "spat2"),
     rightsholder = List("right1", "right2"),
     relations = List(QualifiedLinkRelation("replaces", "foo")),
@@ -844,7 +845,28 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     }
   }
 
-  "creator" should "return None if the none of the fields are defined" in {
+  "iso639Language" should "check that the value for the language is ISO-639.2 valid" in {
+    val langs = Table(("lang", "exists"),
+      ("eng", true), // normal
+      ("nld", true), // terminology
+      ("dut", true), // bibliographic
+      ("abc", false), // random string
+      ("day", true), // some obscure language no one has ever heard about
+      ("a", false), // too short code
+      ("abcdef", false) // too long code
+    )
+
+    forAll (langs) { (lang: String, exists: Boolean) =>
+      val row = Map("taal" -> lang)
+      lazy val errorMsg = s"Value '$lang' is not a valid value for taal"
+      iso639_2Language("taal")(2)(row).value should matchPattern {
+        case Success(`lang`) if exists =>
+        case Failure(ParseException(2, `errorMsg`, _)) if !exists =>
+      }
+    }
+  }
+
+  "creator" should "return None if none of the fields are defined" in {
     val row = Map(
       "DCX_CREATOR_TITLES" -> "",
       "DCX_CREATOR_INITIALS" -> "",
