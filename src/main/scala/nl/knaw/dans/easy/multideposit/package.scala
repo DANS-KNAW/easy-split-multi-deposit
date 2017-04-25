@@ -39,14 +39,17 @@ package object multideposit {
                       outputDepositDir: File = null,
                       datamanager: Datamanager = null,
                       depositPermissions: DepositPermissions = null,
-                      formats: Set[String] = null,
+                      private val formatsFile: File = null,
                       ldap: Ldap = null) {
+    val formats: Set[String] = formatsFile.read().lines.toSet
+
     override def toString: String =
       s"Settings(multideposit-dir=$multidepositDir, " +
         s"staging-dir=$stagingDir, " +
         s"output-deposit-dir=$outputDepositDir" +
         s"datamanager=$datamanager, " +
-        s"deposit-permissions=$depositPermissions)"
+        s"deposit-permissions=$depositPermissions, " +
+        s"formats=${ formats.mkString("{", ", ", "}") })"
   }
 
   case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")
@@ -206,27 +209,24 @@ package object multideposit {
     def directoryContains(child: File): Boolean = FileUtils.directoryContains(file, child)
 
     /**
-     * Copies a whole directory to a new location preserving the file dates.
+     * Copies a file to a new location preserving the file date.
      * <p>
-     * This method copies the specified directory and all its child
-     * directories and files to the specified destination.
-     * The destination is the new location and name of the directory.
+     * This method copies the contents of the specified source file to the
+     * specified destination file. The directory holding the destination file is
+     * created if it does not exist. If the destination file exists, then this
+     * method will overwrite it.
      * <p>
-     * The destination directory is created if it does not exist.
-     * If the destination directory did exist, then this method merges
-     * the source with the destination, with the source taking precedence.
-     * <p>
-     * <strong>Note:</strong> This method tries to preserve the files' last
-     * modified date/times using File.setLastModified(long), however
-     * it is not guaranteed that those operations will succeed.
+     * <strong>Note:</strong> This method tries to preserve the file's last
+     * modified date/times using File#setLastModified(long), however
+     * it is not guaranteed that the operation will succeed.
      * If the modification operation fails, no indication is provided.
      *
-     * @param destDir the new directory, must not be ``null``
+     * @param destFile  the new file, must not be ``null``
      */
     @throws[NullPointerException]("if source or destination is null")
     @throws[IOException]("if source or destination is invalid")
     @throws[IOException]("if an IO error occurs during copying")
-    def copyFile(destDir: File): Unit = FileUtils.copyFile(file, destDir)
+    def copyFile(destFile: File): Unit = FileUtils.copyFile(file, destFile)
 
     /**
      * Copies a whole directory to a new location preserving the file dates.

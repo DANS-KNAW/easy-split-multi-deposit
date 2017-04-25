@@ -44,6 +44,7 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory {
       outputDepositDir = new File(testDir, "od").getAbsoluteFile,
       datamanager = "easyadmin",
       depositPermissions = DepositPermissions("rwxrwx---", "admin"),
+      formatsFile = formatsFile,
       ldap = ldap
     )
     val expectedOutputDir = new File(getClass.getResource("/allfields/output").toURI)

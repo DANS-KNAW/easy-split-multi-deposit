@@ -26,14 +26,16 @@ import org.joda.time.DateTime
 abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest with BeforeAndAfterAll {
 
   val testDir = new File(s"target/test/${getClass.getSimpleName}")
+  val formatsFile = new File(testDir, "formats.txt")
 
   override def beforeAll(): Unit = {
     super.beforeAll()
     testDir.mkdirs()
+    new File(getClass.getResource("/debug-config/formats.txt").toURI).copyFile(formatsFile)
   }
 
   override def afterAll: Unit = {
-    super.beforeAll()
+    super.afterAll()
     testDir.getParentFile.deleteDirectory()
   }
 
