@@ -15,7 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.parser.{ Dataset, _ }
@@ -65,13 +64,13 @@ object AddDatasetMetadataToDeposit {
   def createProfile(profile: Profile): Elem = {
     // @formatter:off
     <ddm:profile>
-      {profile.titles.map(elemFromKey("DC_TITLE"))}
-      {profile.descriptions.map(elemFromKey("DC_DESCRIPTION"))}
+      {profile.titles.map(elem("dc:title"))}
+      {profile.descriptions.map(elem("dcterms:description"))}
       {profile.creators.map(createCreator)}
-      {elemFromKey("DDM_CREATED")(date(profile.created))}
-      {elemFromKey("DDM_AVAILABLE")(date(profile.available))}
-      {profile.audiences.map(elemFromKey("DDM_AUDIENCE"))}
-      {elemFromKey("DDM_ACCESSRIGHTS")(profile.accessright.toString)}
+      {elem("ddm:created")(date(profile.created))}
+      {elem("ddm:available")(date(profile.available))}
+      {profile.audiences.map(elem("ddm:audience"))}
+      {elem("ddm:accessRights")(profile.accessright.toString)}
     </ddm:profile>
     // @formatter:on
   }
@@ -221,20 +220,6 @@ object AddDatasetMetadataToDeposit {
     // @formatter:on
   }
 
-  /*
-    qualifier   link   title   valid
-        1        1       1       0
-        1        1       0       1
-        1        0       1       1
-        1        0       0       0
-        0        1       1       0
-        0        1       0       1
-        0        0       1       1
-        0        0       0       1
-
-    observation: if the qualifier is present, either DCX_RELATION_LINK or DCX_RELATION_TITLE must be defined
-                 if the qualifier is not defined, DCX_RELATION_LINK and DCX_RELATION_TITLE must not both be defined
-   */
   def createRelation(relation: Relation): Elem = {
     relation match {
       case QualifiedLinkRelation(qualifier, link) => elem(s"dcterms:$qualifier")(link)
@@ -255,15 +240,15 @@ object AddDatasetMetadataToDeposit {
   def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty): Elem = {
     // @formatter:off
     <ddm:dcmiMetadata>
-      {metadata.alternatives.map(elemFromKey("DCT_ALTERNATIVE"))}
-      {metadata.publishers.map(elemFromKey("DC_PUBLISHER"))}
-      {metadata.types.map(elemFromKey("DC_TYPE"))}
-      {metadata.formats.map(elemFromKey("DC_FORMAT"))}
-      {metadata.identifiers.map(elemFromKey("DC_IDENTIFIER"))}
-      {metadata.sources.map(elemFromKey("DC_SOURCE"))}
-      {metadata.languages.map(elemFromKey("DC_LANGUAGE"))}
-      {metadata.spatials.map(elemFromKey("DCT_SPATIAL"))}
-      {metadata.rightsholder.map(elemFromKey("DCT_RIGHTSHOLDER"))}
+      {metadata.alternatives.map(elem("dcterms:alternative"))}
+      {metadata.publishers.map(elem("dcterms:publisher"))}
+      {metadata.types.map(elem("dcterms:type"))}
+      {metadata.formats.map(elem("dc:format"))}
+      {metadata.identifiers.map(elem("dc:identifier"))}
+      {metadata.sources.map(elem("dc:source"))}
+      {metadata.languages.map(elem("dc:language"))}
+      {metadata.spatials.map(elem("dcterms:spatial"))}
+      {metadata.rightsholder.map(elem("dcterms:rightsHolder"))}
       {metadata.relations.map(createRelation) ++ maybeSpringfield.map(createSurrogateRelation) }
       {metadata.contributors.map(createContributor)}
       {metadata.subjects.map(createSubject)}
@@ -272,10 +257,6 @@ object AddDatasetMetadataToDeposit {
       {metadata.temporal.map(createTemporal)}
     </ddm:dcmiMetadata>
     // @formatter:on
-  }
-
-  def elemFromKey(key: MultiDepositKey): String => Elem = {
-    elem((profileFields ++ metadataFields).getOrElse(key, key))
   }
 
   def elem(key: String)(value: String): Elem = {

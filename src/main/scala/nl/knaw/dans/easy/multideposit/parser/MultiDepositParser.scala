@@ -328,6 +328,20 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     }
   }
 
+  /*
+    qualifier   link   title   valid
+        1        1       1       0
+        1        1       0       1
+        1        0       1       1
+        1        0       0       0
+        0        1       1       0
+        0        1       0       1
+        0        0       1       1
+        0        0       0       1
+
+    observation: if the qualifier is present, either DCX_RELATION_LINK or DCX_RELATION_TITLE must be defined
+                 if the qualifier is not defined, DCX_RELATION_LINK and DCX_RELATION_TITLE must not both be defined
+   */
   def relation(rowNum: => Int)(row: DatasetRow): Option[Try[Relation]] = {
     val qualifier = row.find("DCX_RELATION_QUALIFIER")
     val link = row.find("DCX_RELATION_LINK")
