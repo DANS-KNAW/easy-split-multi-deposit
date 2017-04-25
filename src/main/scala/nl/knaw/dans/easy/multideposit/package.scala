@@ -39,6 +39,7 @@ package object multideposit {
                       outputDepositDir: File = null,
                       datamanager: Datamanager = null,
                       depositPermissions: DepositPermissions = null,
+                      formats: Set[String] = null,
                       ldap: Ldap = null) {
     override def toString: String =
       s"Settings(multideposit-dir=$multidepositDir, " +
