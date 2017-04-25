@@ -41,7 +41,7 @@ package object multideposit {
                       depositPermissions: DepositPermissions = null,
                       private val formatsFile: File = null,
                       ldap: Ldap = null) {
-    val formats: Set[String] = formatsFile.read().lines.toSet
+    val formats: Set[String] = Option(formatsFile).fold(Set.empty[String])(_.read().lines.toSet)
 
     override def toString: String =
       s"Settings(multideposit-dir=$multidepositDir, " +
