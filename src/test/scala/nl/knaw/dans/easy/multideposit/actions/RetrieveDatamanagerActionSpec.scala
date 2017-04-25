@@ -42,16 +42,13 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
   def createDatamanagerAttributes(state: String = "ACTIVE",
                                   roles: Seq[String] = Seq("USER","ARCHIVIST"),
                                   mail: String = "dm@test.org"): BasicAttributes = {
-
-    val a = new BasicAttributes()
-    a.put("dansState", state)
-    a.put({
-      val r = new BasicAttribute("easyRoles")
-      roles.foreach(r.add)
-      r
-    })
-    a.put("mail", mail)
-    a
+    new BasicAttributes() {
+      put("dansState", state)
+      put(new BasicAttribute("easyRoles") {
+        roles.foreach(add)
+      })
+      put("mail", mail)
+    }
   }
 
   def mockLdapForDatamanager(attrs: Attributes): Unit = {

@@ -33,7 +33,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
   }
 
   private implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md")
+    multidepositDir = new File(testDir, "md").getAbsoluteFile
   )
   private val parser = new MultiDepositParser
   import parser._
@@ -425,20 +425,28 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     atMostOne(2, List("FOO", "BAR"))(List("abc")) should matchPattern { case Success(Some("abc")) => }
   }
 
-  it should "fail when the input contains more than one value and one columnName is given" in {
+  it should "succeed when the input contains multiple equal value" in {
+    atMostOne(2, List("FOO"))(List.fill(5)("abc")) should matchPattern { case Success(Some("abc")) =>}
+  }
+
+  it should "fail when the input contains more than one distinct value and one columnName is given" in {
     atMostOne(2, List("FOO"))(List("abc", "def")) should matchPattern {
-      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column: 'FOO'", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'FOO'. Found: [abc, def]", _)) =>
     }
   }
 
-  it should "fail when the input contains more than one value and multiple columnNames are given" in {
+  it should "fail when the input contains more than one distinct value and multiple columnNames are given" in {
     atMostOne(2, List("FOO", "BAR"))(List("abc", "def")) should matchPattern {
-      case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [FOO, BAR]", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [FOO, BAR]. Found: [abc, def]", _)) =>
     }
   }
 
   "exactlyOne" should "succeed when the input contains exactly one value" in {
     exactlyOne(2, List("FOO", "BAR"))(List("abc")) should matchPattern { case Success("abc") => }
+  }
+
+  it should "succeed when the input contains exactly one distinct value" in {
+    exactlyOne(2, List("FOO"))(List.fill(5)("abc")) should matchPattern { case Success("abc") => }
   }
 
   it should "fail when the input is empty and one columnName is given" in {
@@ -455,13 +463,13 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
   it should "fail when the input contains more than one value and one columnName is given" in {
     exactlyOne(2, List("FOO"))(List("abc", "def")) should matchPattern {
-      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column: 'FOO'", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'FOO'. Found: [abc, def]", _)) =>
     }
   }
 
   it should "fail when the input contains more than one value and multiple columnNames are given" in {
     exactlyOne(2, List("FOO", "BAR"))(List("abc", "def")) should matchPattern {
-      case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [FOO, BAR]", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [FOO, BAR]. Found: [abc, def]", _)) =>
     }
   }
 
@@ -521,7 +529,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     val rows = datasetCSVRow1 :: (datasetCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) :: datasetCSVRow3 :: Nil
 
     extractDataset("test", rows) should matchPattern {
-      case Failure(ParseException(2, "There are multiple distinct depositorIDs in dataset 'test': [ikke, ikke2]", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [ikke, ikke2]", _)) =>
     }
   }
 
@@ -594,9 +602,9 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       case Failure(CompositeException(es)) =>
         val e1 :: e2 :: e3 :: Nil = es.toList
 
-        e1 should have message "Only one row is allowed to contain a value for the column: 'DDM_CREATED'"
-        e2 should have message "Only one row is allowed to contain a value for the column: 'DDM_AVAILABLE'"
-        e3 should have message "Only one row is allowed to contain a value for the column: 'DDM_ACCESSRIGHTS'"
+        e1.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_CREATED'")
+        e2.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_AVAILABLE'")
+        e3.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'")
     }
   }
 
@@ -768,7 +776,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       audioVideoCSVRow3 :: Nil
 
     extractAudioVideo(rows, 2) should matchPattern {
-      case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]. Found: [(dans,janvanmansum,jans-test-files), (extra1,extra2,extra3)]", _)) =>
     }
   }
 
@@ -778,7 +786,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       audioVideoCSVRow3 :: Nil
 
     extractAudioVideo(rows, 2) should matchPattern {
-      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column: 'SF_ACCESSIBILITY'", _)) =>
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'SF_ACCESSIBILITY'. Found: [NONE, KNOWN]", _)) =>
     }
   }
 
@@ -1381,7 +1389,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       case Failure(CompositeException(es)) =>
         val e1 :: e2 :: e3 :: Nil = es.toList
         e1 should have message "The column 'SF_DOMAIN' contains the following invalid characters: {@, ï, ç, æ}"
-        e2 should have message "The column 'SF_USER' contains the following invalid characters: {%, &, !, @, #, $}"
+        e2 should have message "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"
         e3 should have message "The column 'SF_COLLECTION' contains the following invalid characters: {*}"
     }
   }

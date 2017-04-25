@@ -38,9 +38,9 @@ object CommandLineOptions extends DebugEnhancedLogging {
     val opts = new ScallopCommandLine(props, args)
 
     val settings = Settings(
-      multidepositDir = opts.multiDepositDir(),
-      stagingDir = opts.stagingDir(),
-      outputDepositDir = opts.outputDepositDir(),
+      multidepositDir = opts.multiDepositDir().getAbsoluteFile,
+      stagingDir = opts.stagingDir().getAbsoluteFile,
+      outputDepositDir = opts.outputDepositDir().getAbsoluteFile,
       datamanager = opts.datamanager(),
       depositPermissions = DepositPermissions(props.getString("deposit.permissions.access"), props.getString("deposit.permissions.group")),
       formats = new File(props.getString("formats.file")).read().lines.toSet,

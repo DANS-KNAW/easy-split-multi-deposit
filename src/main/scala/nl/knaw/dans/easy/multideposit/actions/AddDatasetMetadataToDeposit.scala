@@ -79,15 +79,19 @@ object AddDatasetMetadataToDeposit {
     dateTime.toString(ISODateTimeFormat.date())
   }
 
+  private def createOrganisation(org: String): Elem = {
+    // @formatter:off
+    <dcx-dai:organization>
+      <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>
+    </dcx-dai:organization>
+    // @formatter:on
+  }
+
   def createCreator(creator: Creator): Elem = {
     creator match {
       case CreatorOrganization(org) =>
         // @formatter:off
-        <dcx-dai:creatorDetails>
-          <dcx-dai:organization>
-            <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>
-          </dcx-dai:organization>
-        </dcx-dai:creatorDetails>
+        <dcx-dai:creatorDetails>{createOrganisation(org)}</dcx-dai:creatorDetails>
         // @formatter:on
       case CreatorPerson(titles, initials, insertions, surname, organization, dai) =>
         // @formatter:off
@@ -98,7 +102,7 @@ object AddDatasetMetadataToDeposit {
             insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
             <dcx-dai:surname>{surname}</dcx-dai:surname> ++
             dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
-            organization.map(org => <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>)
+            organization.map(createOrganisation)
           }</dcx-dai:author>
         </dcx-dai:creatorDetails>
         // @formatter:on
@@ -109,11 +113,7 @@ object AddDatasetMetadataToDeposit {
     contributor match {
       case ContributorOrganization(org) =>
         // @formatter:off
-        <dcx-dai:contributorDetails>
-          <dcx-dai:organization>
-            <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>
-          </dcx-dai:organization>
-        </dcx-dai:contributorDetails>
+        <dcx-dai:contributorDetails>{createOrganisation(org)}</dcx-dai:contributorDetails>
         // @formatter:on
       case ContributorPerson(titles, initials, insertions, surname, organization, dai) =>
         // @formatter:off
@@ -124,7 +124,7 @@ object AddDatasetMetadataToDeposit {
             insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
             <dcx-dai:surname>{surname}</dcx-dai:surname> ++
             dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
-            organization.map(org => <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>)
+            organization.map(createOrganisation)
           }</dcx-dai:author>
         </dcx-dai:contributorDetails>
         // @formatter:on

@@ -28,8 +28,8 @@ import scala.xml.{ Node, Utility, XML }
 class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
 
   implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md"),
-    stagingDir = new File(testDir, "sd")
+    multidepositDir = new File(testDir, "md").getAbsoluteFile,
+    stagingDir = new File(testDir, "sd").getAbsoluteFile
   )
   val datasetID = "ruimtereis01"
 

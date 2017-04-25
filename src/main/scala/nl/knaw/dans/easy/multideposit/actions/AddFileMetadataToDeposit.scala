@@ -73,7 +73,7 @@ case class AddFileMetadataToDeposit(dataset: Dataset)(implicit settings: Setting
     val datasetDir = multiDepositDir(dataset.datasetId)
     if (datasetDir.exists()) {
       datasetDir.listRecursively
-        .map(file => getFileMetadata(file.getAbsoluteFile))
+        .map(getFileMetadata)
         .collectResults
     }
     else // if the dataset does not contain any data
@@ -165,7 +165,6 @@ case class AddFileMetadataToDeposit(dataset: Dataset)(implicit settings: Setting
 
   private def formatFilePath(file: File): File = {
     multiDepositDir(dataset.datasetId)
-      .getAbsoluteFile
       .toPath
       .relativize(file.toPath)
       .toFile

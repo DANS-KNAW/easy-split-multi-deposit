@@ -33,7 +33,7 @@ object Main extends DebugEnhancedLogging {
         logger.error(e.getMessage)
         logger.debug(e.getMessage, e)
       }
-      .ifSuccess(_ => logger.info("Finished successfully!"))
+      .ifSuccess(_ => logger.info(s"Finished successfully! The output can be found in ${ settings.outputDepositDir }."))
 
     logger.debug("closing ldap")
     settings.ldap.close()
@@ -60,6 +60,7 @@ object Main extends DebugEnhancedLogging {
         .combine(retrieveDatamanagerAction)
         .combine(AddPropertiesToDeposit(dataset))
         .combine(SetDepositPermissions(dataset.row, dataset.datasetId))
+        .withLogMessages(s"Checking preconditions for ${dataset.datasetId}", s"Executing ${dataset.datasetId}", s"Rolling back ${dataset.datasetId}")
     }).reduceOption(_ combine _)
     val moveActions = datasets.map(dataset => MoveDepositToOutputDir(dataset.row, dataset.datasetId): Action[Unit, Unit]).reduceOption(_ combine _)
 

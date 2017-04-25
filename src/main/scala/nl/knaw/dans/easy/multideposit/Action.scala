@@ -27,15 +27,10 @@ import scala.util.control.NonFatal
  */
 trait Action[-A, +T] extends DebugEnhancedLogging { self =>
 
-  private def logPreconditions(): Unit = {
-    logger.info(s"Checking preconditions of ${getClass.getSimpleName} ...")
-  }
-  private def logExecute(): Unit = {
-    logger.info(s"Executing action of ${getClass.getSimpleName} ...")
-  }
-  private def logRollback(): Unit = {
-    logger.info(s"An error occurred. Rolling back action ${getClass.getSimpleName} ...")
-  }
+  protected[Action] def logPreconditions(): Unit = {}
+  protected[Action] def logExecute(): Unit = {}
+  protected[Action] def logRollback(): Unit = {}
+
   protected[Action] def innerCheckPreconditions: Try[Unit] = Try(logPreconditions()).flatMap(_ => checkPreconditions)
   protected[Action] def innerExecute(a: A): Try[T] = Try(logExecute()).flatMap(_ => execute(a))
   protected[Action] def innerRollback(): Try[Unit] = Try(logRollback()).flatMap(_ => rollback())
@@ -122,6 +117,7 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
     def report(es: List[Throwable], rpt: List[String] = Nil): List[String] = {
       es match {
         case Nil => rpt
+        case ActionException(-1, msg, _) :: xs => report(xs, s" - cmd line: $msg" :: rpt)
         case ActionException(row, msg, _) :: xs => report(xs, s" - row $row: $msg" :: rpt)
         case CompositeException(ths) :: xs => report(ths.toList ::: xs, rpt)
         case NonFatal(ex) :: xs => report(xs, s" - unexpected error: ${ex.getMessage}" :: rpt)
@@ -129,7 +125,7 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
     }
 
     header.toOption.fold("")(_ + "\n") +
-      report(List(throwable)).reverse.mkString("\n") +
+      report(List(throwable)).distinct.reverse.mkString("\n") +
       footer.toOption.fold("")("\n" + _)
   }
 
@@ -183,6 +179,30 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
         .collectResults
         .map(_ => ())
     }
+  }
+
+  def withLogMessages(pre: => String, exe: => String, rb: => String): Action[A, T] = new Action[A, T] {
+
+    override def logPreconditions(): Unit = {
+      super.logPreconditions()
+      logger.info(pre)
+    }
+
+    override def logExecute(): Unit = {
+      super.logExecute()
+      logger.info(exe)
+    }
+
+    override def logRollback(): Unit = {
+      super.logRollback()
+      logger.info(rb)
+    }
+
+    override protected def checkPreconditions: Try[Unit] = self.checkPreconditions
+
+    override protected def execute(a: A): Try[T] = self.execute(a)
+
+    override protected def rollback(): Try[Unit] = self.rollback()
   }
 }
 
