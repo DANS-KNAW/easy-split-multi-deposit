@@ -23,7 +23,7 @@ import org.scalatest.BeforeAndAfter
 
 import scala.util.{ Failure, Success }
 
-class IntegrationSpec extends UnitSpec with BeforeAndAfter with MockFactory {
+class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory {
 
   private val allfields = new File(testDir, "md/allfields").getAbsoluteFile
   private val invalidCSV = new File(testDir, "md/invalidCSV").getAbsoluteFile
