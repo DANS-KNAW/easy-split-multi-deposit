@@ -77,7 +77,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         <dcx-dai:author>
           <dcx-dai:initials>A.</dcx-dai:initials>
           <dcx-dai:surname>Jones</dcx-dai:surname>
-          <dcx-dai:name xml:lang="en">Lorem ipsum dolor sit amet</dcx-dai:name>
+          <dcx-dai:organization>
+            <dcx-dai:name xml:lang="en">Lorem ipsum dolor sit amet</dcx-dai:name>
+          </dcx-dai:organization>
         </dcx-dai:author>
       </dcx-dai:creatorDetails>
       <dcx-dai:creatorDetails>
@@ -209,7 +211,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
             <dcx-dai:insertions>X</dcx-dai:insertions>
             <dcx-dai:surname>Jones</dcx-dai:surname>
             <dcx-dai:DAI>dai</dcx-dai:DAI>
-            <dcx-dai:name xml:lang="en">contr2</dcx-dai:name>
+            <dcx-dai:organization>
+              <dcx-dai:name xml:lang="en">contr2</dcx-dai:name>
+            </dcx-dai:organization>
           </dcx-dai:author>
         </dcx-dai:contributorDetails>
         <dc:subject>me</dc:subject>

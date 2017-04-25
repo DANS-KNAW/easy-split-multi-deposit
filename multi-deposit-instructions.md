@@ -61,7 +61,7 @@ The supported metadata elements are subdivided into the following groups:
 * Other DANS specific metadata elements: `DDM_CREATED`, `DDM_AVAILABLE`,
   `DDM_AUDIENCE`, `DDM_ACCESSRIGHTS`, `DEPOSITOR_ID`
 * Fields that specify the relation to a streaming surrogate on the Springfield
-  platform: `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, `SF_SUBTITLES`
+  platform: `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, `SF_ACCESSIBILITY`
 * The use of `DC_CREATOR` and `DC_CONTRIBUTOR` is deprecated in favor of the new
   `DCX_CREATOR_*` and `DCX_CONTRIBUTOR_*` fields.
 
@@ -121,7 +121,7 @@ a audio or video presentation contained in the dataset:
    `DDM_ACCESSRIGHTS` for all A/V file.
 * The columns `AV_FILE`, `AV_FILE_TITLE`, `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` are used to
   provide extra metadata specific to audio/video files. For a path to a A/V file in `AV_FILE`,
-  the user can specify the a title in `AV_FILE_TITLE` and one or more combinations of subtitles
+  the user can specify at most one title in `AV_FILE_TITLE` and one or more combinations of subtitles
   and the corresponding language tag in `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` respectively.
 * The information found in the `AV_*` columns is put into `files.xml` to better describe the file
   at hand. The `AV_FILE_TITLE` relation is put inside a `dcterms:title` element; the `AV_SUBTITLE`

@@ -59,7 +59,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   private def validateDatasetHeaders(headers: List[MultiDepositKey]): Try[Unit] = {
     val validHeaders = Headers.validHeaders
     val invalidHeaders = headers.filterNot(validHeaders.contains)
-    lazy val uniqueHeaders = headers.toSet.toList
+    lazy val uniqueHeaders = headers.distinct
 
     if (invalidHeaders.nonEmpty)
       Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
@@ -69,34 +69,40 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       Failure(ParseException(0, "SIP Instructions file contains duplicate headers: " +
         s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
     else
-      Success(Unit)
+      Success(())
   }
 
   private def recoverParsing(t: Throwable): Failure[Nothing] = {
+    @tailrec
+    def flattenException(es: List[Throwable], result: List[Throwable] = Nil): List[Throwable] = {
+      es match {
+        case Nil => result
+        case CompositeException(ths) :: exs => flattenException(ths.toList ::: exs, result)
+        case NonFatal(ex) :: exs => flattenException(exs, ex :: result)
+      }
+    }
+
+    def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
+      header.toOption.fold("")(_ + "\n") +
+        flattenException(List(throwable))
+          .sortBy {
+            case ParseException(row, _, _) => row
+            case _ => -1
+          }
+          .map {
+            case ParseException(row, msg, _) => s" - row $row: $msg"
+            case e => s" - unexpected: ${e.getMessage}"
+          }
+          .mkString("\n") +
+        footer.toOption.fold("")("\n" + _)
+    }
+
     Failure(ParserFailedException(
       report = generateReport(
         header = "CSV failures:",
         throwable = t,
         footer = "Due to these errors in the 'instructions.csv', nothing was done."),
       cause = t))
-  }
-
-  // TODO temporary fix, please get rid of code duplication with Action.generateReport
-  private def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
-
-    @tailrec
-    def report(es: List[Throwable], rpt: List[String] = Nil): List[String] = {
-      es match {
-        case Nil => rpt
-        case ParseException(row, msg, _) :: xs => report(xs, s" - row $row: $msg" :: rpt)
-        case CompositeException(ths) :: xs => report(ths.toList ::: xs, rpt)
-        case NonFatal(ex) :: xs => report(xs, s" - unexpected error: ${ex.getMessage}" :: rpt)
-      }
-    }
-
-    header.toOption.fold("")(_ + "\n") +
-      report(List(throwable)).reverse.mkString("\n") +
-      footer.toOption.fold("")("\n" + _)
   }
 
   def parse(file: File): Try[Seq[Dataset]] = {
@@ -146,32 +152,32 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   }
 
   def atMostOne[T](rowNum: => Int, columnNames: => NonEmptyList[MultiDepositKey])(values: List[T]): Try[Option[T]] = {
-    values match {
+    values.distinct match {
       case Nil => Success(None)
       case t :: Nil => Success(Some(t))
-      case _ if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
-        s"to contain a value for the column: '${ columnNames.head }'"))
-      case _ => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
-        s"these columns: ${ columnNames.mkString("[", ", ", "]") }"))
+      case ts if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
+        s"to contain a value for the column '${ columnNames.head }'. Found: ${ ts.mkString("[", ", ", "]") }"))
+      case ts => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
+        s"these columns: ${ columnNames.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
     }
   }
 
   def exactlyOne[T](rowNum: => Int, columnNames: => NonEmptyList[MultiDepositKey])(values: List[T]): Try[T] = {
-    values match {
+    values.distinct match {
       case t :: Nil => Success(t)
       case Nil if columnNames.size == 1 => Failure(ParseException(rowNum, "One row has to contain " +
         s"a value for the column: '${ columnNames.head }'"))
       case Nil => Failure(ParseException(rowNum, "One row has to contain a value for these " +
         s"columns: ${ columnNames.mkString("[", ", ", "]") }"))
-      case _ if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
-        s"to contain a value for the column: '${ columnNames.head }'"))
-      case _ => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
-        s"these columns: ${ columnNames.mkString("[", ", ", "]") }"))
+      case ts if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
+        s"to contain a value for the column '${ columnNames.head }'. Found: ${ ts.mkString("[", ", ", "]") }"))
+      case ts => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
+        s"these columns: ${ columnNames.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
     }
   }
 
   def checkValidChars(rowNum: => Int, column: => MultiDepositKey, value: String): Try[String] = {
-    val invalidCharacters = "[^a-zA-Z0-9_-]".r.findAllIn(value).toSet
+    val invalidCharacters = "[^a-zA-Z0-9_-]".r.findAllIn(value).toSeq.distinct
     if (invalidCharacters.isEmpty) Success(value)
     else Failure(ParseException(rowNum, s"The column '$column' contains the following invalid characters: ${ invalidCharacters.mkString("{", ", ", "}") }"))
   }
@@ -187,18 +193,10 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   def extractDataset(datasetId: DatasetId, rows: DatasetRows): Try[Dataset] = {
     val rowNum = rows.map(getRowNum).min
 
-    val depositorId = extractNEL(rows, rowNum, "DEPOSITOR_ID")
-      .flatMap {
-        case depositorIds if depositorIds.toSet.size > 1 =>
-          Failure(ParseException(rowNum, "There are multiple distinct depositorIDs in dataset " +
-            s"'$datasetId': ${ depositorIds.toSet.mkString("[", ", ", "]") }"))
-        case depId :: _ => Success(depId)
-      }
-
     Try { Dataset.curried }
       .combine(checkValidChars(rowNum, "DATASET", datasetId))
       .map(_ (rowNum))
-      .combine(depositorId)
+      .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
       .combine(extractProfile(rows, rowNum))
       .combine(extractMetadata(rows))
       .combine(extractAudioVideo(rows, rowNum))
@@ -259,7 +257,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       }).curried
     }
       .combine(extractList(rows)(springfield)
-        .flatMap(atMostOne(rowNum, List("SF_DOMAIN", "SF_USER", "SF_COLLECTION"))))
+        .flatMap(ss => atMostOne(rowNum, List("SF_DOMAIN", "SF_USER", "SF_COLLECTION"))(ss.map { case Springfield(d, u, c) => (d, u, c) }).map(_.map(Springfield.tupled))))
       .combine(extractList(rows)(fileAccessRight)
         .flatMap(atMostOne(rowNum, List("SF_ACCESSIBILITY"))))
       .combine(extractList(rows)(avFile)
@@ -424,9 +422,9 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
   }
 
   def avFile(rowNum: => Int)(row: DatasetRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
-    val file = row.find("AV_FILE").map(new File(settings.multidepositDir, _).getAbsoluteFile)
+    val file = row.find("AV_FILE").map(new File(settings.multidepositDir, _))
     val title = row.find("AV_FILE_TITLE")
-    val subtitle = row.find("AV_SUBTITLES").map(new File(settings.multidepositDir, _).getAbsoluteFile)
+    val subtitle = row.find("AV_SUBTITLES").map(new File(settings.multidepositDir, _))
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, title, subtitle, subtitleLang) match {
