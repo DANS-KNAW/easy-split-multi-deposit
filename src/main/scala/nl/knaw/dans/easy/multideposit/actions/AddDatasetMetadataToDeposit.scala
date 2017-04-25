@@ -24,7 +24,7 @@ import org.joda.time.format.ISODateTimeFormat
 import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
-import scala.xml.Elem
+import scala.xml.{ Elem, Null, PrefixedAttribute }
 
 case class AddDatasetMetadataToDeposit(dataset: Dataset)(implicit settings: Settings) extends UnitAction[Unit] {
 
@@ -40,7 +40,7 @@ object AddDatasetMetadataToDeposit {
     }
   }
 
-  def datasetToXml(dataset: Dataset): Elem = {
+  def datasetToXml(dataset: Dataset)(implicit settings: Settings): Elem = {
     // @formatter:off
     <ddm:DDM
       xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
@@ -237,13 +237,22 @@ object AddDatasetMetadataToDeposit {
     // @formatter:on
   }
 
-  def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty): Elem = {
+  def createFormat(format: String)(implicit settings: Settings): Elem = {
+    val xml = elem("dc:format")(format)
+
+    if (settings.formats.contains(format))
+      xml % new PrefixedAttribute("xsi", "type", "dcterms:IMT", Null)
+    else
+      xml
+  }
+
+  def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty)(implicit settings: Settings): Elem = {
     // @formatter:off
     <ddm:dcmiMetadata>
       {metadata.alternatives.map(elem("dcterms:alternative"))}
       {metadata.publishers.map(elem("dcterms:publisher"))}
       {metadata.types.map(elem("dcterms:type"))}
-      {metadata.formats.map(elem("dc:format"))}
+      {metadata.formats.map(createFormat)}
       {metadata.identifiers.map(elem("dc:identifier"))}
       {metadata.sources.map(elem("dc:source"))}
       {metadata.languages.map(elem("dc:language"))}

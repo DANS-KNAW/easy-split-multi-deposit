@@ -37,8 +37,8 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <ddm:accessRights>OPEN_ACCESS</ddm:accessRights>
   </ddm:profile>
   <ddm:dcmiMetadata>
-    <dc:format>image/jpeg</dc:format>
-    <dc:format>text/plain</dc:format>
+    <dc:format xsi:type="dcterms:IMT">image/jpeg</dc:format>
+    <dc:format xsi:type="dcterms:IMT">text/plain</dc:format>
     <dc:identifier>ds2</dc:identifier>
     <dc:source>http://scholar.google.com</dc:source>
     <dc:language>NL</dc:language>

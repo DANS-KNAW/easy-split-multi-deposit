@@ -29,10 +29,12 @@ import scala.xml.{ Elem, Node, Utility }
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
-  implicit val settings = Settings(
+  implicit val settings = new Settings(
     multidepositDir = new File(testDir, "md"),
     stagingDir = new File(testDir, "sd")
-  )
+  ) {
+    override val formats: Set[String] = Set("text/xml")
+  }
 
   val datasetID = "ds1"
   val dataset: Dataset = Dataset(
@@ -129,9 +131,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "return xml on reading from the allfields input instructions csv" in {
-    implicit val s2 = settings.copy(multidepositDir = new File(getClass.getResource("/allfields/input").toURI))
+    implicit val s2: Settings = settings.copy(multidepositDir = new File(getClass.getResource("/allfields/input").toURI))
     val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
-    inside(new MultiDepositParser()(s2).parse(csv).map(_.map(datasetToXml))) {
+    inside(new MultiDepositParser()(s2).parse(csv).map(_.map(datasetToXml(_)(s2)))) {
       case Success(xmls) => xmls should have size 3
     }
   }
@@ -141,7 +143,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       alternatives = List("alt1", "alt2"),
       publishers = List("pub1"),
       types = List("type1", "type2"),
-      formats = List("text"),
+      formats = List("arbitrary format", "text/xml"),
       identifiers = List("ds1"),
       sources = List("src", "test"),
       languages = List("Scala", "Haskell"),
@@ -181,7 +183,8 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         <dcterms:publisher>pub1</dcterms:publisher>
         <dcterms:type>type1</dcterms:type>
         <dcterms:type>type2</dcterms:type>
-        <dc:format>text</dc:format>
+        <dc:format>arbitrary format</dc:format>
+        <dc:format xsi:type="dcterms:IMT">text/xml</dc:format>
         <dc:identifier>ds1</dc:identifier>
         <dc:source>src</dc:source>
         <dc:source>test</dc:source>
