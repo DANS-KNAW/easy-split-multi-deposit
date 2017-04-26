@@ -122,7 +122,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
       datasetId = datasetID,
       audioVideo = testDataset1.audioVideo.copy(
         accessibility = Option(FileAccessRights.NONE),
-        avFiles = List(AVFile(new File("ruimtereis01/reisverslag/centaur.mpg")))
+        avFiles = Set(AVFile(new File("ruimtereis01/reisverslag/centaur.mpg")))
       )
     )
     val action = AddFileMetadataToDeposit(dataset)
@@ -140,7 +140,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files")),
         accessibility = Option(FileAccessRights.RESTRICTED_GROUP),
-        avFiles = List(
+        avFiles = Set(
           AVFile(
             file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile,
             title = Option("video about the centaur meteorite"),
