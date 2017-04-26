@@ -66,7 +66,7 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
       ),
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files")),
-        avFiles = List(AVFile(
+        avFiles = Set(AVFile(
           file = new File("ruimtereis01/reisverslag/centaur.mpg"),
           title = Option("flyby of centaur"),
           subtitles = List(Subtitles(new File("ruimtereis01/reisverslag/centaur.srt"), Option("en")))

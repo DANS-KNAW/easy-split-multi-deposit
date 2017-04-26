@@ -249,7 +249,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
 
   def extractAudioVideo(rows: DatasetRows, rowNum: Int): Try[AudioVideo] = {
     Try {
-      ((springf: Option[Springfield], acc: Option[FileAccessRights.Value], avFiles: List[AVFile]) => {
+      ((springf: Option[Springfield], acc: Option[FileAccessRights.Value], avFiles: Set[AVFile]) => {
         (springf, acc, avFiles) match {
           case (None, _, fs) if fs.nonEmpty => Failure(ParseException(rowNum, "The column " +
             "'AV_FILE' contains values, but the columns [SF_COLLECTION, SF_USER] do not"))
@@ -274,7 +274,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
               val subtitles = instrPerFile.collect { case (_, _, Some(instr)) => instr }
 
               fileTitle.map(AVFile(file, _, subtitles))
-          }.toList.collectResults))
+          }.collectResults.map(_.toSet)))
       .flatten
   }
 

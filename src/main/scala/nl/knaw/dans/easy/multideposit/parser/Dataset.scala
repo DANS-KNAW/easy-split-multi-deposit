@@ -53,7 +53,7 @@ case class Metadata(alternatives: List[String] = List.empty,
 
 case class AudioVideo(springfield: Option[Springfield] = Option.empty,
                       accessibility: Option[FileAccessRights.Value] = Option.empty,
-                      avFiles: List[AVFile] = List.empty)
+                      avFiles: Set[AVFile] = Set.empty)
 
 sealed abstract class Creator
 case class CreatorOrganization(organization: String) extends Creator

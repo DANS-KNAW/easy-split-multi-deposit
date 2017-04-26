@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.{ File, FileInputStream }
+import java.util.Locale
 
 import gov.loc.repository.bagit.BagFactory.Version
 import gov.loc.repository.bagit.Manifest.Algorithm
@@ -34,6 +35,10 @@ import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
 case class AddBagToDeposit(dataset: Dataset)(implicit settings: Settings) extends UnitAction[Unit] {
+
+  override def checkPreconditions: Try[Unit] = Try {
+    Locale.setDefault(Locale.US)
+  }
 
   override def execute(): Try[Unit] = {
     createBag(dataset.datasetId, dataset).recoverWith {

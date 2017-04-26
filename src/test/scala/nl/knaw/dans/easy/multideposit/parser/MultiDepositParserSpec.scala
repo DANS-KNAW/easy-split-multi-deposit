@@ -744,7 +744,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
   private lazy val audioVideo = AudioVideo(
     springfield = Option(Springfield("dans", "janvanmansum", "jans-test-files")),
     accessibility = Option(FileAccessRights.NONE),
-    avFiles = List(
+    avFiles = Set(
       AVFile(
         file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile,
         title = Option("video about the centaur meteorite"),
