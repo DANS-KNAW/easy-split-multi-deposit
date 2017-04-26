@@ -41,8 +41,8 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dc:format xsi:type="dcterms:IMT">text/plain</dc:format>
     <dc:identifier>ds2</dc:identifier>
     <dc:source>http://scholar.google.com</dc:source>
-    <dc:language>NL</dc:language>
-    <dc:language>EN</dc:language>
+    <dc:language xsi:type="dcterms:ISO639-2">day</dc:language>
+    <dc:language xsi:type="dcterms:ISO639-2">dut</dc:language>
     <dcterms:rightsHolder>paul</dcterms:rightsHolder>
     <dcterms:rightsHolder>henk</dcterms:rightsHolder>
     <dcterms:rightsHolder>richard</dcterms:rightsHolder>

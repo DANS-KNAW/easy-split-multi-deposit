@@ -22,11 +22,29 @@ import nl.knaw.dans.easy.multideposit.{ ParseException, _ }
 import nl.knaw.dans.lib.error.CompositeException
 import org.joda.time.DateTime
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.{ FlatSpec, Matchers, OptionValues }
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 import scala.util.{ Failure, Success }
 
-class MultiDepositParserSpec extends UnitSpec with MockFactory with TableDrivenPropertyChecks {
+trait LanguageBehavior { this: UnitSpec =>
+  def validLanguageTag(parser: MultiDepositParser, lang: String): Unit = {
+    it should "succeed when the language tag is valid" in {
+      val row = Map("taal" -> lang)
+      parser.iso639_2Language("taal")(2)(row).value should matchPattern { case Success(`lang`) => }
+    }
+  }
+
+  def invalidLanguageTag(parser: MultiDepositParser, lang: String): Unit = {
+    it should "fail when the language tag is invalid" in {
+      val row = Map("taal" -> lang)
+      val errorMsg = s"Value '$lang' is not a valid value for taal"
+      parser.iso639_2Language("taal")(2)(row).value should matchPattern { case Failure(ParseException(2, `errorMsg`, _)) => }
+    }
+  }
+}
+
+class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBehavior {
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -845,26 +863,23 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with TableDrivenP
     }
   }
 
-  "iso639Language" should "check that the value for the language is ISO-639.2 valid" in {
-    val langs = Table(("lang", "exists"),
-      ("eng", true), // normal
-      ("nld", true), // terminology
-      ("dut", true), // bibliographic
-      ("abc", false), // random string
-      ("day", true), // some obscure language no one has ever heard about
-      ("a", false), // too short code
-      ("abcdef", false) // too long code
-    )
+  "iso639Language (with normal 3-letter tag)" should behave like validLanguageTag(parser, "eng")
 
-    forAll (langs) { (lang: String, exists: Boolean) =>
-      val row = Map("taal" -> lang)
-      lazy val errorMsg = s"Value '$lang' is not a valid value for taal"
-      iso639_2Language("taal")(2)(row).value should matchPattern {
-        case Success(`lang`) if exists =>
-        case Failure(ParseException(2, `errorMsg`, _)) if !exists =>
-      }
-    }
-  }
+  "iso639Language (with terminology tag)" should behave like validLanguageTag(parser, "nld")
+
+  "iso639Language (with bibliographic tag)" should behave like validLanguageTag(parser, "dut")
+
+  "iso639Language (with a random tag)" should behave like invalidLanguageTag(parser, "abc")
+
+  "iso639Language (with some obscure language tag no one has ever heard about)" should behave like validLanguageTag(parser, "day")
+
+  "iso639Language (with a 2-letter tag)" should behave like invalidLanguageTag(parser, "nl")
+
+  "iso639Language (with a too short tag)" should behave like invalidLanguageTag(parser, "a")
+
+  "iso639Language (with a too long tag)" should behave like invalidLanguageTag(parser, "abcdef")
+
+  "iso639Language (with encoding tag)" should behave like invalidLanguageTag(parser, "encoding=UTF-8")
 
   "creator" should "return None if none of the fields are defined" in {
     val row = Map(

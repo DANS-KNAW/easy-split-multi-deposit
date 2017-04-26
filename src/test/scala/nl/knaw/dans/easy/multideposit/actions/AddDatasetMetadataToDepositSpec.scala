@@ -146,7 +146,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       formats = List("arbitrary format", "text/xml"),
       identifiers = List("ds1"),
       sources = List("src", "test"),
-      languages = List("Scala", "Haskell"),
+      languages = List("eng", "nld"),
       spatials = List("sp1"),
       rightsholder = List("rh1"),
       relations = List(
@@ -188,8 +188,8 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         <dc:identifier>ds1</dc:identifier>
         <dc:source>src</dc:source>
         <dc:source>test</dc:source>
-        <dc:language>Scala</dc:language>
-        <dc:language>Haskell</dc:language>
+        <dc:language xsi:type='dcterms:ISO639-2'>eng</dc:language>
+        <dc:language xsi:type='dcterms:ISO639-2'>nld</dc:language>
         <dcterms:spatial>sp1</dcterms:spatial>
         <dcterms:rightsHolder>rh1</dcterms:rightsHolder>
         <dcterms:q1>l1</dcterms:q1>

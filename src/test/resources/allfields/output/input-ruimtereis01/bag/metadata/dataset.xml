@@ -31,8 +31,8 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dc:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dc:format>
     <dc:identifier>ds1</dc:identifier>
     <dc:source>whatever</dc:source>
-    <dc:language>NL</dc:language>
-    <dc:language>encoding=UTF-8</dc:language>
+    <dc:language xsi:type="dcterms:ISO639-2">nld</dc:language>
+    <dc:language xsi:type="dcterms:ISO639-2">eng</dc:language>
     <dcterms:spatial>here</dcterms:spatial>
     <dcterms:spatial>there</dcterms:spatial>
     <dcterms:rightsHolder>jan</dcterms:rightsHolder>

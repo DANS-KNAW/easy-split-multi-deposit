@@ -246,6 +246,10 @@ object AddDatasetMetadataToDeposit {
       xml
   }
 
+  def createLanguage(lang: String): Elem = {
+    <dc:language xsi:type='dcterms:ISO639-2'>{lang}</dc:language>
+  }
+
   def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty)(implicit settings: Settings): Elem = {
     // @formatter:off
     <ddm:dcmiMetadata>
@@ -255,7 +259,7 @@ object AddDatasetMetadataToDeposit {
       {metadata.formats.map(createFormat)}
       {metadata.identifiers.map(elem("dc:identifier"))}
       {metadata.sources.map(elem("dc:source"))}
-      {metadata.languages.map(elem("dc:language"))}
+      {metadata.languages.map(createLanguage)}
       {metadata.spatials.map(elem("dcterms:spatial"))}
       {metadata.rightsholder.map(elem("dcterms:rightsHolder"))}
       {metadata.relations.map(createRelation) ++ maybeSpringfield.map(createSurrogateRelation) }

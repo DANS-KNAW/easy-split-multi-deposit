@@ -303,10 +303,11 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
         // Most ISO 639-2/T languages are contained in the iso639_2Languages Set.
         // However, some of them are not and need to be checked using the second predicate.
         // The latter also allows to check ISO 639-2/B language codes.
+        lazy val b0 = lang.length == 3
         lazy val b1 = iso639_2Languages.contains(lang)
-        lazy val b2 = new Locale(lang).getDisplayLanguage != lang
+        lazy val b2 = new Locale(lang).getDisplayLanguage.toLowerCase != lang.toLowerCase
 
-        if (b1 || b2) Success(lang)
+        if (b0 && (b1 || b2)) Success(lang)
         else Failure(ParseException(rowNum, s"Value '$lang' is not a valid value for $columnName"))
       })
   }
