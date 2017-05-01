@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +25,25 @@ import org.scalamock.scalatest.MockFactory
 
 import scala.util.{ Failure, Success }
 
-class MultiDepositParserSpec extends UnitSpec with MockFactory {
+trait LanguageBehavior {
+  this: UnitSpec =>
+  def validLanguage3Tag(parser: MultiDepositParser, lang: String): Unit = {
+    it should "succeed when the language tag is valid" in {
+      val row = Map("taal" -> lang)
+      parser.iso639_2Language("taal")(2)(row).value should matchPattern { case Success(`lang`) => }
+    }
+  }
+
+  def invalidLanguage3Tag(parser: MultiDepositParser, lang: String): Unit = {
+    it should "fail when the language tag is invalid" in {
+      val row = Map("taal" -> lang)
+      val errorMsg = s"Value '$lang' is not a valid value for taal"
+      parser.iso639_2Language("taal")(2)(row).value should matchPattern { case Failure(ParseException(2, `errorMsg`, _)) => }
+    }
+  }
+}
+
+class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBehavior {
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -36,6 +54,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     multidepositDir = new File(testDir, "md").getAbsoluteFile
   )
   private val parser = new MultiDepositParser
+
   import parser._
 
   "read" should "parse the input csv file into a list of headers and a table of data" in {
@@ -51,11 +70,11 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc","def","ghi","jkl"),
-      List("3", "mno","pqr","stu","vwx"),
-      List("4", "yzy","xwv","uts","rqp"),
-      List("5", "onm","lkj","ihg","fed"),
-      List("6", "cba","abc","def","ghi")
+      List("2", "abc", "def", "ghi", "jkl"),
+      List("3", "mno", "pqr", "stu", "vwx"),
+      List("4", "yzy", "xwv", "uts", "rqp"),
+      List("5", "onm", "lkj", "ihg", "fed"),
+      List("6", "cba", "abc", "def", "ghi")
     )
 
     read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
@@ -75,11 +94,11 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "a  bc","def","ghi","jkl"),
-      List("3", "mno","pq\nr","stu","vwx"),
-      List("4", "yzy","xwv","uts","rqp"),
-      List("5", "onm","lkj","ihg","fed"),
-      List("6", "cba","abc","def","ghi")
+      List("2", "a  bc", "def", "ghi", "jkl"),
+      List("3", "mno", "pq\nr", "stu", "vwx"),
+      List("4", "yzy", "xwv", "uts", "rqp"),
+      List("5", "onm", "lkj", "ihg", "fed"),
+      List("6", "cba", "abc", "def", "ghi")
     )
 
     read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
@@ -98,11 +117,11 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc","def","","jkl"),
-      List("3", "mno","","stu","vwx"),
-      List("4", "yzy","xwv","uts","rqp"),
-      List("5", "onm","lkj","","fed"),
-      List("6", "cba","abc","def","ghi")
+      List("2", "abc", "def", "", "jkl"),
+      List("3", "mno", "", "stu", "vwx"),
+      List("4", "yzy", "xwv", "uts", "rqp"),
+      List("5", "onm", "lkj", "", "fed"),
+      List("6", "cba", "abc", "def", "ghi")
     )
 
     read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
@@ -121,11 +140,11 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc","def","ghi","jkl"),
-      List("3", "mno","","stu","vwx"),
-      List("4", "","xwv","uts","rqp"),
-      List("5", "onm","lkj","","fed"),
-      List("6", "cba","abc","def","ghi")
+      List("2", "abc", "def", "ghi", "jkl"),
+      List("3", "mno", "", "stu", "vwx"),
+      List("4", "", "xwv", "uts", "rqp"),
+      List("5", "onm", "lkj", "", "fed"),
+      List("6", "cba", "abc", "def", "ghi")
     )
 
     read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
@@ -144,10 +163,10 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc","def","ghi","jkl"),
-      List("3", "mno","pqr","stu","vwx"),
-      List("5", "onm","lkj","ihg","fed"),
-      List("6", "cba","abc","def","ghi")
+      List("2", "abc", "def", "ghi", "jkl"),
+      List("3", "mno", "pqr", "stu", "vwx"),
+      List("5", "onm", "lkj", "ihg", "fed"),
+      List("6", "cba", "abc", "def", "ghi")
     )
 
     read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
@@ -185,7 +204,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     inside(read(file)) {
       case Failure(ParseException(0, msg, _)) =>
-        msg should include ("unknown headers: [foo]")
+        msg should include("unknown headers: [foo]")
     }
   }
 
@@ -202,7 +221,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     inside(read(file)) {
       case Failure(ParseException(0, msg, _)) =>
-        msg should include ("duplicate headers: [DEPOSITOR_ID]")
+        msg should include("duplicate headers: [DEPOSITOR_ID]")
     }
   }
 
@@ -215,15 +234,15 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
         datasets should have size 3
         val dataset2 :: dataset1 :: dataset3 :: Nil = datasets.toList
 
-        dataset1 should have (
+        dataset1 should have(
           'datasetId ("ruimtereis01"),
           'row (2)
         )
-        dataset2 should have (
+        dataset2 should have(
           'datasetId ("ruimtereis02"),
           'row (5)
         )
-        dataset3 should have (
+        dataset3 should have(
           'datasetId ("ruimtereis03"),
           'row (10)
         )
@@ -257,13 +276,13 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
   it should "throw a NoSuchElementException when ROW is not a header in the dataset" in {
     val row = Map("TEST" -> "abc")
 
-    the [NoSuchElementException] thrownBy getRowNum(row) should have message "key not found: ROW"
+    the[NoSuchElementException] thrownBy getRowNum(row) should have message "key not found: ROW"
   }
 
   it should "throw a NumberFormatException when the value for ROW cannot be converted to an integer" in {
     val row = Map("ROW" -> "def", "TEST" -> "abc")
 
-    the [NumberFormatException] thrownBy getRowNum(row) should have message "For input string: \"def\""
+    the[NumberFormatException] thrownBy getRowNum(row) should have message "For input string: \"def\""
   }
 
   "extractNEL curried" should "for each row run the given function and collect the results" in {
@@ -308,7 +327,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       Map("ROW" -> "3", "FOO" -> "ghi", "BAR" -> "jkl")
     )
 
-    the [NoSuchElementException] thrownBy extractNEL(rows)(i => _ => Some(Success(i))) should
+    the[NoSuchElementException] thrownBy extractNEL(rows)(i => _ => Some(Success(i))) should
       have message "key not found: ROW"
   }
 
@@ -395,7 +414,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       Map("ROW" -> "3", "FOO" -> "ghi", "BAR" -> "jkl")
     )
 
-    the [NoSuchElementException] thrownBy extractList(rows)(i => _ => Some(Success(i))) should
+    the[NoSuchElementException] thrownBy extractList(rows)(i => _ => Some(Success(i))) should
       have message "key not found: ROW"
   }
 
@@ -405,7 +424,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       Map("FOO" -> "ghi", "BAR" -> "jkl")
     )
 
-    extractList(rows, "FOO") should contain inOrderOnly ("abc", "ghi")
+    extractList(rows, "FOO") should contain inOrderOnly("abc", "ghi")
   }
 
   it should "filter out the blank values" in {
@@ -426,7 +445,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
   }
 
   it should "succeed when the input contains multiple equal value" in {
-    atMostOne(2, List("FOO"))(List.fill(5)("abc")) should matchPattern { case Success(Some("abc")) =>}
+    atMostOne(2, List("FOO"))(List.fill(5)("abc")) should matchPattern { case Success(Some("abc")) => }
   }
 
   it should "fail when the input contains more than one distinct value and one columnName is given" in {
@@ -494,7 +513,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
   it should "throw an IllegalArgumentException if no columns were missing" in {
     val row = Map("a" -> "1", "b" -> "2", "c" -> "3")
 
-    the [IllegalArgumentException] thrownBy missingRequired(2, row, Set("a", "b", "c")) should have message "requirement failed: the list of missing elements is supposed to be non-empty"
+    the[IllegalArgumentException] thrownBy missingRequired(2, row, Set("a", "b", "c")) should have message "requirement failed: the list of missing elements is supposed to be non-empty"
   }
 
   private lazy val datasetCSV @ datasetCSVRow1 :: datasetCSVRow2 :: datasetCSVRow3 :: Nil = List(
@@ -522,7 +541,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     // terribly wrong!
     val rows = datasetCSVRow1 :: (datasetCSVRow2 - "ROW") :: datasetCSVRow3 :: Nil
 
-    the [NoSuchElementException] thrownBy extractDataset("test", rows) should have message "key not found: ROW"
+    the[NoSuchElementException] thrownBy extractDataset("test", rows) should have message "key not found: ROW"
   }
 
   it should "fail if there are multiple distinct depositorIDs" in {
@@ -602,9 +621,9 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
       case Failure(CompositeException(es)) =>
         val e1 :: e2 :: e3 :: Nil = es.toList
 
-        e1.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_CREATED'")
-        e2.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_AVAILABLE'")
-        e3.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'")
+        e1.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_CREATED'")
+        e2.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_AVAILABLE'")
+        e3.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'")
     }
   }
 
@@ -614,8 +633,8 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     inside(extractProfile(rows, 2)) {
       case Failure(ParseException(2, msg, _)) =>
         msg should {
-          include ("DDM_AUDIENCE should be D37000 (Archaeology)") and
-            include ("contains: [D30000]")
+          include("DDM_AUDIENCE should be D37000 (Archaeology)") and
+            include("contains: [D30000]")
         }
     }
   }
@@ -624,11 +643,11 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     Map(
       "DCT_ALTERNATIVE" -> "alt1",
       "DC_PUBLISHER" -> "pub1",
-      "DC_TYPE" -> "type1",
+      "DC_TYPE" -> "Collection",
       "DC_FORMAT" -> "format1",
       "DC_IDENTIFIER" -> "id1",
       "DC_SOURCE" -> "src1",
-      "DC_LANGUAGE" -> "lang1",
+      "DC_LANGUAGE" -> "dut",
       "DCT_SPATIAL" -> "spat1",
       "DCT_RIGHTSHOLDER" -> "right1",
       // relation
@@ -651,11 +670,11 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     Map(
       "DCT_ALTERNATIVE" -> "alt2",
       "DC_PUBLISHER" -> "pub2",
-      "DC_TYPE" -> "type2",
+      "DC_TYPE" -> "MovingImage",
       "DC_FORMAT" -> "format2",
       "DC_IDENTIFIER" -> "id2",
       "DC_SOURCE" -> "src2",
-      "DC_LANGUAGE" -> "lang2",
+      "DC_LANGUAGE" -> "nld",
       "DCT_SPATIAL" -> "spat2",
       "DCT_RIGHTSHOLDER" -> "right2",
       // spatialBox
@@ -670,11 +689,11 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
   private lazy val metadata = Metadata(
     alternatives = List("alt1", "alt2"),
     publishers = List("pub1", "pub2"),
-    types = List("type1", "type2"),
+    types = List(DcType.COLLECTION, DcType.MOVINGIMAGE),
     formats = List("format1", "format2"),
     identifiers = List("id1", "id2"),
     sources = List("src1", "src2"),
-    languages = List("lang1", "lang2"),
+    languages = List("dut", "nld"),
     spatials = List("spat1", "spat2"),
     rightsholder = List("right1", "right2"),
     relations = List(QualifiedLinkRelation("replaces", "foo")),
@@ -687,6 +706,12 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
   "extractMetadata" should "convert the csv input to the corresponding output" in {
     extractMetadata(metadataCSV) should matchPattern { case Success(`metadata`) => }
+  }
+
+  it should "use the default type value if no value for DC_TYPE is specified" in {
+    inside(extractMetadata(metadataCSV.map(row => row - "DC_TYPE"))) {
+      case Success(md) => md.types should contain only DcType.DATASET
+    }
   }
 
   private lazy val audioVideoCSV @ audioVideoCSVRow1 :: audioVideoCSVRow2 :: audioVideoCSVRow3 :: Nil = List(
@@ -782,7 +807,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
   it should "fail if there is more than one file accessright" in {
     val rows = audioVideoCSVRow1 ::
-      audioVideoCSVRow2.updated("SF_ACCESSIBILITY", "KNOWN")::
+      audioVideoCSVRow2.updated("SF_ACCESSIBILITY", "KNOWN") ::
       audioVideoCSVRow3 :: Nil
 
     extractAudioVideo(rows, 2) should matchPattern {
@@ -844,7 +869,41 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     }
   }
 
-  "creator" should "return None if the none of the fields are defined" in {
+  "iso639_1Language" should "return true if the tag matches an ISO 639-1 language" in {
+    isValidISO639_1Language("en") shouldBe true
+  }
+
+  it should "return false if the tag is too long" in {
+    isValidISO639_1Language("eng") shouldBe false
+  }
+
+  it should "return false if the tag is too short" in {
+    isValidISO639_1Language("e") shouldBe false
+  }
+
+  it should "return false if the tag does not match a Locale" in {
+    isValidISO639_1Language("ac") shouldBe false
+  }
+
+  "iso639_2Language (with normal 3-letter tag)" should behave like validLanguage3Tag(parser, "eng")
+
+  "iso639_2Language (with terminology tag)" should behave like validLanguage3Tag(parser, "nld")
+
+  "iso639_2Language (with bibliographic tag)" should behave like validLanguage3Tag(parser, "dut")
+
+  "iso639_2Language (with a random tag)" should behave like invalidLanguage3Tag(parser, "abc")
+
+  "iso639_2Language (with some obscure language tag no one has ever heard about)" should behave like validLanguage3Tag(parser, "day")
+
+  "iso639_2Language (with a 2-letter tag)" should behave like invalidLanguage3Tag(parser, "nl")
+
+  "iso639_2Language (with a too short tag)" should behave like invalidLanguage3Tag(parser, "a")
+
+  "iso639_2Language (with a too long tag)" should behave like invalidLanguage3Tag(parser, "abcdef")
+
+  "iso639_2Language (with encoding tag)" should behave like invalidLanguage3Tag(parser, "encoding=UTF-8")
+
+  "creator" should "return None if none of the fields are defined" in {
     val row = Map(
       "DCX_CREATOR_TITLES" -> "",
       "DCX_CREATOR_INITIALS" -> "",
@@ -1043,6 +1102,23 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     contributor(2)(row).value should matchPattern {
       case Failure(ParseException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME, DCX_CONTRIBUTOR_INITIALS]", _)) =>
+    }
+  }
+
+  "dcType" should "convert the value for DC_TYPE into the corresponding enum object" in {
+    val row = Map("DC_TYPE" -> "Collection")
+    dcType(2)(row).value should matchPattern { case Success(DcType.COLLECTION) => }
+  }
+
+  it should "return None if DC_TYPE is not defined" in {
+    val row = Map("DC_TYPE" -> "")
+    dcType(2)(row) shouldBe empty
+  }
+
+  it should "fail if the DC_TYPE value does not correspond to an object in the enum" in {
+    val row = Map("DC_TYPE" -> "unknown value")
+    dcType(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Value 'unknown value' is not a valid type", _)) =>
     }
   }
 
@@ -1362,7 +1438,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     springfield(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: SF_USER",_)) =>
+      case Failure(ParseException(2, "Missing value for: SF_USER", _)) =>
     }
   }
 
@@ -1374,7 +1450,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     )
 
     springfield(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: SF_COLLECTION",_)) =>
+      case Failure(ParseException(2, "Missing value for: SF_COLLECTION", _)) =>
     }
   }
 
@@ -1420,13 +1496,13 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
   it should "fail if the value for AV_FILE represents a path that does not exist" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur2.mpg",
+      "AV_FILE" -> "ruimtereis01/path/to/file/that/does/not/exist.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
       "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur2.mpg").getAbsoluteFile
+    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.mpg").getAbsoluteFile
     inside(avFile(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
         msg shouldBe s"AV_FILE file '$file' does not exist"
@@ -1435,13 +1511,13 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
   it should "fail if the value for AV_FILE represents a path that does not exist when AV_SUBTITLES is not defined" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur2.mpg",
+      "AV_FILE" -> "ruimtereis01/path/to/file/that/does/not/exist.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur2.mpg").getAbsoluteFile
+    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.mpg").getAbsoluteFile
     inside(avFile(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
         msg shouldBe s"AV_FILE file '$file' does not exist"
@@ -1452,14 +1528,27 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
     val row = Map(
       "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
-      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur2.srt",
+      "AV_SUBTITLES" -> "ruimtereis01/path/to/file/that/does/not/exist.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur2.srt").getAbsoluteFile
+    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.srt").getAbsoluteFile
     inside(avFile(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
         msg shouldBe s"AV_SUBTITLES file '$file' does not exist"
+    }
+  }
+
+  it should "fail if the value for AV_SUBTITLES_LANGUAGE does not represent an ISO 639-1 language value" in {
+    val row = Map(
+      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
+      "AV_SUBTITLES_LANGUAGE" -> "ac"
+    )
+
+    avFile(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "AV_SUBTITLES_LANGUAGE 'ac' doesn't have a valid ISO 639-1 language value", _)) =>
     }
   }
 
@@ -1527,7 +1616,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory {
 
     inside(avFile(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
-        msg should include ("No value is defined for AV_FILE")
+        msg should include("No value is defined for AV_FILE")
     }
   }
 

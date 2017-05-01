@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.DDM._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.parser.{ Dataset, _ }
@@ -25,7 +24,7 @@ import org.joda.time.format.ISODateTimeFormat
 import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
-import scala.xml.Elem
+import scala.xml.{ Elem, Null, PrefixedAttribute }
 
 case class AddDatasetMetadataToDeposit(dataset: Dataset)(implicit settings: Settings) extends UnitAction[Unit] {
 
@@ -41,8 +40,7 @@ object AddDatasetMetadataToDeposit {
     }
   }
 
-  def datasetToXml(dataset: Dataset): Elem = {
-    // @formatter:off
+  def datasetToXml(dataset: Dataset)(implicit settings: Settings): Elem = {
     <ddm:DDM
       xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -59,21 +57,18 @@ object AddDatasetMetadataToDeposit {
       {createProfile(dataset.profile)}
       {createMetadata(dataset.metadata, dataset.audioVideo.springfield)}
     </ddm:DDM>
-    // @formatter:on
   }
 
   def createProfile(profile: Profile): Elem = {
-    // @formatter:off
     <ddm:profile>
-      {profile.titles.map(elemFromKey("DC_TITLE"))}
-      {profile.descriptions.map(elemFromKey("DC_DESCRIPTION"))}
+      {profile.titles.map(elem("dc:title"))}
+      {profile.descriptions.map(elem("dcterms:description"))}
       {profile.creators.map(createCreator)}
-      {elemFromKey("DDM_CREATED")(date(profile.created))}
-      {elemFromKey("DDM_AVAILABLE")(date(profile.available))}
-      {profile.audiences.map(elemFromKey("DDM_AUDIENCE"))}
-      {elemFromKey("DDM_ACCESSRIGHTS")(profile.accessright.toString)}
+      {elem("ddm:created")(date(profile.created))}
+      {elem("ddm:available")(date(profile.available))}
+      {profile.audiences.map(elem("ddm:audience"))}
+      {elem("ddm:accessRights")(profile.accessright.toString)}
     </ddm:profile>
-    // @formatter:on
   }
 
   def date(dateTime: DateTime): String = {
@@ -81,54 +76,44 @@ object AddDatasetMetadataToDeposit {
   }
 
   private def createOrganisation(org: String): Elem = {
-    // @formatter:off
     <dcx-dai:organization>
       <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>
     </dcx-dai:organization>
-    // @formatter:on
   }
 
   def createCreator(creator: Creator): Elem = {
     creator match {
       case CreatorOrganization(org) =>
-        // @formatter:off
         <dcx-dai:creatorDetails>{createOrganisation(org)}</dcx-dai:creatorDetails>
-        // @formatter:on
       case CreatorPerson(titles, initials, insertions, surname, organization, dai) =>
-        // @formatter:off
         <dcx-dai:creatorDetails>
           <dcx-dai:author>{
             titles.map(ts => <dcx-dai:titles>{ts}</dcx-dai:titles>) ++
-            <dcx-dai:initials>{initials}</dcx-dai:initials> ++
-            insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
-            <dcx-dai:surname>{surname}</dcx-dai:surname> ++
-            dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
-            organization.map(createOrganisation)
+              <dcx-dai:initials>{initials}</dcx-dai:initials> ++
+              insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
+              <dcx-dai:surname>{surname}</dcx-dai:surname> ++
+              dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
+              organization.map(createOrganisation)
           }</dcx-dai:author>
         </dcx-dai:creatorDetails>
-        // @formatter:on
     }
   }
 
   def createContributor(contributor: Contributor): Elem = {
     contributor match {
       case ContributorOrganization(org) =>
-        // @formatter:off
         <dcx-dai:contributorDetails>{createOrganisation(org)}</dcx-dai:contributorDetails>
-        // @formatter:on
       case ContributorPerson(titles, initials, insertions, surname, organization, dai) =>
-        // @formatter:off
         <dcx-dai:contributorDetails>
           <dcx-dai:author>{
             titles.map(ts => <dcx-dai:titles>{ts}</dcx-dai:titles>) ++
-            <dcx-dai:initials>{initials}</dcx-dai:initials> ++
-            insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
-            <dcx-dai:surname>{surname}</dcx-dai:surname> ++
-            dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
-            organization.map(createOrganisation)
+              <dcx-dai:initials>{initials}</dcx-dai:initials> ++
+              insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
+              <dcx-dai:surname>{surname}</dcx-dai:surname> ++
+              dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
+              organization.map(createOrganisation)
           }</dcx-dai:author>
         </dcx-dai:contributorDetails>
-        // @formatter:on
     }
   }
 
@@ -143,9 +128,9 @@ object AddDatasetMetadataToDeposit {
     val srsName = point.scheme.map(createSrsName).getOrElse("")
 
     // coordinate order x, y = longitude (DCX_SPATIAL_X), latitude (DCX_SPATIAL_Y)
-    lazy val xy = s"${point.x} ${point.y}"
+    lazy val xy = s"${ point.x } ${ point.y }"
     // coordinate order y, x = latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
-    lazy val yx = s"${point.y} ${point.x}"
+    lazy val yx = s"${ point.y } ${ point.x }"
 
     val pos = srsName match {
       case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
@@ -153,13 +138,11 @@ object AddDatasetMetadataToDeposit {
       case _ => yx
     }
 
-    // @formatter:off
     <dcx-gml:spatial srsName={srsName}>
       <Point xmlns="http://www.opengis.net/gml">
         <pos>{pos}</pos>
       </Point>
     </dcx-gml:spatial>
-    // @formatter:on
   }
 
   /*
@@ -193,7 +176,6 @@ object AddDatasetMetadataToDeposit {
       case _ => yx
     }
 
-    // @formatter:off
     <dcx-gml:spatial>
       <boundedBy xmlns="http://www.opengis.net/gml">
         <Envelope srsName={srsName}>
@@ -202,39 +184,20 @@ object AddDatasetMetadataToDeposit {
         </Envelope>
       </boundedBy>
     </dcx-gml:spatial>
-    // @formatter:on
   }
 
   def createTemporal(temporal: Temporal): Elem = {
-    // @formatter:off
     temporal.scheme
       .map(scheme => <dcterms:temporal xsi:type={scheme}>{temporal.temporal}</dcterms:temporal>)
       .getOrElse(<dcterms:temporal>{temporal.temporal}</dcterms:temporal>)
-    // @formatter:on
   }
 
   def createSubject(subject: Subject): Elem = {
-    // @formatter:off
     subject.scheme
       .map(scheme => <dc:subject xsi:type={scheme}>{subject.subject}</dc:subject>)
       .getOrElse(<dc:subject>{subject.subject}</dc:subject>)
-    // @formatter:on
   }
 
-  /*
-    qualifier   link   title   valid
-        1        1       1       0
-        1        1       0       1
-        1        0       1       1
-        1        0       0       0
-        0        1       1       0
-        0        1       0       1
-        0        0       1       1
-        0        0       0       1
-
-    observation: if the qualifier is present, either DCX_RELATION_LINK or DCX_RELATION_TITLE must be defined
-                 if the qualifier is not defined, DCX_RELATION_LINK and DCX_RELATION_TITLE must not both be defined
-   */
   def createRelation(relation: Relation): Elem = {
     relation match {
       case QualifiedLinkRelation(qualifier, link) => elem(s"dcterms:$qualifier")(link)
@@ -245,25 +208,39 @@ object AddDatasetMetadataToDeposit {
   }
 
   def createSurrogateRelation(springfield: Springfield): Elem = {
-    // @formatter:off
     <ddm:relation scheme="STREAMING_SURROGATE_RELATION">{
-      s"/domain/${springfield.domain}/user/${springfield.user}/collection/${springfield.collection}/presentation/$$sdo-id"
+      s"/domain/${ springfield.domain }/user/${ springfield.user }/collection/${ springfield.collection }/presentation/$$sdo-id"
     }</ddm:relation>
-    // @formatter:on
   }
 
-  def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty): Elem = {
-    // @formatter:off
+  def createType(dcType: DcType.Value): Elem = {
+    <dcterms:type xsi:type="dcterms:DCMIType">{dcType.toString}</dcterms:type>
+  }
+
+  def createFormat(format: String)(implicit settings: Settings): Elem = {
+    val xml = elem("dc:format")(format)
+
+    if (settings.formats.contains(format))
+      xml % new PrefixedAttribute("xsi", "type", "dcterms:IMT", Null)
+    else
+      xml
+  }
+
+  def createLanguage(lang: String): Elem = {
+    <dc:language xsi:type="dcterms:ISO639-2">{lang}</dc:language>
+  }
+
+  def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty)(implicit settings: Settings): Elem = {
     <ddm:dcmiMetadata>
-      {metadata.alternatives.map(elemFromKey("DCT_ALTERNATIVE"))}
-      {metadata.publishers.map(elemFromKey("DC_PUBLISHER"))}
-      {metadata.types.map(elemFromKey("DC_TYPE"))}
-      {metadata.formats.map(elemFromKey("DC_FORMAT"))}
-      {metadata.identifiers.map(elemFromKey("DC_IDENTIFIER"))}
-      {metadata.sources.map(elemFromKey("DC_SOURCE"))}
-      {metadata.languages.map(elemFromKey("DC_LANGUAGE"))}
-      {metadata.spatials.map(elemFromKey("DCT_SPATIAL"))}
-      {metadata.rightsholder.map(elemFromKey("DCT_RIGHTSHOLDER"))}
+      {metadata.alternatives.map(elem("dcterms:alternative"))}
+      {metadata.publishers.map(elem("dcterms:publisher"))}
+      {metadata.types.map(createType)}
+      {metadata.formats.map(createFormat)}
+      {metadata.identifiers.map(elem("dc:identifier"))}
+      {metadata.sources.map(elem("dc:source"))}
+      {metadata.languages.map(createLanguage)}
+      {metadata.spatials.map(elem("dcterms:spatial"))}
+      {metadata.rightsholder.map(elem("dcterms:rightsHolder"))}
       {metadata.relations.map(createRelation) ++ maybeSpringfield.map(createSurrogateRelation) }
       {metadata.contributors.map(createContributor)}
       {metadata.subjects.map(createSubject)}
@@ -271,16 +248,9 @@ object AddDatasetMetadataToDeposit {
       {metadata.spatialBoxes.map(createSpatialBox)}
       {metadata.temporal.map(createTemporal)}
     </ddm:dcmiMetadata>
-    // @formatter:on
-  }
-
-  def elemFromKey(key: MultiDepositKey): String => Elem = {
-    elem((profileFields ++ metadataFields).getOrElse(key, key))
   }
 
   def elem(key: String)(value: String): Elem = {
-    // @formatter:off
-    <key>{value}</key>.copy(label=key)
-    // @formatter:on
+    <key>{value}</key>.copy(label = key)
   }
 }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -71,11 +71,11 @@ case class SetDepositPermissions(row: Int, datasetId: DatasetId)(implicit settin
 
         FileVisitResult.CONTINUE
       } onError {
-        case upnf: UserPrincipalNotFoundException => throw ActionException(row, s"Group ${depositPermissions.group} could not be found", upnf)
+        case upnf: UserPrincipalNotFoundException => throw ActionException(row, s"Group ${ depositPermissions.group } could not be found", upnf)
         case usoe: UnsupportedOperationException => throw ActionException(row, "Not on a POSIX supported file system", usoe)
         case cce: ClassCastException => throw ActionException(row, "No file permission elements in set", cce)
-        case iae: IllegalArgumentException => throw ActionException(row, s"Invalid privileges (${depositPermissions.permissions})", iae)
-        case fse: FileSystemException => throw ActionException(row, s"Not able to set the group to ${depositPermissions.group}. Probably the current user (${System.getProperty("user.name")}) is not part of this group.", fse)
+        case iae: IllegalArgumentException => throw ActionException(row, s"Invalid privileges (${ depositPermissions.permissions })", iae)
+        case fse: FileSystemException => throw ActionException(row, s"Not able to set the group to ${ depositPermissions.group }. Probably the current user (${ System.getProperty("user.name") }) is not part of this group.", fse)
         case ioe: IOException => throw ActionException(row, s"Could not set file permissions or group on $path", ioe)
         case se: SecurityException => throw ActionException(row, s"Not enough privileges to set file permissions or group on $path", se)
         case NonFatal(e) => throw ActionException(row, s"unexpected error occured on $path", e)

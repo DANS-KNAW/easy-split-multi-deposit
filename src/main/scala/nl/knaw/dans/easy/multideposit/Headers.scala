@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,31 +15,111 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import nl.knaw.dans.easy.multideposit.DDM._
-
 object Headers {
-  val springfieldHeaders = List("SF_DOMAIN", "SF_USER", "SF_COLLECTION", "SF_ACCESSIBILITY")
-  val audioVideoHeaders = List("AV_FILE", "AV_FILE_TITLE", "AV_SUBTITLES", "AV_SUBTITLES_LANGUAGE")
-  val administrativeHeaders = List("DEPOSITOR_ID")
 
-  val validHeaders: List[String] = {
-    val ddmHeaders = List(
-      profileFields,
-      metadataFields,
-      composedCreatorFields,
-      composedContributorFields,
-      composedSpatialPointFields,
-      composedSpatialBoxFields,
-      composedRelationFields,
-      composedTemporalFields,
-      composedSubjectFields)
-      .flatMap(_.keySet)
-
-    "ROW" ::
-      "DATASET" ::
+  lazy val validHeaders: Set[String] = {
+    administrativeHeaders ++
+      profileFields ++
+      metadataFields ++
+      composedCreatorFields ++
+      composedContributorFields ++
+      composedSpatialPointFields ++
+      composedSpatialBoxFields ++
+      composedRelationFields ++
+      composedTemporalFields ++
+      composedSubjectFields ++
       springfieldHeaders ++
-        audioVideoHeaders ++
-        administrativeHeaders ++
-        ddmHeaders
+      audioVideoHeaders
   }
+
+  private lazy val profileFields = Set(
+    "DC_TITLE",
+    "DC_DESCRIPTION",
+    "DC_CREATOR",
+    "DDM_CREATED",
+    "DDM_AVAILABLE",
+    "DDM_AUDIENCE",
+    "DDM_ACCESSRIGHTS"
+  )
+
+  private lazy val metadataFields = Set(
+    "DC_CONTRIBUTOR",
+    "DCT_ALTERNATIVE",
+    "DC_PUBLISHER",
+    "DC_TYPE",
+    "DC_FORMAT",
+    "DC_IDENTIFIER",
+    "DC_SOURCE",
+    "DC_LANGUAGE",
+    "DCT_SPATIAL",
+    "DCT_RIGHTSHOLDER"
+  )
+
+  private lazy val composedCreatorFields = Set(
+    "DCX_CREATOR_TITLES",
+    "DCX_CREATOR_INITIALS",
+    "DCX_CREATOR_INSERTIONS",
+    "DCX_CREATOR_SURNAME",
+    "DCX_CREATOR_DAI",
+    "DCX_CREATOR_ORGANIZATION"
+  )
+
+  private lazy val composedContributorFields = Set(
+    "DCX_CONTRIBUTOR_TITLES",
+    "DCX_CONTRIBUTOR_INITIALS",
+    "DCX_CONTRIBUTOR_INSERTIONS",
+    "DCX_CONTRIBUTOR_SURNAME",
+    "DCX_CONTRIBUTOR_DAI",
+    "DCX_CONTRIBUTOR_ORGANIZATION"
+  )
+
+  private lazy val composedSpatialPointFields = Set(
+    "DCX_SPATIAL_SCHEME",
+    "DCX_SPATIAL_X",
+    "DCX_SPATIAL_Y"
+  )
+
+  private lazy val composedSpatialBoxFields = Set(
+    "DCX_SPATIAL_SCHEME",
+    "DCX_SPATIAL_NORTH",
+    "DCX_SPATIAL_SOUTH",
+    "DCX_SPATIAL_EAST",
+    "DCX_SPATIAL_WEST"
+  )
+
+  private lazy val composedRelationFields = Set(
+    "DCX_RELATION_QUALIFIER",
+    "DCX_RELATION_TITLE",
+    "DCX_RELATION_LINK"
+  )
+
+  private lazy val composedTemporalFields = Set(
+    "DCT_TEMPORAL",
+    "DCT_TEMPORAL_SCHEME"
+  )
+
+  private lazy val composedSubjectFields = Set(
+    "DC_SUBJECT",
+    "DC_SUBJECT_SCHEME"
+  )
+
+  private lazy val springfieldHeaders = Set(
+    "SF_DOMAIN",
+    "SF_USER",
+    "SF_COLLECTION",
+    "SF_ACCESSIBILITY"
+  )
+
+  private lazy val audioVideoHeaders = Set(
+    "AV_FILE",
+    "AV_FILE_TITLE",
+    "AV_SUBTITLES",
+    "AV_SUBTITLES_LANGUAGE"
+  )
+
+  private lazy val administrativeHeaders = Set(
+    "ROW",
+    "DATASET",
+    "DEPOSITOR_ID"
+  )
 }

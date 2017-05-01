@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,13 +39,17 @@ package object multideposit {
                       outputDepositDir: File = null,
                       datamanager: Datamanager = null,
                       depositPermissions: DepositPermissions = null,
+                      private val formatsFile: File = null,
                       ldap: Ldap = null) {
+    val formats: Set[String] = Option(formatsFile).fold(Set.empty[String])(_.read().lines.toSet)
+
     override def toString: String =
       s"Settings(multideposit-dir=$multidepositDir, " +
         s"staging-dir=$stagingDir, " +
         s"output-deposit-dir=$outputDepositDir" +
         s"datamanager=$datamanager, " +
-        s"deposit-permissions=$depositPermissions)"
+        s"deposit-permissions=$depositPermissions, " +
+        s"formats=${ formats.mkString("{", ", ", "}") })"
   }
 
   case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")
@@ -80,7 +84,10 @@ package object multideposit {
      *
      * @return an `Option` of the input string that indicates whether it is blank
      */
-    def toOption: Option[String] = if (s.isBlank) Option.empty else Option(s)
+    def toOption: Option[String] = {
+      if (s.isBlank) Option.empty
+      else Option(s)
+    }
 
     /**
      * Converts a `String` into an `Option[Int]` if it is not blank
@@ -113,7 +120,7 @@ package object multideposit {
 
     def ifSuccess(f: T => Unit): Try[T] = {
       t match {
-        case success@Success(x) => Try {
+        case success @ Success(x) => Try {
           f(x)
           return success
         }
@@ -123,7 +130,7 @@ package object multideposit {
 
     def ifFailure(f: PartialFunction[Throwable, Unit]): Try[T] = {
       t match {
-        case failure@Failure(e) if f.isDefinedAt(e) => Try {
+        case failure @ Failure(e) if f.isDefinedAt(e) => Try {
           f(e)
           return failure
         }
@@ -156,7 +163,7 @@ package object multideposit {
     /**
      * Writes the xml to a `File` and prepends a simple xml header: `<?xml version="1.0" encoding="UTF-8"?>`
      *
-     * @param elem the xml to be written
+     * @param elem     the xml to be written
      * @param encoding the encoding applied to this xml
      */
     @throws[IOException]("in case of an I/O error")
@@ -205,27 +212,24 @@ package object multideposit {
     def directoryContains(child: File): Boolean = FileUtils.directoryContains(file, child)
 
     /**
-     * Copies a whole directory to a new location preserving the file dates.
+     * Copies a file to a new location preserving the file date.
      * <p>
-     * This method copies the specified directory and all its child
-     * directories and files to the specified destination.
-     * The destination is the new location and name of the directory.
+     * This method copies the contents of the specified source file to the
+     * specified destination file. The directory holding the destination file is
+     * created if it does not exist. If the destination file exists, then this
+     * method will overwrite it.
      * <p>
-     * The destination directory is created if it does not exist.
-     * If the destination directory did exist, then this method merges
-     * the source with the destination, with the source taking precedence.
-     * <p>
-     * <strong>Note:</strong> This method tries to preserve the files' last
-     * modified date/times using File.setLastModified(long), however
-     * it is not guaranteed that those operations will succeed.
+     * <strong>Note:</strong> This method tries to preserve the file's last
+     * modified date/times using File#setLastModified(long), however
+     * it is not guaranteed that the operation will succeed.
      * If the modification operation fails, no indication is provided.
      *
-     * @param destDir the new directory, must not be ``null``
+     * @param destFile the new file, must not be ``null``
      */
     @throws[NullPointerException]("if source or destination is null")
     @throws[IOException]("if source or destination is invalid")
     @throws[IOException]("if an IO error occurs during copying")
-    def copyFile(destDir: File): Unit = FileUtils.copyFile(file, destDir)
+    def copyFile(destFile: File): Unit = FileUtils.copyFile(file, destFile)
 
     /**
      * Copies a whole directory to a new location preserving the file dates.
@@ -287,8 +291,9 @@ package object multideposit {
   val propsFileName = "deposit.properties"
 
   private def datasetDir(datasetId: DatasetId)(implicit settings: Settings): String = {
-    s"${settings.multidepositDir.getName}-$datasetId"
+    s"${ settings.multidepositDir.getName }-$datasetId"
   }
+
   def multiDepositInstructionsFile(baseDir: File): File = {
     new File(baseDir, instructionsFileName)
   }
@@ -297,38 +302,47 @@ package object multideposit {
   def multiDepositDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(settings.multidepositDir, datasetId)
   }
+
   // mdDir/instructions.csv
   def multiDepositInstructionsFile(implicit settings: Settings): File = {
     multiDepositInstructionsFile(settings.multidepositDir)
   }
+
   // stagingDir/mdDir-datasetId/
   def stagingDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(settings.stagingDir, datasetDir(datasetId))
   }
+
   // stagingDir/mdDir-datasetId/bag/
   def stagingBagDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingDir(datasetId), bagDirName)
   }
+
   // stagingDir/mdDir-datasetId/bag/data/
   def stagingBagDataDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingBagDir(datasetId), dataDirName)
   }
+
   // stagingDir/mdDir-datasetId/bag/metadata/
   def stagingBagMetadataDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingBagDir(datasetId), metadataDirName)
   }
+
   // stagingDir/mdDir-datasetId/deposit.properties
   def stagingPropertiesFile(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingDir(datasetId), propsFileName)
   }
+
   // stagingDir/mdDir-datasetId/bag/metadata/dataset.xml
   def stagingDatasetMetadataFile(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingBagMetadataDir(datasetId), datasetMetadataFileName)
   }
+
   // stagingDir/mdDir-datasetId/bag/metadata/files.xml
   def stagingFileMetadataFile(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingBagMetadataDir(datasetId), fileMetadataFileName)
   }
+
   // outputDepositDir/mdDir-datasetId/
   def outputDepositDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(settings.outputDepositDir, datasetDir(datasetId))

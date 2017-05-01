@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +16,10 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import java.io.File
+import java.util.Locale
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit.{ ParseException, EmptyInstructionsFileException, Headers, ParserFailedException, Settings, StringExtensions, encoding }
+import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
@@ -65,9 +66,10 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
         s"${ invalidHeaders.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
         s"consult the documentation for the list of valid headers."))
-    else if (headers.size != uniqueHeaders.size)
+    else if (headers.size != uniqueHeaders.size) {
       Failure(ParseException(0, "SIP Instructions file contains duplicate headers: " +
         s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
+    }
     else
       Success(())
   }
@@ -91,7 +93,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
           }
           .map {
             case ParseException(row, msg, _) => s" - row $row: $msg"
-            case e => s" - unexpected: ${e.getMessage}"
+            case e => s" - unexpected: ${ e.getMessage }"
           }
           .mkString("\n") +
         footer.toOption.fold("")("\n" + _)
@@ -107,18 +109,18 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
 
   def parse(file: File): Try[Seq[Dataset]] = {
     logger.info(s"Parsing $file")
-    
+
     val datasets = for {
       (headers, content) <- read(file)
       datasetIdIndex = headers.indexOf("DATASET")
-      _ <- detectEmptyDatasetCells(content.map(_(datasetIdIndex)))
+      _ <- detectEmptyDatasetCells(content.map(_ (datasetIdIndex)))
       result <- content.groupBy(_ (datasetIdIndex))
         .mapValues(_.map(headers.zip(_).filterNot { case (_, value) => value.isBlank }.toMap))
         .map((extractDataset _).tupled)
         .toSeq
         .collectResults
     } yield result
-    
+
     datasets.recoverWith { case NonFatal(e) => recoverParsing(e) }
   }
 
@@ -187,7 +189,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     val missingColumns = required.diff(row.keySet)
     val missing = blankRequired.toSet ++ missingColumns
     require(missing.nonEmpty, "the list of missing elements is supposed to be non-empty")
-    Failure(ParseException(rowNum, s"Missing value(s) for: ${missing.mkString("[", ", ", "]")}"))
+    Failure(ParseException(rowNum, s"Missing value(s) for: ${ missing.mkString("[", ", ", "]") }"))
   }
 
   def extractDataset(datasetId: DatasetId, rows: DatasetRows): Try[Dataset] = {
@@ -231,11 +233,11 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     Try { Metadata.curried }
       .map(_ (extractList(rows, "DCT_ALTERNATIVE")))
       .map(_ (extractList(rows, "DC_PUBLISHER")))
-      .map(_ (extractList(rows, "DC_TYPE")))
+      .combine(extractList(rows)(dcType).map(_ defaultIfEmpty DcType.DATASET))
       .map(_ (extractList(rows, "DC_FORMAT")))
       .map(_ (extractList(rows, "DC_IDENTIFIER")))
       .map(_ (extractList(rows, "DC_SOURCE")))
-      .map(_ (extractList(rows, "DC_LANGUAGE")))
+      .combine(extractList(rows)(iso639_2Language("DC_LANGUAGE")))
       .map(_ (extractList(rows, "DCT_SPATIAL")))
       .map(_ (extractList(rows, "DCT_RIGHTSHOLDER")))
       .combine(extractList(rows)(relation))
@@ -267,7 +269,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
               val fileTitle = instrPerFile.collect { case (_, Some(title), _) => title } match {
                 case Seq() => Success(None)
                 case Seq(title) => Success(Some(title))
-                case Seq(_, _@_*) => Failure(ParseException(rowNum, s"The column 'AV_FILE_TITLE' " +
+                case Seq(_, _ @ _*) => Failure(ParseException(rowNum, s"The column 'AV_FILE_TITLE' " +
                   s"can only have one value for file '$file'"))
               }
               val subtitles = instrPerFile.collect { case (_, _, Some(instr)) => instr }
@@ -292,6 +294,30 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
           case e: IllegalArgumentException => Failure(ParseException(rowNum, s"Value '$acc' is " +
             s"not a valid accessright", e))
         })
+  }
+
+  def isValidISO639_1Language(lang: String): Boolean = {
+    val b0: Boolean = lang.length == 2
+    val b1: Boolean = new Locale(lang).getDisplayLanguage.toLowerCase != lang.toLowerCase
+
+    b0 && b1
+  }
+
+  private lazy val iso639_2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
+
+  def iso639_2Language(columnName: MultiDepositKey)(rowNum: => Int)(row: DatasetRow): Option[Try[String]] = {
+    row.find(columnName)
+      .map(lang => {
+        // Most ISO 639-2/T languages are contained in the iso639_2Languages Set.
+        // However, some of them are not and need to be checked using the second predicate.
+        // The latter also allows to check ISO 639-2/B language codes.
+        lazy val b0 = lang.length == 3
+        lazy val b1 = iso639_2Languages.contains(lang)
+        lazy val b2 = new Locale(lang).getDisplayLanguage.toLowerCase != lang.toLowerCase
+
+        if (b0 && (b1 || b2)) Success(lang)
+        else Failure(ParseException(rowNum, s"Value '$lang' is not a valid value for $columnName"))
+      })
   }
 
   def creator(rowNum: => Int)(row: DatasetRow): Option[Try[Creator]] = {
@@ -326,6 +352,27 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     }
   }
 
+  def dcType(rowNum: => Int)(row: DatasetRow): Option[Try[DcType.Value]] = {
+    row.find("DC_TYPE")
+      .map(t => DcType.valueOf(t)
+        .map(Success(_))
+        .getOrElse(Failure(ParseException(rowNum, s"Value '$t' is not a valid type"))))
+  }
+
+  /*
+    qualifier   link   title   valid
+        1        1       1       0
+        1        1       0       1
+        1        0       1       1
+        1        0       0       0
+        0        1       1       0
+        0        1       0       1
+        0        0       1       1
+        0        0       0       1
+
+    observation: if the qualifier is present, either DCX_RELATION_LINK or DCX_RELATION_TITLE must be defined
+                 if the qualifier is not defined, DCX_RELATION_LINK and DCX_RELATION_TITLE must not both be defined
+   */
   def relation(rowNum: => Int)(row: DatasetRow): Option[Try[Relation]] = {
     val qualifier = row.find("DCX_RELATION_QUALIFIER")
     val link = row.find("DCX_RELATION_LINK")
@@ -428,9 +475,10 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, title, subtitle, subtitleLang) match {
-      case (Some(p), t, Some(sub), subLang) if p.exists() && sub.exists() => Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
+      case (Some(p), t, Some(sub), subLang) if p.exists() && sub.exists() && subLang.forall(isValidISO639_1Language) => Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
       case (Some(p), _, Some(_), _) if !p.exists() => Some(Failure(ParseException(rowNum, s"AV_FILE file '$p' does not exist")))
       case (Some(_), _, Some(sub), _) if !sub.exists() => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES file '$sub' does not exist")))
+      case (Some(_), _, Some(_), subLang) if subLang.exists(!isValidISO639_1Language(_)) => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '${ subLang.get }' doesn't have a valid ISO 639-1 language value")))
       case (Some(_), _, None, Some(subLang)) => Some(Failure(ParseException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
       case (Some(p), t, None, None) if p.exists() => Some(Success((p, t, None)))
       case (Some(p), _, None, None) => Some(Failure(ParseException(rowNum, s"AV_FILE file '$p' does not exist")))
