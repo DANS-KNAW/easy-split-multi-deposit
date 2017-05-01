@@ -21,7 +21,7 @@ import javax.naming.ldap.InitialLdapContext
 
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.configuration.PropertiesConfiguration
-import org.rogach.scallop.{ScallopConf, ScallopOption}
+import org.rogach.scallop.{ ScallopConf, ScallopOption }
 
 object CommandLineOptions extends DebugEnhancedLogging {
 
@@ -67,19 +67,20 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
   editBuilder(_.setHelpWidth(110))
 
   printedName = "easy-split-multi-deposit"
-  version(s"$printedName ${Version()}")
+  version(s"$printedName ${ Version() }")
   val description = "Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive"
   val synopsis = s"""$printedName.sh [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>"""
-  banner(s"""
-           |  $description
-           |  Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
-           |
-           |Usage:
-           |
-           |  $synopsis
-           |
-           |Options:
-           |""".stripMargin)
+  banner(
+    s"""
+       |  $description
+       |  Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
+       |
+       |Usage:
+       |
+       |  $synopsis
+       |
+       |Options:
+       |""".stripMargin)
 
   val multiDepositDir: ScallopOption[File] = trailArg[File](
     name = "multi-deposit-dir",

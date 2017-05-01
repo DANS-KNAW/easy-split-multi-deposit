@@ -40,7 +40,7 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
    * Default creates correct BasicAttributes
    */
   def createDatamanagerAttributes(state: String = "ACTIVE",
-                                  roles: Seq[String] = Seq("USER","ARCHIVIST"),
+                                  roles: Seq[String] = Seq("USER", "ARCHIVIST"),
                                   mail: String = "dm@test.org"): BasicAttributes = {
     new BasicAttributes() {
       put("dansState", state)
@@ -52,7 +52,7 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
   }
 
   def mockLdapForDatamanager(attrs: Attributes): Unit = {
-    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects ("dm", *) once() returning Success(Seq(attrs))
+    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects("dm", *) once() returning Success(Seq(attrs))
   }
 
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
@@ -64,10 +64,10 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
   }
 
   it should "fail if ldap does not return anything for the datamanager" in {
-    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects ("dm", *) returning Success(Seq.empty)
+    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects("dm", *) returning Success(Seq.empty)
 
     inside(RetrieveDatamanagerAction().checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include ("""The datamanager "dm" is unknown""")
+      case Failure(ActionException(_, message, _)) => message should include("""The datamanager "dm" is unknown""")
     }
   }
 
@@ -76,7 +76,7 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
     mockLdapForDatamanager(nonActiveDatamanagerAttrs)
 
     inside(RetrieveDatamanagerAction().checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include ("not an active user")
+      case Failure(ActionException(_, message, _)) => message should include("not an active user")
     }
   }
 
@@ -85,7 +85,7 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
     mockLdapForDatamanager(nonArchivistDatamanagerAttrs)
 
     inside(RetrieveDatamanagerAction().checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include ("is not an archivist")
+      case Failure(ActionException(_, message, _)) => message should include("is not an archivist")
     }
   }
 
@@ -94,7 +94,7 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
     mockLdapForDatamanager(nonEmailDatamanagerAttrs)
 
     inside(RetrieveDatamanagerAction().checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include ("does not have an email address")
+      case Failure(ActionException(_, message, _)) => message should include("does not have an email address")
     }
   }
 
@@ -106,7 +106,7 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
     }
   }
 
-  it should "only compute the datamanager email once, eventhough some methods were called twice"  in {
+  it should "only compute the datamanager email once, eventhough some methods were called twice" in {
     // this call makes sure ldap is only called once
     mockLdapForDatamanager(correctDatamanagerAttrs)
     val action = RetrieveDatamanagerAction()

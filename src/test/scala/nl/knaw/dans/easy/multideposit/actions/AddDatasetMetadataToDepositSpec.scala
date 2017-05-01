@@ -120,7 +120,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   "execute" should "write the metadata to a file at the correct place" in {
     val file = stagingDatasetMetadataFile(datasetID)
 
-    file should not (exist)
+    file should not(exist)
 
     AddDatasetMetadataToDeposit(dataset).execute shouldBe a[Success[_]]
 

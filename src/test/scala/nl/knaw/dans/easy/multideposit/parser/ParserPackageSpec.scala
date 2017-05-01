@@ -24,7 +24,7 @@ class ParserPackageSpec extends UnitSpec {
   }
 
   it should "fail when the input list is empty" in {
-    the [IllegalArgumentException] thrownBy listToNEL(List.empty) should have message "requirement failed: the list can't be empty"
+    the[IllegalArgumentException] thrownBy listToNEL(List.empty) should have message "requirement failed: the list can't be empty"
   }
 
   "defaultIfEmpty" should "return the original list if it isn't empty" in {

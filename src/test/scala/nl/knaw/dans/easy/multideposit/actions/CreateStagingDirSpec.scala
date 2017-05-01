@@ -64,7 +64,7 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter {
 
     // creation of directories
     inside(CreateStagingDir(1, datasetID).checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include (s"The deposit for dataset $datasetID already exists")
+      case Failure(ActionException(_, message, _)) => message should include(s"The deposit for dataset $datasetID already exists")
     }
   }
 

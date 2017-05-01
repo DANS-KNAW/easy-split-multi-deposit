@@ -28,7 +28,7 @@ trait Ldap extends AutoCloseable {
    * into an instance of type `T` using the function `f`.
    *
    * @param userId the identifier related to the user
-   * @param f function that transforms an `Attributes` object to an instance of type `T`
+   * @param f      function that transforms an `Attributes` object to an instance of type `T`
    * @tparam T the result type of the transformer function
    * @return `Success` if the query succeeds, `Failure` otherwise
    */

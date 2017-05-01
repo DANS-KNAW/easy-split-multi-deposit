@@ -80,7 +80,7 @@ class MultiDepositSpec extends UnitSpec {
     val err1 = new IllegalArgumentException("foo")
     val err2 = new IllegalArgumentException("bar")
     inside(Try { throw err1 } combine Try { throw err2 }) {
-      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly (err1, err2)
+      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly(err1, err2)
     }
   }
 
@@ -94,7 +94,7 @@ class MultiDepositSpec extends UnitSpec {
     val right = List[Try[Int]](Failure(err3), Failure(err4)).collectResults.map(_.head)
 
     inside(left combine right) {
-      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly (err1, err2, err3, err4)
+      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly(err1, err2, err3, err4)
     }
   }
 
@@ -107,7 +107,7 @@ class MultiDepositSpec extends UnitSpec {
     val right = Failure(err3)
 
     inside(left combine right) {
-      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly (err1, err2, err3)
+      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly(err1, err2, err3)
     }
   }
 
@@ -120,7 +120,7 @@ class MultiDepositSpec extends UnitSpec {
     val right = List[Try[Int]](Failure(err2), Failure(err3)).collectResults.map(_.head)
 
     inside(left combine right) {
-      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly (err1, err2, err3)
+      case Failure(CompositeException(es)) => es.toList should contain inOrderOnly(err1, err2, err3)
     }
   }
 }

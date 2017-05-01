@@ -71,7 +71,7 @@ case class ContributorPerson(titles: Option[String] = Option.empty,
                              insertions: Option[String] = Option.empty,
                              surname: String,
                              organization: Option[String] = Option.empty,
-                             dai: Option[String]= Option.empty) extends Contributor
+                             dai: Option[String] = Option.empty) extends Contributor
 
 sealed abstract class Relation
 case class QualifiedLinkRelation(qualifier: String, link: String) extends Relation

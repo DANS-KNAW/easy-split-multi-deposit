@@ -66,9 +66,10 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
         s"${ invalidHeaders.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
         s"consult the documentation for the list of valid headers."))
-    else if (headers.size != uniqueHeaders.size)
+    else if (headers.size != uniqueHeaders.size) {
       Failure(ParseException(0, "SIP Instructions file contains duplicate headers: " +
         s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
+    }
     else
       Success(())
   }
@@ -92,7 +93,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
           }
           .map {
             case ParseException(row, msg, _) => s" - row $row: $msg"
-            case e => s" - unexpected: ${e.getMessage}"
+            case e => s" - unexpected: ${ e.getMessage }"
           }
           .mkString("\n") +
         footer.toOption.fold("")("\n" + _)
@@ -108,18 +109,18 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
 
   def parse(file: File): Try[Seq[Dataset]] = {
     logger.info(s"Parsing $file")
-    
+
     val datasets = for {
       (headers, content) <- read(file)
       datasetIdIndex = headers.indexOf("DATASET")
-      _ <- detectEmptyDatasetCells(content.map(_(datasetIdIndex)))
+      _ <- detectEmptyDatasetCells(content.map(_ (datasetIdIndex)))
       result <- content.groupBy(_ (datasetIdIndex))
         .mapValues(_.map(headers.zip(_).filterNot { case (_, value) => value.isBlank }.toMap))
         .map((extractDataset _).tupled)
         .toSeq
         .collectResults
     } yield result
-    
+
     datasets.recoverWith { case NonFatal(e) => recoverParsing(e) }
   }
 
@@ -188,7 +189,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     val missingColumns = required.diff(row.keySet)
     val missing = blankRequired.toSet ++ missingColumns
     require(missing.nonEmpty, "the list of missing elements is supposed to be non-empty")
-    Failure(ParseException(rowNum, s"Missing value(s) for: ${missing.mkString("[", ", ", "]")}"))
+    Failure(ParseException(rowNum, s"Missing value(s) for: ${ missing.mkString("[", ", ", "]") }"))
   }
 
   def extractDataset(datasetId: DatasetId, rows: DatasetRows): Try[Dataset] = {
@@ -268,7 +269,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
               val fileTitle = instrPerFile.collect { case (_, Some(title), _) => title } match {
                 case Seq() => Success(None)
                 case Seq(title) => Success(Some(title))
-                case Seq(_, _@_*) => Failure(ParseException(rowNum, s"The column 'AV_FILE_TITLE' " +
+                case Seq(_, _ @ _*) => Failure(ParseException(rowNum, s"The column 'AV_FILE_TITLE' " +
                   s"can only have one value for file '$file'"))
               }
               val subtitles = instrPerFile.collect { case (_, _, Some(instr)) => instr }
@@ -477,7 +478,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       case (Some(p), t, Some(sub), subLang) if p.exists() && sub.exists() && subLang.forall(isValidISO639_1Language) => Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
       case (Some(p), _, Some(_), _) if !p.exists() => Some(Failure(ParseException(rowNum, s"AV_FILE file '$p' does not exist")))
       case (Some(_), _, Some(sub), _) if !sub.exists() => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES file '$sub' does not exist")))
-      case (Some(_), _, Some(_), subLang) if subLang.exists(!isValidISO639_1Language(_)) => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '${subLang.get}' doesn't have a valid ISO 639-1 language value")))
+      case (Some(_), _, Some(_), subLang) if subLang.exists(!isValidISO639_1Language(_)) => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '${ subLang.get }' doesn't have a valid ISO 639-1 language value")))
       case (Some(_), _, None, Some(subLang)) => Some(Failure(ParseException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
       case (Some(p), t, None, None) if p.exists() => Some(Success((p, t, None)))
       case (Some(p), _, None, None) => Some(Failure(ParseException(rowNum, s"AV_FILE file '$p' does not exist")))

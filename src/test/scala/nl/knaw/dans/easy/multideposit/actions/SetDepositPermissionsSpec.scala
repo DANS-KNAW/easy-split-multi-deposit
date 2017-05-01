@@ -131,7 +131,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
     )
 
     inside(SetDepositPermissions(1, datasetID)(settings).execute()) {
-      case Failure(ActionException(1, msg, _: FileSystemException)) => msg should include (s"Not able to set the group to $unrelatedGroup")
+      case Failure(ActionException(1, msg, _: FileSystemException)) => msg should include(s"Not able to set the group to $unrelatedGroup")
     }
   }
 }
