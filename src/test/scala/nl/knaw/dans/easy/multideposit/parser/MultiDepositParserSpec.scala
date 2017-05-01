@@ -22,8 +22,6 @@ import nl.knaw.dans.easy.multideposit.{ ParseException, _ }
 import nl.knaw.dans.lib.error.CompositeException
 import org.joda.time.DateTime
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{ FlatSpec, Matchers, OptionValues }
-import org.scalatest.prop.TableDrivenPropertyChecks
 
 import scala.util.{ Failure, Success }
 
@@ -643,7 +641,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
     Map(
       "DCT_ALTERNATIVE" -> "alt1",
       "DC_PUBLISHER" -> "pub1",
-      "DC_TYPE" -> "type1",
+      "DC_TYPE" -> "Collection",
       "DC_FORMAT" -> "format1",
       "DC_IDENTIFIER" -> "id1",
       "DC_SOURCE" -> "src1",
@@ -670,7 +668,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
     Map(
       "DCT_ALTERNATIVE" -> "alt2",
       "DC_PUBLISHER" -> "pub2",
-      "DC_TYPE" -> "type2",
+      "DC_TYPE" -> "MovingImage",
       "DC_FORMAT" -> "format2",
       "DC_IDENTIFIER" -> "id2",
       "DC_SOURCE" -> "src2",
@@ -689,7 +687,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
   private lazy val metadata = Metadata(
     alternatives = List("alt1", "alt2"),
     publishers = List("pub1", "pub2"),
-    types = List("type1", "type2"),
+    types = List(DcType.COLLECTION, DcType.MOVINGIMAGE),
     formats = List("format1", "format2"),
     identifiers = List("id1", "id2"),
     sources = List("src1", "src2"),
@@ -706,6 +704,12 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
   "extractMetadata" should "convert the csv input to the corresponding output" in {
     extractMetadata(metadataCSV) should matchPattern { case Success(`metadata`) => }
+  }
+
+  it should "use the default type value if no value for DC_TYPE is specified" in {
+    inside(extractMetadata(metadataCSV.map(row => row - "DC_TYPE"))) {
+      case Success(md) => md.types should contain only DcType.DATASET
+    }
   }
 
   private lazy val audioVideoCSV @ audioVideoCSVRow1 :: audioVideoCSVRow2 :: audioVideoCSVRow3 :: Nil = List(
@@ -1080,6 +1084,23 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
     contributor(2)(row).value should matchPattern {
       case Failure(ParseException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME, DCX_CONTRIBUTOR_INITIALS]", _)) =>
+    }
+  }
+
+  "dcType" should "convert the value for DC_TYPE into the corresponding enum object" in {
+    val row = Map("DC_TYPE" -> "Collection")
+    dcType(2)(row).value should matchPattern { case Success(DcType.COLLECTION) => }
+  }
+
+  it should "return None if DC_TYPE is not defined" in {
+    val row = Map("DC_TYPE" -> "")
+    dcType(2)(row) shouldBe empty
+  }
+
+  it should "fail if the DC_TYPE value does not correspond to an object in the enum" in {
+    val row = Map("DC_TYPE" -> "unknown value")
+    dcType(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Value 'unknown value' is not a valid type", _)) =>
     }
   }
 

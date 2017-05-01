@@ -55,7 +55,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     ),
     metadata = Metadata(
       alternatives = List("foobar"),
-      types = List("random test data")
+      publishers = List("random publisher")
     )
   )
 
@@ -104,7 +104,8 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     </ddm:profile>
     <ddm:dcmiMetadata>
       <dcterms:alternative>foobar</dcterms:alternative>
-      <dcterms:type>random test data</dcterms:type>
+      <dcterms:publisher>random publisher</dcterms:publisher>
+      <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
     </ddm:dcmiMetadata>
   </ddm:DDM>
 
@@ -142,7 +143,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     val metadata = Metadata(
       alternatives = List("alt1", "alt2"),
       publishers = List("pub1"),
-      types = List("type1", "type2"),
+      types = List(DcType.INTERACTIVERESOURCE, DcType.SOFTWARE),
       formats = List("arbitrary format", "text/xml"),
       identifiers = List("ds1"),
       sources = List("src", "test"),
@@ -181,8 +182,8 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         <dcterms:alternative>alt1</dcterms:alternative>
         <dcterms:alternative>alt2</dcterms:alternative>
         <dcterms:publisher>pub1</dcterms:publisher>
-        <dcterms:type>type1</dcterms:type>
-        <dcterms:type>type2</dcterms:type>
+        <dcterms:type xsi:type="dcterms:DCMIType">InteractiveResource</dcterms:type>
+        <dcterms:type xsi:type="dcterms:DCMIType">Software</dcterms:type>
         <dc:format>arbitrary format</dc:format>
         <dc:format xsi:type="dcterms:IMT">text/xml</dc:format>
         <dc:identifier>ds1</dc:identifier>

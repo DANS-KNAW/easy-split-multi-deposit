@@ -237,6 +237,10 @@ object AddDatasetMetadataToDeposit {
     // @formatter:on
   }
 
+  def createType(dcType: DcType.Value): Elem = {
+    <dcterms:type xsi:type="dcterms:DCMIType">{dcType.toString}</dcterms:type>
+  }
+
   def createFormat(format: String)(implicit settings: Settings): Elem = {
     val xml = elem("dc:format")(format)
 
@@ -255,7 +259,7 @@ object AddDatasetMetadataToDeposit {
     <ddm:dcmiMetadata>
       {metadata.alternatives.map(elem("dcterms:alternative"))}
       {metadata.publishers.map(elem("dcterms:publisher"))}
-      {metadata.types.map(elem("dcterms:type"))}
+      {metadata.types.map(createType)}
       {metadata.formats.map(createFormat)}
       {metadata.identifiers.map(elem("dc:identifier"))}
       {metadata.sources.map(elem("dc:source"))}

@@ -232,7 +232,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     Try { Metadata.curried }
       .map(_ (extractList(rows, "DCT_ALTERNATIVE")))
       .map(_ (extractList(rows, "DC_PUBLISHER")))
-      .map(_ (extractList(rows, "DC_TYPE")))
+      .combine(extractList(rows)(dcType).map(_ defaultIfEmpty DcType.DATASET))
       .map(_ (extractList(rows, "DC_FORMAT")))
       .map(_ (extractList(rows, "DC_IDENTIFIER")))
       .map(_ (extractList(rows, "DC_SOURCE")))
@@ -342,6 +342,13 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       case (_, Some(init), _, Some(sur), _, _) => Some(Try { ContributorPerson(titles, init, insertions, sur, organization, dai) })
       case (_, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")))
     }
+  }
+
+  def dcType(rowNum: => Int)(row: DatasetRow): Option[Try[DcType.Value]] = {
+    row.find("DC_TYPE")
+      .map(t => DcType.valueOf(t)
+        .map(Success(_))
+        .getOrElse(Failure(ParseException(rowNum, s"Value '$t' is not a valid type"))))
   }
 
   /*

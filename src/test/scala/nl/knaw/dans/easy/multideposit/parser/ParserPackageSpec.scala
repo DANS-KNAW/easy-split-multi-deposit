@@ -27,6 +27,15 @@ class ParserPackageSpec extends UnitSpec {
     the [IllegalArgumentException] thrownBy listToNEL(List.empty) should have message "requirement failed: the list can't be empty"
   }
 
+  "defaultIfEmpty" should "return the original list if it isn't empty" in {
+    val list = (1 to 4).toList
+    list.defaultIfEmpty(-1) shouldBe list
+  }
+
+  it should "return a list with the default value if the input list is empty" in {
+    List.empty.defaultIfEmpty(-1) shouldBe List(-1)
+  }
+
   "find" should "return the value corresponding to the key in the row" in {
     val row = Map("foo" -> "abc", "bar" -> "def")
     row.find("foo").value shouldBe "abc"
