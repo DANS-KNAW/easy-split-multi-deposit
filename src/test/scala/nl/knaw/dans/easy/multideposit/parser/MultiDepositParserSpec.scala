@@ -26,14 +26,14 @@ import org.scalamock.scalatest.MockFactory
 import scala.util.{ Failure, Success }
 
 trait LanguageBehavior { this: UnitSpec =>
-  def validLanguageTag(parser: MultiDepositParser, lang: String): Unit = {
+  def validLanguage3Tag(parser: MultiDepositParser, lang: String): Unit = {
     it should "succeed when the language tag is valid" in {
       val row = Map("taal" -> lang)
       parser.iso639_2Language("taal")(2)(row).value should matchPattern { case Success(`lang`) => }
     }
   }
 
-  def invalidLanguageTag(parser: MultiDepositParser, lang: String): Unit = {
+  def invalidLanguage3Tag(parser: MultiDepositParser, lang: String): Unit = {
     it should "fail when the language tag is invalid" in {
       val row = Map("taal" -> lang)
       val errorMsg = s"Value '$lang' is not a valid value for taal"
@@ -867,23 +867,39 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
     }
   }
 
-  "iso639Language (with normal 3-letter tag)" should behave like validLanguageTag(parser, "eng")
+  "iso639_1Language" should "return true if the tag matches an ISO 639-1 language" in {
+    isValidISO639_1Language("en") shouldBe true
+  }
 
-  "iso639Language (with terminology tag)" should behave like validLanguageTag(parser, "nld")
+  it should "return false if the tag is too long" in {
+    isValidISO639_1Language("eng") shouldBe false
+  }
 
-  "iso639Language (with bibliographic tag)" should behave like validLanguageTag(parser, "dut")
+  it should "return false if the tag is too short" in {
+    isValidISO639_1Language("e") shouldBe false
+  }
 
-  "iso639Language (with a random tag)" should behave like invalidLanguageTag(parser, "abc")
+  it should "return false if the tag does not match a Locale" in {
+    isValidISO639_1Language("ac") shouldBe false
+  }
 
-  "iso639Language (with some obscure language tag no one has ever heard about)" should behave like validLanguageTag(parser, "day")
+  "iso639_2Language (with normal 3-letter tag)" should behave like validLanguage3Tag(parser, "eng")
 
-  "iso639Language (with a 2-letter tag)" should behave like invalidLanguageTag(parser, "nl")
+  "iso639_2Language (with terminology tag)" should behave like validLanguage3Tag(parser, "nld")
 
-  "iso639Language (with a too short tag)" should behave like invalidLanguageTag(parser, "a")
+  "iso639_2Language (with bibliographic tag)" should behave like validLanguage3Tag(parser, "dut")
 
-  "iso639Language (with a too long tag)" should behave like invalidLanguageTag(parser, "abcdef")
+  "iso639_2Language (with a random tag)" should behave like invalidLanguage3Tag(parser, "abc")
 
-  "iso639Language (with encoding tag)" should behave like invalidLanguageTag(parser, "encoding=UTF-8")
+  "iso639_2Language (with some obscure language tag no one has ever heard about)" should behave like validLanguage3Tag(parser, "day")
+
+  "iso639_2Language (with a 2-letter tag)" should behave like invalidLanguage3Tag(parser, "nl")
+
+  "iso639_2Language (with a too short tag)" should behave like invalidLanguage3Tag(parser, "a")
+
+  "iso639_2Language (with a too long tag)" should behave like invalidLanguage3Tag(parser, "abcdef")
+
+  "iso639_2Language (with encoding tag)" should behave like invalidLanguage3Tag(parser, "encoding=UTF-8")
 
   "creator" should "return None if none of the fields are defined" in {
     val row = Map(
@@ -1478,13 +1494,13 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
   it should "fail if the value for AV_FILE represents a path that does not exist" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur2.mpg",
+      "AV_FILE" -> "ruimtereis01/path/to/file/that/does/not/exist.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
       "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur2.mpg").getAbsoluteFile
+    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.mpg").getAbsoluteFile
     inside(avFile(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
         msg shouldBe s"AV_FILE file '$file' does not exist"
@@ -1493,13 +1509,13 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
   it should "fail if the value for AV_FILE represents a path that does not exist when AV_SUBTITLES is not defined" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur2.mpg",
+      "AV_FILE" -> "ruimtereis01/path/to/file/that/does/not/exist.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur2.mpg").getAbsoluteFile
+    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.mpg").getAbsoluteFile
     inside(avFile(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
         msg shouldBe s"AV_FILE file '$file' does not exist"
@@ -1510,14 +1526,27 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
     val row = Map(
       "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
-      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur2.srt",
+      "AV_SUBTITLES" -> "ruimtereis01/path/to/file/that/does/not/exist.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur2.srt").getAbsoluteFile
+    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.srt").getAbsoluteFile
     inside(avFile(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
         msg shouldBe s"AV_SUBTITLES file '$file' does not exist"
+    }
+  }
+
+  it should "fail if the value for AV_SUBTITLES_LANGUAGE does not represent an ISO 639-1 language value" in {
+    val row = Map(
+      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
+      "AV_SUBTITLES_LANGUAGE" -> "ac"
+    )
+
+    avFile(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "AV_SUBTITLES_LANGUAGE 'ac' doesn't have a valid ISO 639-1 language value", _)) =>
     }
   }
 

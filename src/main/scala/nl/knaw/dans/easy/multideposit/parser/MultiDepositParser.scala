@@ -295,6 +295,13 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
         })
   }
 
+  def isValidISO639_1Language(lang: String): Boolean = {
+    val b0: Boolean = lang.length == 2
+    val b1: Boolean = new Locale(lang).getDisplayLanguage.toLowerCase != lang.toLowerCase
+
+    b0 && b1
+  }
+
   private lazy val iso639_2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
 
   def iso639_2Language(columnName: MultiDepositKey)(rowNum: => Int)(row: DatasetRow): Option[Try[String]] = {
@@ -467,9 +474,10 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, title, subtitle, subtitleLang) match {
-      case (Some(p), t, Some(sub), subLang) if p.exists() && sub.exists() => Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
+      case (Some(p), t, Some(sub), subLang) if p.exists() && sub.exists() && subLang.forall(isValidISO639_1Language) => Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
       case (Some(p), _, Some(_), _) if !p.exists() => Some(Failure(ParseException(rowNum, s"AV_FILE file '$p' does not exist")))
       case (Some(_), _, Some(sub), _) if !sub.exists() => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES file '$sub' does not exist")))
+      case (Some(_), _, Some(_), subLang) if subLang.exists(!isValidISO639_1Language(_)) => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '${subLang.get}' doesn't have a valid ISO 639-1 language value")))
       case (Some(_), _, None, Some(subLang)) => Some(Failure(ParseException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
       case (Some(p), t, None, None) if p.exists() => Some(Success((p, t, None)))
       case (Some(p), _, None, None) => Some(Failure(ParseException(rowNum, s"AV_FILE file '$p' does not exist")))
