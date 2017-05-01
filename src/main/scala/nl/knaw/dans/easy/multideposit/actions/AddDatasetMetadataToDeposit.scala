@@ -251,7 +251,7 @@ object AddDatasetMetadataToDeposit {
   }
 
   def createLanguage(lang: String): Elem = {
-    <dc:language xsi:type='dcterms:ISO639-2'>{lang}</dc:language>
+    <dc:language xsi:type="dcterms:ISO639-2">{lang}</dc:language>
   }
 
   def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty)(implicit settings: Settings): Elem = {
