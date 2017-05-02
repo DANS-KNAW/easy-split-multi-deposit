@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,7 +37,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   val datasetID = "ds1"
 
   def mockLdapForDepositor(b: Boolean): Unit = {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(b))
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Success(Seq(b))
   }
 
   before {
@@ -56,23 +56,23 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     mockLdapForDepositor(false)
 
     inside(AddPropertiesToDeposit(testDataset1.copy(depositorId = "dp1")).checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include ("depositor 'dp1' is not an active user")
+      case Failure(ActionException(_, message, _)) => message should include("depositor 'dp1' is not an active user")
     }
   }
 
   it should "fail if ldap does not return anything for the depositor" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq.empty)
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Success(Seq.empty)
 
     inside(AddPropertiesToDeposit(testDataset1.copy(depositorId = "dp1")).checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include ("DepositorID 'dp1' is unknown")
+      case Failure(ActionException(_, message, _)) => message should include("DepositorID 'dp1' is unknown")
     }
   }
 
   it should "fail if ldap returns multiple values" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects ("dp1", *) returning Success(Seq(true, true))
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Success(Seq(true, true))
 
     inside(AddPropertiesToDeposit(testDataset1.copy(depositorId = "dp1")).checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include ("multiple users with id 'dp1'")
+      case Failure(ActionException(_, message, _)) => message should include("multiple users with id 'dp1'")
     }
   }
 
@@ -85,7 +85,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     props.read() should {
       include("state.label") and
         include("state.description") and
-        include(s"depositor.userId=${testDataset1.depositorId}") and
+        include(s"depositor.userId=${ testDataset1.depositorId }") and
         include("datamanager.email=dm@test.org") and
         include("datamanager.userId=dm") and
         not include "springfield.domain" and

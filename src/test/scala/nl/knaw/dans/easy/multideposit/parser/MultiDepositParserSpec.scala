@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -53,6 +53,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
     multidepositDir = new File(testDir, "md").getAbsoluteFile
   )
   private val parser = new MultiDepositParser
+
   import parser._
 
   "read" should "parse the input csv file into a list of headers and a table of data" in {
@@ -68,11 +69,11 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc","def","ghi","jkl"),
-      List("3", "mno","pqr","stu","vwx"),
-      List("4", "yzy","xwv","uts","rqp"),
-      List("5", "onm","lkj","ihg","fed"),
-      List("6", "cba","abc","def","ghi")
+      List("2", "abc", "def", "ghi", "jkl"),
+      List("3", "mno", "pqr", "stu", "vwx"),
+      List("4", "yzy", "xwv", "uts", "rqp"),
+      List("5", "onm", "lkj", "ihg", "fed"),
+      List("6", "cba", "abc", "def", "ghi")
     )
 
     read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
@@ -92,11 +93,11 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "a  bc","def","ghi","jkl"),
-      List("3", "mno","pq\nr","stu","vwx"),
-      List("4", "yzy","xwv","uts","rqp"),
-      List("5", "onm","lkj","ihg","fed"),
-      List("6", "cba","abc","def","ghi")
+      List("2", "a  bc", "def", "ghi", "jkl"),
+      List("3", "mno", "pq\nr", "stu", "vwx"),
+      List("4", "yzy", "xwv", "uts", "rqp"),
+      List("5", "onm", "lkj", "ihg", "fed"),
+      List("6", "cba", "abc", "def", "ghi")
     )
 
     read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
@@ -115,11 +116,11 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc","def","","jkl"),
-      List("3", "mno","","stu","vwx"),
-      List("4", "yzy","xwv","uts","rqp"),
-      List("5", "onm","lkj","","fed"),
-      List("6", "cba","abc","def","ghi")
+      List("2", "abc", "def", "", "jkl"),
+      List("3", "mno", "", "stu", "vwx"),
+      List("4", "yzy", "xwv", "uts", "rqp"),
+      List("5", "onm", "lkj", "", "fed"),
+      List("6", "cba", "abc", "def", "ghi")
     )
 
     read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
@@ -138,11 +139,11 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc","def","ghi","jkl"),
-      List("3", "mno","","stu","vwx"),
-      List("4", "","xwv","uts","rqp"),
-      List("5", "onm","lkj","","fed"),
-      List("6", "cba","abc","def","ghi")
+      List("2", "abc", "def", "ghi", "jkl"),
+      List("3", "mno", "", "stu", "vwx"),
+      List("4", "", "xwv", "uts", "rqp"),
+      List("5", "onm", "lkj", "", "fed"),
+      List("6", "cba", "abc", "def", "ghi")
     )
 
     read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
@@ -161,10 +162,10 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc","def","ghi","jkl"),
-      List("3", "mno","pqr","stu","vwx"),
-      List("5", "onm","lkj","ihg","fed"),
-      List("6", "cba","abc","def","ghi")
+      List("2", "abc", "def", "ghi", "jkl"),
+      List("3", "mno", "pqr", "stu", "vwx"),
+      List("5", "onm", "lkj", "ihg", "fed"),
+      List("6", "cba", "abc", "def", "ghi")
     )
 
     read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
@@ -202,7 +203,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
     inside(read(file)) {
       case Failure(ParseException(0, msg, _)) =>
-        msg should include ("unknown headers: [foo]")
+        msg should include("unknown headers: [foo]")
     }
   }
 
@@ -219,7 +220,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
     inside(read(file)) {
       case Failure(ParseException(0, msg, _)) =>
-        msg should include ("duplicate headers: [DEPOSITOR_ID]")
+        msg should include("duplicate headers: [DEPOSITOR_ID]")
     }
   }
 
@@ -232,15 +233,15 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
         datasets should have size 3
         val dataset2 :: dataset1 :: dataset3 :: Nil = datasets.toList
 
-        dataset1 should have (
+        dataset1 should have(
           'datasetId ("ruimtereis01"),
           'row (2)
         )
-        dataset2 should have (
+        dataset2 should have(
           'datasetId ("ruimtereis02"),
           'row (5)
         )
-        dataset3 should have (
+        dataset3 should have(
           'datasetId ("ruimtereis03"),
           'row (10)
         )
@@ -274,13 +275,13 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
   it should "throw a NoSuchElementException when ROW is not a header in the dataset" in {
     val row = Map("TEST" -> "abc")
 
-    the [NoSuchElementException] thrownBy getRowNum(row) should have message "key not found: ROW"
+    the[NoSuchElementException] thrownBy getRowNum(row) should have message "key not found: ROW"
   }
 
   it should "throw a NumberFormatException when the value for ROW cannot be converted to an integer" in {
     val row = Map("ROW" -> "def", "TEST" -> "abc")
 
-    the [NumberFormatException] thrownBy getRowNum(row) should have message "For input string: \"def\""
+    the[NumberFormatException] thrownBy getRowNum(row) should have message "For input string: \"def\""
   }
 
   "extractNEL curried" should "for each row run the given function and collect the results" in {
@@ -325,7 +326,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
       Map("ROW" -> "3", "FOO" -> "ghi", "BAR" -> "jkl")
     )
 
-    the [NoSuchElementException] thrownBy extractNEL(rows)(i => _ => Some(Success(i))) should
+    the[NoSuchElementException] thrownBy extractNEL(rows)(i => _ => Some(Success(i))) should
       have message "key not found: ROW"
   }
 
@@ -412,7 +413,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
       Map("ROW" -> "3", "FOO" -> "ghi", "BAR" -> "jkl")
     )
 
-    the [NoSuchElementException] thrownBy extractList(rows)(i => _ => Some(Success(i))) should
+    the[NoSuchElementException] thrownBy extractList(rows)(i => _ => Some(Success(i))) should
       have message "key not found: ROW"
   }
 
@@ -422,7 +423,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
       Map("FOO" -> "ghi", "BAR" -> "jkl")
     )
 
-    extractList(rows, "FOO") should contain inOrderOnly ("abc", "ghi")
+    extractList(rows, "FOO") should contain inOrderOnly("abc", "ghi")
   }
 
   it should "filter out the blank values" in {
@@ -443,7 +444,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
   }
 
   it should "succeed when the input contains multiple equal value" in {
-    atMostOne(2, List("FOO"))(List.fill(5)("abc")) should matchPattern { case Success(Some("abc")) =>}
+    atMostOne(2, List("FOO"))(List.fill(5)("abc")) should matchPattern { case Success(Some("abc")) => }
   }
 
   it should "fail when the input contains more than one distinct value and one columnName is given" in {
@@ -511,7 +512,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
   it should "throw an IllegalArgumentException if no columns were missing" in {
     val row = Map("a" -> "1", "b" -> "2", "c" -> "3")
 
-    the [IllegalArgumentException] thrownBy missingRequired(2, row, Set("a", "b", "c")) should have message "requirement failed: the list of missing elements is supposed to be non-empty"
+    the[IllegalArgumentException] thrownBy missingRequired(2, row, Set("a", "b", "c")) should have message "requirement failed: the list of missing elements is supposed to be non-empty"
   }
 
   private lazy val datasetCSV @ datasetCSVRow1 :: datasetCSVRow2 :: datasetCSVRow3 :: Nil = List(
@@ -539,7 +540,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
     // terribly wrong!
     val rows = datasetCSVRow1 :: (datasetCSVRow2 - "ROW") :: datasetCSVRow3 :: Nil
 
-    the [NoSuchElementException] thrownBy extractDataset("test", rows) should have message "key not found: ROW"
+    the[NoSuchElementException] thrownBy extractDataset("test", rows) should have message "key not found: ROW"
   }
 
   it should "fail if there are multiple distinct depositorIDs" in {
@@ -619,9 +620,9 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
       case Failure(CompositeException(es)) =>
         val e1 :: e2 :: e3 :: Nil = es.toList
 
-        e1.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_CREATED'")
-        e2.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_AVAILABLE'")
-        e3.getMessage should include ("Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'")
+        e1.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_CREATED'")
+        e2.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_AVAILABLE'")
+        e3.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'")
     }
   }
 
@@ -631,8 +632,8 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
     inside(extractProfile(rows, 2)) {
       case Failure(ParseException(2, msg, _)) =>
         msg should {
-          include ("DDM_AUDIENCE should be D37000 (Archaeology)") and
-            include ("contains: [D30000]")
+          include("DDM_AUDIENCE should be D37000 (Archaeology)") and
+            include("contains: [D30000]")
         }
     }
   }
@@ -805,7 +806,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
   it should "fail if there is more than one file accessright" in {
     val rows = audioVideoCSVRow1 ::
-      audioVideoCSVRow2.updated("SF_ACCESSIBILITY", "KNOWN")::
+      audioVideoCSVRow2.updated("SF_ACCESSIBILITY", "KNOWN") ::
       audioVideoCSVRow3 :: Nil
 
     extractAudioVideo(rows, 2) should matchPattern {
@@ -1436,7 +1437,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
     )
 
     springfield(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: SF_USER",_)) =>
+      case Failure(ParseException(2, "Missing value for: SF_USER", _)) =>
     }
   }
 
@@ -1448,7 +1449,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
     )
 
     springfield(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: SF_COLLECTION",_)) =>
+      case Failure(ParseException(2, "Missing value for: SF_COLLECTION", _)) =>
     }
   }
 
@@ -1614,7 +1615,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
     inside(avFile(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
-        msg should include ("No value is defined for AV_FILE")
+        msg should include("No value is defined for AV_FILE")
     }
   }
 

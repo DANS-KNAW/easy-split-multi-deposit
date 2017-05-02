@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -66,9 +66,10 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
         s"${ invalidHeaders.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
         s"consult the documentation for the list of valid headers."))
-    else if (headers.size != uniqueHeaders.size)
+    else if (headers.size != uniqueHeaders.size) {
       Failure(ParseException(0, "SIP Instructions file contains duplicate headers: " +
         s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
+    }
     else
       Success(())
   }
@@ -92,7 +93,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
           }
           .map {
             case ParseException(row, msg, _) => s" - row $row: $msg"
-            case e => s" - unexpected: ${e.getMessage}"
+            case e => s" - unexpected: ${ e.getMessage }"
           }
           .mkString("\n") +
         footer.toOption.fold("")("\n" + _)
@@ -108,18 +109,18 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
 
   def parse(file: File): Try[Seq[Dataset]] = {
     logger.info(s"Parsing $file")
-    
+
     val datasets = for {
       (headers, content) <- read(file)
       datasetIdIndex = headers.indexOf("DATASET")
-      _ <- detectEmptyDatasetCells(content.map(_(datasetIdIndex)))
+      _ <- detectEmptyDatasetCells(content.map(_ (datasetIdIndex)))
       result <- content.groupBy(_ (datasetIdIndex))
         .mapValues(_.map(headers.zip(_).filterNot { case (_, value) => value.isBlank }.toMap))
         .map((extractDataset _).tupled)
         .toSeq
         .collectResults
     } yield result
-    
+
     datasets.recoverWith { case NonFatal(e) => recoverParsing(e) }
   }
 
@@ -188,7 +189,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     val missingColumns = required.diff(row.keySet)
     val missing = blankRequired.toSet ++ missingColumns
     require(missing.nonEmpty, "the list of missing elements is supposed to be non-empty")
-    Failure(ParseException(rowNum, s"Missing value(s) for: ${missing.mkString("[", ", ", "]")}"))
+    Failure(ParseException(rowNum, s"Missing value(s) for: ${ missing.mkString("[", ", ", "]") }"))
   }
 
   def extractDataset(datasetId: DatasetId, rows: DatasetRows): Try[Dataset] = {
@@ -268,7 +269,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
               val fileTitle = instrPerFile.collect { case (_, Some(title), _) => title } match {
                 case Seq() => Success(None)
                 case Seq(title) => Success(Some(title))
-                case Seq(_, _@_*) => Failure(ParseException(rowNum, s"The column 'AV_FILE_TITLE' " +
+                case Seq(_, _ @ _*) => Failure(ParseException(rowNum, s"The column 'AV_FILE_TITLE' " +
                   s"can only have one value for file '$file'"))
               }
               val subtitles = instrPerFile.collect { case (_, _, Some(instr)) => instr }

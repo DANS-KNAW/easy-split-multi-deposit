@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,7 +41,6 @@ object AddDatasetMetadataToDeposit {
   }
 
   def datasetToXml(dataset: Dataset)(implicit settings: Settings): Elem = {
-    // @formatter:off
     <ddm:DDM
       xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -58,11 +57,9 @@ object AddDatasetMetadataToDeposit {
       {createProfile(dataset.profile)}
       {createMetadata(dataset.metadata, dataset.audioVideo.springfield)}
     </ddm:DDM>
-    // @formatter:on
   }
 
   def createProfile(profile: Profile): Elem = {
-    // @formatter:off
     <ddm:profile>
       {profile.titles.map(elem("dc:title"))}
       {profile.descriptions.map(elem("dcterms:description"))}
@@ -72,7 +69,6 @@ object AddDatasetMetadataToDeposit {
       {profile.audiences.map(elem("ddm:audience"))}
       {elem("ddm:accessRights")(profile.accessright.toString)}
     </ddm:profile>
-    // @formatter:on
   }
 
   def date(dateTime: DateTime): String = {
@@ -80,54 +76,44 @@ object AddDatasetMetadataToDeposit {
   }
 
   private def createOrganisation(org: String): Elem = {
-    // @formatter:off
     <dcx-dai:organization>
       <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>
     </dcx-dai:organization>
-    // @formatter:on
   }
 
   def createCreator(creator: Creator): Elem = {
     creator match {
       case CreatorOrganization(org) =>
-        // @formatter:off
         <dcx-dai:creatorDetails>{createOrganisation(org)}</dcx-dai:creatorDetails>
-        // @formatter:on
       case CreatorPerson(titles, initials, insertions, surname, organization, dai) =>
-        // @formatter:off
         <dcx-dai:creatorDetails>
           <dcx-dai:author>{
             titles.map(ts => <dcx-dai:titles>{ts}</dcx-dai:titles>) ++
-            <dcx-dai:initials>{initials}</dcx-dai:initials> ++
-            insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
-            <dcx-dai:surname>{surname}</dcx-dai:surname> ++
-            dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
-            organization.map(createOrganisation)
+              <dcx-dai:initials>{initials}</dcx-dai:initials> ++
+              insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
+              <dcx-dai:surname>{surname}</dcx-dai:surname> ++
+              dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
+              organization.map(createOrganisation)
           }</dcx-dai:author>
         </dcx-dai:creatorDetails>
-        // @formatter:on
     }
   }
 
   def createContributor(contributor: Contributor): Elem = {
     contributor match {
       case ContributorOrganization(org) =>
-        // @formatter:off
         <dcx-dai:contributorDetails>{createOrganisation(org)}</dcx-dai:contributorDetails>
-        // @formatter:on
       case ContributorPerson(titles, initials, insertions, surname, organization, dai) =>
-        // @formatter:off
         <dcx-dai:contributorDetails>
           <dcx-dai:author>{
             titles.map(ts => <dcx-dai:titles>{ts}</dcx-dai:titles>) ++
-            <dcx-dai:initials>{initials}</dcx-dai:initials> ++
-            insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
-            <dcx-dai:surname>{surname}</dcx-dai:surname> ++
-            dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
-            organization.map(createOrganisation)
+              <dcx-dai:initials>{initials}</dcx-dai:initials> ++
+              insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
+              <dcx-dai:surname>{surname}</dcx-dai:surname> ++
+              dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
+              organization.map(createOrganisation)
           }</dcx-dai:author>
         </dcx-dai:contributorDetails>
-        // @formatter:on
     }
   }
 
@@ -142,9 +128,9 @@ object AddDatasetMetadataToDeposit {
     val srsName = point.scheme.map(createSrsName).getOrElse("")
 
     // coordinate order x, y = longitude (DCX_SPATIAL_X), latitude (DCX_SPATIAL_Y)
-    lazy val xy = s"${point.x} ${point.y}"
+    lazy val xy = s"${ point.x } ${ point.y }"
     // coordinate order y, x = latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
-    lazy val yx = s"${point.y} ${point.x}"
+    lazy val yx = s"${ point.y } ${ point.x }"
 
     val pos = srsName match {
       case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
@@ -152,13 +138,11 @@ object AddDatasetMetadataToDeposit {
       case _ => yx
     }
 
-    // @formatter:off
     <dcx-gml:spatial srsName={srsName}>
       <Point xmlns="http://www.opengis.net/gml">
         <pos>{pos}</pos>
       </Point>
     </dcx-gml:spatial>
-    // @formatter:on
   }
 
   /*
@@ -192,7 +176,6 @@ object AddDatasetMetadataToDeposit {
       case _ => yx
     }
 
-    // @formatter:off
     <dcx-gml:spatial>
       <boundedBy xmlns="http://www.opengis.net/gml">
         <Envelope srsName={srsName}>
@@ -201,23 +184,18 @@ object AddDatasetMetadataToDeposit {
         </Envelope>
       </boundedBy>
     </dcx-gml:spatial>
-    // @formatter:on
   }
 
   def createTemporal(temporal: Temporal): Elem = {
-    // @formatter:off
     temporal.scheme
       .map(scheme => <dcterms:temporal xsi:type={scheme}>{temporal.temporal}</dcterms:temporal>)
       .getOrElse(<dcterms:temporal>{temporal.temporal}</dcterms:temporal>)
-    // @formatter:on
   }
 
   def createSubject(subject: Subject): Elem = {
-    // @formatter:off
     subject.scheme
       .map(scheme => <dc:subject xsi:type={scheme}>{subject.subject}</dc:subject>)
       .getOrElse(<dc:subject>{subject.subject}</dc:subject>)
-    // @formatter:on
   }
 
   def createRelation(relation: Relation): Elem = {
@@ -230,11 +208,9 @@ object AddDatasetMetadataToDeposit {
   }
 
   def createSurrogateRelation(springfield: Springfield): Elem = {
-    // @formatter:off
     <ddm:relation scheme="STREAMING_SURROGATE_RELATION">{
-      s"/domain/${springfield.domain}/user/${springfield.user}/collection/${springfield.collection}/presentation/$$sdo-id"
+      s"/domain/${ springfield.domain }/user/${ springfield.user }/collection/${ springfield.collection }/presentation/$$sdo-id"
     }</ddm:relation>
-    // @formatter:on
   }
 
   def createType(dcType: DcType.Value): Elem = {
@@ -255,7 +231,6 @@ object AddDatasetMetadataToDeposit {
   }
 
   def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty)(implicit settings: Settings): Elem = {
-    // @formatter:off
     <ddm:dcmiMetadata>
       {metadata.alternatives.map(elem("dcterms:alternative"))}
       {metadata.publishers.map(elem("dcterms:publisher"))}
@@ -273,12 +248,9 @@ object AddDatasetMetadataToDeposit {
       {metadata.spatialBoxes.map(createSpatialBox)}
       {metadata.temporal.map(createTemporal)}
     </ddm:dcmiMetadata>
-    // @formatter:on
   }
 
   def elem(key: String)(value: String): Elem = {
-    // @formatter:off
-    <key>{value}</key>.copy(label=key)
-    // @formatter:on
+    <key>{value}</key>.copy(label = key)
   }
 }
