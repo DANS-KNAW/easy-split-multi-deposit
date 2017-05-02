@@ -113,11 +113,11 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     new File(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.srt").toURI)
       .copyFile(new File(settings.multidepositDir, s"$datasetID/reisverslag/centaur.srt"))
   }
-  
+
   "execute" should "write the metadata to a file at the correct place" in {
     val file = stagingDatasetMetadataFile(datasetID)
 
-    file should not (exist)
+    file should not(exist)
 
     AddDatasetMetadataToDeposit(dataset).execute shouldBe a[Success[_]]
 

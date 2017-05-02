@@ -42,15 +42,15 @@ case class MoveDepositToOutputDir(row: Int, datasetId: DatasetId)(implicit setti
       case e =>
         Try { outputDir.exists() } match {
           case Success(true) => Failure(ActionException(row, "An error occurred while moving " +
-            s"$stagingDirectory to $outputDir: ${e.getMessage}. The move is probably only partially " +
+            s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move is probably only partially " +
             s"done since the output directory does exist. This move is, however, NOT revertable! " +
             s"Please contact your application manager ASAP!", e))
           case Success(false) => Failure(ActionException(row, "An error occurred while moving " +
-            s"$stagingDirectory to $outputDir: ${e.getMessage}. The move did not take place, since " +
+            s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move did not take place, since " +
             s"the output directory does not yet exist.", e))
           case Failure(e2) => Failure(ActionException(row, "An error occurred both while moving " +
-            s"$stagingDirectory to $outputDir: ${e.getMessage} and while checking whether the " +
-            s"output directory actually exists now: ${e2.getMessage}. Please contact your " +
+            s"$stagingDirectory to $outputDir: ${ e.getMessage } and while checking whether the " +
+            s"output directory actually exists now: ${ e2.getMessage }. Please contact your " +
             s"application manager ASAP!", CompositeException(List(e, e2))))
         }
     }

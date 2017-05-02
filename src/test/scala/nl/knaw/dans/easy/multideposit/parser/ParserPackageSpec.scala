@@ -24,7 +24,7 @@ class ParserPackageSpec extends UnitSpec {
   }
 
   it should "fail when the input list is empty" in {
-    the [IllegalArgumentException] thrownBy listToNEL(List.empty) should have message "requirement failed: the list can't be empty"
+    the[IllegalArgumentException] thrownBy listToNEL(List.empty) should have message "requirement failed: the list can't be empty"
   }
 
   "find" should "return the value corresponding to the key in the row" in {

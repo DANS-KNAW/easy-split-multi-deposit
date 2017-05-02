@@ -42,7 +42,7 @@ case class AddBagToDeposit(dataset: Dataset)(implicit settings: Settings) extend
 
   override def execute(): Try[Unit] = {
     createBag(dataset.datasetId, dataset).recoverWith {
-      case NonFatal(e) => Failure(ActionException(dataset.row, s"Error occured in creating the bag for ${dataset.datasetId}: ${ e.getMessage }", e))
+      case NonFatal(e) => Failure(ActionException(dataset.row, s"Error occured in creating the bag for ${ dataset.datasetId }: ${ e.getMessage }", e))
     }
   }
 }

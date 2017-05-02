@@ -25,14 +25,19 @@ import scala.util.control.NonFatal
 /*
   To future developers: this class is a Category. It should satisfy the law of composition.
  */
-trait Action[-A, +T] extends DebugEnhancedLogging { self =>
+trait Action[-A, +T] extends DebugEnhancedLogging {
+  self =>
 
   protected[Action] def logPreconditions(): Unit = {}
+
   protected[Action] def logExecute(): Unit = {}
+
   protected[Action] def logRollback(): Unit = {}
 
   protected[Action] def innerCheckPreconditions: Try[Unit] = Try(logPreconditions()).flatMap(_ => checkPreconditions)
+
   protected[Action] def innerExecute(a: A): Try[T] = Try(logExecute()).flatMap(_ => execute(a))
+
   protected[Action] def innerRollback(): Try[Unit] = Try(logRollback()).flatMap(_ => rollback())
 
   /**
@@ -120,7 +125,7 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
         case ActionException(-1, msg, _) :: xs => report(xs, s" - cmd line: $msg" :: rpt)
         case ActionException(row, msg, _) :: xs => report(xs, s" - row $row: $msg" :: rpt)
         case CompositeException(ths) :: xs => report(ths.toList ::: xs, rpt)
-        case NonFatal(ex) :: xs => report(xs, s" - unexpected error: ${ex.getMessage}" :: rpt)
+        case NonFatal(ex) :: xs => report(xs, s" - unexpected error: ${ ex.getMessage }" :: rpt)
       }
     }
 
@@ -158,7 +163,9 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
     }
 
     override def innerCheckPreconditions: Try[Unit] = checkPreconditions
+
     override def innerExecute(a: A): Try[S] = execute(a)
+
     override def innerRollback(): Try[Unit] = rollback()
 
     override protected def checkPreconditions: Try[Unit] = {
@@ -174,7 +181,8 @@ trait Action[-A, +T] extends DebugEnhancedLogging { self =>
     }
 
     override protected def rollback(): Try[Unit] = {
-      (if (pastSelf) List(other, self) else List(self))
+      (if (pastSelf) List(other, self)
+       else List(self))
         .map(_.innerRollback())
         .collectResults
         .map(_ => ())
@@ -211,12 +219,15 @@ object Action {
                   action: A => Try[T],
                   undo: () => Try[Unit] = () => Success(())): Action[A, T] = new Action[A, T] {
     override protected def checkPreconditions: Try[Unit] = precondition()
+
     override protected def execute(a: A): Try[T] = action(a)
+
     override protected def rollback(): Try[Unit] = undo()
   }
 }
 
 trait UnitAction[+T] extends Action[Unit, T] {
   protected def execute(u: Unit): Try[T] = execute()
+
   protected def execute(): Try[T]
 }

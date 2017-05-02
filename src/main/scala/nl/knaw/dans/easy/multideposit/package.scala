@@ -80,7 +80,10 @@ package object multideposit {
      *
      * @return an `Option` of the input string that indicates whether it is blank
      */
-    def toOption: Option[String] = if (s.isBlank) Option.empty else Option(s)
+    def toOption: Option[String] = {
+      if (s.isBlank) Option.empty
+      else Option(s)
+    }
 
     /**
      * Converts a `String` into an `Option[Int]` if it is not blank
@@ -113,7 +116,7 @@ package object multideposit {
 
     def ifSuccess(f: T => Unit): Try[T] = {
       t match {
-        case success@Success(x) => Try {
+        case success @ Success(x) => Try {
           f(x)
           return success
         }
@@ -123,7 +126,7 @@ package object multideposit {
 
     def ifFailure(f: PartialFunction[Throwable, Unit]): Try[T] = {
       t match {
-        case failure@Failure(e) if f.isDefinedAt(e) => Try {
+        case failure @ Failure(e) if f.isDefinedAt(e) => Try {
           f(e)
           return failure
         }
@@ -156,7 +159,7 @@ package object multideposit {
     /**
      * Writes the xml to a `File` and prepends a simple xml header: `<?xml version="1.0" encoding="UTF-8"?>`
      *
-     * @param elem the xml to be written
+     * @param elem     the xml to be written
      * @param encoding the encoding applied to this xml
      */
     @throws[IOException]("in case of an I/O error")
@@ -287,8 +290,9 @@ package object multideposit {
   val propsFileName = "deposit.properties"
 
   private def datasetDir(datasetId: DatasetId)(implicit settings: Settings): String = {
-    s"${settings.multidepositDir.getName}-$datasetId"
+    s"${ settings.multidepositDir.getName }-$datasetId"
   }
+
   def multiDepositInstructionsFile(baseDir: File): File = {
     new File(baseDir, instructionsFileName)
   }
@@ -297,38 +301,47 @@ package object multideposit {
   def multiDepositDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(settings.multidepositDir, datasetId)
   }
+
   // mdDir/instructions.csv
   def multiDepositInstructionsFile(implicit settings: Settings): File = {
     multiDepositInstructionsFile(settings.multidepositDir)
   }
+
   // stagingDir/mdDir-datasetId/
   def stagingDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(settings.stagingDir, datasetDir(datasetId))
   }
+
   // stagingDir/mdDir-datasetId/bag/
   def stagingBagDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingDir(datasetId), bagDirName)
   }
+
   // stagingDir/mdDir-datasetId/bag/data/
   def stagingBagDataDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingBagDir(datasetId), dataDirName)
   }
+
   // stagingDir/mdDir-datasetId/bag/metadata/
   def stagingBagMetadataDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingBagDir(datasetId), metadataDirName)
   }
+
   // stagingDir/mdDir-datasetId/deposit.properties
   def stagingPropertiesFile(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingDir(datasetId), propsFileName)
   }
+
   // stagingDir/mdDir-datasetId/bag/metadata/dataset.xml
   def stagingDatasetMetadataFile(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingBagMetadataDir(datasetId), datasetMetadataFileName)
   }
+
   // stagingDir/mdDir-datasetId/bag/metadata/files.xml
   def stagingFileMetadataFile(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(stagingBagMetadataDir(datasetId), fileMetadataFileName)
   }
+
   // outputDepositDir/mdDir-datasetId/
   def outputDepositDir(datasetId: DatasetId)(implicit settings: Settings): File = {
     new File(settings.outputDepositDir, datasetDir(datasetId))

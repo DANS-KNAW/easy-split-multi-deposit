@@ -143,9 +143,9 @@ object AddDatasetMetadataToDeposit {
     val srsName = point.scheme.map(createSrsName).getOrElse("")
 
     // coordinate order x, y = longitude (DCX_SPATIAL_X), latitude (DCX_SPATIAL_Y)
-    lazy val xy = s"${point.x} ${point.y}"
+    lazy val xy = s"${ point.x } ${ point.y }"
     // coordinate order y, x = latitude (DCX_SPATIAL_Y), longitude (DCX_SPATIAL_X)
-    lazy val yx = s"${point.y} ${point.x}"
+    lazy val yx = s"${ point.y } ${ point.x }"
 
     val pos = srsName match {
       case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
