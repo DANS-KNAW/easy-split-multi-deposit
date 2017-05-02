@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -113,7 +113,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
   it should "create an empty list of file metadata if the dataset directory corresponding with the datasetId does not exist and therefore succeed" in {
     val datasetID = "ruimtereis03"
     val dataset = testDataset2.copy(datasetId = datasetID)
-    multiDepositDir(datasetID) should not (exist)
+    multiDepositDir(datasetID) should not(exist)
     AddFileMetadataToDeposit(dataset).checkPreconditions shouldBe a[Success[_]]
   }
 
@@ -248,7 +248,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
 
   it should "fail if the file does not exist" in {
     inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-does-not-exist.doc"))) {
-      case Failure(e: FileNotFoundException) => e.getMessage should include ("mimetypes/file-does-not-exist.doc")
+      case Failure(e: FileNotFoundException) => e.getMessage should include("mimetypes/file-does-not-exist.doc")
     }
   }
 

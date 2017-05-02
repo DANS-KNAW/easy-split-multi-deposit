@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -60,7 +60,7 @@ object Main extends DebugEnhancedLogging {
         .combine(retrieveDatamanagerAction)
         .combine(AddPropertiesToDeposit(dataset))
         .combine(SetDepositPermissions(dataset.row, dataset.datasetId))
-        .withLogMessages(s"Checking preconditions for ${dataset.datasetId}", s"Executing ${dataset.datasetId}", s"Rolling back ${dataset.datasetId}")
+        .withLogMessages(s"Checking preconditions for ${ dataset.datasetId }", s"Executing ${ dataset.datasetId }", s"Rolling back ${ dataset.datasetId }")
     }).reduceOption(_ combine _)
     val moveActions = datasets.map(dataset => MoveDepositToOutputDir(dataset.row, dataset.datasetId): Action[Unit, Unit]).reduceOption(_ combine _)
 

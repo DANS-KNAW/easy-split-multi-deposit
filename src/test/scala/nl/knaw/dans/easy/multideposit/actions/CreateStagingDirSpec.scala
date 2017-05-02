@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -64,7 +64,7 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter {
 
     // creation of directories
     inside(CreateStagingDir(1, datasetID).checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include (s"The deposit for dataset $datasetID already exists")
+      case Failure(ActionException(_, message, _)) => message should include(s"The deposit for dataset $datasetID already exists")
     }
   }
 

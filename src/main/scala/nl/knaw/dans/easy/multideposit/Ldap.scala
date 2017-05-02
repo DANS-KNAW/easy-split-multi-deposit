@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,7 +28,7 @@ trait Ldap extends AutoCloseable {
    * into an instance of type `T` using the function `f`.
    *
    * @param userId the identifier related to the user
-   * @param f function that transforms an `Attributes` object to an instance of type `T`
+   * @param f      function that transforms an `Attributes` object to an instance of type `T`
    * @tparam T the result type of the transformer function
    * @return `Success` if the query succeeds, `Failure` otherwise
    */

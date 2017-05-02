@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,7 +47,7 @@ class ActionSpec extends UnitSpec {
     inside(action.run(())) {
       case Success(x) => x shouldBe 42
     }
-    action.visited shouldBe (true, true, false)
+    action.visited shouldBe(true, true, false)
   }
 
   it should "fail if the precondition fails" in {
@@ -62,7 +62,7 @@ class ActionSpec extends UnitSpec {
           | - row 1: pre
           |Due to these errors in the preconditions, nothing was done.""".stripMargin
     }
-    action.visited shouldBe (true, false, false)
+    action.visited shouldBe(true, false, false)
   }
 
   it should "fail if the execute fails" in {
@@ -77,7 +77,7 @@ class ActionSpec extends UnitSpec {
           | - row 1: exe
           |The actions that were already performed, were rolled back.""".stripMargin
     }
-    action.visited shouldBe (true, true, true)
+    action.visited shouldBe(true, true, true)
   }
 
   it should "succeed if the precondition and execute succeed but the rollback fails (never called)" in {
@@ -89,7 +89,7 @@ class ActionSpec extends UnitSpec {
     inside(action.run(())) {
       case Success(x) => x shouldBe 42
     }
-    action.visited shouldBe (true, true, false)
+    action.visited shouldBe(true, true, false)
   }
 
   it should "fail if both the execute and rollback fail" in {
@@ -105,7 +105,7 @@ class ActionSpec extends UnitSpec {
           | - row 1: undo
           |The actions that were already performed, were rolled back.""".stripMargin
     }
-    action.visited shouldBe (true, true, true)
+    action.visited shouldBe(true, true, true)
   }
 
   "combine" should "succeed if everything succeeds" in {
@@ -123,9 +123,9 @@ class ActionSpec extends UnitSpec {
       rollback = Success(()))
 
     m1.combine(m2).combine(m3).run(()) shouldBe a[Success[_]]
-    m1.visited shouldBe (true, true, false)
-    m2.visited shouldBe (true, true, false)
-    m3.visited shouldBe (true, true, false)
+    m1.visited shouldBe(true, true, false)
+    m2.visited shouldBe(true, true, false)
+    m3.visited shouldBe(true, true, false)
   }
 
   it should "fail when the first precondition fails" in {
@@ -148,9 +148,9 @@ class ActionSpec extends UnitSpec {
           | - row 1: pre
           |Due to these errors in the preconditions, nothing was done.""".stripMargin
     }
-    m1.visited shouldBe (true, false, false)
-    m2.visited shouldBe (true, false, false)
-    m3.visited shouldBe (true, false, false)
+    m1.visited shouldBe(true, false, false)
+    m2.visited shouldBe(true, false, false)
+    m3.visited shouldBe(true, false, false)
   }
 
   it should "fail when the second precondition fails" in {
@@ -173,9 +173,9 @@ class ActionSpec extends UnitSpec {
           | - row 2: pre
           |Due to these errors in the preconditions, nothing was done.""".stripMargin
     }
-    m1.visited shouldBe (true, false, false)
-    m2.visited shouldBe (true, false, false)
-    m3.visited shouldBe (true, false, false)
+    m1.visited shouldBe(true, false, false)
+    m2.visited shouldBe(true, false, false)
+    m3.visited shouldBe(true, false, false)
   }
 
   it should "fail when multiple preconditions fail" in {
@@ -199,9 +199,9 @@ class ActionSpec extends UnitSpec {
           | - row 2: pre
           |Due to these errors in the preconditions, nothing was done.""".stripMargin
     }
-    m1.visited shouldBe (true, false, false)
-    m2.visited shouldBe (true, false, false)
-    m3.visited shouldBe (true, false, false)
+    m1.visited shouldBe(true, false, false)
+    m2.visited shouldBe(true, false, false)
+    m3.visited shouldBe(true, false, false)
   }
 
   it should "fail when the preconditions succeed, but the first run fails" in {
@@ -224,9 +224,9 @@ class ActionSpec extends UnitSpec {
           | - row 1: exe
           |The actions that were already performed, were rolled back.""".stripMargin
     }
-    m1.visited shouldBe (true, true, true)
-    m2.visited shouldBe (true, false, false)
-    m3.visited shouldBe (true, false, false)
+    m1.visited shouldBe(true, true, true)
+    m2.visited shouldBe(true, false, false)
+    m3.visited shouldBe(true, false, false)
   }
 
   it should "fail when the preconditions succeed, but the second run fails" in {
@@ -249,9 +249,9 @@ class ActionSpec extends UnitSpec {
           | - row 2: exe
           |The actions that were already performed, were rolled back.""".stripMargin
     }
-    m1.visited shouldBe (true, true, true)
-    m2.visited shouldBe (true, true, true)
-    m3.visited shouldBe (true, false, false)
+    m1.visited shouldBe(true, true, true)
+    m2.visited shouldBe(true, true, true)
+    m3.visited shouldBe(true, false, false)
   }
 
   it should "fail when the preconditions succeed, but both the second run and rollback fail, as well as the first rollback" in {
@@ -276,8 +276,8 @@ class ActionSpec extends UnitSpec {
           | - row 1: undo
           |The actions that were already performed, were rolled back.""".stripMargin
     }
-    m1.visited shouldBe (true, true, true)
-    m2.visited shouldBe (true, true, true)
-    m3.visited shouldBe (true, false, false)
+    m1.visited shouldBe(true, true, true)
+    m2.visited shouldBe(true, true, true)
+    m3.visited shouldBe(true, false, false)
   }
 }
