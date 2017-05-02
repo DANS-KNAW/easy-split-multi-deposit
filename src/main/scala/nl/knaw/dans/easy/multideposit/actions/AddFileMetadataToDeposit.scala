@@ -120,9 +120,7 @@ case class AddFileMetadataToDeposit(dataset: Dataset)(implicit settings: Setting
     fileMetadata.map(fileXmls(_) match {
       case Nil => <files xmlns:dcterms="http://purl.org/dc/terms/"/>
       case files =>
-        // @formatter:off
         <files xmlns:dcterms="http://purl.org/dc/terms/">{files}</files>
-        // @formatter:on
     })
   }
 
@@ -134,33 +132,27 @@ case class AddFileMetadataToDeposit(dataset: Dataset)(implicit settings: Setting
   }
 
   private def fileXml(fmd: FileMetadata): Elem = {
-    // @formatter:off
-    <file filepath={s"data/${formatFilePath(fmd.filepath)}"}>
+    <file filepath={s"data/${ formatFilePath(fmd.filepath) }"}>
       <dcterms:format>{fmd.mimeType}</dcterms:format>
     </file>
-    // @formatter:on
   }
 
   private def avFileXml(fmd: AVFileMetadata): Elem = {
-    // @formatter:off
-    <file filepath={s"data/${formatFilePath(fmd.filepath)}"}>
+    <file filepath={s"data/${ formatFilePath(fmd.filepath) }"}>
       <dcterms:type>{fmd.vocabulary.vocabulary}</dcterms:type>
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       <dcterms:title>{fmd.title}</dcterms:title>
       <dcterms:accessRights>{fmd.accessibleTo}</dcterms:accessRights>
       {fmd.subtitles.map(subtitleXml)}
     </file>
-    // @formatter:on
   }
 
   private def subtitleXml(subtitle: Subtitles): Elem = {
     val filepath = formatFilePath(subtitle.file)
 
-    // @formatter:off
     subtitle.language
       .map(lang => <dcterms:relation xml:lang={lang}>{s"data/$filepath"}</dcterms:relation>)
       .getOrElse(<dcterms:relation>{s"data/$filepath"}</dcterms:relation>)
-    // @formatter:on
   }
 
   private def formatFilePath(file: File): File = {
