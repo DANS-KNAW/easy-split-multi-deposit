@@ -19,6 +19,7 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <ddm:accessRights>GROUP_ACCESS</ddm:accessRights>
   </ddm:profile>
   <ddm:dcmiMetadata>
+    <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
     <dcterms:rightsHolder>unknown person</dcterms:rightsHolder>
     <dc:subject>empty space</dc:subject>
   </ddm:dcmiMetadata>

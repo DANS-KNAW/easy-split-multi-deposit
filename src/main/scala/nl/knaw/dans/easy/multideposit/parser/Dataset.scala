@@ -37,7 +37,7 @@ case class Profile(titles: NonEmptyList[String],
 
 case class Metadata(alternatives: List[String] = List.empty,
                     publishers: List[String] = List.empty,
-                    types: List[String] = List.empty,
+                    types: NonEmptyList[DcType.Value] = List(DcType.DATASET),
                     formats: List[String] = List.empty,
                     identifiers: List[Identifier] = List.empty,
                     sources: List[String] = List.empty,
