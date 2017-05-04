@@ -29,10 +29,12 @@ import scala.xml.{ Elem, Node, Utility }
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
-  implicit val settings = Settings(
+  implicit val settings = new Settings(
     multidepositDir = new File(testDir, "md"),
     stagingDir = new File(testDir, "sd")
-  )
+  ) {
+    override val formats: Set[String] = Set("text/xml")
+  }
 
   val datasetID = "ds1"
   val dataset: Dataset = Dataset(
@@ -53,7 +55,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     ),
     metadata = Metadata(
       alternatives = List("foobar"),
-      types = List("random test data")
+      publishers = List("random publisher")
     )
   )
 
@@ -102,7 +104,8 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     </ddm:profile>
     <ddm:dcmiMetadata>
       <dcterms:alternative>foobar</dcterms:alternative>
-      <dcterms:type>random test data</dcterms:type>
+      <dcterms:publisher>random publisher</dcterms:publisher>
+      <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
     </ddm:dcmiMetadata>
   </ddm:DDM>
 
@@ -129,9 +132,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   it should "return xml on reading from the allfields input instructions csv" in {
-    implicit val s2 = settings.copy(multidepositDir = new File(getClass.getResource("/allfields/input").toURI))
+    implicit val s2: Settings = settings.copy(multidepositDir = new File(getClass.getResource("/allfields/input").toURI))
     val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
-    inside(new MultiDepositParser()(s2).parse(csv).map(_.map(datasetToXml))) {
+    inside(new MultiDepositParser()(s2).parse(csv).map(_.map(datasetToXml(_)(s2)))) {
       case Success(xmls) => xmls should have size 3
     }
   }
@@ -140,11 +143,11 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     val metadata = Metadata(
       alternatives = List("alt1", "alt2"),
       publishers = List("pub1"),
-      types = List("type1", "type2"),
-      formats = List("text"),
+      types = List(DcType.INTERACTIVERESOURCE, DcType.SOFTWARE),
+      formats = List("arbitrary format", "text/xml"),
       identifiers = List("ds1"),
       sources = List("src", "test"),
-      languages = List("Scala", "Haskell"),
+      languages = List("eng", "nld"),
       spatials = List("sp1"),
       rightsholder = List("rh1"),
       relations = List(
@@ -179,14 +182,15 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         <dcterms:alternative>alt1</dcterms:alternative>
         <dcterms:alternative>alt2</dcterms:alternative>
         <dcterms:publisher>pub1</dcterms:publisher>
-        <dcterms:type>type1</dcterms:type>
-        <dcterms:type>type2</dcterms:type>
-        <dc:format>text</dc:format>
+        <dcterms:type xsi:type="dcterms:DCMIType">InteractiveResource</dcterms:type>
+        <dcterms:type xsi:type="dcterms:DCMIType">Software</dcterms:type>
+        <dc:format>arbitrary format</dc:format>
+        <dc:format xsi:type="dcterms:IMT">text/xml</dc:format>
         <dc:identifier>ds1</dc:identifier>
         <dc:source>src</dc:source>
         <dc:source>test</dc:source>
-        <dc:language>Scala</dc:language>
-        <dc:language>Haskell</dc:language>
+        <dc:language xsi:type='dcterms:ISO639-2'>eng</dc:language>
+        <dc:language xsi:type='dcterms:ISO639-2'>nld</dc:language>
         <dcterms:spatial>sp1</dcterms:spatial>
         <dcterms:rightsHolder>rh1</dcterms:rightsHolder>
         <dcterms:q1>l1</dcterms:q1>

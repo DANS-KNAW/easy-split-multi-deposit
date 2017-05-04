@@ -25,14 +25,14 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dcterms:alternative>Gewoon een stukje steen in de ruimte?</dcterms:alternative>
     <dcterms:publisher>dans</dcterms:publisher>
     <dcterms:publisher>knaw</dcterms:publisher>
-    <dcterms:type>random test data</dcterms:type>
-    <dc:format>video/mpeg</dc:format>
-    <dc:format>text/plain</dc:format>
+    <dcterms:type xsi:type="dcterms:DCMIType">Text</dcterms:type>
+    <dc:format xsi:type="dcterms:IMT">video/mpeg1</dc:format>
+    <dc:format xsi:type="dcterms:IMT">text/plain</dc:format>
     <dc:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dc:format>
     <dc:identifier>ds1</dc:identifier>
     <dc:source>whatever</dc:source>
-    <dc:language>NL</dc:language>
-    <dc:language>encoding=UTF-8</dc:language>
+    <dc:language xsi:type="dcterms:ISO639-2">nld</dc:language>
+    <dc:language xsi:type="dcterms:ISO639-2">eng</dc:language>
     <dcterms:spatial>here</dcterms:spatial>
     <dcterms:spatial>there</dcterms:spatial>
     <dcterms:rightsHolder>jan</dcterms:rightsHolder>

@@ -16,9 +16,10 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import java.io.File
+import java.util.Locale
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit.{ ParseException, EmptyInstructionsFileException, Headers, ParserFailedException, Settings, StringExtensions, encoding }
+import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
@@ -232,11 +233,11 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     Try { Metadata.curried }
       .map(_ (extractList(rows, "DCT_ALTERNATIVE")))
       .map(_ (extractList(rows, "DC_PUBLISHER")))
-      .map(_ (extractList(rows, "DC_TYPE")))
+      .combine(extractList(rows)(dcType).map(_ defaultIfEmpty DcType.DATASET))
       .map(_ (extractList(rows, "DC_FORMAT")))
       .map(_ (extractList(rows, "DC_IDENTIFIER")))
       .map(_ (extractList(rows, "DC_SOURCE")))
-      .map(_ (extractList(rows, "DC_LANGUAGE")))
+      .combine(extractList(rows)(iso639_2Language("DC_LANGUAGE")))
       .map(_ (extractList(rows, "DCT_SPATIAL")))
       .map(_ (extractList(rows, "DCT_RIGHTSHOLDER")))
       .combine(extractList(rows)(relation))
@@ -295,6 +296,30 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
         })
   }
 
+  def isValidISO639_1Language(lang: String): Boolean = {
+    val b0: Boolean = lang.length == 2
+    val b1: Boolean = new Locale(lang).getDisplayLanguage.toLowerCase != lang.toLowerCase
+
+    b0 && b1
+  }
+
+  private lazy val iso639_2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
+
+  def iso639_2Language(columnName: MultiDepositKey)(rowNum: => Int)(row: DatasetRow): Option[Try[String]] = {
+    row.find(columnName)
+      .map(lang => {
+        // Most ISO 639-2/T languages are contained in the iso639_2Languages Set.
+        // However, some of them are not and need to be checked using the second predicate.
+        // The latter also allows to check ISO 639-2/B language codes.
+        lazy val b0 = lang.length == 3
+        lazy val b1 = iso639_2Languages.contains(lang)
+        lazy val b2 = new Locale(lang).getDisplayLanguage.toLowerCase != lang.toLowerCase
+
+        if (b0 && (b1 || b2)) Success(lang)
+        else Failure(ParseException(rowNum, s"Value '$lang' is not a valid value for $columnName"))
+      })
+  }
+
   def creator(rowNum: => Int)(row: DatasetRow): Option[Try[Creator]] = {
     val titles = row.find("DCX_CREATOR_TITLES")
     val initials = row.find("DCX_CREATOR_INITIALS")
@@ -327,6 +352,27 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     }
   }
 
+  def dcType(rowNum: => Int)(row: DatasetRow): Option[Try[DcType.Value]] = {
+    row.find("DC_TYPE")
+      .map(t => DcType.valueOf(t)
+        .map(Success(_))
+        .getOrElse(Failure(ParseException(rowNum, s"Value '$t' is not a valid type"))))
+  }
+
+  /*
+    qualifier   link   title   valid
+        1        1       1       0
+        1        1       0       1
+        1        0       1       1
+        1        0       0       0
+        0        1       1       0
+        0        1       0       1
+        0        0       1       1
+        0        0       0       1
+
+    observation: if the qualifier is present, either DCX_RELATION_LINK or DCX_RELATION_TITLE must be defined
+                 if the qualifier is not defined, DCX_RELATION_LINK and DCX_RELATION_TITLE must not both be defined
+   */
   def relation(rowNum: => Int)(row: DatasetRow): Option[Try[Relation]] = {
     val qualifier = row.find("DCX_RELATION_QUALIFIER")
     val link = row.find("DCX_RELATION_LINK")
@@ -429,9 +475,10 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, title, subtitle, subtitleLang) match {
-      case (Some(p), t, Some(sub), subLang) if p.exists() && sub.exists() => Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
+      case (Some(p), t, Some(sub), subLang) if p.exists() && sub.exists() && subLang.forall(isValidISO639_1Language) => Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
       case (Some(p), _, Some(_), _) if !p.exists() => Some(Failure(ParseException(rowNum, s"AV_FILE file '$p' does not exist")))
       case (Some(_), _, Some(sub), _) if !sub.exists() => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES file '$sub' does not exist")))
+      case (Some(_), _, Some(_), subLang) if subLang.exists(!isValidISO639_1Language(_)) => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '${subLang.get}' doesn't have a valid ISO 639-1 language value")))
       case (Some(_), _, None, Some(subLang)) => Some(Failure(ParseException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
       case (Some(p), t, None, None) if p.exists() => Some(Success((p, t, None)))
       case (Some(p), _, None, None) => Some(Failure(ParseException(rowNum, s"AV_FILE file '$p' does not exist")))

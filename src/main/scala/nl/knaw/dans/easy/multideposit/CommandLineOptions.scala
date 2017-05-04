@@ -43,6 +43,7 @@ object CommandLineOptions extends DebugEnhancedLogging {
       outputDepositDir = opts.outputDepositDir().getAbsoluteFile,
       datamanager = opts.datamanager(),
       depositPermissions = DepositPermissions(props.getString("deposit.permissions.access"), props.getString("deposit.permissions.group")),
+      formatsFile = new File(homeDir, "cfg/formats.txt"),
       ldap = {
         val env = new java.util.Hashtable[String, String]
         env.put(Context.PROVIDER_URL, props.getString("auth.ldap.url"))

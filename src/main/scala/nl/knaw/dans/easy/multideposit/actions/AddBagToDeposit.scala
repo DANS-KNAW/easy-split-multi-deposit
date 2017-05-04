@@ -65,16 +65,12 @@ object AddBagToDeposit {
     fsw.write(bag, outputBagDir)
 
     val algorithm = Algorithm.SHA1
-    val defaultCompleter = {
-      val dc = new DefaultCompleter(bagFactory)
-      dc.setCompleteTagManifests(false)
-      dc.setPayloadManifestAlgorithm(algorithm)
-      dc
+    val defaultCompleter = new DefaultCompleter(bagFactory) {
+      setCompleteTagManifests(false)
+      setPayloadManifestAlgorithm(algorithm)
     }
-    val tagManifestCompleter = {
-      val tm = new TagManifestCompleter(bagFactory)
-      tm.setTagManifestAlgorithm(algorithm)
-      tm
+    val tagManifestCompleter = new TagManifestCompleter(bagFactory) {
+      setTagManifestAlgorithm(algorithm)
     }
     val completer = new ChainingCompleter(
       defaultCompleter,
