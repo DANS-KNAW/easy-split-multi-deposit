@@ -39,7 +39,7 @@ case class Metadata(alternatives: List[String] = List.empty,
                     publishers: List[String] = List.empty,
                     types: NonEmptyList[DcType.Value] = List(DcType.DATASET),
                     formats: List[String] = List.empty,
-                    identifiers: List[String] = List.empty,
+                    identifiers: List[Identifier] = List.empty,
                     sources: List[String] = List.empty,
                     languages: List[String] = List.empty,
                     spatials: List[String] = List.empty,
@@ -72,6 +72,8 @@ case class ContributorPerson(titles: Option[String] = Option.empty,
                              surname: String,
                              organization: Option[String] = Option.empty,
                              dai: Option[String] = Option.empty) extends Contributor
+
+case class Identifier(id: String, idType: Option[IdentifierType.Value] = Option.empty)
 
 sealed abstract class Relation
 case class QualifiedLinkRelation(qualifier: String, link: String) extends Relation

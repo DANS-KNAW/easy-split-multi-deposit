@@ -235,7 +235,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       .map(_ (extractList(rows, "DC_PUBLISHER")))
       .combine(extractList(rows)(dcType).map(_ defaultIfEmpty DcType.DATASET))
       .map(_ (extractList(rows, "DC_FORMAT")))
-      .map(_ (extractList(rows, "DC_IDENTIFIER")))
+      .combine(extractList(rows)(identifier))
       .map(_ (extractList(rows, "DC_SOURCE")))
       .combine(extractList(rows)(iso639_2Language("DC_LANGUAGE")))
       .map(_ (extractList(rows, "DCT_SPATIAL")))
@@ -349,6 +349,29 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
       case (None, None, None, None, Some(org), None) => Some(Try { ContributorOrganization(org) })
       case (_, Some(init), _, Some(sur), _, _) => Some(Try { ContributorPerson(titles, init, insertions, sur, organization, dai) })
       case (_, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")))
+    }
+  }
+
+  // TODO hebben de identifier types nog een speciaal format?
+  // TODO pas AddDatasetMetadataToDeposit aan
+  // TODO test dit
+  // TODO pas de output van beide examples aan
+  def identifier(rowNum: => Int)(row: DatasetRow): Option[Try[Identifier]] = {
+    val identifier = row.find("DC_IDENTIFIER")
+    val identifierType = row.find("DC_IDENTIFIER_TYPE")
+
+    (identifier, identifierType) match {
+      case (Some(id), idt) => Some {
+        idt.map(s => {
+          val triedIdentifierType = IdentifierType.valueOf(s)
+            .map(v => Success(Option(v)))
+            .getOrElse(Failure(ParseException(rowNum, s"Value '$s' is not a valid identifier type")))
+
+          Try { Identifier.curried }.map(_ (id)).combine(triedIdentifierType)
+        }).getOrElse(Try { Identifier(id) })
+      }
+      case (None, Some(_)) => Some(missingRequired(rowNum, row, Set("DC_IDENTIFIER")))
+      case (None, None) => None
     }
   }
 

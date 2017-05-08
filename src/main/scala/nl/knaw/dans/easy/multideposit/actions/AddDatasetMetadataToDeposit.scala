@@ -53,6 +53,7 @@ object AddDatasetMetadataToDeposit {
       xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/"
       xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/"
       xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/"
+      xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/"
       xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
       {createProfile(dataset.profile)}
       {createMetadata(dataset.metadata, dataset.audioVideo.springfield)}
@@ -213,6 +214,12 @@ object AddDatasetMetadataToDeposit {
     }</ddm:relation>
   }
 
+  def createIdentifier(identifier: Identifier): Elem = {
+    identifier.idType
+      .map(idType => <dc:identifier xsi:type={s"id-type:$idType"}>{identifier.id}</dc:identifier>)
+      .getOrElse(<dc:identifier>{identifier.id}</dc:identifier>)
+  }
+
   def createType(dcType: DcType.Value): Elem = {
     <dcterms:type xsi:type="dcterms:DCMIType">{dcType.toString}</dcterms:type>
   }
@@ -236,7 +243,7 @@ object AddDatasetMetadataToDeposit {
       {metadata.publishers.map(elem("dcterms:publisher"))}
       {metadata.types.map(createType)}
       {metadata.formats.map(createFormat)}
-      {metadata.identifiers.map(elem("dc:identifier"))}
+      {metadata.identifiers.map(createIdentifier)}
       {metadata.sources.map(elem("dc:source"))}
       {metadata.languages.map(createLanguage)}
       {metadata.spatials.map(elem("dcterms:spatial"))}

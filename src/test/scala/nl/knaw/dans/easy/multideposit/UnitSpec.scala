@@ -94,7 +94,7 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
         subjects = List(Subject("subject 1", Option("abr:ABRcomplex")), Subject("subject 2"), Subject("subject 3")),
         publishers = List("publisher 1"),
         types = List(DcType.STILLIMAGE),
-        identifiers = List("id1234")
+        identifiers = List(Identifier("id1234"))
       )
     )
   }

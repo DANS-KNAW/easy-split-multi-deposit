@@ -116,6 +116,7 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory {
           " - row 2: DDM_CREATED value 'invalid-date' does not represent a date",
           " - row 2: Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [user001, invalid-user]",
           " - row 3: No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined",
+          " - row 3: Missing value(s) for: [DC_IDENTIFIER]",
           " - row 3: DDM_AVAILABLE value 'invalid-date' does not represent a date",
           "Due to these errors in the 'instructions.csv', nothing was done."
         )
