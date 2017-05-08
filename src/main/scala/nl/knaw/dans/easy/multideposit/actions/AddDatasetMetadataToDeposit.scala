@@ -213,6 +213,12 @@ object AddDatasetMetadataToDeposit {
     }</ddm:relation>
   }
 
+  def createIdentifier(identifier: Identifier): Elem = {
+    identifier.idType
+      .map(idType => <dc:identifier xsi:type={s"id-type:$idType"}>{identifier.id}</dc:identifier>)
+      .getOrElse(<dc:identifier>{identifier.id}</dc:identifier>)
+  }
+
   def createType(dcType: DcType.Value): Elem = {
     <dcterms:type xsi:type="dcterms:DCMIType">{dcType.toString}</dcterms:type>
   }
@@ -236,7 +242,7 @@ object AddDatasetMetadataToDeposit {
       {metadata.publishers.map(elem("dcterms:publisher"))}
       {metadata.types.map(createType)}
       {metadata.formats.map(createFormat)}
-      {metadata.identifiers.map(elem("dc:identifier"))}
+      {metadata.identifiers.map(createIdentifier)}
       {metadata.sources.map(elem("dc:source"))}
       {metadata.languages.map(createLanguage)}
       {metadata.spatials.map(elem("dcterms:spatial"))}

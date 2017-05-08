@@ -55,7 +55,8 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     ),
     metadata = Metadata(
       alternatives = List("foobar"),
-      publishers = List("random publisher")
+      publishers = List("random publisher"),
+      identifiers = List(Identifier("123456", Some(IdentifierType.ISBN)), Identifier("id"))
     )
   )
 
@@ -106,6 +107,8 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       <dcterms:alternative>foobar</dcterms:alternative>
       <dcterms:publisher>random publisher</dcterms:publisher>
       <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
+      <dc:identifier xsi:type="id-type:ISBN">123456</dc:identifier>
+      <dc:identifier>id</dc:identifier>
     </ddm:dcmiMetadata>
   </ddm:DDM>
 
@@ -145,7 +148,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
       publishers = List("pub1"),
       types = List(DcType.INTERACTIVERESOURCE, DcType.SOFTWARE),
       formats = List("arbitrary format", "text/xml"),
-      identifiers = List("ds1"),
+      identifiers = List(Identifier("123456", Some(IdentifierType.ISBN)), Identifier("id")),
       sources = List("src", "test"),
       languages = List("eng", "nld"),
       spatials = List("sp1"),
@@ -186,7 +189,8 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         <dcterms:type xsi:type="dcterms:DCMIType">Software</dcterms:type>
         <dc:format>arbitrary format</dc:format>
         <dc:format xsi:type="dcterms:IMT">text/xml</dc:format>
-        <dc:identifier>ds1</dc:identifier>
+        <dc:identifier xsi:type="id-type:ISBN">123456</dc:identifier>
+        <dc:identifier>id</dc:identifier>
         <dc:source>src</dc:source>
         <dc:source>test</dc:source>
         <dc:language xsi:type='dcterms:ISO639-2'>eng</dc:language>

@@ -352,9 +352,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
     }
   }
 
-  // TODO meld de DC_IDENTIFIER_TYPE aan in de Headers
-  // TODO voeg de DC_IDENTIFIER_TYPE column toe aan beide examples (input)
-  // TODO test deze methode
+  // TODO hebben de identifier types nog een speciaal format?
   // TODO pas AddDatasetMetadataToDeposit aan
   // TODO test dit
   // TODO pas de output van beide examples aan
@@ -367,7 +365,7 @@ class MultiDepositParser(implicit settings: Settings) extends DebugEnhancedLoggi
         idt.map(s => {
           val triedIdentifierType = IdentifierType.valueOf(s)
             .map(v => Success(Option(v)))
-            .getOrElse(Failure(ParseException(rowNum, s"Value '$idt' is not a valid identifier type")))
+            .getOrElse(Failure(ParseException(rowNum, s"Value '$s' is not a valid identifier type")))
 
           Try { Identifier.curried }.map(_ (id)).combine(triedIdentifierType)
         }).getOrElse(Try { Identifier(id) })

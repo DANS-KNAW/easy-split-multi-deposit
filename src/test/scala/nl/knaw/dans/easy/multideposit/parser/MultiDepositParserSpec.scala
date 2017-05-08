@@ -644,7 +644,9 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
       "DC_PUBLISHER" -> "pub1",
       "DC_TYPE" -> "Collection",
       "DC_FORMAT" -> "format1",
-      "DC_IDENTIFIER" -> "id1",
+      // identifier
+      "DC_IDENTIFIER" -> "123456",
+      "DC_IDENTIFIER_TYPE" -> "ARCHIS_ZAAK_IDENTIFICATIE",
       "DC_SOURCE" -> "src1",
       "DC_LANGUAGE" -> "dut",
       "DCT_SPATIAL" -> "spat1",
@@ -671,7 +673,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
       "DC_PUBLISHER" -> "pub2",
       "DC_TYPE" -> "MovingImage",
       "DC_FORMAT" -> "format2",
-      "DC_IDENTIFIER" -> "id2",
+      "DC_IDENTIFIER" -> "id",
       "DC_SOURCE" -> "src2",
       "DC_LANGUAGE" -> "nld",
       "DCT_SPATIAL" -> "spat2",
@@ -690,7 +692,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
     publishers = List("pub1", "pub2"),
     types = List(DcType.COLLECTION, DcType.MOVINGIMAGE),
     formats = List("format1", "format2"),
-    identifiers = List("id1", "id2"),
+    identifiers = List(Identifier("123456", Some(IdentifierType.ARCHIS_ZAAK_IDENTIFICATIE)), Identifier("id")),
     sources = List("src1", "src2"),
     languages = List("dut", "nld"),
     spatials = List("spat1", "spat2"),
@@ -1101,6 +1103,50 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
 
     contributor(2)(row).value should matchPattern {
       case Failure(ParseException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME, DCX_CONTRIBUTOR_INITIALS]", _)) =>
+    }
+  }
+
+  "identifier" should "return None if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are not defined" in {
+    val row = Map(
+      "DC_IDENTIFIER" -> "",
+      "DC_IDENTIFIER_TYPE" -> ""
+    )
+    identifier(2)(row) shouldBe empty
+  }
+
+  it should "fail if DC_IDENTIFIER_TYPE is defined, but DC_IDENTIFIER is not" in {
+    val row = Map(
+      "DC_IDENTIFIER" -> "",
+      "DC_IDENTIFIER_TYPE" -> "ISSN"
+    )
+    identifier(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Missing value(s) for: [DC_IDENTIFIER]", _)) =>
+    }
+  }
+
+  it should "succeed if DC_IDENTIFIER is defined and DC_IDENTIFIER_TYPE is not" in {
+    val row = Map(
+      "DC_IDENTIFIER" -> "id",
+      "DC_IDENTIFIER_TYPE" -> ""
+    )
+    identifier(2)(row).value should matchPattern { case Success(Identifier("id", None)) => }
+  }
+
+  it should "succeed if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are defined and DC_IDENTIFIER_TYPE is valid" in {
+    val row = Map(
+      "DC_IDENTIFIER" -> "123456",
+      "DC_IDENTIFIER_TYPE" -> "ISSN"
+    )
+    identifier(2)(row).value should matchPattern { case Success(Identifier("123456", Some(IdentifierType.ISSN))) => }
+  }
+
+  it should "fail if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are defined, but DC_IDENTIFIER_TYPE is invalid" in {
+    val row = Map(
+      "DC_IDENTIFIER" -> "123456",
+      "DC_IDENTIFIER_TYPE" -> "INVALID_IDENTIFIER_TYPE"
+    )
+    identifier(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Value 'INVALID_IDENTIFIER_TYPE' is not a valid identifier type", _)) =>
     }
   }
 

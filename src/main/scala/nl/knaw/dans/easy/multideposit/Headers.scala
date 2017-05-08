@@ -49,6 +49,7 @@ object Headers {
     "DC_TYPE",
     "DC_FORMAT",
     "DC_IDENTIFIER",
+    "DC_IDENTIFIER_TYPE",
     "DC_SOURCE",
     "DC_LANGUAGE",
     "DCT_SPATIAL",
