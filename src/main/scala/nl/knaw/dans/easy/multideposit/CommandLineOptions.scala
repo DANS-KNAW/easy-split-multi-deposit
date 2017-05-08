@@ -28,11 +28,9 @@ object CommandLineOptions extends DebugEnhancedLogging {
   def parse(args: Array[String]): Settings = {
     debug("Loading application.properties ...")
     val homeDir = new File(System.getProperty("app.home"))
-    val props = {
-      val ps = new PropertiesConfiguration()
-      ps.setDelimiterParsingDisabled(true)
-      ps.load(new File(homeDir, "cfg/application.properties"))
-      ps
+    val props = new PropertiesConfiguration() {
+      setDelimiterParsingDisabled(true)
+      load(new File(homeDir, "cfg/application.properties"))
     }
     debug("Parsing command line ...")
     val opts = new ScallopCommandLine(props, args)
