@@ -646,7 +646,7 @@ class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBeha
       "DC_FORMAT" -> "format1",
       // identifier
       "DC_IDENTIFIER" -> "123456",
-      "DC_IDENTIFIER_TYPE" -> "ARCHIS_ZAAK_IDENTIFICATIE",
+      "DC_IDENTIFIER_TYPE" -> "ARCHIS-ZAAK-IDENTIFICATIE",
       "DC_SOURCE" -> "src1",
       "DC_LANGUAGE" -> "dut",
       "DCT_SPATIAL" -> "spat1",
