@@ -100,13 +100,14 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
   def extractDataset(datasetId: DatasetId, rows: DatasetRows): Try[Dataset] = {
     val rowNum = rows.map(getRowNum).min
 
-    Try { Dataset.curried }
-      .combine(checkValidChars(rowNum, "DATASET", datasetId))
-      .map(_ (rowNum))
-      .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
-      .combine(extractProfile(rows, rowNum))
-      .combine(extractMetadata(rows))
-      .combine(extractAudioVideo(rows, rowNum))
+    checkValidChars(rowNum, "DATASET", datasetId)
+      .flatMap(dsId => Try { Dataset.curried }
+        .map(_ (dsId))
+        .map(_ (rowNum))
+        .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
+        .combine(extractProfile(rows, rowNum))
+        .combine(extractMetadata(rows))
+        .combine(extractAudioVideo(rows, rowNum, datasetId)))
   }
 
   private def recoverParsing(t: Throwable): Failure[Nothing] = {

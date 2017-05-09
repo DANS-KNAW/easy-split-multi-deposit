@@ -26,13 +26,13 @@ import scala.util.{ Failure, Success }
 trait DatasetTestObjects extends AudioVideoTestObjects with MetadataTestObjects with ProfileTestObjects {
 
   lazy val datasetCSV @ datasetCSVRow1 :: datasetCSVRow2 :: datasetCSVRow3 :: Nil = List(
-    Map("ROW" -> "2", "DATASET" -> "test", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ metadataCSVRow1 ++ audioVideoCSVRow1,
-    Map("ROW" -> "3", "DATASET" -> "test") ++ profileCSVRow2 ++ metadataCSVRow2 ++ audioVideoCSVRow2,
-    Map("ROW" -> "4", "DATASET" -> "test") ++ audioVideoCSVRow3
+    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ metadataCSVRow1 ++ audioVideoCSVRow1,
+    Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ metadataCSVRow2 ++ audioVideoCSVRow2,
+    Map("ROW" -> "4", "DATASET" -> "ruimtereis01") ++ audioVideoCSVRow3
   )
 
   lazy val dataset = Dataset(
-    datasetId = "test",
+    datasetId = "ruimtereis01",
     row = 2,
     depositorId = "ikke",
     profile = profile,
@@ -266,7 +266,7 @@ class MultiDepositParserSpec extends UnitSpec with DatasetTestObjects {
   }
 
   "extractDataset" should "convert the csv input to the corresponding output" in {
-    extractDataset("test", datasetCSV) should matchPattern { case Success(`dataset`) => }
+    extractDataset("ruimtereis01", datasetCSV) should matchPattern { case Success(`dataset`) => }
   }
 
   it should "throw an exception if a row number is not found on each row" in {
@@ -275,13 +275,13 @@ class MultiDepositParserSpec extends UnitSpec with DatasetTestObjects {
     // terribly wrong!
     val rows = datasetCSVRow1 :: (datasetCSVRow2 - "ROW") :: datasetCSVRow3 :: Nil
 
-    the[NoSuchElementException] thrownBy extractDataset("test", rows) should have message "key not found: ROW"
+    the[NoSuchElementException] thrownBy extractDataset("ruimtereis01", rows) should have message "key not found: ROW"
   }
 
   it should "fail if there are multiple distinct depositorIDs" in {
     val rows = datasetCSVRow1 :: (datasetCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) :: datasetCSVRow3 :: Nil
 
-    extractDataset("test", rows) should matchPattern {
+    extractDataset("ruimtereis01", rows) should matchPattern {
       case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [ikke, ikke2]", _)) =>
     }
   }
@@ -289,11 +289,11 @@ class MultiDepositParserSpec extends UnitSpec with DatasetTestObjects {
   it should "succeed if there are multiple depositorIDs that are all equal" in {
     val rows = datasetCSVRow1 :: (datasetCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) :: datasetCSVRow3 :: Nil
 
-    extractDataset("test", rows) should matchPattern { case Success(`dataset`) => }
+    extractDataset("ruimtereis01", rows) should matchPattern { case Success(`dataset`) => }
   }
 
   it should "fail if the datasetID contains invalid characters" in {
-    extractDataset("test#", datasetCSV) should matchPattern {
+    extractDataset("ruimtereis01#", datasetCSV) should matchPattern {
       case Failure(ParseException(2, "The column 'DATASET' contains the following invalid characters: {#}", _)) =>
     }
   }

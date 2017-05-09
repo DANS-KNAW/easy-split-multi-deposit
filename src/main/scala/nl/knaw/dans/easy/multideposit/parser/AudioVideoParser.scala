@@ -19,6 +19,7 @@ import java.io.File
 
 import nl.knaw.dans.easy.multideposit.{ ParseException, Settings }
 import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.lib.error._
 
 import scala.util.{ Failure, Success, Try }
@@ -26,9 +27,9 @@ import scala.util.{ Failure, Success, Try }
 trait AudioVideoParser {
   this: ParserUtils =>
 
-  val settings: Settings
+  implicit val settings: Settings
 
-  def extractAudioVideo(rows: DatasetRows, rowNum: Int): Try[AudioVideo] = {
+  def extractAudioVideo(rows: DatasetRows, rowNum: Int, datasetId: DatasetId): Try[AudioVideo] = {
     Try {
       ((springf: Option[Springfield], acc: Option[FileAccessRights.Value], avFiles: Set[AVFile]) => {
         (springf, acc, avFiles) match {
@@ -42,7 +43,7 @@ trait AudioVideoParser {
         .flatMap(ss => atMostOne(rowNum, List("SF_DOMAIN", "SF_USER", "SF_COLLECTION"))(ss.map { case Springfield(d, u, c) => (d, u, c) }).map(_.map(Springfield.tupled))))
       .combine(extractList(rows)(fileAccessRight)
         .flatMap(atMostOne(rowNum, List("SF_ACCESSIBILITY"))))
-      .combine(extractList(rows)(avFile)
+      .combine(extractList(rows)(avFile(datasetId))
         .flatMap(_.groupBy { case (file, _, _) => file }
           .map {
             case (file, (instrPerFile: Seq[(File, Option[String], Option[Subtitles])])) =>
@@ -86,10 +87,10 @@ trait AudioVideoParser {
     }
   }
 
-  def avFile(rowNum: => Int)(row: DatasetRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
-    val file = row.find("AV_FILE").map(new File(settings.multidepositDir, _))
+  def avFile(datasetId: DatasetId)(rowNum: => Int)(row: DatasetRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
+    val file = row.find("AV_FILE").map(new File(multiDepositDir(datasetId), _))
     val title = row.find("AV_FILE_TITLE")
-    val subtitle = row.find("AV_SUBTITLES").map(new File(settings.multidepositDir, _))
+    val subtitle = row.find("AV_SUBTITLES").map(new File(multiDepositDir(datasetId), _))
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, title, subtitle, subtitleLang) match {
