@@ -2,10 +2,8 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import java.io.File
 
-import nl.knaw.dans.easy.multideposit.{ ParseException, Settings, UnitSpec }
-import org.scalamock.scalatest.MockFactory
-import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model.{ AVFile, AudioVideo, FileAccessRights, Springfield, Subtitles }
+import nl.knaw.dans.easy.multideposit.{ ParseException, Settings, UnitSpec, _ }
 import nl.knaw.dans.lib.error.CompositeException
 
 import scala.util.{ Failure, Success }
@@ -73,7 +71,7 @@ trait AudioVideoTestObjects {
   )
 }
 
-class AudioVideoParserSpec extends UnitSpec with MockFactory with LanguageBehavior with AudioVideoTestObjects { self =>
+class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
 
   override def beforeAll(): Unit = {
     super.beforeAll()

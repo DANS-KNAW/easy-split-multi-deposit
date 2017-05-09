@@ -1,13 +1,10 @@
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.io.File
-
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.easy.multideposit.{ ParseException, Settings, UnitSpec, _ }
+import nl.knaw.dans.easy.multideposit.{ ParseException, UnitSpec }
 import nl.knaw.dans.lib.error.CompositeException
 import org.joda.time.DateTime
-import org.scalamock.scalatest.MockFactory
 
 import scala.util.{ Failure, Success }
 
@@ -42,16 +39,8 @@ trait ProfileTestObjects {
   )
 }
 
-class ProfileParserSpec extends UnitSpec with MockFactory with LanguageBehavior with ProfileTestObjects {
+class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    new File(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
-  }
-
-  private implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md").getAbsoluteFile
-  )
   private val parser = new ProfileParser with ParserUtils {}
 
   import parser._

@@ -1,11 +1,7 @@
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.io.File
-
-import nl.knaw.dans.easy.multideposit.{ ParseException, Settings, UnitSpec }
-import org.scalamock.scalatest.MockFactory
-import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.easy.multideposit.{ ParseException, UnitSpec }
 
 import scala.util.{ Failure, Success }
 
@@ -79,16 +75,8 @@ trait MetadataTestObjects {
   )
 }
 
-class MetadataParserSpec extends UnitSpec with MockFactory with LanguageBehavior with MetadataTestObjects {
+class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    new File(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
-  }
-
-  private implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md").getAbsoluteFile
-  )
   private val parser = new MetadataParser with ParserUtils {}
 
   import parser._

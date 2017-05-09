@@ -20,7 +20,6 @@ import java.io.File
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.{ ParseException, _ }
 import nl.knaw.dans.lib.error.CompositeException
-import org.scalamock.scalatest.MockFactory
 
 import scala.util.{ Failure, Success }
 
@@ -42,7 +41,7 @@ trait DatasetTestObjects extends AudioVideoTestObjects with MetadataTestObjects 
   )
 }
 
-class MultiDepositParserSpec extends UnitSpec with MockFactory with LanguageBehavior with DatasetTestObjects {
+class MultiDepositParserSpec extends UnitSpec with DatasetTestObjects {
 
   override def beforeAll(): Unit = {
     super.beforeAll()
