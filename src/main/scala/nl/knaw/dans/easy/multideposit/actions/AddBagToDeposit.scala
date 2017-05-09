@@ -27,7 +27,7 @@ import gov.loc.repository.bagit.writer.impl.FileSystemWriter
 import gov.loc.repository.bagit.{ Bag, BagFactory }
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
-import nl.knaw.dans.easy.multideposit.model.{ Deposit, DatasetId }
+import nl.knaw.dans.easy.multideposit.model.{ Deposit, DepositId }
 import org.joda.time.format.ISODateTimeFormat
 
 import scala.collection.JavaConverters._
@@ -42,7 +42,7 @@ case class AddBagToDeposit(deposit: Deposit)(implicit settings: Settings) extend
 
   override def execute(): Try[Unit] = {
     createBag(deposit).recoverWith {
-      case NonFatal(e) => Failure(ActionException(deposit.row, s"Error occured in creating the bag for ${ deposit.datasetId }: ${ e.getMessage }", e))
+      case NonFatal(e) => Failure(ActionException(deposit.row, s"Error occured in creating the bag for ${ deposit.depositId }: ${ e.getMessage }", e))
     }
   }
 }
@@ -50,10 +50,10 @@ object AddBagToDeposit {
   // for examples see https://github.com/LibraryOfCongress/bagit-java/issues/18
   //              and http://www.mpcdf.mpg.de/services/data/annotate/downloads -> TacoHarvest
   def createBag(deposit: Deposit)(implicit settings: Settings): Try[Unit] = Try {
-    val datasetId = deposit.datasetId
-    val inputDir = multiDepositDir(datasetId)
+    val depositId = deposit.depositId
+    val inputDir = multiDepositDir(depositId)
     val inputDirExists = inputDir.exists
-    val outputBagDir = stagingBagDir(datasetId)
+    val outputBagDir = stagingBagDir(depositId)
 
     val bagFactory = new BagFactory
     val preBag = bagFactory.createPreBag(outputBagDir)

@@ -57,7 +57,7 @@ case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings)
     }
 
     Try { addProperties(props, emailaddress) }
-      .flatMap(_ => Using.fileWriter(encoding)(stagingPropertiesFile(deposit.datasetId)).map(out => props.store(out, "")).tried)
+      .flatMap(_ => Using.fileWriter(encoding)(stagingPropertiesFile(deposit.depositId)).map(out => props.store(out, "")).tried)
       .recoverWith {
         case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write properties to file: $e", e))
       }

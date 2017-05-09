@@ -65,29 +65,29 @@ class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter with Befor
   }
 
   it should "fail if the deposit already exists in the outputDepositDir" in {
-    val datasetID = "ruimtereis01"
-    stagingDir(datasetID).copyDir(outputDepositDir(datasetID))
-    outputDepositDir(datasetID) should exist
+    val depositId = "ruimtereis01"
+    stagingDir(depositId).copyDir(outputDepositDir(depositId))
+    outputDepositDir(depositId) should exist
 
-    inside(MoveDepositToOutputDir(1, datasetID).checkPreconditions) {
-      case Failure(ActionException(1, msg, null)) => msg should include(s"The deposit for dataset $datasetID already exists")
+    inside(MoveDepositToOutputDir(1, depositId).checkPreconditions) {
+      case Failure(ActionException(1, msg, null)) => msg should include(s"The deposit for dataset $depositId already exists")
     }
   }
 
   "execute" should "move the deposit to the outputDepositDirectory" in {
-    val datasetID = "ruimtereis01"
-    MoveDepositToOutputDir(1, datasetID).execute() shouldBe a[Success[_]]
+    val depositId = "ruimtereis01"
+    MoveDepositToOutputDir(1, depositId).execute() shouldBe a[Success[_]]
 
-    stagingDir(datasetID) shouldNot exist
-    outputDepositDir(datasetID) should exist
+    stagingDir(depositId) shouldNot exist
+    outputDepositDir(depositId) should exist
 
     stagingDir("ruimtereis02") should exist
     outputDepositDir("ruimtereis02") shouldNot exist
   }
 
   it should "only move the one deposit to the outputDepositDirectory, not other deposits in the staging directory" in {
-    val datasetID = "ruimtereis01"
-    MoveDepositToOutputDir(1, datasetID).execute() shouldBe a[Success[_]]
+    val depositId = "ruimtereis01"
+    MoveDepositToOutputDir(1, depositId).execute() shouldBe a[Success[_]]
 
     stagingDir("ruimtereis02") should exist
     outputDepositDir("ruimtereis02") shouldNot exist

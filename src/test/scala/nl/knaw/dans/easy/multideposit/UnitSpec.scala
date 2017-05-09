@@ -41,7 +41,7 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
 
   def testDeposit1: Deposit = {
     Deposit(
-      datasetId = "ruimtereis01",
+      depositId = "ruimtereis01",
       row = 2,
       depositorId = "ruimtereiziger1",
       profile = Profile(
@@ -77,7 +77,7 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
 
   def testDeposit2: Deposit = {
     Deposit(
-      datasetId = "deposit-2",
+      depositId = "deposit-2",
       row = 5,
       depositorId = "ruimtereiziger2",
       profile = Profile(

@@ -34,14 +34,14 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     datamanager = "dm",
     ldap = ldapMock
   )
-  val datasetID = "ds1"
+  val depositId = "ds1"
 
   def mockLdapForDepositor(b: Boolean): Unit = {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Success(Seq(b))
   }
 
   before {
-    new File(settings.stagingDir, s"md-$datasetID").mkdirs
+    new File(settings.stagingDir, s"md-$depositId").mkdirs
   }
 
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
@@ -79,7 +79,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   "execute" should "generate the properties file and write the properties in it" in {
     AddPropertiesToDeposit(testDeposit1.copy(audioVideo = AudioVideo())).execute("dm@test.org") shouldBe a[Success[_]]
 
-    val props = stagingPropertiesFile(testDeposit1.datasetId)
+    val props = stagingPropertiesFile(testDeposit1.depositId)
     props should exist
 
     props.read() should {
@@ -97,7 +97,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   it should "generate the properties file with springfield fields and write the properties in it" in {
     AddPropertiesToDeposit(testDeposit1).execute("dm@test.org") shouldBe a[Success[_]]
 
-    val props = stagingPropertiesFile(testDeposit1.datasetId)
+    val props = stagingPropertiesFile(testDeposit1.depositId)
     props should exist
 
     props.read() should {

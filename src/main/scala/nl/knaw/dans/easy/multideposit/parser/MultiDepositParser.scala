@@ -89,25 +89,25 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
       Success(())
   }
 
-  def detectEmptyDepositCells(datasetIds: List[String]): Try[Unit] = {
-    datasetIds.zipWithIndex
+  def detectEmptyDepositCells(depositIds: List[String]): Try[Unit] = {
+    depositIds.zipWithIndex
       .collect { case (s, i) if s.isBlank => i + 2 }
-      .map(index => Failure(ParseException(index, s"Row $index does not have a datasetId in column DATASET")): Try[Unit])
+      .map(index => Failure(ParseException(index, s"Row $index does not have a depositId in column DATASET")): Try[Unit])
       .collectResults
       .map(_ => ())
   }
 
-  def extractDeposit(datasetId: DatasetId, rows: DepositRows): Try[Deposit] = {
+  def extractDeposit(depositId: DepositId, rows: DepositRows): Try[Deposit] = {
     val rowNum = rows.map(getRowNum).min
 
-    checkValidChars(rowNum, "DATASET", datasetId)
+    checkValidChars(rowNum, "DATASET", depositId)
       .flatMap(dsId => Try { Deposit.curried }
         .map(_ (dsId))
         .map(_ (rowNum))
         .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
         .combine(extractProfile(rows, rowNum))
         .combine(extractMetadata(rows))
-        .combine(extractAudioVideo(rows, rowNum, datasetId)))
+        .combine(extractAudioVideo(rows, rowNum, depositId)))
   }
 
   private def recoverParsing(t: Throwable): Failure[Nothing] = {

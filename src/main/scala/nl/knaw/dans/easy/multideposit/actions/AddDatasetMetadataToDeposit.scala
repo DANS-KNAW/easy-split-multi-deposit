@@ -34,7 +34,7 @@ object AddDatasetMetadataToDeposit {
 
   def writeDatasetMetadataXml(deposit: Deposit)(implicit settings: Settings): Try[Unit] = {
     Try {
-      stagingDatasetMetadataFile(deposit.datasetId).writeXml(depositToDDM(deposit))
+      stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
     } recoverWith {
       case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write deposit metadata: $e", e))
     }

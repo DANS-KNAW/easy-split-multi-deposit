@@ -43,9 +43,9 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
     depositPermissions = DepositPermissions("rwxrwx---", userGroup)
   )
 
-  private val datasetID = "ruimtereis01"
+  private val depositId = "ruimtereis01"
 
-  private val base = stagingDir(datasetID)
+  private val base = stagingDir(depositId)
   private val folder1 = new File(base, "folder1")
   private val folder2 = new File(base, "folder2")
   private val file1 = new File(base, "file1.txt")
@@ -77,7 +77,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
   "setFilePermissions" should "set the permissions of each of the files and folders to the correct permissions" in {
     assume(user != "travis")
 
-    SetDepositPermissions(1, datasetID).execute() shouldBe a[Success[_]]
+    SetDepositPermissions(1, depositId).execute() shouldBe a[Success[_]]
 
     for (file <- filesAndFolders) {
       Files.getPosixFilePermissions(file.toPath) should {
@@ -106,7 +106,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
       depositPermissions = DepositPermissions("rwxrwx---", "non-existing-group-name")
     )
 
-    inside(SetDepositPermissions(1, datasetID)(settings).execute()) {
+    inside(SetDepositPermissions(1, depositId)(settings).execute()) {
       case Failure(ActionException(1, msg, _: UserPrincipalNotFoundException)) => msg shouldBe "Group non-existing-group-name could not be found"
     }
   }
@@ -118,7 +118,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
       depositPermissions = DepositPermissions("abcdefghi", "admin")
     )
 
-    inside(SetDepositPermissions(1, datasetID)(settings).execute()) {
+    inside(SetDepositPermissions(1, depositId)(settings).execute()) {
       case Failure(ActionException(1, msg, _: IllegalArgumentException)) => msg shouldBe "Invalid privileges (abcdefghi)"
     }
   }
@@ -130,7 +130,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
       depositPermissions = DepositPermissions("rwxrwx---", unrelatedGroup)
     )
 
-    inside(SetDepositPermissions(1, datasetID)(settings).execute()) {
+    inside(SetDepositPermissions(1, depositId)(settings).execute()) {
       case Failure(ActionException(1, msg, _: FileSystemException)) => msg should include(s"Not able to set the group to $unrelatedGroup")
     }
   }

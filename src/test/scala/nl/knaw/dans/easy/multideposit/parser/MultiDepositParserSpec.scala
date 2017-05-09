@@ -32,7 +32,7 @@ trait DepositTestObjects extends AudioVideoTestObjects with MetadataTestObjects 
   )
 
   lazy val deposit = Deposit(
-    datasetId = "ruimtereis01",
+    depositId = "ruimtereis01",
     row = 2,
     depositorId = "ikke",
     profile = profile,
@@ -62,15 +62,15 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
     inside(parse(file)) {
       case Success(deposit2 :: deposit1 :: deposit3 :: Nil) =>
         deposit1 should have(
-          'datasetId ("ruimtereis01"),
+          'depositId ("ruimtereis01"),
           'row (2)
         )
         deposit2 should have(
-          'datasetId ("ruimtereis02"),
+          'depositId ("ruimtereis02"),
           'row (5)
         )
         deposit3 should have(
-          'datasetId ("ruimtereis03"),
+          'depositId ("ruimtereis03"),
           'row (10)
         )
     }
@@ -257,8 +257,8 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
       case Failure(CompositeException(es)) =>
         val e1 :: e2 :: Nil = es.toList
 
-        e1 should have message "Row 3 does not have a datasetId in column DATASET"
-        e2 should have message "Row 6 does not have a datasetId in column DATASET"
+        e1 should have message "Row 3 does not have a depositId in column DATASET"
+        e2 should have message "Row 6 does not have a depositId in column DATASET"
     }
   }
 
@@ -289,7 +289,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
     extractDeposit("ruimtereis01", rows) should matchPattern { case Success(`deposit`) => }
   }
 
-  it should "fail if the datasetID contains invalid characters" in {
+  it should "fail if the depositId contains invalid characters" in {
     extractDeposit("ruimtereis01#", depositCSV) should matchPattern {
       case Failure(ParseException(2, "The column 'DATASET' contains the following invalid characters: {#}", _)) =>
     }

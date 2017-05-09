@@ -29,7 +29,7 @@ trait AudioVideoParser {
 
   implicit val settings: Settings
 
-  def extractAudioVideo(rows: DepositRows, rowNum: Int, datasetId: DatasetId): Try[AudioVideo] = {
+  def extractAudioVideo(rows: DepositRows, rowNum: Int, depositId: DepositId): Try[AudioVideo] = {
     Try {
       ((springf: Option[Springfield], acc: Option[FileAccessRights.Value], avFiles: Set[AVFile]) => {
         (springf, acc, avFiles) match {
@@ -43,7 +43,7 @@ trait AudioVideoParser {
         .flatMap(ss => atMostOne(rowNum, List("SF_DOMAIN", "SF_USER", "SF_COLLECTION"))(ss.map { case Springfield(d, u, c) => (d, u, c) }).map(_.map(Springfield.tupled))))
       .combine(extractList(rows)(fileAccessRight)
         .flatMap(atMostOne(rowNum, List("SF_ACCESSIBILITY"))))
-      .combine(extractList(rows)(avFile(datasetId))
+      .combine(extractList(rows)(avFile(depositId))
         .flatMap(_.groupBy { case (file, _, _) => file }
           .map {
             case (file, (instrPerFile: Seq[(File, Option[String], Option[Subtitles])])) =>
@@ -87,10 +87,10 @@ trait AudioVideoParser {
     }
   }
 
-  def avFile(datasetId: DatasetId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
-    val file = row.find("AV_FILE").map(new File(multiDepositDir(datasetId), _))
+  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
+    val file = row.find("AV_FILE").map(new File(multiDepositDir(depositId), _))
     val title = row.find("AV_FILE_TITLE")
-    val subtitle = row.find("AV_SUBTITLES").map(new File(multiDepositDir(datasetId), _))
+    val subtitle = row.find("AV_SUBTITLES").map(new File(multiDepositDir(depositId), _))
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, title, subtitle, subtitleLang) match {

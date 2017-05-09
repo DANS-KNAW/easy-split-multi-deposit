@@ -70,7 +70,7 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
   }
 
   private lazy val fileMetadata: Try[Seq[FileMetadata]] = Try {
-    val depositDir = multiDepositDir(deposit.datasetId)
+    val depositDir = multiDepositDir(deposit.depositId)
     if (depositDir.exists()) {
       depositDir.listRecursively
         .map(getFileMetadata)
@@ -110,7 +110,7 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
 
   override def execute(): Try[Unit] = {
     depositToFileXml
-      .map(stagingFileMetadataFile(deposit.datasetId).writeXml(_))
+      .map(stagingFileMetadataFile(deposit.depositId).writeXml(_))
       .recoverWith {
         case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write file meta data: $e", e))
       }
@@ -156,7 +156,7 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
   }
 
   private def formatFilePath(file: File): File = {
-    multiDepositDir(deposit.datasetId)
+    multiDepositDir(deposit.depositId)
       .toPath
       .relativize(file.toPath)
       .toFile

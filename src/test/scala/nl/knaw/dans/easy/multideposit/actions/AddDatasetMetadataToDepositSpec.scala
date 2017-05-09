@@ -37,9 +37,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
     override val formats: Set[String] = Set("text/xml")
   }
 
-  val datasetID = "ds1"
+  val depositId = "ds1"
   val deposit: Deposit = Deposit(
-    datasetId = datasetID,
+    depositId = depositId,
     row = 1,
     depositorId = "dep",
     profile = Profile(
@@ -117,13 +117,13 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     super.beforeAll()
     new File(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.mpg").toURI)
-      .copyFile(new File(settings.multidepositDir, s"$datasetID/reisverslag/centaur.mpg"))
+      .copyFile(new File(settings.multidepositDir, s"$depositId/reisverslag/centaur.mpg"))
     new File(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.srt").toURI)
-      .copyFile(new File(settings.multidepositDir, s"$datasetID/reisverslag/centaur.srt"))
+      .copyFile(new File(settings.multidepositDir, s"$depositId/reisverslag/centaur.srt"))
   }
 
   "execute" should "write the metadata to a file at the correct place" in {
-    val file = stagingDatasetMetadataFile(datasetID)
+    val file = stagingDatasetMetadataFile(depositId)
 
     file should not(exist)
 

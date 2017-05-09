@@ -19,7 +19,7 @@ import java.io.{ File, IOException }
 import java.nio.file._
 import java.nio.file.attribute._
 
-import nl.knaw.dans.easy.multideposit.model.DatasetId
+import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.easy.multideposit.{ UnitAction, _ }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -27,7 +27,7 @@ import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class SetDepositPermissions(row: Int, datasetId: DatasetId)(implicit settings: Settings) extends UnitAction[Unit] {
+case class SetDepositPermissions(row: Int, depositId: DepositId)(implicit settings: Settings) extends UnitAction[Unit] {
 
   def execute(): Try[Unit] = {
     setFilePermissions().recoverWith {
@@ -37,7 +37,7 @@ case class SetDepositPermissions(row: Int, datasetId: DatasetId)(implicit settin
   }
 
   private def setFilePermissions(): Try[Unit] = {
-    val stagingDirectory = stagingDir(datasetId)
+    val stagingDirectory = stagingDir(depositId)
     isOnPosixFileSystem(stagingDirectory)
       .flatMap {
         case true => Try { Files.walkFileTree(stagingDirectory.toPath, PermissionFileVisitor(settings.depositPermissions)) }

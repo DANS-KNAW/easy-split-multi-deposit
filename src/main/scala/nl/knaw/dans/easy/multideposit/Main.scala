@@ -52,18 +52,18 @@ object Main extends DebugEnhancedLogging {
 
     val retrieveDatamanagerAction = RetrieveDatamanagerAction()
     val depositActions = deposits.map(deposit => {
-      logger.debug(s"Getting actions for deposit ${ deposit.datasetId } ...")
+      logger.debug(s"Getting actions for deposit ${ deposit.depositId } ...")
 
-      CreateStagingDir(deposit.row, deposit.datasetId)
+      CreateStagingDir(deposit.row, deposit.depositId)
         .combine(AddBagToDeposit(deposit))
         .combine(AddDatasetMetadataToDeposit(deposit))
         .combine(AddFileMetadataToDeposit(deposit))
         .combine(retrieveDatamanagerAction)
         .combine(AddPropertiesToDeposit(deposit))
-        .combine(SetDepositPermissions(deposit.row, deposit.datasetId))
-        .withLogMessages(s"Checking preconditions for ${ deposit.datasetId }", s"Executing ${ deposit.datasetId }", s"Rolling back ${ deposit.datasetId }")
+        .combine(SetDepositPermissions(deposit.row, deposit.depositId))
+        .withLogMessages(s"Checking preconditions for ${ deposit.depositId }", s"Executing ${ deposit.depositId }", s"Rolling back ${ deposit.depositId }")
     }).reduceOption(_ combine _)
-    val moveActions = deposits.map(deposit => MoveDepositToOutputDir(deposit.row, deposit.datasetId): Action[Unit, Unit]).reduceOption(_ combine _)
+    val moveActions = deposits.map(deposit => MoveDepositToOutputDir(deposit.row, deposit.depositId): Action[Unit, Unit]).reduceOption(_ combine _)
 
     for {
       dsAct <- depositActions
