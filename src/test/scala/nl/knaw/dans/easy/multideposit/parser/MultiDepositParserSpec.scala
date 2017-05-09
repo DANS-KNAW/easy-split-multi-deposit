@@ -60,7 +60,10 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
     file should exist
 
     inside(parse(file)) {
-      case Success(deposit2 :: deposit1 :: deposit3 :: Nil) =>
+      case Success(datasets) =>
+        datasets should have size 3
+        val deposit2 :: deposit1 :: deposit3 :: Nil = datasets.toList
+
         deposit1 should have(
           'depositId ("ruimtereis01"),
           'row (2)

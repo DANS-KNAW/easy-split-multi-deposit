@@ -40,7 +40,7 @@ case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings)
   private def validateDepositorUserId: Try[Unit] = {
     settings.ldap.query(deposit.depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
       .flatMap {
-        case Seq() => Failure(ActionException(deposit.row, s"depositorUserID '${ deposit.depositorUserId }' is unknown"))
+        case Seq() => Failure(ActionException(deposit.row, s"depositorUserId '${ deposit.depositorUserId }' is unknown"))
         case Seq(head) => Success(head)
         case _ => Failure(ActionException(deposit.row, s"There appear to be multiple users with id '${ deposit.depositorUserId }'"))
       }
