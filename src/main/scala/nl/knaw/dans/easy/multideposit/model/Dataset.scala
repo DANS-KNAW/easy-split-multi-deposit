@@ -48,7 +48,7 @@ case class Metadata(alternatives: List[String] = List.empty,
                     contributors: List[Contributor] = List.empty,
                     subjects: List[Subject] = List.empty,
                     spatialPoints: List[SpatialPoint] = List.empty,
-                    spatialBoxes: List[SpatialBoxx] = List.empty,
+                    spatialBoxes: List[SpatialBox] = List.empty,
                     temporal: List[Temporal] = List.empty)
 
 case class AudioVideo(springfield: Option[Springfield] = Option.empty,
@@ -87,8 +87,7 @@ case class Temporal(temporal: String = "", scheme: Option[String] = Option.empty
 
 case class SpatialPoint(x: String, y: String, scheme: Option[String] = Option.empty)
 
-// TODO this class is renamed to SpatialBoxx to prevent the Avira virus scan from rejecting this file.
-case class SpatialBoxx(north: String, south: String, east: String, west: String, scheme: Option[String] = Option.empty)
+case class SpatialBox(north: String, south: String, east: String, west: String, scheme: Option[String] = Option.empty)
 
 case class Springfield(domain: String = "dans", user: String, collection: String)
 

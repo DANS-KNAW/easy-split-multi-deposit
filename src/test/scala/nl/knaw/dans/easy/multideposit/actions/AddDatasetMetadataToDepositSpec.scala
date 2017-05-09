@@ -174,9 +174,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         SpatialPoint("3", "4"),
         SpatialPoint("5", "6", Option("degrees"))),
       spatialBoxes = List(
-        SpatialBoxx("1", "2", "3", "4", Option("RD")),
-        SpatialBoxx("5", "6", "7", "8", None),
-        SpatialBoxx("9", "10", "11", "12", Option("degrees"))),
+        SpatialBox("1", "2", "3", "4", Option("RD")),
+        SpatialBox("5", "6", "7", "8", None),
+        SpatialBox("9", "10", "11", "12", Option("degrees"))),
       temporal = List(
         Temporal("1992-2016"),
         Temporal("PALEOV", Option("abr:ABRperiode")),
