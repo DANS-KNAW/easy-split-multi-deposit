@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.util.{ Collections, Properties, UUID }
 import java.{ util => ju }
 
-import nl.knaw.dans.easy.multideposit.model.Dataset
+import nl.knaw.dans.easy.multideposit.model.Deposit
 import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
 import resource._
 
@@ -26,7 +26,7 @@ import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class AddPropertiesToDeposit(dataset: Dataset)(implicit settings: Settings) extends Action[DatamanagerEmailaddress, Unit] {
+case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings) extends Action[DatamanagerEmailaddress, Unit] {
 
   override def checkPreconditions: Try[Unit] = validateDepositor
 
@@ -35,18 +35,18 @@ case class AddPropertiesToDeposit(dataset: Dataset)(implicit settings: Settings)
   }
 
   /**
-   * Checks whether there is only one unique DEPOSITOR_ID set in the `Dataset` (there can be multiple values but the must all be equal!).
+   * Checks whether there is only one unique DEPOSITOR_ID set in the `Deposit` (there can be multiple values but the must all be equal!).
    */
   private def validateDepositor: Try[Unit] = {
-    settings.ldap.query(dataset.depositorId)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
+    settings.ldap.query(deposit.depositorId)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
       .flatMap {
-        case Seq() => Failure(ActionException(dataset.row, s"DepositorID '${ dataset.depositorId }' is unknown"))
+        case Seq() => Failure(ActionException(deposit.row, s"DepositorID '${ deposit.depositorId }' is unknown"))
         case Seq(head) => Success(head)
-        case _ => Failure(ActionException(dataset.row, s"There appear to be multiple users with id '${ dataset.depositorId }'"))
+        case _ => Failure(ActionException(deposit.row, s"There appear to be multiple users with id '${ deposit.depositorId }'"))
       }
       .flatMap {
         case true => Success(())
-        case false => Failure(ActionException(dataset.row, s"The depositor '${ dataset.depositorId }' is not an active user"))
+        case false => Failure(ActionException(deposit.row, s"The depositor '${ deposit.depositorId }' is not an active user"))
       }
   }
 
@@ -57,19 +57,19 @@ case class AddPropertiesToDeposit(dataset: Dataset)(implicit settings: Settings)
     }
 
     Try { addProperties(props, emailaddress) }
-      .flatMap(_ => Using.fileWriter(encoding)(stagingPropertiesFile(dataset.datasetId)).map(out => props.store(out, "")).tried)
+      .flatMap(_ => Using.fileWriter(encoding)(stagingPropertiesFile(deposit.datasetId)).map(out => props.store(out, "")).tried)
       .recoverWith {
-        case NonFatal(e) => Failure(ActionException(dataset.row, s"Could not write properties to file: $e", e))
+        case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write properties to file: $e", e))
       }
   }
 
   private def addProperties(properties: Properties, emailaddress: DatamanagerEmailaddress): Unit = {
-    val sf = dataset.audioVideo.springfield
+    val sf = deposit.audioVideo.springfield
     val props: Map[String, Option[String]] = Map(
       "bag-store.bag-id" -> Some(UUID.randomUUID().toString),
       "state.label" -> Some("SUBMITTED"),
       "state.description" -> Some("Deposit is valid and ready for post-submission processing"),
-      "depositor.userId" -> Some(dataset.depositorId),
+      "depositor.userId" -> Some(deposit.depositorId),
       "datamanager.userId" -> Some(settings.datamanager),
       "datamanager.email" -> Some(emailaddress),
       "springfield.domain" -> sf.map(_.domain),

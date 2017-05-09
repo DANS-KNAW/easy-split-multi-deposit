@@ -19,7 +19,7 @@ import java.io.File
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.datasetToXml
+import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.depositToDDM
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.parser._
 import org.joda.time.DateTime
@@ -38,7 +38,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   val datasetID = "ds1"
-  val dataset: Dataset = Dataset(
+  val deposit: Deposit = Deposit(
     datasetId = datasetID,
     row = 1,
     depositorId = "dep",
@@ -127,19 +127,19 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
 
     file should not(exist)
 
-    AddDatasetMetadataToDeposit(dataset).execute shouldBe a[Success[_]]
+    AddDatasetMetadataToDeposit(deposit).execute shouldBe a[Success[_]]
 
     file should exist
   }
 
-  "datasetToXml" should "return the expected xml" in {
-    verify(datasetToXml(dataset), expectedXml)
+  "depositToDDM" should "return the expected xml" in {
+    verify(depositToDDM(deposit), expectedXml)
   }
 
   it should "return xml on reading from the allfields input instructions csv" in {
     implicit val s2: Settings = settings.copy(multidepositDir = new File(getClass.getResource("/allfields/input").toURI))
     val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
-    inside(MultiDepositParser()(s2).parse(csv).map(_.map(datasetToXml(_)(s2)))) {
+    inside(MultiDepositParser()(s2).parse(csv).map(_.map(depositToDDM(_)(s2)))) {
       case Success(xmls) => xmls should have size 3
     }
   }

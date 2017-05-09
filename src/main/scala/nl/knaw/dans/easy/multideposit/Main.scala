@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit
 
 import nl.knaw.dans.easy.multideposit.actions._
-import nl.knaw.dans.easy.multideposit.model.Dataset
+import nl.knaw.dans.easy.multideposit.model.Deposit
 import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -42,31 +42,31 @@ object Main extends DebugEnhancedLogging {
 
   def run(implicit settings: Settings): Try[Unit] = {
     for {
-      datasets <- MultiDepositParser().parse(multiDepositInstructionsFile)
-      _ <- getActions(datasets).map(_.run(())).getOrElse(Failure(new Exception("no actions were defined")))
+      deposits <- MultiDepositParser().parse(multiDepositInstructionsFile)
+      _ <- getActions(deposits).map(_.run(())).getOrElse(Failure(new Exception("no actions were defined")))
     } yield ()
   }
 
-  def getActions(datasets: Seq[Dataset])(implicit settings: Settings): Option[Action[Unit, Unit]] = {
+  def getActions(deposits: Seq[Deposit])(implicit settings: Settings): Option[Action[Unit, Unit]] = {
     logger.info("Compiling list of actions to perform ...")
 
     val retrieveDatamanagerAction = RetrieveDatamanagerAction()
-    val datasetActions = datasets.map(dataset => {
-      logger.debug(s"Getting actions for dataset ${ dataset.datasetId } ...")
+    val depositActions = deposits.map(deposit => {
+      logger.debug(s"Getting actions for deposit ${ deposit.datasetId } ...")
 
-      CreateStagingDir(dataset.row, dataset.datasetId)
-        .combine(AddBagToDeposit(dataset))
-        .combine(AddDatasetMetadataToDeposit(dataset))
-        .combine(AddFileMetadataToDeposit(dataset))
+      CreateStagingDir(deposit.row, deposit.datasetId)
+        .combine(AddBagToDeposit(deposit))
+        .combine(AddDatasetMetadataToDeposit(deposit))
+        .combine(AddFileMetadataToDeposit(deposit))
         .combine(retrieveDatamanagerAction)
-        .combine(AddPropertiesToDeposit(dataset))
-        .combine(SetDepositPermissions(dataset.row, dataset.datasetId))
-        .withLogMessages(s"Checking preconditions for ${ dataset.datasetId }", s"Executing ${ dataset.datasetId }", s"Rolling back ${ dataset.datasetId }")
+        .combine(AddPropertiesToDeposit(deposit))
+        .combine(SetDepositPermissions(deposit.row, deposit.datasetId))
+        .withLogMessages(s"Checking preconditions for ${ deposit.datasetId }", s"Executing ${ deposit.datasetId }", s"Rolling back ${ deposit.datasetId }")
     }).reduceOption(_ combine _)
-    val moveActions = datasets.map(dataset => MoveDepositToOutputDir(dataset.row, dataset.datasetId): Action[Unit, Unit]).reduceOption(_ combine _)
+    val moveActions = deposits.map(deposit => MoveDepositToOutputDir(deposit.row, deposit.datasetId): Action[Unit, Unit]).reduceOption(_ combine _)
 
     for {
-      dsAct <- datasetActions
+      dsAct <- depositActions
       mvAct <- moveActions
     } yield dsAct combine mvAct
   }

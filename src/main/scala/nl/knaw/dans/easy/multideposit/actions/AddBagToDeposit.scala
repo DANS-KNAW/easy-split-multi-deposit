@@ -27,29 +27,30 @@ import gov.loc.repository.bagit.writer.impl.FileSystemWriter
 import gov.loc.repository.bagit.{ Bag, BagFactory }
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
-import nl.knaw.dans.easy.multideposit.model.{ Dataset, DatasetId }
+import nl.knaw.dans.easy.multideposit.model.{ Deposit, DatasetId }
 import org.joda.time.format.ISODateTimeFormat
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
-case class AddBagToDeposit(dataset: Dataset)(implicit settings: Settings) extends UnitAction[Unit] {
+case class AddBagToDeposit(deposit: Deposit)(implicit settings: Settings) extends UnitAction[Unit] {
 
   override def checkPreconditions: Try[Unit] = Try {
     Locale.setDefault(Locale.US)
   }
 
   override def execute(): Try[Unit] = {
-    createBag(dataset.datasetId, dataset).recoverWith {
-      case NonFatal(e) => Failure(ActionException(dataset.row, s"Error occured in creating the bag for ${ dataset.datasetId }: ${ e.getMessage }", e))
+    createBag(deposit).recoverWith {
+      case NonFatal(e) => Failure(ActionException(deposit.row, s"Error occured in creating the bag for ${ deposit.datasetId }: ${ e.getMessage }", e))
     }
   }
 }
 object AddBagToDeposit {
   // for examples see https://github.com/LibraryOfCongress/bagit-java/issues/18
   //              and http://www.mpcdf.mpg.de/services/data/annotate/downloads -> TacoHarvest
-  def createBag(datasetId: DatasetId, dataset: Dataset)(implicit settings: Settings): Try[Unit] = Try {
+  def createBag(deposit: Deposit)(implicit settings: Settings): Try[Unit] = Try {
+    val datasetId = deposit.datasetId
     val inputDir = multiDepositDir(datasetId)
     val inputDirExists = inputDir.exists
     val outputBagDir = stagingBagDir(datasetId)
@@ -74,7 +75,7 @@ object AddBagToDeposit {
     }
     val completer = new ChainingCompleter(
       defaultCompleter,
-      new BagInfoCompleter(bagFactory, dataset),
+      new BagInfoCompleter(bagFactory, deposit),
       tagManifestCompleter
     )
 
@@ -90,7 +91,7 @@ object AddBagToDeposit {
   }
 }
 
-private class BagInfoCompleter(bagFactory: BagFactory, dataset: Dataset) extends Completer {
+private class BagInfoCompleter(bagFactory: BagFactory, deposit: Deposit) extends Completer {
 
   def complete(bag: Bag): Bag = {
     val newBag = bagFactory.createBag(bag)
@@ -104,7 +105,7 @@ private class BagInfoCompleter(bagFactory: BagFactory, dataset: Dataset) extends
     val bagInfo = bagPartFactory.createBagInfoTxt(bag.getBagInfoTxt)
 
     // add the CREATED field
-    bagInfo.put("Created", dataset.profile.created.toString(ISODateTimeFormat.dateTime()))
+    bagInfo.put("Created", deposit.profile.created.toString(ISODateTimeFormat.dateTime()))
 
     // add the new BagInfoTxt to the newBag
     newBag.putBagFile(bagInfo)

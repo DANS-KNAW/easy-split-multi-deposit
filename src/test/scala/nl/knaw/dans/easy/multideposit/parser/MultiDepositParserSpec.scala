@@ -23,15 +23,15 @@ import nl.knaw.dans.lib.error.CompositeException
 
 import scala.util.{ Failure, Success }
 
-trait DatasetTestObjects extends AudioVideoTestObjects with MetadataTestObjects with ProfileTestObjects {
+trait DepositTestObjects extends AudioVideoTestObjects with MetadataTestObjects with ProfileTestObjects {
 
-  lazy val datasetCSV @ datasetCSVRow1 :: datasetCSVRow2 :: datasetCSVRow3 :: Nil = List(
+  lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: depositCSVRow3 :: Nil = List(
     Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ metadataCSVRow1 ++ audioVideoCSVRow1,
     Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ metadataCSVRow2 ++ audioVideoCSVRow2,
     Map("ROW" -> "4", "DATASET" -> "ruimtereis01") ++ audioVideoCSVRow3
   )
 
-  lazy val dataset = Dataset(
+  lazy val deposit = Deposit(
     datasetId = "ruimtereis01",
     row = 2,
     depositorId = "ikke",
@@ -41,7 +41,7 @@ trait DatasetTestObjects extends AudioVideoTestObjects with MetadataTestObjects 
   )
 }
 
-class MultiDepositParserSpec extends UnitSpec with DatasetTestObjects {
+class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -60,19 +60,16 @@ class MultiDepositParserSpec extends UnitSpec with DatasetTestObjects {
     file should exist
 
     inside(parse(file)) {
-      case Success(datasets) =>
-        datasets should have size 3
-        val dataset2 :: dataset1 :: dataset3 :: Nil = datasets.toList
-
-        dataset1 should have(
+      case Success(deposit2 :: deposit1 :: deposit3 :: Nil) =>
+        deposit1 should have(
           'datasetId ("ruimtereis01"),
           'row (2)
         )
-        dataset2 should have(
+        deposit2 should have(
           'datasetId ("ruimtereis02"),
           'row (5)
         )
-        dataset3 should have(
+        deposit3 should have(
           'datasetId ("ruimtereis03"),
           'row (10)
         )
@@ -247,16 +244,16 @@ class MultiDepositParserSpec extends UnitSpec with DatasetTestObjects {
     }
   }
 
-  "detectEmptyDatasetCells" should "succeed when no elements in the input are empty" in {
+  "detectEmptyDepositCells" should "succeed when no elements in the input are empty" in {
     val dsIds = List("ds1", "ds1", "ds2", "ds2", "ds2", "ds3")
 
-    detectEmptyDatasetCells(dsIds) shouldBe a[Success[_]]
+    detectEmptyDepositCells(dsIds) shouldBe a[Success[_]]
   }
 
   it should "fail when any number of elements in the input are blank" in {
     val dsIds = List("ds1", "", "ds2", "ds2", "   ", "ds3")
 
-    inside(detectEmptyDatasetCells(dsIds)) {
+    inside(detectEmptyDepositCells(dsIds)) {
       case Failure(CompositeException(es)) =>
         val e1 :: e2 :: Nil = es.toList
 
@@ -265,35 +262,35 @@ class MultiDepositParserSpec extends UnitSpec with DatasetTestObjects {
     }
   }
 
-  "extractDataset" should "convert the csv input to the corresponding output" in {
-    extractDataset("ruimtereis01", datasetCSV) should matchPattern { case Success(`dataset`) => }
+  "extractDeposit" should "convert the csv input to the corresponding output" in {
+    extractDeposit("ruimtereis01", depositCSV) should matchPattern { case Success(`deposit`) => }
   }
 
   it should "throw an exception if a row number is not found on each row" in {
     // This is supposed to throw an exception rather than fail, because the ROW is a column
     // that is created by our program itself. If the ROW is not present, something has gone
     // terribly wrong!
-    val rows = datasetCSVRow1 :: (datasetCSVRow2 - "ROW") :: datasetCSVRow3 :: Nil
+    val rows = depositCSVRow1 :: (depositCSVRow2 - "ROW") :: depositCSVRow3 :: Nil
 
-    the[NoSuchElementException] thrownBy extractDataset("ruimtereis01", rows) should have message "key not found: ROW"
+    the[NoSuchElementException] thrownBy extractDeposit("ruimtereis01", rows) should have message "key not found: ROW"
   }
 
   it should "fail if there are multiple distinct depositorIDs" in {
-    val rows = datasetCSVRow1 :: (datasetCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) :: datasetCSVRow3 :: Nil
+    val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) :: depositCSVRow3 :: Nil
 
-    extractDataset("ruimtereis01", rows) should matchPattern {
+    extractDeposit("ruimtereis01", rows) should matchPattern {
       case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [ikke, ikke2]", _)) =>
     }
   }
 
   it should "succeed if there are multiple depositorIDs that are all equal" in {
-    val rows = datasetCSVRow1 :: (datasetCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) :: datasetCSVRow3 :: Nil
+    val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) :: depositCSVRow3 :: Nil
 
-    extractDataset("ruimtereis01", rows) should matchPattern { case Success(`dataset`) => }
+    extractDeposit("ruimtereis01", rows) should matchPattern { case Success(`deposit`) => }
   }
 
   it should "fail if the datasetID contains invalid characters" in {
-    extractDataset("ruimtereis01#", datasetCSV) should matchPattern {
+    extractDeposit("ruimtereis01#", depositCSV) should matchPattern {
       case Failure(ParseException(2, "The column 'DATASET' contains the following invalid characters: {#}", _)) =>
     }
   }

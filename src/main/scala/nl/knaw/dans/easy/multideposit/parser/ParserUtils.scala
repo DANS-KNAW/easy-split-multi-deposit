@@ -26,24 +26,24 @@ import scala.util.{ Failure, Success, Try }
 
 trait ParserUtils {
 
-  def getRowNum(row: DatasetRow): Int = row("ROW").toInt
+  def getRowNum(row: DepositRow): Int = row("ROW").toInt
 
-  def extractNEL[T](rows: DatasetRows)(f: (=> Int) => DatasetRow => Option[Try[T]]): Try[NonEmptyList[T]] = {
+  def extractNEL[T](rows: DepositRows)(f: (=> Int) => DepositRow => Option[Try[T]]): Try[NonEmptyList[T]] = {
     rows.flatMap(row => f(getRowNum(row))(row)).collectResults.map(_.toList)
   }
 
-  def extractNEL(rows: DatasetRows, rowNum: Int, name: MultiDepositKey): Try[NonEmptyList[String]] = {
+  def extractNEL(rows: DepositRows, rowNum: Int, name: MultiDepositKey): Try[NonEmptyList[String]] = {
     rows.flatMap(_.find(name)) match {
       case Seq() => Failure(ParseException(rowNum, s"There should be at least one non-empty value for $name"))
       case xs => Try { xs.toList }
     }
   }
 
-  def extractList[T](rows: DatasetRows)(f: (=> Int) => DatasetRow => Option[Try[T]]): Try[List[T]] = {
+  def extractList[T](rows: DepositRows)(f: (=> Int) => DepositRow => Option[Try[T]]): Try[List[T]] = {
     rows.flatMap(row => f(getRowNum(row))(row)).collectResults.map(_.toList)
   }
 
-  def extractList(rows: DatasetRows, name: MultiDepositKey): List[String] = {
+  def extractList(rows: DepositRows, name: MultiDepositKey): List[String] = {
     rows.flatMap(_.find(name)).toList
   }
 
@@ -78,7 +78,7 @@ trait ParserUtils {
     else Failure(ParseException(rowNum, s"The column '$column' contains the following invalid characters: ${ invalidCharacters.mkString("{", ", ", "}") }"))
   }
 
-  def missingRequired[T](rowNum: Int, row: DatasetRow, required: Set[String]): Failure[T] = {
+  def missingRequired[T](rowNum: Int, row: DepositRow, required: Set[String]): Failure[T] = {
     val blankRequired = row.collect { case (key, value) if value.isBlank && required.contains(key) => key }
     val missingColumns = required.diff(row.keySet)
     val missing = blankRequired.toSet ++ missingColumns
@@ -95,7 +95,7 @@ trait ParserUtils {
 
   private lazy val iso639_2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
 
-  def iso639_2Language(columnName: MultiDepositKey)(rowNum: => Int)(row: DatasetRow): Option[Try[String]] = {
+  def iso639_2Language(columnName: MultiDepositKey)(rowNum: => Int)(row: DepositRow): Option[Try[String]] = {
     row.find(columnName)
       .map(lang => {
         // Most ISO 639-2/T languages are contained in the iso639_2Languages Set.

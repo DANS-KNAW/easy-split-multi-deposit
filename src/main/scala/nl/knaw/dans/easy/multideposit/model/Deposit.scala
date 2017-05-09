@@ -20,7 +20,7 @@ import java.io.File
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import org.joda.time.DateTime
 
-case class Dataset(datasetId: DatasetId,
+case class Deposit(datasetId: DatasetId,
                    row: Int,
                    depositorId: DepositorId,
                    profile: Profile,

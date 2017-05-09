@@ -29,7 +29,7 @@ trait AudioVideoParser {
 
   implicit val settings: Settings
 
-  def extractAudioVideo(rows: DatasetRows, rowNum: Int, datasetId: DatasetId): Try[AudioVideo] = {
+  def extractAudioVideo(rows: DepositRows, rowNum: Int, datasetId: DatasetId): Try[AudioVideo] = {
     Try {
       ((springf: Option[Springfield], acc: Option[FileAccessRights.Value], avFiles: Set[AVFile]) => {
         (springf, acc, avFiles) match {
@@ -60,7 +60,7 @@ trait AudioVideoParser {
       .flatten
   }
 
-  def springfield(rowNum: => Int)(row: DatasetRow): Option[Try[Springfield]] = {
+  def springfield(rowNum: => Int)(row: DepositRow): Option[Try[Springfield]] = {
     val domain = row.find("SF_DOMAIN")
     val user = row.find("SF_USER")
     val collection = row.find("SF_COLLECTION")
@@ -87,7 +87,7 @@ trait AudioVideoParser {
     }
   }
 
-  def avFile(datasetId: DatasetId)(rowNum: => Int)(row: DatasetRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
+  def avFile(datasetId: DatasetId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
     val file = row.find("AV_FILE").map(new File(multiDepositDir(datasetId), _))
     val title = row.find("AV_FILE_TITLE")
     val subtitle = row.find("AV_SUBTITLES").map(new File(multiDepositDir(datasetId), _))
@@ -106,7 +106,7 @@ trait AudioVideoParser {
     }
   }
 
-  def fileAccessRight(rowNum: => Int)(row: DatasetRow): Option[Try[FileAccessRights.Value]] = {
+  def fileAccessRight(rowNum: => Int)(row: DepositRow): Option[Try[FileAccessRights.Value]] = {
     row.find("SF_ACCESSIBILITY")
       .map(acc => FileAccessRights.valueOf(acc)
         .map(Success(_))

@@ -39,8 +39,8 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
     testDir.getParentFile.deleteDirectory()
   }
 
-  def testDataset1: Dataset = {
-    Dataset(
+  def testDeposit1: Deposit = {
+    Deposit(
       datasetId = "ruimtereis01",
       row = 2,
       depositorId = "ruimtereiziger1",
@@ -75,14 +75,14 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
     )
   }
 
-  def testDataset2: Dataset = {
-    Dataset(
-      datasetId = "dataset-2",
+  def testDeposit2: Deposit = {
+    Deposit(
+      datasetId = "deposit-2",
       row = 5,
       depositorId = "ruimtereiziger2",
       profile = Profile(
-        titles = List("Title 1 of dataset 2", "Title 2 of dataset 2"),
-        descriptions = List("A sample dataset with a not very long description"),
+        titles = List("Title 1 of deposit 2", "Title 2 of deposit 2"),
+        descriptions = List("A sample deposit with a not very long description"),
         creators = List(CreatorOrganization("Creator A")),
         created = DateTime.now(),
         available = DateTime.parse("2016-07-30"),
@@ -99,5 +99,5 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
     )
   }
 
-  def testDatasets: Seq[Dataset] = List(testDataset1, testDataset2)
+  def testDeposits: Seq[Deposit] = List(testDeposit1, testDeposit2)
 }

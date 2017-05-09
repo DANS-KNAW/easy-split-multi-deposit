@@ -23,7 +23,7 @@ import scala.util.{ Failure, Success, Try }
 trait MetadataParser {
   this: ParserUtils =>
 
-  def extractMetadata(rows: DatasetRows): Try[Metadata] = {
+  def extractMetadata(rows: DepositRows): Try[Metadata] = {
     Try { Metadata.curried }
       .map(_ (extractList(rows, "DCT_ALTERNATIVE")))
       .map(_ (extractList(rows, "DC_PUBLISHER")))
@@ -42,7 +42,7 @@ trait MetadataParser {
       .combine(extractList(rows)(temporal))
   }
 
-  def contributor(rowNum: => Int)(row: DatasetRow): Option[Try[Contributor]] = {
+  def contributor(rowNum: => Int)(row: DepositRow): Option[Try[Contributor]] = {
     val titles = row.find("DCX_CONTRIBUTOR_TITLES")
     val initials = row.find("DCX_CONTRIBUTOR_INITIALS")
     val insertions = row.find("DCX_CONTRIBUTOR_INSERTIONS")
@@ -58,11 +58,7 @@ trait MetadataParser {
     }
   }
 
-  // TODO hebben de identifier types nog een speciaal format?
-  // TODO pas AddDatasetMetadataToDeposit aan
-  // TODO test dit
-  // TODO pas de output van beide examples aan
-  def identifier(rowNum: => Int)(row: DatasetRow): Option[Try[Identifier]] = {
+  def identifier(rowNum: => Int)(row: DepositRow): Option[Try[Identifier]] = {
     val identifier = row.find("DC_IDENTIFIER")
     val identifierType = row.find("DC_IDENTIFIER_TYPE")
 
@@ -81,7 +77,7 @@ trait MetadataParser {
     }
   }
 
-  def dcType(rowNum: => Int)(row: DatasetRow): Option[Try[DcType.Value]] = {
+  def dcType(rowNum: => Int)(row: DepositRow): Option[Try[DcType.Value]] = {
     row.find("DC_TYPE")
       .map(t => DcType.valueOf(t)
         .map(Success(_))
@@ -102,7 +98,7 @@ trait MetadataParser {
     observation: if the qualifier is present, either DCX_RELATION_LINK or DCX_RELATION_TITLE must be defined
                  if the qualifier is not defined, DCX_RELATION_LINK and DCX_RELATION_TITLE must not both be defined
    */
-  def relation(rowNum: => Int)(row: DatasetRow): Option[Try[Relation]] = {
+  def relation(rowNum: => Int)(row: DepositRow): Option[Try[Relation]] = {
     val qualifier = row.find("DCX_RELATION_QUALIFIER")
     val link = row.find("DCX_RELATION_LINK")
     val title = row.find("DCX_RELATION_TITLE")
@@ -118,7 +114,7 @@ trait MetadataParser {
     }
   }
 
-  def subject(rowNum: => Int)(row: DatasetRow): Option[Try[Subject]] = {
+  def subject(rowNum: => Int)(row: DepositRow): Option[Try[Subject]] = {
     val subject = row.find("DC_SUBJECT")
     val scheme = row.find("DC_SUBJECT_SCHEME")
 
@@ -131,7 +127,7 @@ trait MetadataParser {
     }
   }
 
-  def temporal(rowNum: => Int)(row: DatasetRow): Option[Try[Temporal]] = {
+  def temporal(rowNum: => Int)(row: DepositRow): Option[Try[Temporal]] = {
     val temporal = row.find("DCT_TEMPORAL")
     val scheme = row.find("DCT_TEMPORAL_SCHEME")
 
@@ -144,7 +140,7 @@ trait MetadataParser {
     }
   }
 
-  def spatialPoint(rowNum: => Int)(row: DatasetRow): Option[Try[SpatialPoint]] = {
+  def spatialPoint(rowNum: => Int)(row: DepositRow): Option[Try[SpatialPoint]] = {
     val maybeX = row.find("DCX_SPATIAL_X")
     val maybeY = row.find("DCX_SPATIAL_Y")
     val maybeScheme = row.find("DCX_SPATIAL_SCHEME")
@@ -156,7 +152,7 @@ trait MetadataParser {
     }
   }
 
-  def spatialBox(rowNum: => Int)(row: DatasetRow): Option[Try[SpatialBox]] = {
+  def spatialBox(rowNum: => Int)(row: DepositRow): Option[Try[SpatialBox]] = {
     val west = row.find("DCX_SPATIAL_WEST")
     val east = row.find("DCX_SPATIAL_EAST")
     val south = row.find("DCX_SPATIAL_SOUTH")

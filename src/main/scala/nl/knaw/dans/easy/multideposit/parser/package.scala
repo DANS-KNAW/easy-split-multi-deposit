@@ -19,10 +19,10 @@ import nl.knaw.dans.easy.multideposit.model.MultiDepositKey
 
 package object parser {
 
-  type DatasetRow = Map[MultiDepositKey, String]
-  type DatasetRows = Seq[DatasetRow]
+  type DepositRow = Map[MultiDepositKey, String]
+  type DepositRows = Seq[DepositRow]
 
-  implicit class DatasetRowFind(val row: DatasetRow) extends AnyVal {
+  implicit class DatasetRowFind(val row: DepositRow) extends AnyVal {
     def find(name: MultiDepositKey): Option[String] = row.get(name).filterNot(_.isBlank)
   }
 }

@@ -44,23 +44,23 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     settings.stagingDir.deleteDirectory()
   }
 
-  "checkPreconditions" should "succeed if the dataset contains the SF_* fields in case a A/V file is found" in {
-    val dataset = testDataset1.copy(
+  "checkPreconditions" should "succeed if the deposit contains the SF_* fields in case a A/V file is found" in {
+    val deposit = testDeposit1.copy(
       datasetId = datasetID,
-      audioVideo = testDataset1.audioVideo.copy(
+      audioVideo = testDeposit1.audioVideo.copy(
         springfield = Option(Springfield("domain", "user", "collection")),
         accessibility = Option(FileAccessRights.NONE)
       )
     )
-    AddFileMetadataToDeposit(dataset).checkPreconditions shouldBe a[Success[_]]
+    AddFileMetadataToDeposit(deposit).checkPreconditions shouldBe a[Success[_]]
   }
 
-  it should "fail if the dataset contains A/V files but the SF_* fields are not present" in {
-    val dataset = testDataset1.copy(
+  it should "fail if the deposit contains A/V files but the SF_* fields are not present" in {
+    val deposit = testDeposit1.copy(
       datasetId = datasetID,
       audioVideo = AudioVideo(springfield = Option.empty, accessibility = Option(FileAccessRights.NONE))
     )
-    inside(AddFileMetadataToDeposit(dataset).checkPreconditions) {
+    inside(AddFileMetadataToDeposit(deposit).checkPreconditions) {
       case Failure(ActionException(_, message, _)) =>
         message should {
           include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
@@ -71,71 +71,71 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     }
   }
 
-  it should "succeed if the dataset contains A/V files and SF_ACCESSIBILITY isn't present, but DDM_ACCESSRIGHTS is present" in {
-    val dataset = testDataset1.copy(
+  it should "succeed if the deposit contains A/V files and SF_ACCESSIBILITY isn't present, but DDM_ACCESSRIGHTS is present" in {
+    val deposit = testDeposit1.copy(
       datasetId = datasetID,
-      profile = testDataset1.profile.copy(accessright = AccessCategory.NO_ACCESS),
+      profile = testDeposit1.profile.copy(accessright = AccessCategory.NO_ACCESS),
       audioVideo = AudioVideo(
         springfield = Option(Springfield("domain", "user", "collection")),
         accessibility = Option.empty
       )
     )
-    AddFileMetadataToDeposit(dataset).checkPreconditions shouldBe a[Success[_]]
+    AddFileMetadataToDeposit(deposit).checkPreconditions shouldBe a[Success[_]]
   }
 
-  it should "succeed if the dataset contains no A/V files and the SF_* fields are not present" in {
+  it should "succeed if the deposit contains no A/V files and the SF_* fields are not present" in {
     val datasetID = "ruimtereis02"
-    val dataset = testDataset2.copy(
+    val deposit = testDeposit2.copy(
       datasetId = datasetID,
       audioVideo = AudioVideo()
     )
-    AddFileMetadataToDeposit(dataset).checkPreconditions shouldBe a[Success[_]]
+    AddFileMetadataToDeposit(deposit).checkPreconditions shouldBe a[Success[_]]
   }
 
-  it should "fail if the dataset contains no A/V files and any of the SF_* fields are present" in {
+  it should "fail if the deposit contains no A/V files and any of the SF_* fields are present" in {
     val datasetID = "ruimtereis02"
-    val dataset = testDataset2.copy(
+    val deposit = testDeposit2.copy(
       row = 1,
       datasetId = datasetID,
-      audioVideo = testDataset2.audioVideo.copy(
+      audioVideo = testDeposit2.audioVideo.copy(
         springfield = Option(Springfield(user = "user", collection = "collection"))
       )
     )
-    inside(AddFileMetadataToDeposit(dataset).checkPreconditions) {
+    inside(AddFileMetadataToDeposit(deposit).checkPreconditions) {
       case Failure(ActionException(_, message, _)) =>
         message should {
           include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]") and
-            include("these columns should be empty because there are no audio/video files found in this dataset")
+            include("these columns should be empty because there are no audio/video files found in this deposit")
         }
     }
   }
 
-  it should "create an empty list of file metadata if the dataset directory corresponding with the datasetId does not exist and therefore succeed" in {
+  it should "create an empty list of file metadata if the deposit directory corresponding with the datasetId does not exist and therefore succeed" in {
     val datasetID = "ruimtereis03"
-    val dataset = testDataset2.copy(datasetId = datasetID)
+    val deposit = testDeposit2.copy(datasetId = datasetID)
     multiDepositDir(datasetID) should not(exist)
-    AddFileMetadataToDeposit(dataset).checkPreconditions shouldBe a[Success[_]]
+    AddFileMetadataToDeposit(deposit).checkPreconditions shouldBe a[Success[_]]
   }
 
   "execute" should "write the file metadata to an xml file" in {
-    val dataset = testDataset1.copy(
+    val deposit = testDeposit1.copy(
       datasetId = datasetID,
-      audioVideo = testDataset1.audioVideo.copy(
+      audioVideo = testDeposit1.audioVideo.copy(
         accessibility = Option(FileAccessRights.NONE),
         avFiles = Set(AVFile(new File("ruimtereis01/reisverslag/centaur.mpg")))
       )
     )
-    val action = AddFileMetadataToDeposit(dataset)
-    val metadataDir = stagingBagMetadataDir(dataset.datasetId)
+    val action = AddFileMetadataToDeposit(deposit)
+    val metadataDir = stagingBagMetadataDir(deposit.datasetId)
 
     action.execute() shouldBe a[Success[_]]
 
     metadataDir should exist
-    stagingFileMetadataFile(dataset.datasetId) should exist
+    stagingFileMetadataFile(deposit.datasetId) should exist
   }
 
   it should "produce the xml for all the files" in {
-    val dataset = testDataset1.copy(
+    val deposit = testDeposit1.copy(
       datasetId = datasetID,
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files")),
@@ -156,7 +156,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
         )
       )
     )
-    AddFileMetadataToDeposit(dataset).execute() shouldBe a[Success[_]]
+    AddFileMetadataToDeposit(deposit).execute() shouldBe a[Success[_]]
 
     val expected = XML.loadFile(new File(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI))
     val actual = XML.loadFile(stagingFileMetadataFile(datasetID))
@@ -164,10 +164,10 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     verify(actual, expected)
   }
 
-  it should "produce the xml for a dataset with no A/V files" in {
+  it should "produce the xml for a deposit with no A/V files" in {
     val datasetID = "ruimtereis02"
-    val dataset = testDataset2.copy(datasetId = datasetID)
-    AddFileMetadataToDeposit(dataset).execute() shouldBe a[Success[_]]
+    val deposit = testDeposit2.copy(datasetId = datasetID)
+    AddFileMetadataToDeposit(deposit).execute() shouldBe a[Success[_]]
 
     val expected = XML.loadFile(new File(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI))
     val actual = XML.loadFile(stagingFileMetadataFile(datasetID))
@@ -175,10 +175,10 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     verify(actual, expected)
   }
 
-  it should "produce the xml for a dataset with no files" in {
+  it should "produce the xml for a deposit with no files" in {
     val datasetID = "ruimtereis03"
-    val dataset = testDataset2.copy(datasetId = datasetID)
-    AddFileMetadataToDeposit(dataset).execute() shouldBe a[Success[_]]
+    val deposit = testDeposit2.copy(datasetId = datasetID)
+    AddFileMetadataToDeposit(deposit).execute() shouldBe a[Success[_]]
 
     val expected = XML.loadFile(new File(getClass.getResource("/allfields/output/input-ruimtereis03/bag/metadata/files.xml").toURI))
     val actual = XML.loadFile(stagingFileMetadataFile(datasetID))
