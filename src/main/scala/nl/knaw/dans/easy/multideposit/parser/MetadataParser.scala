@@ -1,7 +1,7 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import nl.knaw.dans.easy.multideposit.ParseException
-import nl.knaw.dans.easy.multideposit.model.{ DatasetRows, DcType, Metadata, _ }
+import nl.knaw.dans.easy.multideposit.model._
 
 import scala.util.{ Failure, Success, Try }
 
