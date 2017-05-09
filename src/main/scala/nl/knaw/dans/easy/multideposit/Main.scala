@@ -16,7 +16,8 @@
 package nl.knaw.dans.easy.multideposit
 
 import nl.knaw.dans.easy.multideposit.actions._
-import nl.knaw.dans.easy.multideposit.parser.{ Dataset, MultiDepositParser }
+import nl.knaw.dans.easy.multideposit.model.Dataset
+import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.postfixOps

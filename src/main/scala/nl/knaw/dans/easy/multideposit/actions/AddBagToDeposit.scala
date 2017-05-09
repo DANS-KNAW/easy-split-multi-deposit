@@ -27,7 +27,7 @@ import gov.loc.repository.bagit.writer.impl.FileSystemWriter
 import gov.loc.repository.bagit.{ Bag, BagFactory }
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
-import nl.knaw.dans.easy.multideposit.parser.{ Dataset, DatasetId }
+import nl.knaw.dans.easy.multideposit.model.{ Dataset, DatasetId }
 import org.joda.time.format.ISODateTimeFormat
 
 import scala.collection.JavaConverters._

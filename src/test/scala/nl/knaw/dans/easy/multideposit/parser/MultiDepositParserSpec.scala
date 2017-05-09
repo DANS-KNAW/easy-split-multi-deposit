@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit.parser
 import java.io.File
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
+import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.{ ParseException, _ }
 import nl.knaw.dans.lib.error.CompositeException
 import org.joda.time.DateTime

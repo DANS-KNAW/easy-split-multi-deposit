@@ -17,7 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
-import nl.knaw.dans.easy.multideposit.parser.{ Dataset, _ }
+import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 

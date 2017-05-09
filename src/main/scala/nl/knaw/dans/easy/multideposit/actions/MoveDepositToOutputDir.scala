@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.parser.DatasetId
+import nl.knaw.dans.easy.multideposit.model.DatasetId
 import nl.knaw.dans.easy.multideposit.{ Settings, _ }
 import nl.knaw.dans.lib.error.CompositeException
 

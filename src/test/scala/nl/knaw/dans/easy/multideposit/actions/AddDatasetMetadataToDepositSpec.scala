@@ -20,6 +20,7 @@ import java.io.File
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.datasetToXml
+import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.parser._
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterAll

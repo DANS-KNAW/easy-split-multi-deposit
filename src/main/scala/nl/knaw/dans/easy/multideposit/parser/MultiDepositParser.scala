@@ -20,6 +20,7 @@ import java.util.Locale
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit._
+import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.csv.{ CSVFormat, CSVParser }

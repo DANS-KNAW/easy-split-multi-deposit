@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 import javax.naming.directory.Attributes
 
-import nl.knaw.dans.easy.multideposit.parser.AudioVideo
+import nl.knaw.dans.easy.multideposit.model.AudioVideo
 import nl.knaw.dans.easy.multideposit.{ ActionException, Settings, UnitSpec, _ }
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit.parser
+package nl.knaw.dans.easy.multideposit.model
 
 object DcType extends Enumeration {
 

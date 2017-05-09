@@ -17,7 +17,7 @@ package nl.knaw.dans.easy.multideposit
 
 import scala.language.implicitConversions
 
-package object parser {
+package object model {
 
   type MultiDepositKey = String
   type DatasetId = String
