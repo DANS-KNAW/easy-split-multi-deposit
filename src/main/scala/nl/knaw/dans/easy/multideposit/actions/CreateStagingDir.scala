@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.easy.multideposit.parser.DatasetId
+import nl.knaw.dans.easy.multideposit.model.DatasetId
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }

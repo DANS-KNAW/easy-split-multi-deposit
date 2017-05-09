@@ -19,7 +19,7 @@ import java.io.{ File, IOException }
 import java.nio.charset.Charset
 import java.util.Properties
 
-import nl.knaw.dans.easy.multideposit.parser.DatasetId
+import nl.knaw.dans.easy.multideposit.model.DatasetId
 import nl.knaw.dans.lib.error._
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.apache.commons.lang.StringUtils

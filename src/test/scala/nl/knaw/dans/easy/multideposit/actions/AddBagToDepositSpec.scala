@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 import java.security.MessageDigest
 
-import nl.knaw.dans.easy.multideposit.parser.{ Dataset, DatasetId }
+import nl.knaw.dans.easy.multideposit.model.{ Dataset, DatasetId }
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.BeforeAndAfter
 

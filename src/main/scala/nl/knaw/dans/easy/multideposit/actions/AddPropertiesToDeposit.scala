@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.util.{ Collections, Properties, UUID }
 import java.{ util => ju }
 
-import nl.knaw.dans.easy.multideposit.parser.Dataset
+import nl.knaw.dans.easy.multideposit.model.Dataset
 import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
 import resource._
 

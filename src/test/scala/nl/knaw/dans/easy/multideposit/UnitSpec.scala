@@ -20,7 +20,7 @@ import java.io.File
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import org.scalatest._
 
-import nl.knaw.dans.easy.multideposit.parser.{ CreatorPerson, Dataset, Profile, _ }
+import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
 
 abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest with BeforeAndAfterAll {

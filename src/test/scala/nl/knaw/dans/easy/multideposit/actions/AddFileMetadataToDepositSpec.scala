@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.{ File, FileNotFoundException }
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit.parser.{ AVFile, AudioVideo, FileAccessRights, Springfield, Subtitles }
+import nl.knaw.dans.easy.multideposit.model.{ AVFile, AudioVideo, FileAccessRights, Springfield, Subtitles }
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.BeforeAndAfter
 

@@ -20,6 +20,7 @@ import java.io.File
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.datasetToXml
+import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.parser._
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterAll
@@ -138,7 +139,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "return xml on reading from the allfields input instructions csv" in {
     implicit val s2: Settings = settings.copy(multidepositDir = new File(getClass.getResource("/allfields/input").toURI))
     val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
-    inside(new MultiDepositParser()(s2).parse(csv).map(_.map(datasetToXml(_)(s2)))) {
+    inside(MultiDepositParser()(s2).parse(csv).map(_.map(datasetToXml(_)(s2)))) {
       case Success(xmls) => xmls should have size 3
     }
   }
@@ -173,9 +174,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         SpatialPoint("3", "4"),
         SpatialPoint("5", "6", Option("degrees"))),
       spatialBoxes = List(
-        SpatialBoxx("1", "2", "3", "4", Option("RD")),
-        SpatialBoxx("5", "6", "7", "8", None),
-        SpatialBoxx("9", "10", "11", "12", Option("degrees"))),
+        SpatialBox("1", "2", "3", "4", Option("RD")),
+        SpatialBox("5", "6", "7", "8", None),
+        SpatialBox("9", "10", "11", "12", Option("degrees"))),
       temporal = List(
         Temporal("1992-2016"),
         Temporal("PALEOV", Option("abr:ABRperiode")),

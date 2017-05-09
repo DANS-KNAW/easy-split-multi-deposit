@@ -17,7 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
-import nl.knaw.dans.easy.multideposit.parser.{ Dataset, _ }
+import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
@@ -165,7 +165,7 @@ object AddDatasetMetadataToDeposit {
      x -->
 
    */
-  def createSpatialBox(box: SpatialBoxx): Elem = {
+  def createSpatialBox(box: SpatialBox): Elem = {
     val srsName = box.scheme.map(createSrsName).getOrElse("")
 
     lazy val xy = (s"${ box.west } ${ box.south }", s"${ box.east } ${ box.north }")

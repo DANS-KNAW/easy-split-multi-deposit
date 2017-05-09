@@ -19,7 +19,7 @@ import java.io.{ File, IOException }
 import java.nio.file._
 import java.nio.file.attribute._
 
-import nl.knaw.dans.easy.multideposit.parser.DatasetId
+import nl.knaw.dans.easy.multideposit.model.DatasetId
 import nl.knaw.dans.easy.multideposit.{ UnitAction, _ }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
