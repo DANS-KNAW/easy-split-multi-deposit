@@ -43,7 +43,7 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
     Deposit(
       depositId = "ruimtereis01",
       row = 2,
-      depositorId = "ruimtereiziger1",
+      depositorUserId = "ruimtereiziger1",
       profile = Profile(
         titles = List("Reis naar Centaur-planetoïde", "Trip to Centaur asteroid"),
         descriptions = List("Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.", "A two day mission to boldly go where no man has gone before"),
@@ -79,7 +79,7 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
     Deposit(
       depositId = "deposit-2",
       row = 5,
-      depositorId = "ruimtereiziger2",
+      depositorUserId = "ruimtereiziger2",
       profile = Profile(
         titles = List("Title 1 of deposit 2", "Title 2 of deposit 2"),
         descriptions = List("A sample deposit with a not very long description"),

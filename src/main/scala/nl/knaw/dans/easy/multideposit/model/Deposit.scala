@@ -22,7 +22,7 @@ import org.joda.time.DateTime
 
 case class Deposit(depositId: DepositId,
                    row: Int,
-                   depositorId: DepositorId,
+                   depositorUserId: DepositorUserId,
                    profile: Profile,
                    metadata: Metadata = Metadata(),
                    audioVideo: AudioVideo = AudioVideo())

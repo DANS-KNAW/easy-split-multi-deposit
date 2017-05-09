@@ -34,7 +34,7 @@ trait DepositTestObjects extends AudioVideoTestObjects with MetadataTestObjects 
   lazy val deposit = Deposit(
     depositId = "ruimtereis01",
     row = 2,
-    depositorId = "ikke",
+    depositorUserId = "ikke",
     profile = profile,
     metadata = metadata,
     audioVideo = audioVideo
@@ -275,7 +275,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
     the[NoSuchElementException] thrownBy extractDeposit("ruimtereis01", rows) should have message "key not found: ROW"
   }
 
-  it should "fail if there are multiple distinct depositorIDs" in {
+  it should "fail if there are multiple distinct depositorUserIDs" in {
     val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) :: depositCSVRow3 :: Nil
 
     extractDeposit("ruimtereis01", rows) should matchPattern {
@@ -283,7 +283,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
     }
   }
 
-  it should "succeed if there are multiple depositorIDs that are all equal" in {
+  it should "succeed if there are multiple depositorUserIDs that are all equal" in {
     val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) :: depositCSVRow3 :: Nil
 
     extractDeposit("ruimtereis01", rows) should matchPattern { case Success(`deposit`) => }

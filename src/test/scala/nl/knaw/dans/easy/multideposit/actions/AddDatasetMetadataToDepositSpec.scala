@@ -41,7 +41,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   val deposit: Deposit = Deposit(
     depositId = depositId,
     row = 1,
-    depositorId = "dep",
+    depositorUserId = "dep",
     profile = Profile(
       titles = List("dataset title"),
       descriptions = List("omschr1"),

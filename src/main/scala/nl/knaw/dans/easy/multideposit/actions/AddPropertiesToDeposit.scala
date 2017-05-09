@@ -28,7 +28,7 @@ import scala.util.{ Failure, Success, Try }
 
 case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings) extends Action[DatamanagerEmailaddress, Unit] {
 
-  override def checkPreconditions: Try[Unit] = validateDepositor
+  override def checkPreconditions: Try[Unit] = validateDepositorUserId
 
   override def execute(datamanagerEmailaddress: DatamanagerEmailaddress): Try[Unit] = {
     writeProperties(datamanagerEmailaddress)
@@ -37,16 +37,16 @@ case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings)
   /**
    * Checks whether there is only one unique DEPOSITOR_ID set in the `Deposit` (there can be multiple values but the must all be equal!).
    */
-  private def validateDepositor: Try[Unit] = {
-    settings.ldap.query(deposit.depositorId)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
+  private def validateDepositorUserId: Try[Unit] = {
+    settings.ldap.query(deposit.depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
       .flatMap {
-        case Seq() => Failure(ActionException(deposit.row, s"DepositorID '${ deposit.depositorId }' is unknown"))
+        case Seq() => Failure(ActionException(deposit.row, s"depositorUserID '${ deposit.depositorUserId }' is unknown"))
         case Seq(head) => Success(head)
-        case _ => Failure(ActionException(deposit.row, s"There appear to be multiple users with id '${ deposit.depositorId }'"))
+        case _ => Failure(ActionException(deposit.row, s"There appear to be multiple users with id '${ deposit.depositorUserId }'"))
       }
       .flatMap {
         case true => Success(())
-        case false => Failure(ActionException(deposit.row, s"The depositor '${ deposit.depositorId }' is not an active user"))
+        case false => Failure(ActionException(deposit.row, s"The depositor '${ deposit.depositorUserId }' is not an active user"))
       }
   }
 
@@ -69,7 +69,7 @@ case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings)
       "bag-store.bag-id" -> Some(UUID.randomUUID().toString),
       "state.label" -> Some("SUBMITTED"),
       "state.description" -> Some("Deposit is valid and ready for post-submission processing"),
-      "depositor.userId" -> Some(deposit.depositorId),
+      "depositor.userId" -> Some(deposit.depositorUserId),
       "datamanager.userId" -> Some(settings.datamanager),
       "datamanager.email" -> Some(emailaddress),
       "springfield.domain" -> sf.map(_.domain),
