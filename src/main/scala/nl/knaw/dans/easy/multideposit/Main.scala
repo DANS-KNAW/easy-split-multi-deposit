@@ -42,7 +42,7 @@ object Main extends DebugEnhancedLogging {
 
   def run(implicit settings: Settings): Try[Unit] = {
     for {
-      datasets <- new MultiDepositParser().parse(multiDepositInstructionsFile)
+      datasets <- MultiDepositParser().parse(multiDepositInstructionsFile)
       _ <- getActions(datasets).map(_.run(())).getOrElse(Failure(new Exception("no actions were defined")))
     } yield ()
   }

@@ -139,7 +139,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   it should "return xml on reading from the allfields input instructions csv" in {
     implicit val s2: Settings = settings.copy(multidepositDir = new File(getClass.getResource("/allfields/input").toURI))
     val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
-    inside(new MultiDepositParser()(s2).parse(csv).map(_.map(datasetToXml(_)(s2)))) {
+    inside(MultiDepositParser()(s2).parse(csv).map(_.map(datasetToXml(_)(s2)))) {
       case Success(xmls) => xmls should have size 3
     }
   }
