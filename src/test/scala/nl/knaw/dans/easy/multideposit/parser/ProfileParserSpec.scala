@@ -215,7 +215,7 @@ class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
     )
 
     creator(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value(s) for: [DCX_CREATOR_INITIALS]", _)) =>
+      case Failure(ParseException(2, "Missing value for: DCX_CREATOR_INITIALS", _)) =>
     }
   }
 
@@ -230,7 +230,7 @@ class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
     )
 
     creator(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value(s) for: [DCX_CREATOR_SURNAME]", _)) =>
+      case Failure(ParseException(2, "Missing value for: DCX_CREATOR_SURNAME", _)) =>
     }
   }
 

@@ -83,7 +83,10 @@ trait ParserUtils {
     val missingColumns = required.diff(row.keySet)
     val missing = blankRequired.toSet ++ missingColumns
     require(missing.nonEmpty, "the list of missing elements is supposed to be non-empty")
-    Failure(ParseException(rowNum, s"Missing value(s) for: ${ missing.mkString("[", ", ", "]") }"))
+    if (missing.size == 1)
+      Failure(ParseException(rowNum, s"Missing value for: ${ missing.head }"))
+    else
+      Failure(ParseException(rowNum, s"Missing value(s) for: ${ missing.mkString("[", ", ", "]") }"))
   }
 
   def isValidISO639_1Language(lang: String): Boolean = {
