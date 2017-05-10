@@ -88,40 +88,38 @@ trait AudioVideoParser {
     }
   }
 
-  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
+  /**
+   * Returns the absolute file for the given `path`. If the input is correct, `path` is relative
+   * to the deposit it is in.
+   *
+   * By means of backwards compatibility, the `path` might also be
+   * relative to the multideposit. In this case the correct absolute file is returned as well,
+   * besides which a warning is logged, notifying the user that `path` should be relative to the
+   * deposit instead.
+   *
+   * If both options do not suffice, the path is just wrapped in a `File`.
+   *
+   * @param path the path to a file, as provided by the user input
+   * @return the absolute path to this file, if it exists
+   */
+  private def findPath(depositId: DepositId)(path: String): File = {
+    lazy val option1 = new File(multiDepositDir(depositId), path)
+    lazy val option2 = new File(settings.multidepositDir, path)
 
-    /**
-     * Returns the absolute file for the given `path`. If the input is correct, `path` is relative
-     * to the deposit it is in.
-     *
-     * By means of backwards compatibility, the `path` might also be
-     * relative to the multideposit. In this case the correct absolute file is returned as well,
-     * besides which a warning is logged, notifying the user that `path` should be relative to the
-     * deposit instead.
-     *
-     * If both options do not suffice, the path is just wrapped in a `File` and will be caught as
-     * a not existing file in the pattern match checks of the surrounding function.
-     *
-     * @param path the path to a file, as provided by the user input
-     * @return the absolute path to this file, if it exists
-     */
-    def findPath(path: String): File = {
-      lazy val option1 = new File(multiDepositDir(depositId), path)
-      lazy val option2 = new File(settings.multidepositDir, path)
-
-      if (option1.exists())
-        option1
-      else if (option2.exists()) {
-        logger.warn(s"path '$path' is not relative to its depositId '$depositId', but rather relative to the multideposit")
-        option2
-      }
-      else
-        new File(path)
+    if (option1.exists())
+      option1
+    else if (option2.exists()) {
+      logger.warn(s"path '$path' is not relative to its depositId '$depositId', but rather relative to the multideposit")
+      option2
     }
+    else
+      new File(path)
+  }
 
-    val file = row.find("AV_FILE").map(findPath)
+  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
+    val file = row.find("AV_FILE").map(findPath(depositId))
     val title = row.find("AV_FILE_TITLE")
-    val subtitle = row.find("AV_SUBTITLES").map(findPath)
+    val subtitle = row.find("AV_SUBTITLES").map(findPath(depositId))
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, title, subtitle, subtitleLang) match {
