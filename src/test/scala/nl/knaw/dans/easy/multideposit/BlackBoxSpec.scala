@@ -110,7 +110,7 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory {
       case Failure(ParserFailedException(report, _)) =>
         report.lines.toSeq should contain inOrder(
           "CSV failures:",
-          s" - row 2: AV_FILE file '${ settings.multidepositDir.getAbsolutePath }/ruimtereis01/path/to/audiofile/that/does/not/exist.mp3' does not exist",
+          " - row 2: AV_FILE 'path/to/audiofile/that/does/not/exist.mp3' does not exist",
           " - row 2: Missing value for: SF_USER",
           " - row 2: Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'. Found: [OPEN_ACCESS, GROUP_ACCESS]",
           " - row 2: DDM_CREATED value 'invalid-date' does not represent a date",

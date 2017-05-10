@@ -21,11 +21,12 @@ import nl.knaw.dans.easy.multideposit.{ ParseException, Settings }
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.lib.error._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
 
 trait AudioVideoParser {
-  this: ParserUtils =>
+  this: ParserUtils with DebugEnhancedLogging =>
 
   implicit val settings: Settings
 
@@ -88,19 +89,52 @@ trait AudioVideoParser {
   }
 
   def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
-    val file = row.find("AV_FILE").map(new File(multiDepositDir(depositId), _))
+
+    /**
+     * Returns the absolute file for the given `path`. If the input is correct, `path` is relative
+     * to the deposit it is in.
+     *
+     * By means of backwards compatibility, the `path` might also be
+     * relative to the multideposit. In this case the correct absolute file is returned as well,
+     * besides which a warning is logged, notifying the user that `path` should be relative to the
+     * deposit instead.
+     *
+     * If both options do not suffice, the path is just wrapped in a `File` and will be caught as
+     * a not existing file in the pattern match checks of the surrounding function.
+     *
+     * @param path the path to a file, as provided by the user input
+     * @return the absolute path to this file, if it exists
+     */
+    def findPath(path: String): File = {
+      lazy val option1 = new File(multiDepositDir(depositId), path)
+      lazy val option2 = new File(settings.multidepositDir, path)
+
+      if (option1.exists())
+        option1
+      else if (option2.exists()) {
+        logger.warn(s"path '$path' is not relative to its depositId '$depositId', but rather relative to the multideposit")
+        option2
+      }
+      else
+        new File(path)
+    }
+
+    val file = row.find("AV_FILE").map(findPath)
     val title = row.find("AV_FILE_TITLE")
-    val subtitle = row.find("AV_SUBTITLES").map(new File(multiDepositDir(depositId), _))
+    val subtitle = row.find("AV_SUBTITLES").map(findPath)
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, title, subtitle, subtitleLang) match {
-      case (Some(p), t, Some(sub), subLang) if p.exists() && sub.exists() && subLang.forall(isValidISO639_1Language) => Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
-      case (Some(p), _, Some(_), _) if !p.exists() => Some(Failure(ParseException(rowNum, s"AV_FILE file '$p' does not exist")))
-      case (Some(_), _, Some(sub), _) if !sub.exists() => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES file '$sub' does not exist")))
+      case (Some(p), t, Some(sub), subLang) if p.exists() && p.isFile && sub.exists() && sub.isFile && subLang.forall(isValidISO639_1Language) => Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
+      case (Some(p), _, Some(_), _) if !p.exists() => Some(Failure(ParseException(rowNum, s"AV_FILE '$p' does not exist")))
+      case (Some(p), _, Some(_), _) if !p.isFile => Some(Failure(ParseException(rowNum, s"AV_FILE '$p' is not a file")))
+      case (Some(_), _, Some(sub), _) if !sub.exists() => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' does not exist")))
+      case (Some(_), _, Some(sub), _) if !sub.isFile => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' is not a file")))
       case (Some(_), _, Some(_), subLang) if subLang.exists(!isValidISO639_1Language(_)) => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '${ subLang.get }' doesn't have a valid ISO 639-1 language value")))
       case (Some(_), _, None, Some(subLang)) => Some(Failure(ParseException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
-      case (Some(p), t, None, None) if p.exists() => Some(Success((p, t, None)))
-      case (Some(p), _, None, None) => Some(Failure(ParseException(rowNum, s"AV_FILE file '$p' does not exist")))
+      case (Some(p), t, None, None) if p.exists() && p.isFile => Some(Success((p, t, None)))
+      case (Some(p), _, None, None) if !p.exists() => Some(Failure(ParseException(rowNum, s"AV_FILE '$p' does not exist")))
+      case (Some(p), _, None, None) if !p.isFile => Some(Failure(ParseException(rowNum, s"AV_FILE '$p' is not a file")))
       case (None, None, None, None) => None
       case (None, _, _, _) => Some(Failure(ParseException(rowNum, "No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined")))
     }
@@ -115,7 +149,7 @@ trait AudioVideoParser {
 }
 
 object AudioVideoParser {
-  def apply()(implicit ss: Settings): AudioVideoParser = new AudioVideoParser with ParserUtils {
+  def apply()(implicit ss: Settings): AudioVideoParser = new AudioVideoParser with ParserUtils with DebugEnhancedLogging {
     override val settings: Settings = ss
   }
 }

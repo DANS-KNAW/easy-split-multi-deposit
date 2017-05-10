@@ -244,6 +244,34 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
     avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `title`, `subtitles`)) => }
   }
 
+  it should "succeed if the value for AV_FILE is relative to the multideposit rather than the deposit" in {
+    val row = Map(
+      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "reisverslag/centaur.srt",
+      "AV_SUBTITLES_LANGUAGE" -> "en"
+    )
+
+    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile
+    val title = Some("rolling stone")
+    val subtitles = Some(Subtitles(new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.srt").getAbsoluteFile, Some("en")))
+    avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `title`, `subtitles`)) => }
+  }
+
+  it should "succeed if the value for AV_SUBTITLES is relative to the multideposit rather than the deposit" in {
+    val row = Map(
+      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
+      "AV_SUBTITLES_LANGUAGE" -> "en"
+    )
+
+    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile
+    val title = Some("rolling stone")
+    val subtitles = Some(Subtitles(new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.srt").getAbsoluteFile, Some("en")))
+    avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `title`, `subtitles`)) => }
+  }
+
   it should "fail if the value for AV_FILE represents a path that does not exist" in {
     val row = Map(
       "AV_FILE" -> "path/to/file/that/does/not/exist.mpg",
@@ -252,10 +280,24 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.mpg").getAbsoluteFile
     inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe s"AV_FILE file '$file' does not exist"
+        msg shouldBe "AV_FILE 'path/to/file/that/does/not/exist.mpg' does not exist"
+    }
+  }
+
+  it should "fail if the value for AV_FILE represents a folder" in {
+    val row = Map(
+      "AV_FILE" -> "reisverslag/",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "reisverslag/centaur.srt",
+      "AV_SUBTITLES_LANGUAGE" -> "en"
+    )
+
+    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/").getAbsoluteFile
+    inside(avFile("ruimtereis01")(2)(row).value) {
+      case Failure(ParseException(2, msg, _)) =>
+        msg shouldBe s"AV_FILE '$file' is not a file"
     }
   }
 
@@ -267,10 +309,24 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.mpg").getAbsoluteFile
     inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe s"AV_FILE file '$file' does not exist"
+        msg shouldBe "AV_FILE 'path/to/file/that/does/not/exist.mpg' does not exist"
+    }
+  }
+
+  it should "fail if the value for AV_FILE represents a folder when AV_SUBTITLES is not defined" in {
+    val row = Map(
+      "AV_FILE" -> "reisverslag/",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "",
+      "AV_SUBTITLES_LANGUAGE" -> ""
+    )
+
+    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/").getAbsoluteFile
+    inside(avFile("ruimtereis01")(2)(row).value) {
+      case Failure(ParseException(2, msg, _)) =>
+        msg shouldBe s"AV_FILE '$file' is not a file"
     }
   }
 
@@ -282,10 +338,24 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.srt").getAbsoluteFile
     inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe s"AV_SUBTITLES file '$file' does not exist"
+        msg shouldBe "AV_SUBTITLES 'path/to/file/that/does/not/exist.srt' does not exist"
+    }
+  }
+
+  it should "fail if the value for AV_SUBTITLES represents a folder" in {
+    val row = Map(
+      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "reisverslag/",
+      "AV_SUBTITLES_LANGUAGE" -> "en"
+    )
+
+    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/").getAbsoluteFile
+    inside(avFile("ruimtereis01")(2)(row).value) {
+      case Failure(ParseException(2, msg, _)) =>
+        msg shouldBe s"AV_SUBTITLES '$file' is not a file"
     }
   }
 
