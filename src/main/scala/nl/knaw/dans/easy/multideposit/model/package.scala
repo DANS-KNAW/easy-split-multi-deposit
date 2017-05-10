@@ -20,8 +20,8 @@ import scala.language.implicitConversions
 package object model {
 
   type MultiDepositKey = String
-  type DatasetId = String
-  type DepositorId = String
+  type DepositId = String
+  type DepositorUserId = String
 
   // inspired by http://stackoverflow.com/questions/28223692/what-is-the-optimal-way-not-using-scalaz-to-type-require-a-non-empty-list
   type NonEmptyList[A] = ::[A]

@@ -28,7 +28,7 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter {
     multidepositDir = new File(testDir, "md"),
     stagingDir = new File(testDir, "sd")
   )
-  val datasetID = "ds1"
+  val depositId = "ds1"
 
   before {
     // create depositDir base directory
@@ -46,25 +46,25 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter {
 
   "checkPreconditions" should "succeed if the output directories do not yet exist" in {
     // directories do not exist before
-    stagingDir(datasetID) shouldNot exist
-    stagingBagDir(datasetID) shouldNot exist
-    stagingBagMetadataDir(datasetID) shouldNot exist
+    stagingDir(depositId) shouldNot exist
+    stagingBagDir(depositId) shouldNot exist
+    stagingBagMetadataDir(depositId) shouldNot exist
 
     // creation of directories
-    CreateStagingDir(1, datasetID).checkPreconditions shouldBe a[Success[_]]
+    CreateStagingDir(1, depositId).checkPreconditions shouldBe a[Success[_]]
   }
 
   it should "fail if either one of the output directories does already exist" in {
-    stagingBagDir(datasetID).mkdirs()
+    stagingBagDir(depositId).mkdirs()
 
     // some directories do already exist before
-    stagingDir(datasetID) should exist
-    stagingBagDir(datasetID) should exist
-    stagingBagMetadataDir(datasetID) shouldNot exist
+    stagingDir(depositId) should exist
+    stagingBagDir(depositId) should exist
+    stagingBagMetadataDir(depositId) shouldNot exist
 
     // creation of directories
-    inside(CreateStagingDir(1, datasetID).checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include(s"The deposit for dataset $datasetID already exists")
+    inside(CreateStagingDir(1, depositId).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) => message should include(s"The deposit for dataset $depositId already exists")
     }
   }
 
@@ -79,26 +79,26 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter {
     executeTest()
 
     // roll back the creation of the directories
-    CreateStagingDir(1, datasetID).rollback() shouldBe a[Success[_]]
+    CreateStagingDir(1, depositId).rollback() shouldBe a[Success[_]]
 
     // test that the directories are really not there anymore
-    stagingDir(datasetID) shouldNot exist
-    stagingBagDir(datasetID) shouldNot exist
-    stagingBagMetadataDir(datasetID) shouldNot exist
+    stagingDir(depositId) shouldNot exist
+    stagingBagDir(depositId) shouldNot exist
+    stagingBagMetadataDir(depositId) shouldNot exist
   }
 
   def executeTest(): Unit = {
     // directories do not exist before
-    stagingDir(datasetID) shouldNot exist
-    stagingBagDir(datasetID) shouldNot exist
-    stagingBagMetadataDir(datasetID) shouldNot exist
+    stagingDir(depositId) shouldNot exist
+    stagingBagDir(depositId) shouldNot exist
+    stagingBagMetadataDir(depositId) shouldNot exist
 
     // creation of directories
-    CreateStagingDir(1, datasetID).execute shouldBe a[Success[_]]
+    CreateStagingDir(1, depositId).execute shouldBe a[Success[_]]
 
     // test existance after creation
-    stagingDir(datasetID) should exist
-    stagingBagDir(datasetID) should exist
-    stagingBagMetadataDir(datasetID) should exist
+    stagingDir(depositId) should exist
+    stagingBagDir(depositId) should exist
+    stagingBagMetadataDir(depositId) should exist
   }
 }

@@ -173,7 +173,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     contributor(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_INITIALS]", _)) =>
+      case Failure(ParseException(2, "Missing value for: DCX_CONTRIBUTOR_INITIALS", _)) =>
     }
   }
 
@@ -188,7 +188,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     contributor(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME]", _)) =>
+      case Failure(ParseException(2, "Missing value for: DCX_CONTRIBUTOR_SURNAME", _)) =>
     }
   }
 
@@ -221,7 +221,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
       "DC_IDENTIFIER_TYPE" -> "ISSN"
     )
     identifier(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value(s) for: [DC_IDENTIFIER]", _)) =>
+      case Failure(ParseException(2, "Missing value for: DC_IDENTIFIER", _)) =>
     }
   }
 
@@ -494,7 +494,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     spatialPoint(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value(s) for: [DCX_SPATIAL_Y]", _)) =>
+      case Failure(ParseException(2, "Missing value for: DCX_SPATIAL_Y", _)) =>
     }
   }
 

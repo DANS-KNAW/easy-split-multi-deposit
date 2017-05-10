@@ -25,7 +25,7 @@ import scala.util.{ Failure, Success, Try }
 trait ProfileParser {
   this: ParserUtils =>
 
-  def extractProfile(rows: DatasetRows, rowNum: Int): Try[Profile] = {
+  def extractProfile(rows: DepositRows, rowNum: Int): Try[Profile] = {
     Try { Profile.curried }
       .combine(extractNEL(rows, rowNum, "DC_TITLE"))
       .combine(extractNEL(rows, rowNum, "DC_DESCRIPTION"))
@@ -50,7 +50,7 @@ trait ProfileParser {
       }
   }
 
-  def date(columnName: MultiDepositKey)(rowNum: => Int)(row: DatasetRow): Option[Try[DateTime]] = {
+  def date(columnName: MultiDepositKey)(rowNum: => Int)(row: DepositRow): Option[Try[DateTime]] = {
     row.find(columnName)
       .map(date => Try { DateTime.parse(date) }.recoverWith {
         case e: IllegalArgumentException => Failure(ParseException(rowNum, s"$columnName value " +
@@ -58,7 +58,7 @@ trait ProfileParser {
       })
   }
 
-  def accessCategory(rowNum: => Int)(row: DatasetRow): Option[Try[AccessCategory]] = {
+  def accessCategory(rowNum: => Int)(row: DepositRow): Option[Try[AccessCategory]] = {
     row.find("DDM_ACCESSRIGHTS")
       .map(acc => Try { AccessCategory.valueOf(acc) }
         .recoverWith {
@@ -67,7 +67,7 @@ trait ProfileParser {
         })
   }
 
-  def creator(rowNum: => Int)(row: DatasetRow): Option[Try[Creator]] = {
+  def creator(rowNum: => Int)(row: DepositRow): Option[Try[Creator]] = {
     val titles = row.find("DCX_CREATOR_TITLES")
     val initials = row.find("DCX_CREATOR_INITIALS")
     val insertions = row.find("DCX_CREATOR_INSERTIONS")

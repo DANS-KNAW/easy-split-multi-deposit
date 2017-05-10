@@ -33,9 +33,9 @@ trait AudioVideoTestObjects {
       "SF_USER" -> "janvanmansum",
       "SF_COLLECTION" -> "jans-test-files",
       "SF_ACCESSIBILITY" -> "NONE",
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE" -> "reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "video about the centaur meteorite",
-      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
+      "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     ),
     Map(
@@ -43,9 +43,9 @@ trait AudioVideoTestObjects {
       "SF_USER" -> "",
       "SF_COLLECTION" -> "",
       "SF_ACCESSIBILITY" -> "",
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE" -> "reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "",
-      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur-nederlands.srt",
+      "AV_SUBTITLES" -> "reisverslag/centaur-nederlands.srt",
       "AV_SUBTITLES_LANGUAGE" -> "nl"
     ),
     Map(
@@ -53,7 +53,7 @@ trait AudioVideoTestObjects {
       "SF_USER" -> "",
       "SF_COLLECTION" -> "",
       "SF_ACCESSIBILITY" -> "",
-      "AV_FILE" -> "ruimtereis01/path/to/a/random/sound/chicken.mp3",
+      "AV_FILE" -> "path/to/a/random/sound/chicken.mp3",
       "AV_FILE_TITLE" -> "our daily wake up call",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
@@ -101,7 +101,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
   import parser._
 
   "extractAudioVideo" should "convert the csv input to the corresponding output" in {
-    extractAudioVideo(audioVideoCSV, 2) should matchPattern { case Success(`audioVideo`) => }
+    extractAudioVideo(audioVideoCSV, 2, "ruimtereis01") should matchPattern { case Success(`audioVideo`) => }
   }
 
   it should "fail if there are AV_FILE values but there is no Springfield data" in {
@@ -116,7 +116,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
       "AV_SUBTITLES_LANGUAGE" -> ""
     ) :: audioVideoCSVRow2 :: audioVideoCSVRow3 :: Nil
 
-    extractAudioVideo(rows, 2) should matchPattern {
+    extractAudioVideo(rows, 2, "ruimtereis01") should matchPattern {
       case Failure(ParseException(2, "The column 'AV_FILE' contains values, but the columns [SF_COLLECTION, SF_USER] do not", _)) =>
     }
   }
@@ -128,7 +128,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
         .updated("SF_COLLECTION", "extra3") ::
       audioVideoCSVRow3 :: Nil
 
-    extractAudioVideo(rows, 2) should matchPattern {
+    extractAudioVideo(rows, 2, "ruimtereis01") should matchPattern {
       case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]. Found: [(dans,janvanmansum,jans-test-files), (extra1,extra2,extra3)]", _)) =>
     }
   }
@@ -138,7 +138,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
       audioVideoCSVRow2.updated("SF_ACCESSIBILITY", "KNOWN") ::
       audioVideoCSVRow3 :: Nil
 
-    extractAudioVideo(rows, 2) should matchPattern {
+    extractAudioVideo(rows, 2, "ruimtereis01") should matchPattern {
       case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'SF_ACCESSIBILITY'. Found: [NONE, KNOWN]", _)) =>
     }
   }
@@ -148,7 +148,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
       audioVideoCSVRow2.updated("AV_FILE_TITLE", "another title") ::
       audioVideoCSVRow3 :: Nil
 
-    inside(extractAudioVideo(rows, 2)) {
+    inside(extractAudioVideo(rows, 2, "ruimtereis01")) {
       case Failure(CompositeException(es)) =>
         val ParseException(2, msg, _) :: Nil = es.toList
         val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile
@@ -232,7 +232,35 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
 
   "avFile" should "convert the csv input into the corresponding object" in {
     val row = Map(
+      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "reisverslag/centaur.srt",
+      "AV_SUBTITLES_LANGUAGE" -> "en"
+    )
+
+    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile
+    val title = Some("rolling stone")
+    val subtitles = Some(Subtitles(new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.srt").getAbsoluteFile, Some("en")))
+    avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `title`, `subtitles`)) => }
+  }
+
+  it should "succeed if the value for AV_FILE is relative to the multideposit rather than the deposit" in {
+    val row = Map(
       "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "reisverslag/centaur.srt",
+      "AV_SUBTITLES_LANGUAGE" -> "en"
+    )
+
+    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile
+    val title = Some("rolling stone")
+    val subtitles = Some(Subtitles(new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.srt").getAbsoluteFile, Some("en")))
+    avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `title`, `subtitles`)) => }
+  }
+
+  it should "succeed if the value for AV_SUBTITLES is relative to the multideposit rather than the deposit" in {
+    val row = Map(
+      "AV_FILE" -> "reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
       "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
@@ -241,76 +269,118 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
     val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile
     val title = Some("rolling stone")
     val subtitles = Some(Subtitles(new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.srt").getAbsoluteFile, Some("en")))
-    avFile(2)(row).value should matchPattern { case Success((`file`, `title`, `subtitles`)) => }
+    avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `title`, `subtitles`)) => }
   }
 
   it should "fail if the value for AV_FILE represents a path that does not exist" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/path/to/file/that/does/not/exist.mpg",
+      "AV_FILE" -> "path/to/file/that/does/not/exist.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
-      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
+      "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.mpg").getAbsoluteFile
-    inside(avFile(2)(row).value) {
+    inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe s"AV_FILE file '$file' does not exist"
+        msg shouldBe "AV_FILE 'path/to/file/that/does/not/exist.mpg' does not exist"
+    }
+  }
+
+  it should "fail if the value for AV_FILE represents a folder" in {
+    val row = Map(
+      "AV_FILE" -> "reisverslag/",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "reisverslag/centaur.srt",
+      "AV_SUBTITLES_LANGUAGE" -> "en"
+    )
+
+    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/").getAbsoluteFile
+    inside(avFile("ruimtereis01")(2)(row).value) {
+      case Failure(ParseException(2, msg, _)) =>
+        msg shouldBe s"AV_FILE '$file' is not a file"
     }
   }
 
   it should "fail if the value for AV_FILE represents a path that does not exist when AV_SUBTITLES is not defined" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/path/to/file/that/does/not/exist.mpg",
+      "AV_FILE" -> "path/to/file/that/does/not/exist.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.mpg").getAbsoluteFile
-    inside(avFile(2)(row).value) {
+    inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe s"AV_FILE file '$file' does not exist"
+        msg shouldBe "AV_FILE 'path/to/file/that/does/not/exist.mpg' does not exist"
+    }
+  }
+
+  it should "fail if the value for AV_FILE represents a folder when AV_SUBTITLES is not defined" in {
+    val row = Map(
+      "AV_FILE" -> "reisverslag/",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "",
+      "AV_SUBTITLES_LANGUAGE" -> ""
+    )
+
+    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/").getAbsoluteFile
+    inside(avFile("ruimtereis01")(2)(row).value) {
+      case Failure(ParseException(2, msg, _)) =>
+        msg shouldBe s"AV_FILE '$file' is not a file"
     }
   }
 
   it should "fail if the value for AV_SUBTITLES represents a path that does not exist" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE" -> "reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
-      "AV_SUBTITLES" -> "ruimtereis01/path/to/file/that/does/not/exist.srt",
+      "AV_SUBTITLES" -> "path/to/file/that/does/not/exist.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = new File(settings.multidepositDir, "ruimtereis01/path/to/file/that/does/not/exist.srt").getAbsoluteFile
-    inside(avFile(2)(row).value) {
+    inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe s"AV_SUBTITLES file '$file' does not exist"
+        msg shouldBe "AV_SUBTITLES 'path/to/file/that/does/not/exist.srt' does not exist"
+    }
+  }
+
+  it should "fail if the value for AV_SUBTITLES represents a folder" in {
+    val row = Map(
+      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_TITLE" -> "rolling stone",
+      "AV_SUBTITLES" -> "reisverslag/",
+      "AV_SUBTITLES_LANGUAGE" -> "en"
+    )
+
+    val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/").getAbsoluteFile
+    inside(avFile("ruimtereis01")(2)(row).value) {
+      case Failure(ParseException(2, msg, _)) =>
+        msg shouldBe s"AV_SUBTITLES '$file' is not a file"
     }
   }
 
   it should "fail if the value for AV_SUBTITLES_LANGUAGE does not represent an ISO 639-1 language value" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE" -> "reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
-      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
+      "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "ac"
     )
 
-    avFile(2)(row).value should matchPattern {
+    avFile("ruimtereis01")(2)(row).value should matchPattern {
       case Failure(ParseException(2, "AV_SUBTITLES_LANGUAGE 'ac' doesn't have a valid ISO 639-1 language value", _)) =>
     }
   }
 
   it should "fail if there is no AV_SUBTITLES value, but there is a AV_SUBTITLES_LANGUAGE" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE" -> "reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    inside(avFile(2)(row).value) {
+    inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
         msg shouldBe s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: 'en'"
     }
@@ -318,21 +388,21 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
 
   it should "succeed if there is a value for AV_SUBTITLES, but no value for AV_SUBTITLES_LANGUAGE" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE" -> "reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
-      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
+      "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
     val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile
     val title = Some("rolling stone")
     val subtitles = Some(Subtitles(new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.srt").getAbsoluteFile))
-    avFile(2)(row).value should matchPattern { case Success((`file`, `title`, `subtitles`)) => }
+    avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `title`, `subtitles`)) => }
   }
 
   it should "succeed if there is no value for both AV_SUBTITLES and AV_SUBTITLES_LANGUAGE" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE" -> "reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "rolling stone",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
@@ -340,31 +410,31 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
 
     val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile
     val title = Some("rolling stone")
-    avFile(2)(row).value should matchPattern { case Success((`file`, `title`, None)) => }
+    avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `title`, None)) => }
   }
 
   it should "succeed if there is no value for AV_FILE_TITLE" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE" -> "reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "",
-      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
+      "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
     val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile
     val subtitles = Some(Subtitles(new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.srt").getAbsoluteFile))
-    avFile(2)(row).value should matchPattern { case Success((`file`, None, `subtitles`)) => }
+    avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, None, `subtitles`)) => }
   }
 
   it should "fail if there is no value for AV_FILE, but the other three do have values" in {
     val row = Map(
       "AV_FILE" -> "",
       "AV_FILE_TITLE" -> "rolling stone",
-      "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
+      "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    inside(avFile(2)(row).value) {
+    inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
         msg should include("No value is defined for AV_FILE")
     }
@@ -378,7 +448,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    avFile(2)(row) shouldBe empty
+    avFile("ruimtereis01")(2)(row) shouldBe empty
   }
 
   "fileAccessRight" should "convert the value for SF_ACCESSIBILITY into the corresponding enum object" in {

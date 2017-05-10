@@ -19,7 +19,7 @@ import java.io.File
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitAction, _ }
-import nl.knaw.dans.easy.multideposit.model.{ AVFile, Dataset, FileAccessRights, Subtitles }
+import nl.knaw.dans.easy.multideposit.model.{ AVFile, Deposit, FileAccessRights, Subtitles }
 import nl.knaw.dans.lib.error._
 import org.apache.tika.Tika
 
@@ -27,7 +27,7 @@ import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 import scala.xml.Elem
 
-case class AddFileMetadataToDeposit(dataset: Dataset)(implicit settings: Settings) extends UnitAction[Unit] {
+case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Settings) extends UnitAction[Unit] {
 
   sealed abstract class AudioVideo(val vocabulary: String)
   case object Audio extends AudioVideo("http://schema.org/AudioObject")
@@ -43,12 +43,12 @@ case class AddFileMetadataToDeposit(dataset: Dataset)(implicit settings: Setting
                            ) extends FileMetadata(filepath, mimeType)
 
   private lazy val fileInstructions: Map[File, AVFile] = {
-    dataset.audioVideo.avFiles.map(avFile => avFile.file -> avFile).toMap
+    deposit.audioVideo.avFiles.map(avFile => avFile.file -> avFile).toMap
   }
 
   private lazy val avAccessibility: FileAccessRights.Value = {
-    dataset.audioVideo.accessibility
-      .getOrElse(FileAccessRights.accessibleTo(dataset.profile.accessright))
+    deposit.audioVideo.accessibility
+      .getOrElse(FileAccessRights.accessibleTo(deposit.profile.accessright))
   }
 
   private def getFileMetadata(file: File): Try[FileMetadata] = {
@@ -70,13 +70,13 @@ case class AddFileMetadataToDeposit(dataset: Dataset)(implicit settings: Setting
   }
 
   private lazy val fileMetadata: Try[Seq[FileMetadata]] = Try {
-    val datasetDir = multiDepositDir(dataset.datasetId)
-    if (datasetDir.exists()) {
-      datasetDir.listRecursively
+    val depositDir = multiDepositDir(deposit.depositId)
+    if (depositDir.exists()) {
+      depositDir.listRecursively
         .map(getFileMetadata)
         .collectResults
     }
-    else // if the dataset does not contain any data
+    else // if the deposit does not contain any data
       Success { List.empty }
   }.flatten
 
@@ -87,36 +87,36 @@ case class AddFileMetadataToDeposit(dataset: Dataset)(implicit settings: Setting
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-    def checkSFColumnsIfDatasetContainsAVFiles(mimetypes: Seq[FileMetadata]): Try[Unit] = {
+    def checkSFColumnsIfDepositContainsAVFiles(mimetypes: Seq[FileMetadata]): Try[Unit] = {
       val avFiles = mimetypes.collect { case fmd: AVFileMetadata => fmd.filepath }
 
-      (dataset.audioVideo.springfield.isDefined, avFiles.isEmpty) match {
+      (deposit.audioVideo.springfield.isDefined, avFiles.isEmpty) match {
         case (true, false) | (false, true) => Success(())
         case (true, true) =>
-          Failure(ActionException(dataset.row,
+          Failure(ActionException(deposit.row,
             "Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]\n" +
               "cause: these columns should be empty because there are no audio/video files " +
-              "found in this dataset"))
+              "found in this deposit"))
         case (false, false) =>
-          Failure(ActionException(dataset.row,
+          Failure(ActionException(deposit.row,
             "No values found for these columns: [SF_USER, SF_COLLECTION]\n" +
               "cause: these columns should contain values because audio/video files are " +
               s"found:\n${ avFiles.map(filepath => s" - $filepath").mkString("\n") }"))
       }
     }
 
-    fileMetadata.flatMap(checkSFColumnsIfDatasetContainsAVFiles)
+    fileMetadata.flatMap(checkSFColumnsIfDepositContainsAVFiles)
   }
 
   override def execute(): Try[Unit] = {
-    datasetToFileXml
-      .map(stagingFileMetadataFile(dataset.datasetId).writeXml(_))
+    depositToFileXml
+      .map(stagingFileMetadataFile(deposit.depositId).writeXml(_))
       .recoverWith {
-        case NonFatal(e) => Failure(ActionException(dataset.row, s"Could not write file meta data: $e", e))
+        case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write file meta data: $e", e))
       }
   }
 
-  def datasetToFileXml: Try[Elem] = {
+  def depositToFileXml: Try[Elem] = {
     fileMetadata.map(fileXmls(_) match {
       case Nil => <files xmlns:dcterms="http://purl.org/dc/terms/"/>
       case files =>
@@ -156,7 +156,7 @@ case class AddFileMetadataToDeposit(dataset: Dataset)(implicit settings: Setting
   }
 
   private def formatFilePath(file: File): File = {
-    multiDepositDir(dataset.datasetId)
+    multiDepositDir(deposit.depositId)
       .toPath
       .relativize(file.toPath)
       .toFile

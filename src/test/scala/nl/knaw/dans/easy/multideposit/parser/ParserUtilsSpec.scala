@@ -44,13 +44,13 @@ class ParserUtilsSpec extends UnitSpec with LanguageBehavior {
 
   import parser._
 
-  "getRowNum" should "extract the row number from the dataset row" in {
+  "getRowNum" should "extract the row number from the deposit row" in {
     val row = Map("ROW" -> "2", "TEST" -> "abc")
 
     getRowNum(row) shouldBe 2
   }
 
-  it should "throw a NoSuchElementException when ROW is not a header in the dataset" in {
+  it should "throw a NoSuchElementException when ROW is not a header in the deposit" in {
     val row = Map("TEST" -> "abc")
 
     the[NoSuchElementException] thrownBy getRowNum(row) should have message "key not found: ROW"

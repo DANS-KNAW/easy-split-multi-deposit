@@ -26,21 +26,21 @@ import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 import scala.xml.{ Elem, Null, PrefixedAttribute }
 
-case class AddDatasetMetadataToDeposit(dataset: Dataset)(implicit settings: Settings) extends UnitAction[Unit] {
+case class AddDatasetMetadataToDeposit(deposit: Deposit)(implicit settings: Settings) extends UnitAction[Unit] {
 
-  override def execute(): Try[Unit] = writeDatasetMetadataXml(dataset)
+  override def execute(): Try[Unit] = writeDatasetMetadataXml(deposit)
 }
 object AddDatasetMetadataToDeposit {
 
-  def writeDatasetMetadataXml(dataset: Dataset)(implicit settings: Settings): Try[Unit] = {
+  def writeDatasetMetadataXml(deposit: Deposit)(implicit settings: Settings): Try[Unit] = {
     Try {
-      stagingDatasetMetadataFile(dataset.datasetId).writeXml(datasetToXml(dataset))
+      stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
     } recoverWith {
-      case NonFatal(e) => Failure(ActionException(dataset.row, s"Could not write dataset metadata: $e", e))
+      case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write deposit metadata: $e", e))
     }
   }
 
-  def datasetToXml(dataset: Dataset)(implicit settings: Settings): Elem = {
+  def depositToDDM(deposit: Deposit)(implicit settings: Settings): Elem = {
     <ddm:DDM
       xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -55,8 +55,8 @@ object AddDatasetMetadataToDeposit {
       xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/"
       xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/"
       xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
-      {createProfile(dataset.profile)}
-      {createMetadata(dataset.metadata, dataset.audioVideo.springfield)}
+      {createProfile(deposit.profile)}
+      {createMetadata(deposit.metadata, deposit.audioVideo.springfield)}
     </ddm:DDM>
   }
 

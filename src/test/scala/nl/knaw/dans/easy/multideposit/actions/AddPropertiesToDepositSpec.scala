@@ -34,28 +34,28 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     datamanager = "dm",
     ldap = ldapMock
   )
-  val datasetID = "ds1"
+  val depositId = "ds1"
 
   def mockLdapForDepositor(b: Boolean): Unit = {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Success(Seq(b))
   }
 
   before {
-    new File(settings.stagingDir, s"md-$datasetID").mkdirs
+    new File(settings.stagingDir, s"md-$depositId").mkdirs
   }
 
   override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
-  "checkPreconditions" should "succeed if ldap identifies the depositorId as active" in {
+  "checkPreconditions" should "succeed if ldap identifies the depositorUserId as active" in {
     mockLdapForDepositor(true)
 
-    AddPropertiesToDeposit(testDataset1.copy(depositorId = "dp1")).checkPreconditions shouldBe a[Success[_]]
+    AddPropertiesToDeposit(testDeposit1.copy(depositorUserId = "dp1")).checkPreconditions shouldBe a[Success[_]]
   }
 
-  it should "fail if ldap identifies the depositorID as not active" in {
+  it should "fail if ldap identifies the depositorUserId as not active" in {
     mockLdapForDepositor(false)
 
-    inside(AddPropertiesToDeposit(testDataset1.copy(depositorId = "dp1")).checkPreconditions) {
+    inside(AddPropertiesToDeposit(testDeposit1.copy(depositorUserId = "dp1")).checkPreconditions) {
       case Failure(ActionException(_, message, _)) => message should include("depositor 'dp1' is not an active user")
     }
   }
@@ -63,29 +63,29 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   it should "fail if ldap does not return anything for the depositor" in {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Success(Seq.empty)
 
-    inside(AddPropertiesToDeposit(testDataset1.copy(depositorId = "dp1")).checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include("DepositorID 'dp1' is unknown")
+    inside(AddPropertiesToDeposit(testDeposit1.copy(depositorUserId = "dp1")).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) => message should include("depositorUserId 'dp1' is unknown")
     }
   }
 
   it should "fail if ldap returns multiple values" in {
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Success(Seq(true, true))
 
-    inside(AddPropertiesToDeposit(testDataset1.copy(depositorId = "dp1")).checkPreconditions) {
+    inside(AddPropertiesToDeposit(testDeposit1.copy(depositorUserId = "dp1")).checkPreconditions) {
       case Failure(ActionException(_, message, _)) => message should include("multiple users with id 'dp1'")
     }
   }
 
   "execute" should "generate the properties file and write the properties in it" in {
-    AddPropertiesToDeposit(testDataset1.copy(audioVideo = AudioVideo())).execute("dm@test.org") shouldBe a[Success[_]]
+    AddPropertiesToDeposit(testDeposit1.copy(audioVideo = AudioVideo())).execute("dm@test.org") shouldBe a[Success[_]]
 
-    val props = stagingPropertiesFile(testDataset1.datasetId)
+    val props = stagingPropertiesFile(testDeposit1.depositId)
     props should exist
 
     props.read() should {
       include("state.label") and
         include("state.description") and
-        include(s"depositor.userId=${ testDataset1.depositorId }") and
+        include(s"depositor.userId=${ testDeposit1.depositorUserId }") and
         include("datamanager.email=dm@test.org") and
         include("datamanager.userId=dm") and
         not include "springfield.domain" and
@@ -95,9 +95,9 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   }
 
   it should "generate the properties file with springfield fields and write the properties in it" in {
-    AddPropertiesToDeposit(testDataset1).execute("dm@test.org") shouldBe a[Success[_]]
+    AddPropertiesToDeposit(testDeposit1).execute("dm@test.org") shouldBe a[Success[_]]
 
-    val props = stagingPropertiesFile(testDataset1.datasetId)
+    val props = stagingPropertiesFile(testDeposit1.depositId)
     props should exist
 
     props.read() should {

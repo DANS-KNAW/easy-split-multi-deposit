@@ -32,21 +32,21 @@ import scala.util.{ Failure, Success, Try }
 
 trait MultiDepositParser extends ParserUtils with AudioVideoParser with MetadataParser with ProfileParser with DebugEnhancedLogging {
 
-  def parse(file: File): Try[Seq[Dataset]] = {
+  def parse(file: File): Try[Seq[Deposit]] = {
     logger.info(s"Parsing $file")
 
-    val datasets = for {
+    val deposits = for {
       (headers, content) <- read(file)
-      datasetIdIndex = headers.indexOf("DATASET")
-      _ <- detectEmptyDatasetCells(content.map(_ (datasetIdIndex)))
-      result <- content.groupBy(_ (datasetIdIndex))
+      depositIdIndex = headers.indexOf("DATASET")
+      _ <- detectEmptyDepositCells(content.map(_ (depositIdIndex)))
+      result <- content.groupBy(_ (depositIdIndex))
         .mapValues(_.map(headers.zip(_).filterNot { case (_, value) => value.isBlank }.toMap))
-        .map((extractDataset _).tupled)
+        .map((extractDeposit _).tupled)
         .toSeq
         .collectResults
     } yield result
 
-    datasets.recoverWith { case NonFatal(e) => recoverParsing(e) }
+    deposits.recoverWith { case NonFatal(e) => recoverParsing(e) }
   }
 
   def read(file: File): Try[(List[MultiDepositKey], List[List[String]])] = {
@@ -56,7 +56,7 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
       .flatMap {
         case Nil => Failure(EmptyInstructionsFileException(file))
         case headers :: rows =>
-          validateDatasetHeaders(headers)
+          validateDepositHeaders(headers)
             .map(_ => ("ROW" :: headers, rows.zipWithIndex.collect {
               case (row, index) if row.nonEmpty => (index + 2).toString :: row
             }))
@@ -72,7 +72,7 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
       }
   }
 
-  private def validateDatasetHeaders(headers: List[MultiDepositKey]): Try[Unit] = {
+  private def validateDepositHeaders(headers: List[MultiDepositKey]): Try[Unit] = {
     val validHeaders = Headers.validHeaders
     val invalidHeaders = headers.filterNot(validHeaders.contains)
     lazy val uniqueHeaders = headers.distinct
@@ -89,24 +89,25 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
       Success(())
   }
 
-  def detectEmptyDatasetCells(datasetIds: List[String]): Try[Unit] = {
-    datasetIds.zipWithIndex
+  def detectEmptyDepositCells(depositIds: List[String]): Try[Unit] = {
+    depositIds.zipWithIndex
       .collect { case (s, i) if s.isBlank => i + 2 }
-      .map(index => Failure(ParseException(index, s"Row $index does not have a datasetId in column DATASET")): Try[Unit])
+      .map(index => Failure(ParseException(index, s"Row $index does not have a depositId in column DATASET")): Try[Unit])
       .collectResults
       .map(_ => ())
   }
 
-  def extractDataset(datasetId: DatasetId, rows: DatasetRows): Try[Dataset] = {
+  def extractDeposit(depositId: DepositId, rows: DepositRows): Try[Deposit] = {
     val rowNum = rows.map(getRowNum).min
 
-    Try { Dataset.curried }
-      .combine(checkValidChars(rowNum, "DATASET", datasetId))
-      .map(_ (rowNum))
-      .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
-      .combine(extractProfile(rows, rowNum))
-      .combine(extractMetadata(rows))
-      .combine(extractAudioVideo(rows, rowNum))
+    checkValidChars(rowNum, "DATASET", depositId)
+      .flatMap(dsId => Try { Deposit.curried }
+        .map(_ (dsId))
+        .map(_ (rowNum))
+        .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
+        .combine(extractProfile(rows, rowNum))
+        .combine(extractMetadata(rows))
+        .combine(extractAudioVideo(rows, rowNum, depositId)))
   }
 
   private def recoverParsing(t: Throwable): Failure[Nothing] = {

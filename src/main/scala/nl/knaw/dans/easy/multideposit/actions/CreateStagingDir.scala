@@ -16,23 +16,23 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.easy.multideposit.model.DatasetId
+import nl.knaw.dans.easy.multideposit.model.DepositId
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class CreateStagingDir(row: Int, datasetId: DatasetId)(implicit settings: Settings) extends UnitAction[Unit] {
+case class CreateStagingDir(row: Int, depositId: DepositId)(implicit settings: Settings) extends UnitAction[Unit] {
 
-  private val stagingDirectory = stagingDir(datasetId)
-  private val bagDir = stagingBagDir(datasetId)
-  private val metadataDir = stagingBagMetadataDir(datasetId)
+  private val stagingDirectory = stagingDir(depositId)
+  private val bagDir = stagingBagDir(depositId)
+  private val metadataDir = stagingBagMetadataDir(depositId)
   private val dirs = stagingDirectory :: bagDir :: metadataDir :: Nil
 
   override def checkPreconditions: Try[Unit] = checkDirectoriesDoNotExist
 
   private def checkDirectoriesDoNotExist: Try[Unit] = {
     dirs.find(_.exists)
-      .map(file => Failure(ActionException(row, s"The deposit for dataset $datasetId already exists in $file.")))
+      .map(file => Failure(ActionException(row, s"The deposit for dataset $depositId already exists in $file.")))
       .getOrElse(Success(()))
   }
 
