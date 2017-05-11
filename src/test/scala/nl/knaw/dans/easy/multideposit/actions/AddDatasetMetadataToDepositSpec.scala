@@ -26,9 +26,9 @@ import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterAll
 
 import scala.util.Success
-import scala.xml.{ Elem, Node, Utility }
+import scala.xml.{ Elem, Node }
 
-class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
+class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll with CustomMatchers {
 
   implicit val settings = new Settings(
     multidepositDir = new File(testDir, "md"),
@@ -133,7 +133,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
   }
 
   "depositToDDM" should "return the expected xml" in {
-    verify(depositToDDM(deposit), expectedXml)
+    depositToDDM(deposit) should equalTrimmed (expectedXml)
   }
 
   it should "return xml on reading from the allfields input instructions csv" in {
@@ -182,116 +182,113 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll {
         Temporal("PALEOV", Option("abr:ABRperiode")),
         Temporal("some arbitrary text"))
     )
-    val expectedXml = <ddm>
-      <ddm:dcmiMetadata>
-        <dcterms:alternative>alt1</dcterms:alternative>
-        <dcterms:alternative>alt2</dcterms:alternative>
-        <dcterms:publisher>pub1</dcterms:publisher>
-        <dcterms:type xsi:type="dcterms:DCMIType">InteractiveResource</dcterms:type>
-        <dcterms:type xsi:type="dcterms:DCMIType">Software</dcterms:type>
-        <dc:format>arbitrary format</dc:format>
-        <dc:format xsi:type="dcterms:IMT">text/xml</dc:format>
-        <dc:identifier xsi:type="id-type:ISBN">123456</dc:identifier>
-        <dc:identifier>id</dc:identifier>
-        <dc:source>src</dc:source>
-        <dc:source>test</dc:source>
-        <dc:language xsi:type='dcterms:ISO639-2'>eng</dc:language>
-        <dc:language xsi:type='dcterms:ISO639-2'>nld</dc:language>
-        <dcterms:spatial>sp1</dcterms:spatial>
-        <dcterms:rightsHolder>rh1</dcterms:rightsHolder>
-        <dcterms:q1>l1</dcterms:q1>
-        <dcterms:q2>t1</dcterms:q2>
-        <dc:relation>l2</dc:relation>
-        <dc:relation>t2</dc:relation>
-        <dcx-dai:contributorDetails>
+
+    val actual: Node = AddDatasetMetadataToDeposit.createMetadata(metadata)
+    val expectedXml: Node = <ddm:dcmiMetadata>
+      <dcterms:alternative>alt1</dcterms:alternative>
+      <dcterms:alternative>alt2</dcterms:alternative>
+      <dcterms:publisher>pub1</dcterms:publisher>
+      <dcterms:type xsi:type="dcterms:DCMIType">InteractiveResource</dcterms:type>
+      <dcterms:type xsi:type="dcterms:DCMIType">Software</dcterms:type>
+      <dc:format>arbitrary format</dc:format>
+      <dc:format xsi:type="dcterms:IMT">text/xml</dc:format>
+      <dc:identifier xsi:type="id-type:ISBN">123456</dc:identifier>
+      <dc:identifier>id</dc:identifier>
+      <dc:source>src</dc:source>
+      <dc:source>test</dc:source>
+      <dc:language xsi:type='dcterms:ISO639-2'>eng</dc:language>
+      <dc:language xsi:type='dcterms:ISO639-2'>nld</dc:language>
+      <dcterms:spatial>sp1</dcterms:spatial>
+      <dcterms:rightsHolder>rh1</dcterms:rightsHolder>
+      <dcterms:q1>l1</dcterms:q1>
+      <dcterms:q2>t1</dcterms:q2>
+      <dc:relation>l2</dc:relation>
+      <dc:relation>t2</dc:relation>
+      <dcx-dai:contributorDetails>
+        <dcx-dai:organization>
+          <dcx-dai:name xml:lang="en">contr1</dcx-dai:name>
+        </dcx-dai:organization>
+      </dcx-dai:contributorDetails>
+      <dcx-dai:contributorDetails>
+        <dcx-dai:author>
+          <dcx-dai:initials>A.B.</dcx-dai:initials>
+          <dcx-dai:surname>Jones</dcx-dai:surname>
+        </dcx-dai:author>
+      </dcx-dai:contributorDetails>
+      <dcx-dai:contributorDetails>
+        <dcx-dai:author>
+          <dcx-dai:titles>dr.</dcx-dai:titles>
+          <dcx-dai:initials>C.</dcx-dai:initials>
+          <dcx-dai:insertions>X</dcx-dai:insertions>
+          <dcx-dai:surname>Jones</dcx-dai:surname>
+          <dcx-dai:DAI>dai</dcx-dai:DAI>
           <dcx-dai:organization>
-            <dcx-dai:name xml:lang="en">contr1</dcx-dai:name>
+            <dcx-dai:name xml:lang="en">contr2</dcx-dai:name>
           </dcx-dai:organization>
-        </dcx-dai:contributorDetails>
-        <dcx-dai:contributorDetails>
-          <dcx-dai:author>
-            <dcx-dai:initials>A.B.</dcx-dai:initials>
-            <dcx-dai:surname>Jones</dcx-dai:surname>
-          </dcx-dai:author>
-        </dcx-dai:contributorDetails>
-        <dcx-dai:contributorDetails>
-          <dcx-dai:author>
-            <dcx-dai:titles>dr.</dcx-dai:titles>
-            <dcx-dai:initials>C.</dcx-dai:initials>
-            <dcx-dai:insertions>X</dcx-dai:insertions>
-            <dcx-dai:surname>Jones</dcx-dai:surname>
-            <dcx-dai:DAI>dai</dcx-dai:DAI>
-            <dcx-dai:organization>
-              <dcx-dai:name xml:lang="en">contr2</dcx-dai:name>
-            </dcx-dai:organization>
-          </dcx-dai:author>
-        </dcx-dai:contributorDetails>
-        <dc:subject>me</dc:subject>
-        <dc:subject>you</dc:subject>
-        <dc:subject>him</dc:subject>
-        <dc:subject xsi:type="abr:ABRcomplex">GX</dc:subject>
-        <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
-          <Point xmlns="http://www.opengis.net/gml">
-            <pos>1 2</pos>
-          </Point>
-        </dcx-gml:spatial>
-        <dcx-gml:spatial srsName="">
-          <Point xmlns="http://www.opengis.net/gml">
-            <pos>4 3</pos>
-          </Point>
-        </dcx-gml:spatial>
-        <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
-          <Point xmlns="http://www.opengis.net/gml">
-            <pos>6 5</pos>
-          </Point>
-        </dcx-gml:spatial>
-        <dcx-gml:spatial>
-          <boundedBy xmlns="http://www.opengis.net/gml">
-            <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
-              <lowerCorner>4 2</lowerCorner>
-              <upperCorner>3 1</upperCorner>
-            </Envelope>
-          </boundedBy>
-        </dcx-gml:spatial>
-        <dcx-gml:spatial>
-          <boundedBy xmlns="http://www.opengis.net/gml">
-            <Envelope srsName="">
-              <lowerCorner>6 8</lowerCorner>
-              <upperCorner>5 7</upperCorner>
-            </Envelope>
-          </boundedBy>
-        </dcx-gml:spatial>
-        <dcx-gml:spatial>
-          <boundedBy xmlns="http://www.opengis.net/gml">
-            <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
-              <lowerCorner>10 12</lowerCorner>
-              <upperCorner>9 11</upperCorner>
-            </Envelope>
-          </boundedBy>
-        </dcx-gml:spatial>
-        <dcterms:temporal>1992-2016</dcterms:temporal>
-        <dcterms:temporal xsi:type="abr:ABRperiode">PALEOV</dcterms:temporal>
-        <dcterms:temporal>some arbitrary text</dcterms:temporal>
-      </ddm:dcmiMetadata>
-    </ddm>
-    verify(<ddm>{AddDatasetMetadataToDeposit.createMetadata(metadata)}</ddm>, expectedXml)
+        </dcx-dai:author>
+      </dcx-dai:contributorDetails>
+      <dc:subject>me</dc:subject>
+      <dc:subject>you</dc:subject>
+      <dc:subject>him</dc:subject>
+      <dc:subject xsi:type="abr:ABRcomplex">GX</dc:subject>
+      <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
+        <Point xmlns="http://www.opengis.net/gml">
+          <pos>1 2</pos>
+        </Point>
+      </dcx-gml:spatial>
+      <dcx-gml:spatial srsName="">
+        <Point xmlns="http://www.opengis.net/gml">
+          <pos>4 3</pos>
+        </Point>
+      </dcx-gml:spatial>
+      <dcx-gml:spatial srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+        <Point xmlns="http://www.opengis.net/gml">
+          <pos>6 5</pos>
+        </Point>
+      </dcx-gml:spatial>
+      <dcx-gml:spatial>
+        <boundedBy xmlns="http://www.opengis.net/gml">
+          <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/28992">
+            <lowerCorner>4 2</lowerCorner>
+            <upperCorner>3 1</upperCorner>
+          </Envelope>
+        </boundedBy>
+      </dcx-gml:spatial>
+      <dcx-gml:spatial>
+        <boundedBy xmlns="http://www.opengis.net/gml">
+          <Envelope srsName="">
+            <lowerCorner>6 8</lowerCorner>
+            <upperCorner>5 7</upperCorner>
+          </Envelope>
+        </boundedBy>
+      </dcx-gml:spatial>
+      <dcx-gml:spatial>
+        <boundedBy xmlns="http://www.opengis.net/gml">
+          <Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+            <lowerCorner>10 12</lowerCorner>
+            <upperCorner>9 11</upperCorner>
+          </Envelope>
+        </boundedBy>
+      </dcx-gml:spatial>
+      <dcterms:temporal>1992-2016</dcterms:temporal>
+      <dcterms:temporal xsi:type="abr:ABRperiode">PALEOV</dcterms:temporal>
+      <dcterms:temporal>some arbitrary text</dcterms:temporal>
+    </ddm:dcmiMetadata>
+
+    actual should equalTrimmed (expectedXml)
   }
 
   "createSurrogateRelation" should "return the expected streaming surrogate relation" in {
     val springfield = Springfield("randomdomainname", "randomusername", "randomcollectionname")
     val expectedXml = <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
 
-    verify(AddDatasetMetadataToDeposit.createSurrogateRelation(springfield), expectedXml)
+    AddDatasetMetadataToDeposit.createSurrogateRelation(springfield) should equalTrimmed (expectedXml)
   }
 
   it should "return a path with the default domain when no domain is specified" in {
     val springfield = Springfield(user = "randomusername", collection = "randomcollectionname")
     val expectedXml = <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
 
-    verify(AddDatasetMetadataToDeposit.createSurrogateRelation(springfield), expectedXml)
-  }
-
-  def verify(actualXml: Node, expectedXml: Node): Unit = {
-    Utility.trim(actualXml).toString() shouldBe Utility.trim(expectedXml).toString()
+    AddDatasetMetadataToDeposit.createSurrogateRelation(springfield) should equalTrimmed (expectedXml)
   }
 }

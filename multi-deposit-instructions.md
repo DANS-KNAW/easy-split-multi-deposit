@@ -45,7 +45,7 @@ The supported metadata elements are subdivided into the following groups:
 
 * The following [Dublin Core elements]: `DC_TITLE`, `DC	_DESCRIPTION`,
   `DC_CREATOR`*, `DC_CONTRIBUTOR`*, `DC_SUBJECT`, `DC_PUBLISHER`,
-  `DC_TYPE`, `DC_FORMAT`, `DC_IDENTIFIER`, `DC_SOURCE`, `DC_LANGUAGE`;
+  `DC_TYPE`, `DC_FORMAT`, `DC_IDENTIFIER`, `DC_IDENTIFIER_TYPE`, `DC_SOURCE`, `DC_LANGUAGE`;
 * The following [Dublin Core Term elements]: `DCT_ALTERNATIVE`, `DCT_SPATIAL`,
   `DCT_TEMPORAL`, `DCT_RIGHTSHOLDER`;
 * DANS specific specializations of Dublin Core: `DCX_CREATOR_TITLES`, 
@@ -99,6 +99,23 @@ form of URL's are accepted. `DCX_RELATION_QUALIFIER` is one of the
 hyperlink if it is displayed on a web page and `DCX_RELATION_LINK` the URL to the
 related resource.
 
+#### Identifier
+`DC_IDENTIFIER_TYPE` gives extra meaning to the `DC_IDENTIFIER`. It can only have either one of the
+following four values: {`ISBN`, `ISSN`, `NWO-PROJECTNR`, `ARCHIS-ZAAK-IDENTIFICATIE`} or be left empty.
+
+#### Language
+`DC_LANGUAGE` should be formatted as an [ISO 639-2](https://www.loc.gov/standards/iso639-2/php/code_list.php) (both `B` and `T` variants are supported).
+`AV_SUBTITLE_LANGUAGE` should be formatted as an [ISO 639-1](https://www.loc.gov/standards/iso639-2/php/code_list.php).
+
+#### Format
+`DC_FORMAT` can either have free text or be one of the elements listed in the [formats list](src/main/assembly/dist/cfg/formats.txt).
+In the latter case an extra `xsi:type` is added to the resulting DDM xml.
+
+#### Type
+`DC_TYPE` can only have a value from the set {`Collection`, `Dataset`, `Event`, `Image`, 
+`InteractiveResource`, `MovingImage`, `PhysicalObject`, `Service`, `Software`, `Sound`, 
+`StillImage`, `Text`}. If no value is given, `Dataset` is choosen as a default.
+
 #### Springfield
 [Springfield Web TV] is the platform that DANS uses to host the streaming surrogates (versions)
 of audiovisual data.
@@ -123,6 +140,7 @@ a audio or video presentation contained in the dataset:
   provide extra metadata specific to audio/video files. For a path to a A/V file in `AV_FILE`,
   the user can specify at most one title in `AV_FILE_TITLE` and one or more combinations of subtitles
   and the corresponding language tag in `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` respectively.
+  Note that the latter has to be formatted as an [ISO 639-1](https://www.loc.gov/standards/iso639-2/php/code_list.php).
 * The information found in the `AV_*` columns is put into `files.xml` to better describe the file
   at hand. The `AV_FILE_TITLE` relation is put inside a `dcterms:title` element; the `AV_SUBTITLE`
   and `AV_SUBTITLE_LANGUAGE` are declared in a `dcterms:relation` and its `xml:lang` attribute

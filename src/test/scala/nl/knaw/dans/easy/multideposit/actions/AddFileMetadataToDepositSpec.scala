@@ -23,9 +23,9 @@ import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.BeforeAndAfter
 
 import scala.util.{ Failure, Success }
-import scala.xml.{ Node, Utility, XML }
+import scala.xml.XML
 
-class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
+class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with CustomMatchers {
 
   implicit val settings = Settings(
     multidepositDir = new File(testDir, "md").getAbsoluteFile,
@@ -161,7 +161,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     val expected = XML.loadFile(new File(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI))
     val actual = XML.loadFile(stagingFileMetadataFile(depositId))
 
-    verify(actual, expected)
+    actual should equalTrimmed (expected)
   }
 
   it should "produce the xml for a deposit with no A/V files" in {
@@ -172,7 +172,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     val expected = XML.loadFile(new File(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI))
     val actual = XML.loadFile(stagingFileMetadataFile(depositId))
 
-    verify(actual, expected)
+    actual should equalTrimmed (expected)
   }
 
   it should "produce the xml for a deposit with no files" in {
@@ -183,7 +183,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     val expected = XML.loadFile(new File(getClass.getResource("/allfields/output/input-ruimtereis03/bag/metadata/files.xml").toURI))
     val actual = XML.loadFile(stagingFileMetadataFile(depositId))
 
-    verify(actual, expected)
+    actual should equalTrimmed (expected)
   }
 
   "getMimeType" should "produce the correct doc mimetype" in {
@@ -250,9 +250,5 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter {
     inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-does-not-exist.doc"))) {
       case Failure(e: FileNotFoundException) => e.getMessage should include("mimetypes/file-does-not-exist.doc")
     }
-  }
-
-  def verify(actualXml: Node, expectedXml: Node): Unit = {
-    Utility.trim(actualXml).toString() shouldBe Utility.trim(expectedXml).toString()
   }
 }

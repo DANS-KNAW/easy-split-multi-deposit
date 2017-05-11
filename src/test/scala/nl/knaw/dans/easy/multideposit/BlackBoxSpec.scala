@@ -22,8 +22,10 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfter
 
 import scala.util.{ Failure, Success }
+import scala.xml.transform.{ RewriteRule, RuleTransformer }
+import scala.xml.{ Elem, Node, NodeSeq, XML }
 
-class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory {
+class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with CustomMatchers {
 
   private val allfields = new File(testDir, "md/allfields").getAbsoluteFile
   private val invalidCSV = new File(testDir, "md/invalidCSV").getAbsoluteFile
@@ -89,11 +91,12 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory {
 
       val datasetXml = new File(bag, "metadata/dataset.xml")
       val expDatasetXml = new File(expBag, "metadata/dataset.xml")
-      datasetXml.read().lines.filterNot(_ contains "ddm:available").mkString("\n") shouldBe expDatasetXml.read().lines.filterNot(_ contains "ddm:available").mkString("\n")
+      val datasetTransformer = transformer("available")
+      datasetTransformer.transform(XML.loadFile(datasetXml)) should equalTrimmed (datasetTransformer.transform(XML.loadFile(expDatasetXml)))
 
       val filesXml = new File(bag, "metadata/files.xml")
       val expFilesXml = new File(expBag, "metadata/files.xml")
-      filesXml.read() shouldBe expFilesXml.read()
+      XML.loadFile(filesXml) should equalTrimmed (XML.loadFile(expFilesXml))
 
       val props = new File(settings.outputDepositDir, s"allfields-$bagName/deposit.properties")
       val expProps = new File(expectedOutputDir, s"input-$bagName/deposit.properties")
@@ -125,4 +128,13 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory {
         )
     }
   }
+
+  def transformer(label: String) = new RuleTransformer(new RewriteRule {
+    override def transform(n: Node): Seq[Node] = {
+      n match {
+        case e: Elem if e.label == label => NodeSeq.Empty
+        case e => e
+      }
+    }
+  })
 }
