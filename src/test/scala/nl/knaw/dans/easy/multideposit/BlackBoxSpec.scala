@@ -91,7 +91,7 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
 
       val datasetXml = new File(bag, "metadata/dataset.xml")
       val expDatasetXml = new File(expBag, "metadata/dataset.xml")
-      val datasetTransformer = transformer("available")
+      val datasetTransformer = removeElemByName("available")
       datasetTransformer.transform(XML.loadFile(datasetXml)) should equalTrimmed (datasetTransformer.transform(XML.loadFile(expDatasetXml)))
 
       val filesXml = new File(bag, "metadata/files.xml")
@@ -129,10 +129,10 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
     }
   }
 
-  def transformer(label: String) = new RuleTransformer(new RewriteRule {
+  def removeElemByName(name: String) = new RuleTransformer(new RewriteRule {
     override def transform(n: Node): Seq[Node] = {
       n match {
-        case e: Elem if e.label == label => NodeSeq.Empty
+        case e: Elem if e.label == name => NodeSeq.Empty
         case e => e
       }
     }
