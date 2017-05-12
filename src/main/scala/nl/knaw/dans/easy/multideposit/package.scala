@@ -26,7 +26,7 @@ import org.apache.commons.lang.StringUtils
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, PrettyPrinter }
+import scala.xml.{ Elem, PrettyPrinter, XML }
 
 package object multideposit {
 
@@ -161,17 +161,15 @@ package object multideposit {
     def write(data: String, encoding: Charset = encoding): Unit = FileUtils.write(file, data, encoding)
 
     /**
-     * Writes the xml to a `File` and prepends a simple xml header: `<?xml version="1.0" encoding="UTF-8"?>`
+     * Writes the xml to `file` and prepends a simple xml header: `<?xml version="1.0" encoding="UTF-8"?>`
      *
      * @param elem     the xml to be written
      * @param encoding the encoding applied to this xml
      */
     @throws[IOException]("in case of an I/O error")
     def writeXml(elem: Elem, encoding: Charset = encoding): Unit = {
-      val header = s"""<?xml version="1.0" encoding="$encoding"?>\n"""
-      val data = new PrettyPrinter(160, 2).format(elem)
-
-      file.write(header + data, encoding)
+      file.getParentFile.mkdirs()
+      XML.save(file.toString, elem, encoding.toString, xmlDecl = true)
     }
 
     /**

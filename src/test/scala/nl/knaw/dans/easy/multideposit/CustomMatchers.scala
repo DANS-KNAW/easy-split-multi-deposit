@@ -20,6 +20,7 @@ import java.io.File
 import org.scalatest.matchers.{ MatchResult, Matcher }
 
 import scala.io.Source
+import scala.xml.{ Node, Utility }
 
 /** Does not dump the full file but just the searched content if it is not found.
  *
@@ -37,4 +38,15 @@ trait CustomMatchers {
     }
   }
   def containTrimmed(content: String) = new ContentMatcher(content)
+
+  class EqualTrimmedMatcher(right: Seq[Node]) extends Matcher[Seq[Node]] {
+    override def apply(left: Seq[Node]): MatchResult = {
+      MatchResult(
+        left.zip(right).forall { case (l, r) => Utility.trim(l).toString() == Utility.trim(r).toString() },
+        s"$left did not equal $right",
+        s"$left did equal $right"
+      )
+    }
+  }
+  def equalTrimmed(right: Seq[Node]) = new EqualTrimmedMatcher(right)
 }
