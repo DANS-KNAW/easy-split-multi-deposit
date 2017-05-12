@@ -129,10 +129,10 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
     }
   }
 
-  def removeElemByName(name: String) = new RuleTransformer(new RewriteRule {
+  def removeElemByName(label: String) = new RuleTransformer(new RewriteRule {
     override def transform(n: Node): Seq[Node] = {
       n match {
-        case e: Elem if e.label == name => NodeSeq.Empty
+        case e: Elem if e.label == label => NodeSeq.Empty
         case e => e
       }
     }
