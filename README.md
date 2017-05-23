@@ -1,5 +1,6 @@
 easy-split-multi-deposit
 ========================
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/bace6a1d52234ce2a70846d15610ca75)](https://www.codacy.com/app/richard.v.heest/easy-split-multi-deposit?utm_source=github.com&utm_medium=referral&utm_content=rvanheest/easy-split-multi-deposit&utm_campaign=badger)
 [![Build Status](https://travis-ci.org/DANS-KNAW/easy-split-multi-deposit.png?branch=master)](https://travis-ci.org/DANS-KNAW/easy-split-multi-deposit)
 
 Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive
