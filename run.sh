@@ -23,14 +23,14 @@ STAGING=data/staging
 
 if [[ " ${ARGS[*]} " != *"--help"* ]] && [[ " ${ARGS[*]} " != *"--version"* ]]; then
     if [ "$(ls -A $OUTPUT)" ]; then
-        NEWOUTPUT=$OUTPUT-`date  +"%Y-%m-%d@%H:%M:%S"`
+        NEWOUTPUT=$OUTPUT-$(date  +"%Y-%m-%d@%H:%M:%S")
         mv $OUTPUT $NEWOUTPUT
         mkdir $OUTPUT
         echo "the old output folder has been moved to $NEWOUTPUT"
     fi
 
     if [ "$(ls -A $STAGING)" ]; then
-        NEWSTAGING=$STAGING-`date  +"%Y-%m-%d@%H:%M:%S"`
+        NEWSTAGING=$STAGING-$(date  +"%Y-%m-%d@%H:%M:%S")
         mv $STAGING $NEWSTAGING
         mkdir $STAGING
         echo "the old staging folder has been moved to $NEWSTAGING"
