@@ -77,16 +77,16 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
     val invalidHeaders = headers.filterNot(validHeaders.contains)
     lazy val uniqueHeaders = headers.distinct
 
-    if (invalidHeaders.nonEmpty)
-      Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
-        s"${ invalidHeaders.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
-        s"consult the documentation for the list of valid headers."))
-    else if (headers.size != uniqueHeaders.size) {
-      Failure(ParseException(0, "SIP Instructions file contains duplicate headers: " +
-        s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
+    invalidHeaders match {
+      case Nil =>
+        Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
+          s"${ invalidHeaders.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
+          s"consult the documentation for the list of valid headers."))
+      case xs if xs.size != headers.size =>
+        Failure(ParseException(0, "SIP Instructions file contains duplicate headers: " +
+          s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
+      case _ => Success(())
     }
-    else
-      Success(())
   }
 
   def detectEmptyDepositCells(depositIds: List[String]): Try[Unit] = {

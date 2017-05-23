@@ -120,9 +120,9 @@ package object multideposit {
 
     def ifSuccess(f: T => Unit): Try[T] = {
       t match {
-        case success @ Success(x) => Try {
+        case Success(x) => Try {
           f(x)
-          return success
+          x
         }
         case e => e
       }
@@ -130,9 +130,9 @@ package object multideposit {
 
     def ifFailure(f: PartialFunction[Throwable, Unit]): Try[T] = {
       t match {
-        case failure @ Failure(e) if f.isDefinedAt(e) => Try {
+        case Failure(e) if f.isDefinedAt(e) => Try {
           f(e)
-          return failure
+          throw e
         }
         case x => x
       }
@@ -293,7 +293,7 @@ package object multideposit {
   }
 
   def multiDepositInstructionsFile(baseDir: File): File = {
-    new File(baseDir, instructionsFileName)
+    new File(baseDir, instructionsFileName).toPath.normalize().toFile
   }
 
   // mdDir/depositId/
