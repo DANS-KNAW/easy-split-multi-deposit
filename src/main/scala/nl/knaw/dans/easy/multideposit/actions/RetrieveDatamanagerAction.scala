@@ -41,11 +41,9 @@ case class RetrieveDatamanagerAction(implicit settings: Settings) extends UnitAc
     val datamanagerId = settings.datamanager
 
     def getFirstAttrs(attrsSeq: Seq[Attributes]) = {
-      attrsSeq match {
-        case Seq() => Failure(ActionException(row, s"""The datamanager "$datamanagerId" is unknown"""))
-        case Seq(head) => Success(head)
-        case Seq(_@_*) => Failure(ActionException(row, s"""There appear to be multiple users with id "$datamanagerId""""))
-      }
+      if (attrsSeq.isEmpty) Failure(ActionException(row, s"""The datamanager "$datamanagerId" is unknown"""))
+      else if (attrsSeq.size > 1) Failure(ActionException(row, s"""There appear to be multiple users with id "$datamanagerId""""))
+      else Success(attrsSeq.head)
     }
 
     def datamanagerIsActive(attrs: Attributes) = {
