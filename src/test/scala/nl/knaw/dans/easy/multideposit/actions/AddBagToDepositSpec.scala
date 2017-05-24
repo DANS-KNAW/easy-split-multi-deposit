@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.io.File
 import java.security.MessageDigest
 
+import gov.loc.repository.bagit.Manifest.Algorithm
 import nl.knaw.dans.easy.multideposit.model.{ Deposit, DepositId }
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.BeforeAndAfter
@@ -147,7 +148,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
   }
 
   def calcSHA1(string: String): String = {
-    MessageDigest.getInstance("SHA-1")
+    MessageDigest.getInstance(Algorithm.SHA1.javaSecurityAlgorithm)
       .digest(string.getBytes(encoding))
       .map("%02x".format(_))
       .mkString
