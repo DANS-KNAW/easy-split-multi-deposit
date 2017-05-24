@@ -31,7 +31,7 @@ trait CustomMatchers {
       def trimLines(s: String): String = s.split("\n").map(_.trim).mkString("\n")
 
       MatchResult(
-        trimLines(Source.fromFile(left).mkString).contains(trimLines(content)),
+        trimLines(Source.fromFile(left.toPath.normalize().toFile).mkString).contains(trimLines(content)),
         s"$left did not contain: $content",
         s"$left contains $content"
       )
