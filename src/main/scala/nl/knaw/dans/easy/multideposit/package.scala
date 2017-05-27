@@ -245,7 +245,7 @@ package object multideposit {
   }
 
   def multiDepositInstructionsFile(baseDir: File): File = {
-    new File(baseDir, instructionsFileName)
+    new File(baseDir, instructionsFileName).toPath.normalize().toFile
   }
 
   // mdDir/depositId/
