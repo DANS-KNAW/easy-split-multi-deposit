@@ -38,7 +38,7 @@ case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings)
    * Checks whether there is only one unique DEPOSITOR_ID set in the `Deposit` (there can be multiple values but the must all be equal!).
    */
   private def validateDepositorUserId: Try[Unit] = {
-    settings.ldap.query(deposit.depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
+    settings.ldap.query(deposit.depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE"))
       .flatMap {
         case Seq() => Failure(ActionException(deposit.row, s"depositorUserId '${ deposit.depositorUserId }' is unknown"))
         case Seq(head) => Success(head)

@@ -51,30 +51,30 @@ trait ParserUtils {
     values.distinct match {
       case Nil => Success(None)
       case t :: Nil => Success(Some(t))
-      case ts =>
-        columnNames match {
-          case name :: Nil => Failure(ParseException(rowNum, "Only one row is allowed " +
-            s"to contain a value for the column '$name'. Found: ${ ts.mkString("[", ", ", "]") }"))
-          case names => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
-            s"these columns: ${ names.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
-        }
+      case ts => checkMultipleValues(rowNum, columnNames, ts)
     }
   }
 
   def exactlyOne[T](rowNum: => Int, columnNames: => NonEmptyList[MultiDepositKey])(values: List[T]): Try[T] = {
     values.distinct match {
-      case t :: Nil => Success(t)
-      case Nil if columnNames.size == 1 => Failure(ParseException(rowNum, "One row has to contain " +
-        s"a value for the column: '${ columnNames.head }'"))
-      case Nil => Failure(ParseException(rowNum, "One row has to contain a value for these " +
-        s"columns: ${ columnNames.mkString("[", ", ", "]") }"))
-      case ts =>
+      case Nil =>
         columnNames match {
-          case name :: Nil => Failure(ParseException(rowNum, "Only one row is allowed " +
-            s"to contain a value for the column '$name'. Found: ${ ts.mkString("[", ", ", "]") }"))
-          case names => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
-            s"these columns: ${ names.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
+          case name :: Nil => Failure(ParseException(rowNum, "One row has to contain " +
+            s"a value for the column: '$name'"))
+          case names => Failure(ParseException(rowNum, "One row has to contain a value for these " +
+            s"columns: ${ names.mkString("[", ", ", "]") }"))
         }
+      case t :: Nil => Success(t)
+      case ts => checkMultipleValues(rowNum, columnNames, ts)
+    }
+  }
+
+  private def checkMultipleValues[T](rowNum: Int, columnNames: NonEmptyList[MultiDepositKey], ts: List[Any]) = {
+    columnNames match {
+      case name :: Nil => Failure(ParseException(rowNum, "Only one row is allowed " +
+        s"to contain a value for the column '$name'. Found: ${ ts.mkString("[", ", ", "]") }"))
+      case names => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
+        s"these columns: ${ names.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
     }
   }
 

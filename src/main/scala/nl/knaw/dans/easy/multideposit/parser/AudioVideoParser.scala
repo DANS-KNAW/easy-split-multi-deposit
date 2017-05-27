@@ -17,9 +17,8 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import java.io.File
 
-import nl.knaw.dans.easy.multideposit.{ ParseException, Settings }
 import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.easy.multideposit._
+import nl.knaw.dans.easy.multideposit.{ ParseException, Settings, _ }
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -106,14 +105,13 @@ trait AudioVideoParser {
     lazy val option1 = new File(multiDepositDir(depositId), path)
     lazy val option2 = new File(settings.multidepositDir, path)
 
-    if (option1.exists())
-      option1
-    else if (option2.exists()) {
-      logger.warn(s"path '$path' is not relative to its depositId '$depositId', but rather relative to the multideposit")
-      option2
+    (option1, option2) match {
+      case (file, _) if file.exists() => file
+      case (_, file2) if file2.exists() =>
+        logger.warn(s"path '$path' is not relative to its depositId '$depositId', but rather relative to the multideposit")
+        file2
+      case (_, _) => new File(path)
     }
-    else
-      new File(path)
   }
 
   def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
