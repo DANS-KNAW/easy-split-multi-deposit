@@ -100,7 +100,7 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
   def extractDeposit(depositId: DepositId, rows: DepositRows): Try[Deposit] = {
     val rowNum = rows.map(getRowNum).min
 
-    checkValidChars(rowNum, "DATASET", depositId)
+    checkValidChars(depositId, rowNum, "DATASET")
       .flatMap(dsId => Try { Deposit.curried }
         .map(_ (dsId))
         .map(_ (rowNum))

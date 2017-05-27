@@ -270,11 +270,11 @@ class ParserUtilsSpec extends UnitSpec with LanguageBehavior {
   }
 
   "checkValidChars" should "succeed with the input value when all characters are valid" in {
-    checkValidChars(2, "TEST", "valid-input") should matchPattern { case Success("valid-input") => }
+    checkValidChars("valid-input", 2, "TEST") should matchPattern { case Success("valid-input") => }
   }
 
   it should "fail when the input contains invalid characters" in {
-    checkValidChars(2, "TEST", "#$%") should matchPattern {
+    checkValidChars("#$%", 2, "TEST") should matchPattern {
       case Failure(ParseException(2, "The column 'TEST' contains the following invalid characters: {#, $, %}", _)) =>
     }
   }

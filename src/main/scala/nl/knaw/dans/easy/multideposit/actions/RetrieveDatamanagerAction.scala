@@ -48,7 +48,7 @@ case class RetrieveDatamanagerAction(implicit settings: Settings) extends UnitAc
 
     def datamanagerIsActive(attrs: Attributes) = {
       Option(attrs.get("dansState"))
-        .filter(_.get.toString == "ACTIVE")
+        .filter(_.get().toString == "ACTIVE")
         .map(_ => Success(attrs))
         .getOrElse(Failure(ActionException(row, s"""The datamanager "$datamanagerId" is not an active user""")))
     }

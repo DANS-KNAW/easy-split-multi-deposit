@@ -51,10 +51,13 @@ trait ParserUtils {
     values.distinct match {
       case Nil => Success(None)
       case t :: Nil => Success(Some(t))
-      case ts if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
-        s"to contain a value for the column '${ columnNames.head }'. Found: ${ ts.mkString("[", ", ", "]") }"))
-      case ts => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
-        s"these columns: ${ columnNames.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
+      case ts =>
+        columnNames match {
+          case name :: Nil => Failure(ParseException(rowNum, "Only one row is allowed " +
+            s"to contain a value for the column '$name'. Found: ${ ts.mkString("[", ", ", "]") }"))
+          case names => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
+            s"these columns: ${ names.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
+        }
     }
   }
 
@@ -65,14 +68,17 @@ trait ParserUtils {
         s"a value for the column: '${ columnNames.head }'"))
       case Nil => Failure(ParseException(rowNum, "One row has to contain a value for these " +
         s"columns: ${ columnNames.mkString("[", ", ", "]") }"))
-      case ts if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
-        s"to contain a value for the column '${ columnNames.head }'. Found: ${ ts.mkString("[", ", ", "]") }"))
-      case ts => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
-        s"these columns: ${ columnNames.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
+      case ts =>
+        columnNames match {
+          case name :: Nil => Failure(ParseException(rowNum, "Only one row is allowed " +
+            s"to contain a value for the column '$name'. Found: ${ ts.mkString("[", ", ", "]") }"))
+          case names => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
+            s"these columns: ${ names.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
+        }
     }
   }
 
-  def checkValidChars(rowNum: => Int, column: => MultiDepositKey, value: String): Try[String] = {
+  def checkValidChars(value: String, rowNum: => Int, column: => MultiDepositKey): Try[String] = {
     val invalidCharacters = "[^a-zA-Z0-9_-]".r.findAllIn(value).toSeq.distinct
     if (invalidCharacters.isEmpty) Success(value)
     else Failure(ParseException(rowNum, s"The column '$column' contains the following invalid characters: ${ invalidCharacters.mkString("{", ", ", "}") }"))
@@ -83,10 +89,11 @@ trait ParserUtils {
     val missingColumns = required.diff(row.keySet)
     val missing = blankRequired.toSet ++ missingColumns
     require(missing.nonEmpty, "the list of missing elements is supposed to be non-empty")
-    if (missing.size == 1)
-      Failure(ParseException(rowNum, s"Missing value for: ${ missing.head }"))
-    else
-      Failure(ParseException(rowNum, s"Missing value(s) for: ${ missing.mkString("[", ", ", "]") }"))
+
+    missing.toList match {
+      case value :: Nil => Failure(ParseException(rowNum, s"Missing value for: $value"))
+      case values => Failure(ParseException(rowNum, s"Missing value(s) for: ${ values.mkString("[", ", ", "]") }"))
+    }
   }
 
   def isValidISO639_1Language(lang: String): Boolean = {

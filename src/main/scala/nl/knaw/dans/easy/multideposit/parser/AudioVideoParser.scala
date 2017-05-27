@@ -68,15 +68,15 @@ trait AudioVideoParser {
 
     def springfield(domain: String, user: String, collection: String): Try[Springfield] = {
       Try { Springfield.curried }
-        .combine(checkValidChars(rowNum, "SF_DOMAIN", domain))
-        .combine(checkValidChars(rowNum, "SF_USER", user))
-        .combine(checkValidChars(rowNum, "SF_COLLECTION", collection))
+        .combine(checkValidChars(domain, rowNum, "SF_DOMAIN"))
+        .combine(checkValidChars(user, rowNum, "SF_USER"))
+        .combine(checkValidChars(collection, rowNum, "SF_COLLECTION"))
     }
 
     def springfieldWithDefaultDomain(user: String, collection: String): Try[Springfield] = {
       Try { ((user: String, collection: String) => Springfield(user = user, collection = collection)).curried }
-        .combine(checkValidChars(rowNum, "SF_USER", user))
-        .combine(checkValidChars(rowNum, "SF_COLLECTION", collection))
+        .combine(checkValidChars(user, rowNum, "SF_USER"))
+        .combine(checkValidChars(collection, rowNum, "SF_COLLECTION"))
     }
 
     (domain, user, collection) match {
@@ -128,7 +128,7 @@ trait AudioVideoParser {
       case (Some(p), _, Some(_), _) if !p.isFile => Some(Failure(ParseException(rowNum, s"AV_FILE '$p' is not a file")))
       case (Some(_), _, Some(sub), _) if !sub.exists() => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' does not exist")))
       case (Some(_), _, Some(sub), _) if !sub.isFile => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' is not a file")))
-      case (Some(_), _, Some(_), subLang) if subLang.exists(!isValidISO639_1Language(_)) => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '${ subLang.get }' doesn't have a valid ISO 639-1 language value")))
+      case (Some(_), _, Some(_), Some(subLang)) if !isValidISO639_1Language(subLang) => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '$subLang' doesn't have a valid ISO 639-1 language value")))
       case (Some(_), _, None, Some(subLang)) => Some(Failure(ParseException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
       case (Some(p), t, None, None) if p.exists() && p.isFile => Some(Success((p, t, None)))
       case (Some(p), _, None, None) if !p.exists() => Some(Failure(ParseException(rowNum, s"AV_FILE '$p' does not exist")))
