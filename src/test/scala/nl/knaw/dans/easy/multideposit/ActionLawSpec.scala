@@ -18,9 +18,10 @@ package nl.knaw.dans.easy.multideposit
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ Inside, Matchers, PropSpec }
+import org.scalatest.{ Assertion, Inside, Matchers, PropSpec }
 
-import scala.util.Try
+import scala.language.{ reflectiveCalls, implicitConversions }
+import scala.util.{ Failure, Success, Try }
 
 class ActionLawSpec extends PropSpec with PropertyChecks with Matchers with Inside with CustomMatchers {
 
@@ -47,6 +48,17 @@ class ActionLawSpec extends PropSpec with PropertyChecks with Matchers with Insi
   property("action - semigroup combined") {
     forAll { (i: Int, a1: Action[Int, String], a2: Action[String, Long], a3: Action[Long, Double], a4: Action[Double, String]) =>
       a1.combine(a2).combine(a3.combine(a4)).run(i) shouldBe a1.combine(a2).combine(a3).combine(a4).run(i)
+    }
+  }
+
+  implicit def compareTry[T](left: Try[T]): { def shouldBe(right: Try[T]): Assertion } = new {
+    def shouldBe(right: Try[T]): Assertion = {
+      inside(left, right) {
+        case (Success(l), Success(r)) => l shouldBe r
+        case (Failure(l), Failure(r)) =>
+          l shouldBe a[r.type]
+          l.getMessage shouldBe r.getMessage
+      }
     }
   }
 }

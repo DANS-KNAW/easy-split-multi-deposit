@@ -20,13 +20,12 @@ import java.nio.charset.Charset
 import java.util.Properties
 
 import nl.knaw.dans.easy.multideposit.model.DepositId
-import nl.knaw.dans.lib.error._
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.apache.commons.lang.StringUtils
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
-import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, PrettyPrinter, XML }
+import scala.util.Try
+import scala.xml.{ Elem, XML }
 
 package object multideposit {
 
@@ -101,53 +100,6 @@ package object multideposit {
         if (s.isBlank) Option.empty
         else Option(s.toInt)
       } getOrElse Option.empty
-    }
-  }
-
-  implicit class TryExceptionHandling[T](val t: Try[T]) extends AnyVal {
-    /**
-     * Terminating operator for `Try` that converts the `Failure` case in a value.
-     *
-     * @param handle converts `Throwable` to a value of type `T`
-     * @return either the value inside `Try` (on success) or the result of `handle` (on failure)
-     */
-    def onError[S >: T](handle: Throwable => S): S = {
-      t match {
-        case Success(value) => value
-        case Failure(throwable) => handle(throwable)
-      }
-    }
-
-    def ifSuccess(f: T => Unit): Try[T] = {
-      t match {
-        case success @ Success(x) => Try {
-          f(x)
-          return success
-        }
-        case e => e
-      }
-    }
-
-    def ifFailure(f: PartialFunction[Throwable, Unit]): Try[T] = {
-      t match {
-        case failure @ Failure(e) if f.isDefinedAt(e) => Try {
-          f(e)
-          return failure
-        }
-        case x => x
-      }
-    }
-
-    def combine[S, R](other: Try[S])(implicit ev: T <:< (S => R)): Try[R] = {
-      (t, other) match {
-        case (Success(f), Success(s)) => Try { f(s) }
-        case (Success(_), Failure(e)) => Failure(e)
-        case (Failure(e), Success(_)) => Failure(e)
-        case (Failure(CompositeException(es1)), Failure(CompositeException(es2))) => Failure(CompositeException(es1 ++ es2))
-        case (Failure(CompositeException(es1)), Failure(e2)) => Failure(CompositeException(es1 ++ List(e2)))
-        case (Failure(e1), Failure(CompositeException(es2))) => Failure(CompositeException(List(e1) ++ es2))
-        case (Failure((e1)), Failure((e2))) => Failure(CompositeException(List(e1, e2)))
-      }
     }
   }
 

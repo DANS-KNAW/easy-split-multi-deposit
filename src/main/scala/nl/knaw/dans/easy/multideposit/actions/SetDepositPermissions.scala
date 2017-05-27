@@ -22,6 +22,7 @@ import java.nio.file.attribute._
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.easy.multideposit.{ UnitAction, _ }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import nl.knaw.dans.lib.error._
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
@@ -70,7 +71,7 @@ case class SetDepositPermissions(row: Int, depositId: DepositId)(implicit settin
         Files.getFileAttributeView(path, classOf[PosixFileAttributeView], LinkOption.NOFOLLOW_LINKS).setGroup(group)
 
         FileVisitResult.CONTINUE
-      } onError {
+      } getOrRecover {
         case upnf: UserPrincipalNotFoundException => throw ActionException(row, s"Group ${ depositPermissions.group } could not be found", upnf)
         case usoe: UnsupportedOperationException => throw ActionException(row, "Not on a POSIX supported file system", usoe)
         case cce: ClassCastException => throw ActionException(row, "No file permission elements in set", cce)

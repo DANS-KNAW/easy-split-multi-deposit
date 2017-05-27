@@ -90,9 +90,7 @@ class ParserUtilsSpec extends UnitSpec with LanguageBehavior {
     )
 
     inside(extractNEL(rows)(i => _ => Some(Failure(new Exception(s"foo $i"))))) {
-      case Failure(CompositeException(es)) =>
-        val e1 :: e2 :: Nil = es.toList
-
+      case Failure(CompositeException(e1 :: e2 :: Nil)) =>
         e1 should have message "foo 2"
         e2 should have message "foo 3"
     }
@@ -177,9 +175,7 @@ class ParserUtilsSpec extends UnitSpec with LanguageBehavior {
     )
 
     inside(extractList(rows)(i => _ => Some(Failure(new Exception(s"foo $i"))))) {
-      case Failure(CompositeException(es)) =>
-        val e1 :: e2 :: Nil = es.toList
-
+      case Failure(CompositeException(e1 :: e2 :: Nil)) =>
         e1 should have message "foo 2"
         e2 should have message "foo 3"
     }

@@ -24,7 +24,6 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
 import resource._
 
-import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
@@ -113,18 +112,13 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
   }
 
   private def recoverParsing(t: Throwable): Failure[Nothing] = {
-    @tailrec
-    def flattenException(es: List[Throwable], result: List[Throwable] = Nil): List[Throwable] = {
-      es match {
-        case Nil => result
-        case CompositeException(ths) :: exs => flattenException(ths.toList ::: exs, result)
-        case NonFatal(ex) :: exs => flattenException(exs, ex :: result)
-      }
-    }
-
     def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
       header.toOption.fold("")(_ + "\n") +
-        flattenException(List(throwable))
+        List(throwable)
+          .flatMap {
+            case es: CompositeException => es.throwables
+            case e => Seq(e)
+          }
           .sortBy {
             case ParseException(row, _, _) => row
             case _ => -1

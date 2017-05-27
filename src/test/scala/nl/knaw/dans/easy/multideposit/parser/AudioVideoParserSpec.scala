@@ -149,8 +149,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
       audioVideoCSVRow3 :: Nil
 
     inside(extractAudioVideo(rows, 2, "ruimtereis01")) {
-      case Failure(CompositeException(es)) =>
-        val ParseException(2, msg, _) :: Nil = es.toList
+      case Failure(CompositeException(ParseException(2, msg, _) :: Nil)) =>
         val file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile
         msg shouldBe s"The column 'AV_FILE_TITLE' can only have one value for file '$file'"
     }
@@ -212,8 +211,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
     )
 
     inside(springfield(2)(row).value) {
-      case Failure(CompositeException(es)) =>
-        val e1 :: e2 :: e3 :: Nil = es.toList
+      case Failure(CompositeException(e1 :: e2 :: e3 :: Nil)) =>
         e1 should have message "The column 'SF_DOMAIN' contains the following invalid characters: {@, ï, ç, æ}"
         e2 should have message "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"
         e3 should have message "The column 'SF_COLLECTION' contains the following invalid characters: {*}"

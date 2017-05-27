@@ -51,7 +51,7 @@ case class MoveDepositToOutputDir(row: Int, depositId: DepositId)(implicit setti
           case Failure(e2) => Failure(ActionException(row, "An error occurred both while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage } and while checking whether the " +
             s"output directory actually exists now: ${ e2.getMessage }. Please contact your " +
-            s"application manager ASAP!", CompositeException(List(e, e2))))
+            s"application manager ASAP!", new CompositeException(e, e2)))
         }
     }
   }

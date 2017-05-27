@@ -257,9 +257,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
     val dsIds = List("ds1", "", "ds2", "ds2", "   ", "ds3")
 
     inside(detectEmptyDepositCells(dsIds)) {
-      case Failure(CompositeException(es)) =>
-        val e1 :: e2 :: Nil = es.toList
-
+      case Failure(CompositeException(e1 :: e2 :: Nil)) =>
         e1 should have message "Row 3 does not have a depositId in column DATASET"
         e2 should have message "Row 6 does not have a depositId in column DATASET"
     }
