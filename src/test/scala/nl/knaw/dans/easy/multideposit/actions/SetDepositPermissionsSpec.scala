@@ -30,10 +30,14 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
 
     // don't hardcode users and groups, since we don't know what we have on travis
     val user = System.getProperty("user.name")
-    val allGroups :: _ = "cut -d: -f1 /etc/group".!!.split("\n").filterNot(_ startsWith "#").toList
-    val userGroups :: _ = s"id -Gn $user".!!.split(" ").toList
+    val allGroups = "cut -d: -f1 /etc/group".!!.split("\n").filterNot(_ startsWith "#").toList
+    val userGroups = s"id -Gn $user".!!.split(" ").toList
 
-    (user, userGroups, allGroups.diff(userGroups))
+    (userGroups, allGroups.diff(userGroups)) match {
+      case (ug :: _, diff :: _) => (user, ug, diff)
+      case (Nil, _) => throw new AssertionError("no suitable user group found")
+      case (_, Nil) => throw new AssertionError("no suitable unrelated group found")
+    }
   }
 
   implicit val settings = Settings(
