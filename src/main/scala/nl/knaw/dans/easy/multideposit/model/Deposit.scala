@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.model
 
-import java.io.File
+import java.nio.file.Path
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import org.joda.time.DateTime
@@ -91,6 +91,6 @@ case class SpatialBox(north: String, south: String, east: String, west: String, 
 
 case class Springfield(domain: String = "dans", user: String, collection: String)
 
-case class Subtitles(file: File, language: Option[String] = Option.empty)
+case class Subtitles(path: Path, language: Option[String] = Option.empty)
 
-case class AVFile(file: File, title: Option[String] = Option.empty, subtitles: Seq[Subtitles] = Seq.empty)
+case class AVFile(path: Path, title: Option[String] = Option.empty, subtitles: Seq[Subtitles] = Seq.empty)

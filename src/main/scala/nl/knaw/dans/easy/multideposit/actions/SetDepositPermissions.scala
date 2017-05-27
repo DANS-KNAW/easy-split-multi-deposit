@@ -15,14 +15,14 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{ File, IOException }
+import java.io.IOException
 import java.nio.file._
 import java.nio.file.attribute._
 
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.easy.multideposit.{ UnitAction, _ }
-import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.error._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
@@ -41,13 +41,15 @@ case class SetDepositPermissions(row: Int, depositId: DepositId)(implicit settin
     val stagingDirectory = stagingDir(depositId)
     isOnPosixFileSystem(stagingDirectory)
       .flatMap {
-        case true => Try { Files.walkFileTree(stagingDirectory.toPath, PermissionFileVisitor(settings.depositPermissions)) }
+        case true => Try {
+          Files.walkFileTree(stagingDirectory, PermissionFileVisitor(settings.depositPermissions))
+        }
         case false => Success(())
       }
   }
 
-  private def isOnPosixFileSystem(file: File): Try[Boolean] = Try {
-    Files.getPosixFilePermissions(file.toPath)
+  private def isOnPosixFileSystem(file: Path): Try[Boolean] = Try {
+    Files.getPosixFilePermissions(file)
     true
   } recover {
     case _: UnsupportedOperationException => false

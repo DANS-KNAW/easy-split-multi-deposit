@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
+import java.nio.file.Paths
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit._
@@ -31,8 +31,8 @@ import scala.xml.{ Elem, Node }
 class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll with CustomMatchers {
 
   implicit val settings = new Settings(
-    multidepositDir = new File(testDir, "md"),
-    stagingDir = new File(testDir, "sd")
+    multidepositDir = testDir.resolve("md"),
+    stagingDir = testDir.resolve("sd")
   ) {
     override val formats: Set[String] = Set("text/xml")
   }
@@ -116,20 +116,20 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll wi
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    new File(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.mpg").toURI)
-      .copyFile(new File(settings.multidepositDir, s"$depositId/reisverslag/centaur.mpg"))
-    new File(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.srt").toURI)
-      .copyFile(new File(settings.multidepositDir, s"$depositId/reisverslag/centaur.srt"))
+    Paths.get(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.mpg").toURI)
+      .copyFile(settings.multidepositDir.resolve(s"$depositId/reisverslag/centaur.mpg"))
+    Paths.get(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.srt").toURI)
+      .copyFile(settings.multidepositDir.resolve(s"$depositId/reisverslag/centaur.srt"))
   }
 
   "execute" should "write the metadata to a file at the correct place" in {
     val file = stagingDatasetMetadataFile(depositId)
 
-    file should not(exist)
+    file.toFile should not(exist)
 
     AddDatasetMetadataToDeposit(deposit).execute shouldBe a[Success[_]]
 
-    file should exist
+    file.toFile should exist
   }
 
   "depositToDDM" should "return the expected xml" in {
@@ -137,8 +137,8 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll wi
   }
 
   it should "return xml on reading from the allfields input instructions csv" in {
-    implicit val s2: Settings = settings.copy(multidepositDir = new File(getClass.getResource("/allfields/input").toURI))
-    val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
+    implicit val s2: Settings = settings.copy(multidepositDir = Paths.get(getClass.getResource("/allfields/input").toURI))
+    val csv = Paths.get(getClass.getResource("/allfields/input/instructions.csv").toURI)
     inside(MultiDepositParser()(s2).parse(csv).map(_.map(depositToDDM(_)(s2)))) {
       case Success(xmls) => xmls should have size 3
     }

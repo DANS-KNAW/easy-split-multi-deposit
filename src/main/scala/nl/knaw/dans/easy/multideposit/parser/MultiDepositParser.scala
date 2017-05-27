@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.io.File
+import java.nio.file.Path
 
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model._
@@ -31,11 +31,11 @@ import scala.util.{ Failure, Success, Try }
 
 trait MultiDepositParser extends ParserUtils with AudioVideoParser with MetadataParser with ProfileParser with DebugEnhancedLogging {
 
-  def parse(file: File): Try[Seq[Deposit]] = {
-    logger.info(s"Parsing $file")
+  def parse(path: Path): Try[Seq[Deposit]] = {
+    logger.info(s"Parsing $path")
 
     val deposits = for {
-      (headers, content) <- read(file)
+      (headers, content) <- read(path)
       depositIdIndex = headers.indexOf("DATASET")
       _ <- detectEmptyDepositCells(content.map(_ (depositIdIndex)))
       result <- content.groupBy(_ (depositIdIndex))
@@ -48,12 +48,12 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
     deposits.recoverWith { case NonFatal(e) => recoverParsing(e) }
   }
 
-  def read(file: File): Try[(List[MultiDepositKey], List[List[String]])] = {
-    managed(CSVParser.parse(file, encoding, CSVFormat.RFC4180))
+  def read(path: Path): Try[(List[MultiDepositKey], List[List[String]])] = {
+    managed(CSVParser.parse(path.toFile, encoding, CSVFormat.RFC4180))
       .map(csvParse)
       .tried
       .flatMap {
-        case Nil => Failure(EmptyInstructionsFileException(file))
+        case Nil => Failure(EmptyInstructionsFileException(path))
         case headers :: rows =>
           validateDepositHeaders(headers)
             .map(_ => ("ROW" :: headers, rows.zipWithIndex.collect {

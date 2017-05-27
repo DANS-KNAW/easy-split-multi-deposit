@@ -15,7 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
 import nl.knaw.dans.easy.multideposit.{ Ldap, Settings, UnitSpec, _ }
@@ -28,8 +27,8 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
 
   val ldapMock: Ldap = mock[Ldap]
   implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md"),
-    stagingDir = new File(testDir, "sd"),
+    multidepositDir = testDir.resolve("md"),
+    stagingDir = testDir.resolve("sd"),
     datamanager = "dm",
     ldap = ldapMock
   )
@@ -55,7 +54,7 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
     (ldapMock.query(_: String)(_: Attributes => Attributes)) expects("dm", *) once() returning Success(Seq(attrs))
   }
 
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParent.deleteDirectory()
 
   "checkPreconditions" should "succeed if the datamanager email can be retrieved" in {
     mockLdapForDatamanager(correctDatamanagerAttrs)

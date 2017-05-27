@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
+import java.nio.file.{ Files, Paths }
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
@@ -25,26 +25,26 @@ import scala.util.{ Failure, Success }
 class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
 
   implicit val settings = Settings(
-    multidepositDir = new File(testDir, "input"),
-    stagingDir = new File(testDir, "sd"),
-    outputDepositDir = new File(testDir, "dd")
+    multidepositDir = testDir.resolve("input"),
+    stagingDir = testDir.resolve("sd"),
+    outputDepositDir = testDir.resolve("dd")
   )
 
-  override def beforeAll(): Unit = testDir.mkdirs
+  override def beforeAll(): Unit = Files.createDirectories(testDir)
 
   before {
     // create stagingDir content
     val baseDir = settings.stagingDir
-    baseDir.mkdir()
-    baseDir should exist
+    Files.createDirectory(baseDir)
+    baseDir.toFile should exist
 
-    new File(getClass.getResource("/allfields/output/input-ruimtereis01").toURI)
+    Paths.get(getClass.getResource("/allfields/output/input-ruimtereis01").toURI)
       .copyDir(stagingDir("ruimtereis01"))
-    new File(getClass.getResource("/allfields/output/input-ruimtereis02").toURI)
+    Paths.get(getClass.getResource("/allfields/output/input-ruimtereis02").toURI)
       .copyDir(stagingDir("ruimtereis02"))
 
-    stagingDir("ruimtereis01") should exist
-    stagingDir("ruimtereis02") should exist
+    stagingDir("ruimtereis01").toFile should exist
+    stagingDir("ruimtereis02").toFile should exist
   }
 
   after {
@@ -54,11 +54,11 @@ class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter with Befor
 
     for (dir <- List(stagingDir, outputDepositDir)) {
       dir.deleteDirectory()
-      dir shouldNot exist
+      dir.toFile shouldNot exist
     }
   }
 
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
+  override def afterAll: Unit = testDir.getParent.deleteDirectory()
 
   "checkPreconditions" should "verify that the deposit does not yet exist in the outputDepositDir" in {
     MoveDepositToOutputDir(1, "ruimtereis01").checkPreconditions shouldBe a[Success[_]]
@@ -67,7 +67,7 @@ class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter with Befor
   it should "fail if the deposit already exists in the outputDepositDir" in {
     val depositId = "ruimtereis01"
     stagingDir(depositId).copyDir(outputDepositDir(depositId))
-    outputDepositDir(depositId) should exist
+    outputDepositDir(depositId).toFile should exist
 
     inside(MoveDepositToOutputDir(1, depositId).checkPreconditions) {
       case Failure(ActionException(1, msg, null)) => msg should include(s"The deposit for dataset $depositId already exists")
@@ -78,18 +78,18 @@ class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter with Befor
     val depositId = "ruimtereis01"
     MoveDepositToOutputDir(1, depositId).execute() shouldBe a[Success[_]]
 
-    stagingDir(depositId) shouldNot exist
-    outputDepositDir(depositId) should exist
+    stagingDir(depositId).toFile shouldNot exist
+    outputDepositDir(depositId).toFile should exist
 
-    stagingDir("ruimtereis02") should exist
-    outputDepositDir("ruimtereis02") shouldNot exist
+    stagingDir("ruimtereis02").toFile should exist
+    outputDepositDir("ruimtereis02").toFile shouldNot exist
   }
 
   it should "only move the one deposit to the outputDepositDirectory, not other deposits in the staging directory" in {
     val depositId = "ruimtereis01"
     MoveDepositToOutputDir(1, depositId).execute() shouldBe a[Success[_]]
 
-    stagingDir("ruimtereis02") should exist
-    outputDepositDir("ruimtereis02") shouldNot exist
+    stagingDir("ruimtereis02").toFile should exist
+    outputDepositDir("ruimtereis02").toFile shouldNot exist
   }
 }

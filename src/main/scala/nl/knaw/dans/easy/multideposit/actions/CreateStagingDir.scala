@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.nio.file.Files
+
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model.DepositId
 
@@ -31,15 +33,18 @@ case class CreateStagingDir(row: Int, depositId: DepositId)(implicit settings: S
   override def checkPreconditions: Try[Unit] = checkDirectoriesDoNotExist
 
   private def checkDirectoriesDoNotExist: Try[Unit] = {
-    dirs.find(_.exists)
+    dirs.find(Files.exists(_))
       .map(file => Failure(ActionException(row, s"The deposit for dataset $depositId already exists in $file.")))
       .getOrElse(Success(()))
   }
 
   override def execute(): Try[Unit] = {
     debug(s"making directories: $dirs")
-    if (dirs.forall(_.mkdirs)) Success(())
-    else Failure(ActionException(row, s"Could not create the staging directory at $stagingDirectory"))
+    Try {
+      dirs.foreach(Files.createDirectories(_))
+    } recoverWith {
+      case NonFatal(e) => Failure(ActionException(row, s"Could not create the staging directory at $stagingDirectory", e))
+    }
   }
 
   override def rollback(): Try[Unit] = {

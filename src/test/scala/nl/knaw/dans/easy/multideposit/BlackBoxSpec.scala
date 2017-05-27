@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.io.File
+import java.nio.file.Paths
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
 import org.scalamock.scalatest.MockFactory
@@ -27,12 +27,12 @@ import scala.xml.{ Elem, Node, NodeSeq, XML }
 
 class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with CustomMatchers {
 
-  private val allfields = new File(testDir, "md/allfields").getAbsoluteFile
-  private val invalidCSV = new File(testDir, "md/invalidCSV").getAbsoluteFile
+  private val allfields = testDir.resolve("md/allfields").toAbsolutePath
+  private val invalidCSV = testDir.resolve("md/invalidCSV").toAbsolutePath
 
   before {
-    new File(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
-    new File(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
+    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
+    Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
   }
 
   "allfields" should "succeed in transforming the input into a bag" in {
@@ -42,14 +42,14 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
     val ldap = mock[Ldap]
     implicit val settings = Settings(
       multidepositDir = allfields,
-      stagingDir = new File(testDir, "sd").getAbsoluteFile,
-      outputDepositDir = new File(testDir, "od").getAbsoluteFile,
+      stagingDir = testDir.resolve("sd").toAbsolutePath,
+      outputDepositDir = testDir.resolve("od").toAbsolutePath,
       datamanager = "easyadmin",
       depositPermissions = DepositPermissions("rwxrwx---", "admin"),
       formatsFile = formatsFile,
       ldap = ldap
     )
-    val expectedOutputDir = new File(getClass.getResource("/allfields/output").toURI)
+    val expectedOutputDir = Paths.get(getClass.getResource("/allfields/output").toURI)
 
     def createDatamanagerAttributes: BasicAttributes = {
       new BasicAttributes() {
@@ -70,36 +70,36 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
     for (bagName <- Seq("ruimtereis01", "ruimtereis02", "ruimtereis03")) {
       // TODO I'm not happy with this way of testing the content of each file, especially with ignoring specific lines,
       // but I'm in a hurry, so I'll think of a better way later
-      val bag = new File(settings.outputDepositDir, s"allfields-$bagName/bag")
-      val expBag = new File(expectedOutputDir, s"input-$bagName/bag")
+      val bag = settings.outputDepositDir.resolve(s"allfields-$bagName/bag")
+      val expBag = expectedOutputDir.resolve(s"input-$bagName/bag")
 
-      val bagInfo = new File(bag, "bag-info.txt")
-      val expBagInfo = new File(expBag, "bag-info.txt")
+      val bagInfo = bag.resolve("bag-info.txt")
+      val expBagInfo = expBag.resolve("bag-info.txt")
       bagInfo.read().lines.toSeq should contain allElementsOf expBagInfo.read().lines.filterNot(_ contains "Bagging-Date").toSeq
 
-      val bagit = new File(bag, "bagit.txt")
-      val expBagit = new File(expBag, "bagit.txt")
+      val bagit = bag.resolve("bagit.txt")
+      val expBagit = expBag.resolve("bagit.txt")
       bagit.read().lines.toSeq should contain allElementsOf expBagit.read().lines.toSeq
 
-      val manifest = new File(bag, "manifest-sha1.txt")
-      val expManifest = new File(expBag, "manifest-sha1.txt")
+      val manifest = bag.resolve("manifest-sha1.txt")
+      val expManifest = expBag.resolve("manifest-sha1.txt")
       manifest.read().lines.toSeq should contain allElementsOf expManifest.read().lines.toSeq
 
-      val tagManifest = new File(bag, "tagmanifest-sha1.txt")
-      val expTagManifest = new File(expBag, "tagmanifest-sha1.txt")
+      val tagManifest = bag.resolve("tagmanifest-sha1.txt")
+      val expTagManifest = expBag.resolve("tagmanifest-sha1.txt")
       tagManifest.read().lines.toSeq should contain allElementsOf expTagManifest.read().lines.filterNot(_ contains "bag-info.txt").filterNot(_ contains "manifest-sha1.txt").toSeq
 
-      val datasetXml = new File(bag, "metadata/dataset.xml")
-      val expDatasetXml = new File(expBag, "metadata/dataset.xml")
+      val datasetXml = bag.resolve("metadata/dataset.xml")
+      val expDatasetXml = expBag.resolve("metadata/dataset.xml")
       val datasetTransformer = removeElemByName("available")
-      datasetTransformer.transform(XML.loadFile(datasetXml)) should equalTrimmed (datasetTransformer.transform(XML.loadFile(expDatasetXml)))
+      datasetTransformer.transform(XML.loadFile(datasetXml.toFile)) should equalTrimmed (datasetTransformer.transform(XML.loadFile(expDatasetXml.toFile)))
 
-      val filesXml = new File(bag, "metadata/files.xml")
-      val expFilesXml = new File(expBag, "metadata/files.xml")
-      XML.loadFile(filesXml) should equalTrimmed (XML.loadFile(expFilesXml))
+      val filesXml = bag.resolve("metadata/files.xml")
+      val expFilesXml = expBag.resolve("metadata/files.xml")
+      XML.loadFile(filesXml.toFile) should equalTrimmed (XML.loadFile(expFilesXml.toFile))
 
-      val props = new File(settings.outputDepositDir, s"allfields-$bagName/deposit.properties")
-      val expProps = new File(expectedOutputDir, s"input-$bagName/deposit.properties")
+      val props = settings.outputDepositDir.resolve(s"allfields-$bagName/deposit.properties")
+      val expProps = expectedOutputDir.resolve(s"input-$bagName/deposit.properties")
       props.read().lines.toSeq should contain allElementsOf expProps.read().lines.filterNot(_ startsWith "#").filterNot(_ contains "bag-store.bag-id").toSeq
     }
   }

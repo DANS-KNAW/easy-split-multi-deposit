@@ -15,20 +15,24 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.io.{ ByteArrayOutputStream, File }
+import java.io.ByteArrayOutputStream
+import java.nio.file.Paths
 
 import org.apache.commons.configuration.PropertiesConfiguration
 import org.scalatest._
 
 class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
-  private val RES_DIR_STR: String = new File(getClass.getResource("/").toURI).getAbsolutePath
+  private val resourceDirString: String = Paths.get(getClass.getResource("/").toURI).toAbsolutePath.toString
 
   private val mockedProps = new PropertiesConfiguration() {
     setDelimiterParsingDisabled(true)
-    load(new File(RES_DIR_STR + "/debug-config", "application.properties"))
+    load(Paths.get(resourceDirString + "/debug-config", "application.properties").toFile)
   }
 
-  val mockedArgs = Array("-s", RES_DIR_STR, RES_DIR_STR + "/allfields/input", RES_DIR_STR + "/allfields/output", "datamanager")
+  val mockedArgs = Array("-s", resourceDirString,
+    resourceDirString + "/allfields/input",
+    resourceDirString + "/allfields/output",
+    "datamanager")
 
   private val clo = new ScallopCommandLine(mockedProps, mockedArgs) {
     // avoids System.exit() in case of invalid arguments or "--help"
@@ -47,15 +51,15 @@ class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
     val lineSeparators = s"(${ System.lineSeparator() })+"
     val options = helpInfo.split(s"${ lineSeparators }Options:$lineSeparators")(1)
     options.trim.length shouldNot be(0)
-    new File("README.md") should containTrimmed(options)
+    Paths.get("README.md") should containTrimmed(options)
   }
 
   "synopsis in help info" should "be part of README.md" in {
-    new File("README.md") should containTrimmed(clo.synopsis)
+    Paths.get("README.md") should containTrimmed(clo.synopsis)
   }
 
   "description line(s) in help info" should "be part of README.md and pom.xml" in {
-    new File("README.md") should containTrimmed(clo.description)
-    new File("pom.xml") should containTrimmed(clo.description)
+    Paths.get("README.md") should containTrimmed(clo.description)
+    Paths.get("pom.xml") should containTrimmed(clo.description)
   }
 }

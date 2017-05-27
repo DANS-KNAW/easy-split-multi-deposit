@@ -18,9 +18,9 @@ package nl.knaw.dans.easy.multideposit
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{ Assertion, Inside, Matchers, PropSpec }
+import org.scalatest.{ Inside, Matchers, PropSpec }
 
-import scala.language.{ reflectiveCalls, implicitConversions }
+import scala.language.{ implicitConversions, reflectiveCalls }
 import scala.util.{ Failure, Success, Try }
 
 class ActionLawSpec extends PropSpec with PropertyChecks with Matchers with Inside with CustomMatchers {

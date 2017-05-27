@@ -15,7 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{ File, FileInputStream }
+import java.io.FileInputStream
+import java.nio.file.Files
 import java.util.Locale
 
 import gov.loc.repository.bagit.BagFactory.Version
@@ -52,18 +53,18 @@ object AddBagToDeposit {
   def createBag(deposit: Deposit)(implicit settings: Settings): Try[Unit] = Try {
     val depositId = deposit.depositId
     val inputDir = multiDepositDir(depositId)
-    val inputDirExists = inputDir.exists
+    val inputDirExists = Files.exists(inputDir)
     val outputBagDir = stagingBagDir(depositId)
 
     val bagFactory = new BagFactory
-    val preBag = bagFactory.createPreBag(outputBagDir)
-    val bag = bagFactory.createBag(outputBagDir)
+    val preBag = bagFactory.createPreBag(outputBagDir.toFile)
+    val bag = bagFactory.createBag(outputBagDir.toFile)
 
-    if (inputDirExists) bag.addFilesToPayload(inputDir.listFiles.toList.asJava)
+    if (inputDirExists) bag.addFilesToPayload(inputDir.toFile.listFiles.toList.asJava)
 
     val fsw = new FileSystemWriter(bagFactory)
     if (!inputDirExists) fsw.setTagFilesOnly(true)
-    fsw.write(bag, outputBagDir)
+    fsw.write(bag, outputBagDir.toFile)
 
     val algorithm = Algorithm.SHA1
     val defaultCompleter = new DefaultCompleter(bagFactory) {
@@ -84,9 +85,9 @@ object AddBagToDeposit {
 
     // TODO, this is temporary, waiting for response from the BagIt-Java developers.
     if (!inputDirExists) {
-      new File(outputBagDir, "data").mkdir()
-      new File(outputBagDir, "manifest-sha1.txt").write("")
-      new File(outputBagDir, "tagmanifest-sha1.txt").append(s"${ MessageDigestHelper.generateFixity(new FileInputStream(new File(outputBagDir, "manifest-sha1.txt")), Algorithm.SHA1) }  manifest-sha1.txt")
+      Files.createDirectory(outputBagDir.resolve("data"))
+      outputBagDir.resolve("manifest-sha1.txt").write("")
+      outputBagDir.resolve("tagmanifest-sha1.txt").append(s"${ MessageDigestHelper.generateFixity(new FileInputStream(outputBagDir.resolve("manifest-sha1.txt").toFile), Algorithm.SHA1) }  manifest-sha1.txt")
     }
   }
 }

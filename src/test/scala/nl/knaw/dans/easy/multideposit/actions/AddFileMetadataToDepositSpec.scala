@@ -15,7 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{ File, FileNotFoundException }
+import java.io.FileNotFoundException
+import java.nio.file.{ NoSuchFileException, Paths }
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model.{ AVFile, AudioVideo, FileAccessRights, Springfield, Subtitles }
@@ -28,16 +29,16 @@ import scala.xml.XML
 class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with CustomMatchers {
 
   implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md").getAbsoluteFile,
-    stagingDir = new File(testDir, "sd").getAbsoluteFile
+    multidepositDir = testDir.resolve("md").toAbsolutePath,
+    stagingDir = testDir.resolve("sd").toAbsolutePath
   )
   val depositId = "ruimtereis01"
 
   before {
-    new File(getClass.getResource("/allfields/input").toURI)
+    Paths.get(getClass.getResource("/allfields/input").toURI)
       .copyDir(settings.multidepositDir)
-    new File(getClass.getResource("/mimetypes").toURI)
-      .copyDir(new File(testDir, "mimetypes"))
+    Paths.get(getClass.getResource("/mimetypes").toURI)
+      .copyDir(testDir.resolve("mimetypes"))
   }
 
   after {
@@ -113,7 +114,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
   it should "create an empty list of file metadata if the deposit directory corresponding with the depositId does not exist and therefore succeed" in {
     val depositId = "ruimtereis03"
     val deposit = testDeposit2.copy(depositId = depositId)
-    multiDepositDir(depositId) should not(exist)
+    multiDepositDir(depositId).toFile should not(exist)
     AddFileMetadataToDeposit(deposit).checkPreconditions shouldBe a[Success[_]]
   }
 
@@ -122,7 +123,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
       depositId = depositId,
       audioVideo = testDeposit1.audioVideo.copy(
         accessibility = Option(FileAccessRights.NONE),
-        avFiles = Set(AVFile(new File("ruimtereis01/reisverslag/centaur.mpg")))
+        avFiles = Set(AVFile(Paths.get("ruimtereis01/reisverslag/centaur.mpg")))
       )
     )
     val action = AddFileMetadataToDeposit(deposit)
@@ -130,8 +131,8 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
 
     action.execute() shouldBe a[Success[_]]
 
-    metadataDir should exist
-    stagingFileMetadataFile(deposit.depositId) should exist
+    metadataDir.toFile should exist
+    stagingFileMetadataFile(deposit.depositId).toFile should exist
   }
 
   it should "produce the xml for all the files" in {
@@ -142,15 +143,15 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
         accessibility = Option(FileAccessRights.RESTRICTED_GROUP),
         avFiles = Set(
           AVFile(
-            file = new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.mpg").getAbsoluteFile,
+            path = settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath,
             title = Option("video about the centaur meteorite"),
             subtitles = List(
-              Subtitles(new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur.srt").getAbsoluteFile, Option("en")),
-              Subtitles(new File(settings.multidepositDir, "ruimtereis01/reisverslag/centaur-nederlands.srt").getAbsoluteFile, Option("nl"))
+              Subtitles(settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath, Option("en")),
+              Subtitles(settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur-nederlands.srt").toAbsolutePath, Option("nl"))
             )
           ),
           AVFile(
-            file = new File(settings.multidepositDir, "ruimtereis01/path/to/a/random/sound/chicken.mp3").getAbsoluteFile,
+            path = settings.multidepositDir.resolve("ruimtereis01/path/to/a/random/sound/chicken.mp3").toAbsolutePath,
             title = Option("our daily wake up call")
           )
         )
@@ -158,8 +159,8 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
     )
     AddFileMetadataToDeposit(deposit).execute() shouldBe a[Success[_]]
 
-    val expected = XML.loadFile(new File(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI))
-    val actual = XML.loadFile(stagingFileMetadataFile(depositId))
+    val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI).toFile)
+    val actual = XML.loadFile(stagingFileMetadataFile(depositId).toFile)
 
     actual should equalTrimmed (expected)
   }
@@ -169,8 +170,8 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
     val deposit = testDeposit2.copy(depositId = depositId)
     AddFileMetadataToDeposit(deposit).execute() shouldBe a[Success[_]]
 
-    val expected = XML.loadFile(new File(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI))
-    val actual = XML.loadFile(stagingFileMetadataFile(depositId))
+    val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI).toFile)
+    val actual = XML.loadFile(stagingFileMetadataFile(depositId).toFile)
 
     actual should equalTrimmed (expected)
   }
@@ -180,75 +181,75 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
     val deposit = testDeposit2.copy(depositId = depositId)
     AddFileMetadataToDeposit(deposit).execute() shouldBe a[Success[_]]
 
-    val expected = XML.loadFile(new File(getClass.getResource("/allfields/output/input-ruimtereis03/bag/metadata/files.xml").toURI))
-    val actual = XML.loadFile(stagingFileMetadataFile(depositId))
+    val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis03/bag/metadata/files.xml").toURI).toFile)
+    val actual = XML.loadFile(stagingFileMetadataFile(depositId).toFile)
 
     actual should equalTrimmed (expected)
   }
 
   "getMimeType" should "produce the correct doc mimetype" in {
-    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-ms-doc.doc"))) {
+    inside(AddFileMetadataToDeposit.getMimeType(testDir.resolve("mimetypes/file-ms-doc.doc"))) {
       case Success(mimetype) => mimetype shouldBe "application/msword"
     }
   }
 
   it should "produce the correct docx mimetype" in {
-    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-ms-docx.docx"))) {
+    inside(AddFileMetadataToDeposit.getMimeType(testDir.resolve("mimetypes/file-ms-docx.docx"))) {
       case Success(mimetype) => mimetype shouldBe "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     }
   }
 
   it should "produce the correct xlsx mimetype" in {
-    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-ms-excel.xlsx"))) {
+    inside(AddFileMetadataToDeposit.getMimeType(testDir.resolve("mimetypes/file-ms-excel.xlsx"))) {
       case Success(mimetype) => mimetype shouldBe "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     }
   }
 
   it should "produce the correct pdf mimetype" in {
-    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-pdf.pdf"))) {
+    inside(AddFileMetadataToDeposit.getMimeType(testDir.resolve("mimetypes/file-pdf.pdf"))) {
       case Success(mimetype) => mimetype shouldBe "application/pdf"
     }
   }
 
   it should "produce the correct plain text mimetype" in {
-    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-plain-text.txt"))) {
+    inside(AddFileMetadataToDeposit.getMimeType(testDir.resolve("mimetypes/file-plain-text.txt"))) {
       case Success(mimetype) => mimetype shouldBe "text/plain"
     }
   }
 
   it should "produce the correct json mimetype" in {
-    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-json.json"))) {
+    inside(AddFileMetadataToDeposit.getMimeType(testDir.resolve("mimetypes/file-json.json"))) {
       case Success(mimetype) => mimetype shouldBe "application/json"
     }
   }
 
   it should "produce the correct xml mimetype" in {
-    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-xml.xml"))) {
+    inside(AddFileMetadataToDeposit.getMimeType(testDir.resolve("mimetypes/file-xml.xml"))) {
       case Success(mimetype) => mimetype shouldBe "application/xml"
     }
   }
 
   it should "give the correct mimetype if the file is plain text and has no extension" in {
-    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-unknown"))) {
+    inside(AddFileMetadataToDeposit.getMimeType(testDir.resolve("mimetypes/file-unknown"))) {
       case Success(mimetype) => mimetype shouldBe "text/plain"
     }
   }
 
   it should "give the correct mimetype if the file has no extension" in {
-    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-unknown-pdf"))) {
+    inside(AddFileMetadataToDeposit.getMimeType(testDir.resolve("mimetypes/file-unknown-pdf"))) {
       case Success(mimetype) => mimetype shouldBe "application/pdf"
     }
   }
 
   it should "give the correct mimetype if the file is hidden" in {
-    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/.file-hidden-pdf"))) {
+    inside(AddFileMetadataToDeposit.getMimeType(testDir.resolve("mimetypes/.file-hidden-pdf"))) {
       case Success(mimetype) => mimetype shouldBe "application/pdf"
     }
   }
 
   it should "fail if the file does not exist" in {
-    inside(AddFileMetadataToDeposit.getMimeType(new File(testDir, "mimetypes/file-does-not-exist.doc"))) {
-      case Failure(e: FileNotFoundException) => e.getMessage should include("mimetypes/file-does-not-exist.doc")
+    inside(AddFileMetadataToDeposit.getMimeType(testDir.resolve("mimetypes/file-does-not-exist.doc"))) {
+      case Failure(e: NoSuchFileException) => e.getMessage should include("mimetypes/file-does-not-exist.doc")
     }
   }
 }
