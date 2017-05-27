@@ -17,14 +17,15 @@ package nl.knaw.dans.easy
 
 import java.io.IOException
 import java.nio.charset.Charset
-import java.nio.file.Path
+import java.nio.file.{ Files, Path }
 import java.util.Properties
 
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.apache.commons.lang.StringUtils
+import resource._
 
-import scala.collection.JavaConversions.collectionAsScalaIterable
+import scala.collection.JavaConverters._
 import scala.util.Try
 import scala.xml.{ Elem, XML }
 
@@ -121,7 +122,7 @@ package object multideposit {
      */
     @throws[IOException]("in case of an I/O error")
     def writeXml(elem: Elem, encoding: Charset = encoding): Unit = {
-      file.toFile.getParentFile.mkdirs()
+      Files.createDirectories(file.getParent)
       XML.save(file.toString, elem, encoding.toString, xmlDecl = true)
     }
 
@@ -229,7 +230,10 @@ package object multideposit {
      *
      * @return a ``List`` of ``java.nio.file.Path`` with the files
      */
-    def listRecursively: List[Path] = FileUtils.listFiles(file.toFile, null, true).toList.map(_.toPath)
+    def listRecursively: List[Path] = {
+      managed(Files.walk(file))
+        .acquireAndGet(_.iterator().asScala.filterNot(Files.isDirectory(_)).toList)
+    }
   }
 
   val encoding = Charsets.UTF_8
