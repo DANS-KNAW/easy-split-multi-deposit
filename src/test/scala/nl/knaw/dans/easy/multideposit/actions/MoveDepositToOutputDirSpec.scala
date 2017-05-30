@@ -70,7 +70,7 @@ class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter with Befor
     outputDepositDir(depositId).toFile should exist
 
     inside(MoveDepositToOutputDir(1, depositId).checkPreconditions) {
-      case Failure(ActionException(1, msg, null)) => msg should include(s"The deposit for dataset $depositId already exists")
+      case Failure(ActionException(1, msg, _)) => msg should include(s"The deposit for dataset $depositId already exists")
     }
   }
 
