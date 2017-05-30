@@ -45,19 +45,20 @@ trait AudioVideoParser {
         .flatMap(atMostOne(rowNum, List("SF_ACCESSIBILITY"))))
       .combine(extractList(rows)(avFile(depositId))
         .flatMap(_.groupBy { case (file, _, _) => file }
-          .map {
-            case (file, (instrPerFile: Seq[(Path, Option[String], Option[Subtitles])])) =>
-              val fileTitle = instrPerFile.collect { case (_, Some(title), _) => title } match {
-                case Seq() => Success(None)
-                case Seq(title) => Success(Some(title))
-                case Seq(_, _ @ _*) => Failure(ParseException(rowNum, s"The column 'AV_FILE_TITLE' " +
-                  s"can only have one value for file '$file'"))
-              }
-              val subtitles = instrPerFile.collect { case (_, _, Some(instr)) => instr }
-
-              fileTitle.map(AVFile(file, _, subtitles))
-          }.collectResults.map(_.toSet)))
+          .map((toAVFile(rowNum) _).tupled)
+          .collectResults
+          .map(_.toSet)))
       .flatten
+  }
+
+  private def toAVFile(rowNum: => Int)(file: Path, instrPerFile: List[(Path, Option[String], Option[Subtitles])]): Try[AVFile] = {
+    val subtitles = instrPerFile.collect { case (_, _, Some(instr)) => instr }
+    instrPerFile.collect { case (_, Some(title), _) => title } match {
+      case Seq() => Success(AVFile(file, None, subtitles))
+      case Seq(title) => Success(AVFile(file, Some(title), subtitles))
+      case Seq(_, _ @ _*) => Failure(ParseException(rowNum, s"The column 'AV_FILE_TITLE' " +
+        s"can only have one value for file '$file'"))
+    }
   }
 
   def springfield(rowNum: => Int)(row: DepositRow): Option[Try[Springfield]] = {
