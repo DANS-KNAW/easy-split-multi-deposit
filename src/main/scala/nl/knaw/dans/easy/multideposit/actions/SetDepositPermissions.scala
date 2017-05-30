@@ -61,8 +61,9 @@ case class SetDepositPermissions(row: Int, depositId: DepositId)(implicit settin
     }
 
     override def postVisitDirectory(dir: Path, exception: IOException): FileVisitResult = {
-      if (exception == null) changePermissions(dir)
-      else FileVisitResult.TERMINATE
+      Option(exception)
+        .map(_ => FileVisitResult.TERMINATE)
+        .getOrElse(changePermissions(dir))
     }
 
     private def changePermissions(path: Path): FileVisitResult = {
