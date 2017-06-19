@@ -105,7 +105,19 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
       }
     }
 
-    fileMetadata.flatMap(checkSFColumnsIfDepositContainsAVFiles)
+    def checkEitherVideoOrAudio(mimetypes: Seq[FileMetadata]): Try[Unit] = {
+      mimetypes.collect { case fmd: AVFileMetadata => fmd.vocabulary }.distinct match {
+        case Nil | Seq(_) => Success(())
+        case _ => Failure(ActionException(deposit.row,
+          "Found both audio and video in this dataset. Only one of them is allowed."))
+      }
+    }
+
+    for {
+      fmds <- fileMetadata
+      _ <- checkSFColumnsIfDepositContainsAVFiles(fmds)
+      _ <- checkEitherVideoOrAudio(fmds)
+    } yield ()
   }
 
   override def execute(): Try[Unit] = {

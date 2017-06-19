@@ -1,11 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <files xmlns:dcterms="http://purl.org/dc/terms/">
-  <file filepath="data/path/to/a/random/sound/chicken.mp3">
-    <dcterms:type>http://schema.org/AudioObject</dcterms:type>
-    <dcterms:format>audio/mpeg</dcterms:format>
-    <dcterms:title>our daily wake up call</dcterms:title>
-    <dcterms:accessRights>RESTRICTED_GROUP</dcterms:accessRights>
-  </file>
   <file filepath="data/path/to/a/random/video/hubble.mpg">
     <dcterms:type>http://schema.org/VideoObject</dcterms:type>
     <dcterms:format>video/mpeg</dcterms:format>

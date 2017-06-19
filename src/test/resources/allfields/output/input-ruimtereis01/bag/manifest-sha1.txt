@@ -6,5 +6,4 @@ a172c01f396818d90cce049a201b4aec4f65cc68  data/reisverslag/deel03.txt
 1dd40013ce63dfa98dfe19f5b4bbf811ee2240f7  data/reisverslag/centaur.mpg
 11f3753c1ce7454931f667e7ccd44c2ae4798fe1  data/ruimtereis01_verklaring.txt
 463eb5053757ef0b1824bef7791ba982e356fbe3  data/reisverslag/centaur.srt
-94c236cdcb2b961ecc9bf434676646da53bfc776  data/path/to/a/random/sound/chicken.mp3
 e8254922967695d60d24db565f1a7d72ee8893ed  data/reisverslag/deel01.txt

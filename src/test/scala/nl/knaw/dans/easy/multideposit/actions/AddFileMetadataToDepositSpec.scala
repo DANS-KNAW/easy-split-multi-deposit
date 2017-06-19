@@ -15,7 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.FileNotFoundException
 import java.nio.file.{ NoSuchFileException, Paths }
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
@@ -43,6 +42,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
 
   after {
     settings.stagingDir.deleteDirectory()
+    settings.multidepositDir.deleteDirectory()
   }
 
   "checkPreconditions" should "succeed if the deposit contains the SF_* fields in case a A/V file is found" in {
@@ -66,8 +66,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
         message should {
           include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
             include("reisverslag/centaur.mpg") and
-            include("path/to/a/random/video/hubble.mpg") and
-            include("path/to/a/random/sound/chicken.mp3")
+            include("path/to/a/random/video/hubble.mpg")
         }
     }
   }
@@ -118,6 +117,26 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
     AddFileMetadataToDeposit(deposit).checkPreconditions shouldBe a[Success[_]]
   }
 
+  it should "fail if a dataset has both audio and video material in it" in {
+    val depositId = "ruimtereis01"
+    val deposit = testDeposit1.copy(depositId = depositId)
+
+    val audioFile = multiDepositDir(depositId).resolve("path/to/a/random/audio/chicken.mp3")
+    testDir.resolve(s"md/ruimtereis04/path/to/a/random/sound/chicken.mp3").copyFile(audioFile)
+
+    val currentAV = deposit.audioVideo.avFiles
+    val newAV = currentAV + AVFile(
+      path = audioFile,
+      title = Option("our daily wake up call"),
+      subtitles = List.empty)
+    val failingDeposit = deposit.copy(audioVideo = deposit.audioVideo.copy(avFiles = newAV))
+
+    inside(AddFileMetadataToDeposit(failingDeposit).checkPreconditions) {
+      case Failure(ActionException(_, message, _)) =>
+        message shouldBe "Found both audio and video in this dataset. Only one of them is allowed."
+    }
+  }
+
   "execute" should "write the file metadata to an xml file" in {
     val deposit = testDeposit1.copy(
       depositId = depositId,
@@ -149,10 +168,6 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
               Subtitles(settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath, Option("en")),
               Subtitles(settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur-nederlands.srt").toAbsolutePath, Option("nl"))
             )
-          ),
-          AVFile(
-            path = settings.multidepositDir.resolve("ruimtereis01/path/to/a/random/sound/chicken.mp3").toAbsolutePath,
-            title = Option("our daily wake up call")
           )
         )
       )

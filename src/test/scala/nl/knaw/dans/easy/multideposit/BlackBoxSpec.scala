@@ -63,11 +63,11 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
     }
 
     (ldap.query(_: String)(_: Attributes => Attributes)) expects(settings.datamanager, *) returning Success(Seq(createDatamanagerAttributes))
-    (ldap.query(_: String)(_: Attributes => Boolean)) expects("user001", *) repeat 3 returning Success(Seq(true))
+    (ldap.query(_: String)(_: Attributes => Boolean)) expects("user001", *) repeat 4 returning Success(Seq(true))
 
     Main.run shouldBe a[Success[_]]
 
-    for (bagName <- Seq("ruimtereis01", "ruimtereis02", "ruimtereis03")) {
+    for (bagName <- Seq("ruimtereis01", "ruimtereis02", "ruimtereis03", "ruimtereis04")) {
       // TODO I'm not happy with this way of testing the content of each file, especially with ignoring specific lines,
       // but I'm in a hurry, so I'll think of a better way later
       val bag = settings.outputDepositDir.resolve(s"allfields-$bagName/bag")

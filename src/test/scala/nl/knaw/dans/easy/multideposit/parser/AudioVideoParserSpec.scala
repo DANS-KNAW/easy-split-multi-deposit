@@ -27,7 +27,7 @@ trait AudioVideoTestObjects {
 
   val settings: Settings
 
-  lazy val audioVideoCSV @ audioVideoCSVRow1 :: audioVideoCSVRow2 :: audioVideoCSVRow3 :: Nil = List(
+  lazy val audioVideoCSV @ audioVideoCSVRow1 :: audioVideoCSVRow2 :: Nil = List(
     Map(
       "SF_DOMAIN" -> "dans",
       "SF_USER" -> "janvanmansum",
@@ -47,16 +47,6 @@ trait AudioVideoTestObjects {
       "AV_FILE_TITLE" -> "",
       "AV_SUBTITLES" -> "reisverslag/centaur-nederlands.srt",
       "AV_SUBTITLES_LANGUAGE" -> "nl"
-    ),
-    Map(
-      "SF_DOMAIN" -> "",
-      "SF_USER" -> "",
-      "SF_COLLECTION" -> "",
-      "SF_ACCESSIBILITY" -> "",
-      "AV_FILE" -> "path/to/a/random/sound/chicken.mp3",
-      "AV_FILE_TITLE" -> "our daily wake up call",
-      "AV_SUBTITLES" -> "",
-      "AV_SUBTITLES_LANGUAGE" -> ""
     )
   )
 
@@ -77,10 +67,6 @@ trait AudioVideoTestObjects {
             language = Option("nl")
           )
         )
-      ),
-      AVFile(
-        path = settings.multidepositDir.resolve("ruimtereis01/path/to/a/random/sound/chicken.mp3").toAbsolutePath,
-        title = Option("our daily wake up call")
       )
     )
   )
@@ -114,7 +100,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
       "AV_FILE_TITLE" -> "",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
-    ) :: audioVideoCSVRow2 :: audioVideoCSVRow3 :: Nil
+    ) :: audioVideoCSVRow2 :: Nil
 
     extractAudioVideo(rows, 2, "ruimtereis01") should matchPattern {
       case Failure(ParseException(2, "The column 'AV_FILE' contains values, but the columns [SF_COLLECTION, SF_USER] do not", _)) =>
@@ -125,8 +111,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
     val rows = audioVideoCSVRow1 ::
       audioVideoCSVRow2.updated("SF_DOMAIN", "extra1")
         .updated("SF_USER", "extra2")
-        .updated("SF_COLLECTION", "extra3") ::
-      audioVideoCSVRow3 :: Nil
+        .updated("SF_COLLECTION", "extra3") :: Nil
 
     extractAudioVideo(rows, 2, "ruimtereis01") should matchPattern {
       case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]. Found: [(dans,janvanmansum,jans-test-files), (extra1,extra2,extra3)]", _)) =>
@@ -135,8 +120,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
 
   it should "fail if there is more than one file accessright" in {
     val rows = audioVideoCSVRow1 ::
-      audioVideoCSVRow2.updated("SF_ACCESSIBILITY", "KNOWN") ::
-      audioVideoCSVRow3 :: Nil
+      audioVideoCSVRow2.updated("SF_ACCESSIBILITY", "KNOWN") :: Nil
 
     extractAudioVideo(rows, 2, "ruimtereis01") should matchPattern {
       case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'SF_ACCESSIBILITY'. Found: [NONE, KNOWN]", _)) =>
@@ -145,8 +129,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects { self =>
 
   it should "fail if there there are multiple AV_FILE_TITLEs for one file" in {
     val rows = audioVideoCSVRow1 ::
-      audioVideoCSVRow2.updated("AV_FILE_TITLE", "another title") ::
-      audioVideoCSVRow3 :: Nil
+      audioVideoCSVRow2.updated("AV_FILE_TITLE", "another title") :: Nil
 
     inside(extractAudioVideo(rows, 2, "ruimtereis01")) {
       case Failure(CompositeException(ParseException(2, msg, _) :: Nil)) =>

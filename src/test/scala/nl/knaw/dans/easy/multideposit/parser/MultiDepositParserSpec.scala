@@ -25,10 +25,9 @@ import scala.util.{ Failure, Success }
 
 trait DepositTestObjects extends AudioVideoTestObjects with MetadataTestObjects with ProfileTestObjects {
 
-  lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: depositCSVRow3 :: Nil = List(
+  lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: Nil = List(
     Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ metadataCSVRow1 ++ audioVideoCSVRow1,
-    Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ metadataCSVRow2 ++ audioVideoCSVRow2,
-    Map("ROW" -> "4", "DATASET" -> "ruimtereis01") ++ audioVideoCSVRow3
+    Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ metadataCSVRow2 ++ audioVideoCSVRow2
   )
 
   lazy val deposit = Deposit(
@@ -61,8 +60,8 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
 
     inside(parse(file)) {
       case Success(datasets) =>
-        datasets should have size 3
-        val deposit2 :: deposit1 :: deposit3 :: Nil = datasets.toList
+        datasets should have size 4
+        val deposit1 :: deposit2 :: deposit3 :: deposit4 :: Nil = datasets.toList.sortBy(_.depositId)
 
         deposit1 should have(
           'depositId ("ruimtereis01"),
@@ -75,6 +74,10 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
         deposit3 should have(
           'depositId ("ruimtereis03"),
           'row (10)
+        )
+        deposit4 should have(
+          'depositId ("ruimtereis04"),
+          'row (11)
         )
     }
   }
@@ -271,13 +274,13 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
     // This is supposed to throw an exception rather than fail, because the ROW is a column
     // that is created by our program itself. If the ROW is not present, something has gone
     // terribly wrong!
-    val rows = depositCSVRow1 :: (depositCSVRow2 - "ROW") :: depositCSVRow3 :: Nil
+    val rows = depositCSVRow1 :: (depositCSVRow2 - "ROW") :: Nil
 
     the[NoSuchElementException] thrownBy extractDeposit("ruimtereis01", rows) should have message "key not found: ROW"
   }
 
   it should "fail if there are multiple distinct depositorUserIDs" in {
-    val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) :: depositCSVRow3 :: Nil
+    val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) :: Nil
 
     extractDeposit("ruimtereis01", rows) should matchPattern {
       case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [ikke, ikke2]", _)) =>
@@ -285,7 +288,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
   }
 
   it should "succeed if there are multiple depositorUserIDs that are all equal" in {
-    val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) :: depositCSVRow3 :: Nil
+    val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) :: Nil
 
     extractDeposit("ruimtereis01", rows) should matchPattern { case Success(`deposit`) => }
   }
