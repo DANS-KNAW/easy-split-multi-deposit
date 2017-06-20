@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.Paths
+import java.nio.file.{ Path, Paths }
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
 import org.scalamock.scalatest.MockFactory
@@ -27,10 +27,12 @@ import scala.xml.{ Elem, Node, NodeSeq, XML }
 
 class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with CustomMatchers {
 
+  private val formatsFile: Path = testDir.resolve("formats.txt")
   private val allfields = testDir.resolve("md/allfields").toAbsolutePath
   private val invalidCSV = testDir.resolve("md/invalidCSV").toAbsolutePath
 
   before {
+    Paths.get(getClass.getResource("/debug-config/formats.txt").toURI).copyFile(formatsFile)
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
     Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
   }

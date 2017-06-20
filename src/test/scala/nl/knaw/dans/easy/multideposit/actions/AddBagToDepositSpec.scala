@@ -50,10 +50,6 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
     Files.createDirectories(stagingBagDir(depositId))
   }
 
-  after {
-    stagingBagDir(depositId).deleteDirectory()
-  }
-
   "execute" should "succeed given the current setup" in {
     AddBagToDeposit(deposit).execute shouldBe a[Success[_]]
   }

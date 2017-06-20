@@ -22,15 +22,13 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
 import scala.util.{ Failure, Success }
 
-class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll {
+class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter {
 
   implicit val settings = Settings(
     multidepositDir = testDir.resolve("input"),
     stagingDir = testDir.resolve("sd"),
     outputDepositDir = testDir.resolve("dd")
   )
-
-  override def beforeAll(): Unit = Files.createDirectories(testDir)
 
   before {
     // create stagingDir content
@@ -46,19 +44,6 @@ class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter with Befor
     stagingDir("ruimtereis01").toFile should exist
     stagingDir("ruimtereis02").toFile should exist
   }
-
-  after {
-    // clean up stuff after the test is done
-    val stagingDir = settings.stagingDir
-    val outputDepositDir = settings.outputDepositDir
-
-    for (dir <- List(stagingDir, outputDepositDir)) {
-      dir.deleteDirectory()
-      dir.toFile shouldNot exist
-    }
-  }
-
-  override def afterAll: Unit = testDir.getParent.deleteDirectory()
 
   "checkPreconditions" should "verify that the deposit does not yet exist in the outputDepositDir" in {
     MoveDepositToOutputDir(1, "ruimtereis01").checkPreconditions shouldBe a[Success[_]]

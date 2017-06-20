@@ -20,6 +20,7 @@ import java.nio.file.Paths
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.{ ParseException, _ }
 import nl.knaw.dans.lib.error.CompositeException
+import org.scalatest.BeforeAndAfter
 
 import scala.util.{ Failure, Success }
 
@@ -40,10 +41,9 @@ trait DepositTestObjects extends AudioVideoTestObjects with MetadataTestObjects 
   )
 }
 
-class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
+class MultiDepositParserSpec extends UnitSpec with DepositTestObjects with BeforeAndAfter {
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
+  before {
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
   }
 

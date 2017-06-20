@@ -34,15 +34,8 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
   val depositId = "ruimtereis01"
 
   before {
-    Paths.get(getClass.getResource("/allfields/input").toURI)
-      .copyDir(settings.multidepositDir)
-    Paths.get(getClass.getResource("/mimetypes").toURI)
-      .copyDir(testDir.resolve("mimetypes"))
-  }
-
-  after {
-    settings.stagingDir.deleteDirectory()
-    settings.multidepositDir.deleteDirectory()
+    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
+    Paths.get(getClass.getResource("/mimetypes").toURI).copyDir(testDir.resolve("mimetypes"))
   }
 
   "checkPreconditions" should "succeed if the deposit contains the SF_* fields in case a A/V file is found" in {

@@ -35,7 +35,7 @@ case class RetrieveDatamanagerAction(implicit settings: Settings) extends UnitAc
    * Tries to retrieve the email address of the datamanager
    * Also used for validation: checks if the datamanager is an active archivist with an email address
    */
-  private def getDatamanagerMailadres(implicit settings: Settings): Try[DatamanagerEmailaddress] = {
+  private def getDatamanagerMailadres: Try[DatamanagerEmailaddress] = {
     val row = -1
     // Note that the datamanager 'precondition' is checked when datamanagerEmailaddress is evaluated the first time
     val datamanagerId = settings.datamanager

@@ -22,20 +22,13 @@ import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
 import org.scalatest._
 
-abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest with BeforeAndAfterAll {
+abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest {
 
-  val testDir: Path = Paths.get(s"target/test/${ getClass.getSimpleName }")
-  val formatsFile: Path = testDir.resolve("formats.txt")
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    Files.createDirectories(testDir)
-    Paths.get(getClass.getResource("/debug-config/formats.txt").toURI).copyFile(formatsFile)
-  }
-
-  override def afterAll: Unit = {
-    super.afterAll()
-    testDir.getParent.deleteDirectory()
+  lazy val testDir: Path = {
+    val path = Paths.get(s"target/test/${ getClass.getSimpleName }").toAbsolutePath
+    path.deleteDirectory()
+    Files.createDirectories(path)
+    path
   }
 
   def testDeposit1: Deposit = {

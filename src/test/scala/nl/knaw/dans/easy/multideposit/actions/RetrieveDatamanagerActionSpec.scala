@@ -23,12 +23,10 @@ import org.scalatest.BeforeAndAfterAll
 
 import scala.util.{ Failure, Success }
 
-class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with MockFactory {
+class RetrieveDatamanagerActionSpec extends UnitSpec with MockFactory {
 
   val ldapMock: Ldap = mock[Ldap]
   implicit val settings = Settings(
-    multidepositDir = testDir.resolve("md"),
-    stagingDir = testDir.resolve("sd"),
     datamanager = "dm",
     ldap = ldapMock
   )
@@ -53,8 +51,6 @@ class RetrieveDatamanagerActionSpec extends UnitSpec with BeforeAndAfterAll with
   def mockLdapForDatamanager(attrs: Attributes): Unit = {
     (ldapMock.query(_: String)(_: Attributes => Attributes)) expects("dm", *) once() returning Success(Seq(attrs))
   }
-
-  override def afterAll: Unit = testDir.getParent.deleteDirectory()
 
   "checkPreconditions" should "succeed if the datamanager email can be retrieved" in {
     mockLdapForDatamanager(correctDatamanagerAttrs)

@@ -25,7 +25,7 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
 import scala.util.{ Failure, Success }
 
-class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll with MockFactory {
+class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with MockFactory {
 
   val ldapMock: Ldap = mock[Ldap]
   implicit val settings = Settings(
@@ -43,8 +43,6 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   before {
     Files.createDirectories(settings.stagingDir.resolve(s"md-$depositId"))
   }
-
-  override def afterAll: Unit = testDir.getParent.deleteDirectory()
 
   "checkPreconditions" should "succeed if ldap identifies the depositorUserId as active" in {
     mockLdapForDepositor(true)

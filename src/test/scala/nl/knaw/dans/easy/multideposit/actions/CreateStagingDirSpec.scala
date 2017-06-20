@@ -37,13 +37,6 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter {
     baseDir.toFile should exist
   }
 
-  after {
-    // clean up stuff after the test is done
-    val baseDir = settings.stagingDir
-    baseDir.deleteDirectory()
-    baseDir.toFile shouldNot exist
-  }
-
   "checkPreconditions" should "succeed if the output directories do not yet exist" in {
     // directories do not exist before
     stagingDir(depositId).toFile shouldNot exist

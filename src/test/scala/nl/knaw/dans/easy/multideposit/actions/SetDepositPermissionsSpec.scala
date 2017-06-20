@@ -73,10 +73,6 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
     }
   }
 
-  after {
-    base.deleteDirectory()
-  }
-
   "setFilePermissions" should "set the permissions of each of the files and folders to the correct permissions" in {
     assume(user != "travis")
 
