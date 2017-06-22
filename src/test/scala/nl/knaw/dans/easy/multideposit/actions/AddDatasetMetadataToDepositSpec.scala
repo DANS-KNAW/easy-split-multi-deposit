@@ -140,7 +140,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with BeforeAndAfterAll wi
     implicit val s2: Settings = settings.copy(multidepositDir = new File(getClass.getResource("/allfields/input").toURI))
     val csv = new File(getClass.getResource("/allfields/input/instructions.csv").toURI)
     inside(MultiDepositParser()(s2).parse(csv).map(_.map(depositToDDM(_)(s2)))) {
-      case Success(xmls) => xmls should have size 3
+      case Success(xmls) => xmls should have size 4
     }
   }
 

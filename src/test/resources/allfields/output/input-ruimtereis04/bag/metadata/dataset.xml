@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<ddm:DDM xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd" xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/"
+  xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/" xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/"
+  xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/" xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/" xmlns:dcx="http://easy.dans.knaw.nl/schemas/dcx/"
+  xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dct="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/">
+  <ddm:profile>
+    <dc:title>Audio Dataset</dc:title>
+    <dcterms:description>This is a dataset with audio in it</dcterms:description>
+    <dcx-dai:creatorDetails>
+      <dcx-dai:author>
+        <dcx-dai:initials>Guus</dcx-dai:initials>
+        <dcx-dai:surname>Geluk</dcx-dai:surname>
+        <dcx-dai:organization>
+          <dcx-dai:name xml:lang="en">Duckstad</dcx-dai:name>
+        </dcx-dai:organization>
+      </dcx-dai:author>
+    </dcx-dai:creatorDetails>
+    <ddm:created>2016-07-31</ddm:created>
+    <ddm:available>2016-07-30</ddm:available>
+    <ddm:audience>D30000</ddm:audience>
+    <ddm:accessRights>OPEN_ACCESS_FOR_REGISTERED_USERS</ddm:accessRights>
+  </ddm:profile>
+  <ddm:dcmiMetadata>
+    <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
+    <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$sdo-id</ddm:relation>
+  </ddm:dcmiMetadata>
+</ddm:DDM>
