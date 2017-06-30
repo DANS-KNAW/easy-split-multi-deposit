@@ -87,7 +87,7 @@
         <dependency>
             <groupId>gov.loc</groupId>
             <artifactId>bagit</artifactId>
-            <version>4.11.0</version>
+            <version>5.0.1</version>
         </dependency>
 
         <!-- apache commons -->

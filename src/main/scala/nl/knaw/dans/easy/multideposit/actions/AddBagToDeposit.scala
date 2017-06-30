@@ -15,20 +15,18 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.FileInputStream
-import java.nio.file.Files
+import java.nio.file.{ Files, Path }
+import java.util
 import java.util.Locale
 
-import gov.loc.repository.bagit.BagFactory.Version
-import gov.loc.repository.bagit.Manifest.Algorithm
-import gov.loc.repository.bagit.transformer.Completer
-import gov.loc.repository.bagit.transformer.impl.{ ChainingCompleter, DefaultCompleter, TagManifestCompleter }
-import gov.loc.repository.bagit.utilities.MessageDigestHelper
-import gov.loc.repository.bagit.writer.impl.FileSystemWriter
-import gov.loc.repository.bagit.{ Bag, BagFactory }
+import gov.loc.repository.bagit.creator.BagCreator
+import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
+import gov.loc.repository.bagit.verify.FileCountAndTotalSizeVistor
+import gov.loc.repository.bagit.writer.BagWriter
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.actions.AddBagToDeposit._
 import nl.knaw.dans.easy.multideposit.model.Deposit
+import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
 import scala.collection.JavaConverters._
@@ -46,71 +44,62 @@ case class AddBagToDeposit(deposit: Deposit)(implicit settings: Settings) extend
       case NonFatal(e) => Failure(ActionException(deposit.row, s"Error occured in creating the bag for ${ deposit.depositId }: ${ e.getMessage }", e))
     }
   }
-}
-object AddBagToDeposit {
-  // for examples see https://github.com/LibraryOfCongress/bagit-java/issues/18
-  //              and http://www.mpcdf.mpg.de/services/data/annotate/downloads -> TacoHarvest
-  def createBag(deposit: Deposit)(implicit settings: Settings): Try[Unit] = Try {
+
+  private def createBag(deposit: Deposit)(implicit settings: Settings): Try[Unit] = Try {
     val depositId = deposit.depositId
     val inputDir = multiDepositDir(depositId)
-    val inputDirExists = Files.exists(inputDir)
-    val outputBagDir = stagingBagDir(depositId)
+    val stageDir = stagingBagDir(depositId)
 
-    val bagFactory = new BagFactory
-    val preBag = bagFactory.createPreBag(outputBagDir.toFile)
-    val bag = bagFactory.createBag(outputBagDir.toFile)
+    if (Files.exists(inputDir))
+      inputDir.copyDir(stageDir)
 
-    if (inputDirExists) bag.addFilesToPayload(inputDir.toFile.listFiles.toList.asJava)
+    val bag = BagCreator.bagInPlace(stageDir, util.Arrays.asList(StandardSupportedAlgorithms.SHA1), false)
 
-    val fsw = new FileSystemWriter(bagFactory)
-    if (!inputDirExists) fsw.setTagFilesOnly(true)
-    fsw.write(bag, outputBagDir.toFile)
+    val bagSize = {
+      val payloadSize = calculateSizeOfPath(stagingBagDataDir(depositId))
+      val tagManifestSize = Files.size(stageDir.resolve("tagmanifest-sha1.txt"))
 
-    val algorithm = Algorithm.SHA1
-    val defaultCompleter = new DefaultCompleter(bagFactory) {
-      setCompleteTagManifests(false)
-      setPayloadManifestAlgorithm(algorithm)
+      payloadSize + tagManifestSize
     }
-    val tagManifestCompleter = new TagManifestCompleter(bagFactory) {
-      setTagManifestAlgorithm(algorithm)
-    }
-    val completer = new ChainingCompleter(
-      defaultCompleter,
-      new BagInfoCompleter(bagFactory, deposit),
-      tagManifestCompleter
-    )
 
-    if (!inputDirExists) preBag.setIgnoreAdditionalDirectories(List(metadataDirName).asJava)
-    preBag.makeBagInPlace(Version.V0_97, false, completer)
+    bag.getMetadata.add("Bag-Size", formatSize(bagSize))
+    bag.getMetadata.add("Bagging-Date", DateTime.now().toString(ISODateTimeFormat.dateTime()))
+    bag.getMetadata.add("Created", deposit.profile.created.toString(ISODateTimeFormat.dateTime()))
 
-    // TODO, this is temporary, waiting for response from the BagIt-Java developers.
-    if (!inputDirExists) {
-      Files.createDirectory(outputBagDir.resolve("data"))
-      outputBagDir.resolve("manifest-sha1.txt").write("")
-      outputBagDir.resolve("tagmanifest-sha1.txt").append(s"${ MessageDigestHelper.generateFixity(new FileInputStream(outputBagDir.resolve("manifest-sha1.txt").toFile), Algorithm.SHA1) }  manifest-sha1.txt")
-    }
+    for (manifest <- bag.getTagManifests.asScala)
+      manifest.getFileToChecksumMap.put(stageDir.resolve("bag-info.txt"), "0")
+
+    BagWriter.write(bag, stageDir)
   }
-}
 
-private class BagInfoCompleter(bagFactory: BagFactory, deposit: Deposit) extends Completer {
+  private def calculateSizeOfPath(dir: Path): Long = {
+    val visitor = new FileCountAndTotalSizeVistor
 
-  def complete(bag: Bag): Bag = {
-    val newBag = bagFactory.createBag(bag)
+    Files.walkFileTree(dir, visitor)
 
-    // copy files from bag to newBag
-    newBag.putBagFiles(bag.getPayload)
-    newBag.putBagFiles(bag.getTags)
+    visitor.getTotalSize
+  }
 
-    // create a BagInfoTxt based on the old one
-    val bagPartFactory = bagFactory.getBagPartFactory
-    val bagInfo = bagPartFactory.createBagInfoTxt(bag.getBagInfoTxt)
+  private val KB: Double = Math.pow(2, 10)
+  private val MB: Double = Math.pow(2, 20)
+  private val GB: Double = Math.pow(2, 30)
+  private val TB: Double = Math.pow(2, 40)
 
-    // add the CREATED field
-    bagInfo.put("Created", deposit.profile.created.toString(ISODateTimeFormat.dateTime()))
+  private def formatSize(octets: Long): String = {
+    def approximate(octets: Long): (String, Double) = {
+      octets match {
+        case o if o < MB => ("KB", KB)
+        case o if o < GB => ("MB", MB)
+        case o if o < TB => ("GB", GB)
+        case _           => ("TB", TB)
+      }
+    }
 
-    // add the new BagInfoTxt to the newBag
-    newBag.putBagFile(bagInfo)
+    val (unit, div) = approximate(octets)
+    val size = octets / div
+    val sizeString = f"$size%1.1f"
+    val string = if (sizeString endsWith ".0") size.toInt.toString else sizeString
 
-    newBag
+    s"$string $unit"
   }
 }
