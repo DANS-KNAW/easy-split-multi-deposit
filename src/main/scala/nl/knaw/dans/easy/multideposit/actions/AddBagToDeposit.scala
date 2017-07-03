@@ -16,19 +16,17 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.{ Files, Path }
-import java.util
-import java.util.Locale
+import java.util.{ Locale, Arrays => JArrays }
 
 import gov.loc.repository.bagit.creator.BagCreator
+import gov.loc.repository.bagit.domain.{ Metadata => BagitMetadata }
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import gov.loc.repository.bagit.verify.FileCountAndTotalSizeVistor
-import gov.loc.repository.bagit.writer.BagWriter
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model.Deposit
-import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
-import scala.collection.JavaConverters._
+import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
@@ -40,7 +38,7 @@ case class AddBagToDeposit(deposit: Deposit)(implicit settings: Settings) extend
 
   override def execute(): Try[Unit] = {
     createBag(deposit).recoverWith {
-      case NonFatal(e) => Failure(ActionException(deposit.row, s"Error occured in creating the bag for ${ deposit.depositId }: ${ e.getMessage }", e))
+      case NonFatal(e) => e.printStackTrace(); Failure(ActionException(deposit.row, s"Error occured in creating the bag for ${ deposit.depositId }: ${ e.getMessage }", e))
     }
   }
 
@@ -49,26 +47,19 @@ case class AddBagToDeposit(deposit: Deposit)(implicit settings: Settings) extend
     val inputDir = multiDepositDir(depositId)
     val stageDir = stagingBagDir(depositId)
 
-    if (inputDir.exists)
-      inputDir.copyDir(stageDir)
-
-    val bag = BagCreator.bagInPlace(stageDir.toPath, util.Arrays.asList(StandardSupportedAlgorithms.SHA1), false)
-
-    val bagSize = {
-      val payloadSize = calculateSizeOfPath(stagingBagDataDir(depositId).toPath)
-      val tagManifestSize = Files.size(stageDir.toPath.resolve("tagmanifest-sha1.txt"))
-
-      payloadSize + tagManifestSize
+    val metadata = new BagitMetadata {
+      add("Created", deposit.profile.created.toString(ISODateTimeFormat.dateTime()))
     }
 
-    bag.getMetadata.add("Bag-Size", formatSize(bagSize))
-    bag.getMetadata.add("Bagging-Date", DateTime.now().toString(ISODateTimeFormat.dateTime()))
-    bag.getMetadata.add("Created", deposit.profile.created.toString(ISODateTimeFormat.dateTime()))
+    if (inputDir.exists()) {
+      inputDir.copyDir(stageDir)
+      metadata.add("Bag-Size", formatSize(calculateSizeOfPath(inputDir.toPath)))
+    }
+    else {
+      metadata.add("Bag-Size", formatSize(0L))
+    }
 
-    for (manifest <- bag.getTagManifests.asScala)
-      manifest.getFileToChecksumMap.put(stageDir.toPath.resolve("bag-info.txt"), "0")
-
-    BagWriter.write(bag, stageDir.toPath)
+    BagCreator.bagInPlace(stageDir.toPath, JArrays.asList(StandardSupportedAlgorithms.SHA1), true, metadata)
   }
 
   private def calculateSizeOfPath(dir: Path): Long = {
@@ -79,18 +70,18 @@ case class AddBagToDeposit(deposit: Deposit)(implicit settings: Settings) extend
     visitor.getTotalSize
   }
 
-  private val KB: Double = Math.pow(2, 10)
-  private val MB: Double = Math.pow(2, 20)
-  private val GB: Double = Math.pow(2, 30)
-  private val TB: Double = Math.pow(2, 40)
+  private val kb: Double = Math.pow(2, 10)
+  private val mb: Double = Math.pow(2, 20)
+  private val gb: Double = Math.pow(2, 30)
+  private val tb: Double = Math.pow(2, 40)
 
   private def formatSize(octets: Long): String = {
     def approximate(octets: Long): (String, Double) = {
       octets match {
-        case o if o < MB => ("KB", KB)
-        case o if o < GB => ("MB", MB)
-        case o if o < TB => ("GB", GB)
-        case _           => ("TB", TB)
+        case o if o < mb => ("KB", kb)
+        case o if o < gb => ("MB", mb)
+        case o if o < tb => ("GB", gb)
+        case _           => ("TB", tb)
       }
     }
 
