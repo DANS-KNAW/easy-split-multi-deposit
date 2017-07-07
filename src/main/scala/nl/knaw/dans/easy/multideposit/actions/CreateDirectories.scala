@@ -15,41 +15,42 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.Files
+import java.nio.file.{ Files, Path }
 
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model.DepositId
+import nl.knaw.dans.lib.error._
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class CreateStagingDir(row: Int, depositId: DepositId)(implicit settings: Settings) extends UnitAction[Unit] {
-
-  private val stagingDirectory = stagingDir(depositId)
-  private val bagDir = stagingBagDir(depositId)
-  private val metadataDir = stagingBagMetadataDir(depositId)
-  private val dirs = stagingDirectory :: bagDir :: metadataDir :: Nil
+case class CreateDirectories(pathsToCreate: Path*)(row: Int, depositId: DepositId)(implicit settings: Settings) extends UnitAction[Unit] {
 
   override def checkPreconditions: Try[Unit] = checkDirectoriesDoNotExist
 
   private def checkDirectoriesDoNotExist: Try[Unit] = {
-    dirs.find(Files.exists(_))
+    pathsToCreate.find(Files.exists(_))
       .map(file => Failure(ActionException(row, s"The deposit for dataset $depositId already exists in $file.")))
       .getOrElse(Success(()))
   }
 
   override def execute(): Try[Unit] = {
-    debug(s"making directories: $dirs")
+    val paths = pathsToCreate.mkString("{", ", ", "}")
+    debug(s"making directories: $paths")
     Try {
-      dirs.foreach(Files.createDirectories(_))
+      pathsToCreate.foreach(Files.createDirectories(_))
     } recoverWith {
-      case NonFatal(e) => Failure(ActionException(row, s"Could not create the staging directory at $stagingDirectory", e))
+      case NonFatal(e) => Failure(ActionException(row, s"Could not create the directories at $paths", e))
     }
   }
 
   override def rollback(): Try[Unit] = {
-    Try { stagingDirectory.deleteDirectory() } recoverWith {
-      case NonFatal(e) => Failure(ActionException(row, s"Could not delete $stagingDirectory, exception: $e", e))
-    }
+    pathsToCreate.reverse
+      .withFilter(Files.exists(_))
+      .map(path => Try { path.deleteDirectory() } recoverWith {
+        case NonFatal(e) => Failure(ActionException(row, s"Could not delete $path, exception: $e", e))
+      })
+      .collectResults
+      .map(_ => ())
   }
 }

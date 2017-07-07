@@ -72,7 +72,7 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
   private lazy val fileMetadata: Try[Seq[FileMetadata]] = Try {
     val depositDir = multiDepositDir(deposit.depositId)
     if (Files.exists(depositDir)) {
-      depositDir.listRecursively
+      depositDir.listRecursively(!Files.isDirectory(_))
         .map(getFileMetadata)
         .collectResults
     }

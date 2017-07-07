@@ -230,9 +230,9 @@ package object multideposit {
      *
      * @return a ``List`` of ``java.nio.file.Path`` with the files
      */
-    def listRecursively: List[Path] = {
+    def listRecursively(predicate: Path => Boolean = _ => true): List[Path] = {
       managed(Files.walk(file))
-        .acquireAndGet(_.iterator().asScala.filterNot(Files.isDirectory(_)).toList)
+        .acquireAndGet(_.iterator().asScala.filter(predicate).toList)
     }
   }
 

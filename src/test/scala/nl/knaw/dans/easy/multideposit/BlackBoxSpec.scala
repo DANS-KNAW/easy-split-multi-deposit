@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.{ Path, Paths }
+import java.nio.file.{ Files, Path, Paths }
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
 import org.scalamock.scalatest.MockFactory
@@ -24,6 +24,8 @@ import org.scalatest.BeforeAndAfter
 import scala.util.{ Failure, Success }
 import scala.xml.transform.{ RewriteRule, RuleTransformer }
 import scala.xml.{ Elem, Node, NodeSeq, XML }
+import resource._
+import scala.collection.JavaConverters._
 
 class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with CustomMatchers {
 
@@ -69,11 +71,32 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
 
     Main.run shouldBe a[Success[_]]
 
+    val expectedDataContent = Map(
+      "ruimtereis01" -> Set("data/", "ruimtereis01_verklaring.txt", "path/", "to/", "a/",
+        "random/", "video/", "hubble.mpg", "reisverslag/", "centaur.mpg", "centaur.srt",
+        "centaur-nederlands.srt", "deel01.docx", "deel01.txt", "deel02.txt", "deel03.txt"),
+      "ruimtereis02" -> Set("data/", "hubble-wiki-en.txt", "hubble-wiki-nl.txt", "path/",
+        "to/", "images/", "Hubble_01.jpg", "Hubbleshots.jpg"),
+      "ruimtereis03" -> Set("data/"),
+      "ruimtereis04" -> Set("data/", "Quicksort.hs", "path/", "to/", "a/", "random/",
+        "file/", "file.txt", "sound/", "chicken.mp3")
+    )
+
     for (bagName <- Seq("ruimtereis01", "ruimtereis02", "ruimtereis03", "ruimtereis04")) {
       // TODO I'm not happy with this way of testing the content of each file, especially with ignoring specific lines,
       // but I'm in a hurry, so I'll think of a better way later
       val bag = settings.outputDepositDir.resolve(s"allfields-$bagName/bag")
       val expBag = expectedOutputDir.resolve(s"input-$bagName/bag")
+
+      managed(Files.list(bag))
+        .acquireAndGet(_.iterator().asScala.toList)
+        .map(_.getFileName.toString) should contain only(
+        "bag-info.txt",
+        "bagit.txt",
+        "manifest-sha1.txt",
+        "tagmanifest-sha1.txt",
+        "data",
+        "metadata")
 
       val bagInfo = bag.resolve("bag-info.txt")
       val expBagInfo = expBag.resolve("bag-info.txt")
@@ -90,6 +113,17 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
       val tagManifest = bag.resolve("tagmanifest-sha1.txt")
       val expTagManifest = expBag.resolve("tagmanifest-sha1.txt")
       tagManifest.read().lines.toSeq should contain allElementsOf expTagManifest.read().lines.filterNot(_ contains "bag-info.txt").filterNot(_ contains "manifest-sha1.txt").toSeq
+
+      val dataDir = bag.resolve("data/")
+      dataDir.toFile should exist
+      dataDir.listRecursively().map {
+        case file if Files.isDirectory(file) => file.getFileName.toString + "/"
+        case file => file.getFileName.toString
+      } should contain theSameElementsAs expectedDataContent(bagName)
+
+      managed(Files.list(bag.resolve("metadata")))
+        .acquireAndGet(_.iterator().asScala.toList)
+        .map(_.getFileName.toString) should contain only("dataset.xml", "files.xml")
 
       val datasetXml = bag.resolve("metadata/dataset.xml")
       val expDatasetXml = expBag.resolve("metadata/dataset.xml")

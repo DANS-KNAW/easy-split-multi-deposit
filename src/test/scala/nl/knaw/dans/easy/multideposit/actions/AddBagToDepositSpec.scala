@@ -59,12 +59,19 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
 
     val root = stagingBagDir(depositId)
     root.toFile should exist
-    root.listRecursively.map(_.getFileName.toString) should contain theSameElementsAs
-      List("bag-info.txt",
+    root.listRecursively().map {
+      case file if Files.isDirectory(file) => file.getFileName.toString + "/"
+      case file => file.getFileName.toString
+    } should contain theSameElementsAs
+      List("bag/",
+        "bag-info.txt",
         "bagit.txt",
+        "data/",
         "file1.txt",
+        "folder1/",
         "file2.txt",
         "file3.txt",
+        "folder2/",
         "file4.txt",
         "manifest-sha1.txt",
         "tagmanifest-sha1.txt")
@@ -97,8 +104,10 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
 
     stagingDir(depositId).toFile should exist
     stagingBagDataDir(depositId).toFile should exist
-    stagingBagDataDir(depositId).listRecursively shouldBe empty
-    stagingBagDir(depositId).listRecursively.map(_.getFileName.toString) should contain theSameElementsAs
+    stagingBagDataDir(depositId).listRecursively(!Files.isDirectory(_)) shouldBe empty
+    stagingBagDir(depositId)
+      .listRecursively(!Files.isDirectory(_))
+      .map(_.getFileName.toString) should contain theSameElementsAs
       List("bag-info.txt",
         "bagit.txt",
         "manifest-sha1.txt",
