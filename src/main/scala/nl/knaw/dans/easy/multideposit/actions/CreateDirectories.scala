@@ -15,36 +15,39 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.io.File
+
+import nl.knaw.dans.lib.error._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model.DepositId
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class CreateStagingDir(row: Int, depositId: DepositId)(implicit settings: Settings) extends UnitAction[Unit] {
-
-  private val stagingDirectory = stagingDir(depositId)
-  private val bagDir = stagingBagDir(depositId)
-  private val metadataDir = stagingBagMetadataDir(depositId)
-  private val dirs = stagingDirectory :: bagDir :: metadataDir :: Nil
+case class CreateDirectories(filesToCreate: File*)(row: Int, depositId: DepositId)(implicit settings: Settings) extends UnitAction[Unit] {
 
   override def checkPreconditions: Try[Unit] = checkDirectoriesDoNotExist
 
   private def checkDirectoriesDoNotExist: Try[Unit] = {
-    dirs.find(_.exists)
+    filesToCreate.find(_.exists)
       .map(file => Failure(ActionException(row, s"The deposit for dataset $depositId already exists in $file.")))
       .getOrElse(Success(()))
   }
 
   override def execute(): Try[Unit] = {
-    debug(s"making directories: $dirs")
-    if (dirs.forall(_.mkdirs)) Success(())
-    else Failure(ActionException(row, s"Could not create the staging directory at $stagingDirectory"))
+    val paths = filesToCreate.mkString("{", ", ", "}")
+    debug(s"making directories: $paths")
+    if (filesToCreate.forall(_.mkdirs)) Success(())
+    else Failure(ActionException(row, s"Could not create the staging directory at $paths"))
   }
 
   override def rollback(): Try[Unit] = {
-    Try { stagingDirectory.deleteDirectory() } recoverWith {
-      case NonFatal(e) => Failure(ActionException(row, s"Could not delete $stagingDirectory, exception: $e", e))
-    }
+    filesToCreate.reverse
+      .withFilter(_.exists)
+      .map(path => Try { path.deleteDirectory() } recoverWith {
+        case NonFatal(e) => Failure(ActionException(row, s"Could not delete $path, exception: $e", e))
+      })
+      .collectResults
+      .map(_ => ())
   }
 }

@@ -67,11 +67,30 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
 
     Main.run shouldBe a[Success[_]]
 
+    val expectedDataContent = Map(
+      "ruimtereis01" -> Set("data/", "ruimtereis01_verklaring.txt", "path/", "to/", "a/",
+        "random/", "video/", "hubble.mpg", "reisverslag/", "centaur.mpg", "centaur.srt",
+        "centaur-nederlands.srt", "deel01.docx", "deel01.txt", "deel02.txt", "deel03.txt"),
+      "ruimtereis02" -> Set("data/", "hubble-wiki-en.txt", "hubble-wiki-nl.txt", "path/",
+        "to/", "images/", "Hubble_01.jpg", "Hubbleshots.jpg"),
+      "ruimtereis03" -> Set("data/"),
+      "ruimtereis04" -> Set("data/", "Quicksort.hs", "path/", "to/", "a/", "random/",
+        "file/", "file.txt", "sound/", "chicken.mp3")
+    )
+
     for (bagName <- Seq("ruimtereis01", "ruimtereis02", "ruimtereis03", "ruimtereis04")) {
       // TODO I'm not happy with this way of testing the content of each file, especially with ignoring specific lines,
       // but I'm in a hurry, so I'll think of a better way later
       val bag = new File(settings.outputDepositDir, s"allfields-$bagName/bag")
       val expBag = new File(expectedOutputDir, s"input-$bagName/bag")
+
+      bag.listFiles().map(_.getName) should contain only(
+        "bag-info.txt",
+        "bagit.txt",
+        "manifest-sha1.txt",
+        "tagmanifest-sha1.txt",
+        "data",
+        "metadata")
 
       val bagInfo = new File(bag, "bag-info.txt")
       val expBagInfo = new File(expBag, "bag-info.txt")
@@ -88,6 +107,17 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
       val tagManifest = new File(bag, "tagmanifest-sha1.txt")
       val expTagManifest = new File(expBag, "tagmanifest-sha1.txt")
       tagManifest.read().lines.toSeq should contain allElementsOf expTagManifest.read().lines.filterNot(_ contains "bag-info.txt").filterNot(_ contains "manifest-sha1.txt").toSeq
+
+      val dataDir = new File(bag, "data")
+      dataDir should exist
+      dataDir.listRecursively().map {
+        case file if file.isDirectory => file.getName + "/"
+        case file => file.getName
+      } should contain theSameElementsAs expectedDataContent(bagName)
+
+      new File(bag, "metadata")
+        .listFiles()
+        .map(_.getName) should contain only("dataset.xml", "files.xml")
 
       val datasetXml = new File(bag, "metadata/dataset.xml")
       val expDatasetXml = new File(expBag, "metadata/dataset.xml")

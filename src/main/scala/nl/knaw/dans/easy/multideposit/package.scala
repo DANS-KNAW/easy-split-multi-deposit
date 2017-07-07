@@ -21,12 +21,13 @@ import java.util.Properties
 
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.lib.error._
+import org.apache.commons.io.filefilter.TrueFileFilter.TRUE
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.apache.commons.lang.StringUtils
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, PrettyPrinter, XML }
+import scala.xml.{ Elem, XML }
 
 package object multideposit {
 
@@ -276,7 +277,9 @@ package object multideposit {
      *
      * @return a ``List`` of ``java.io.File`` with the files
      */
-    def listRecursively: List[File] = FileUtils.listFiles(file, null, true).toList
+    def listRecursively(predicate: File => Boolean = _ => true): List[File] = {
+      FileUtils.listFilesAndDirs(file, TRUE, TRUE).toList.filter(predicate)
+    }
   }
 
   val encoding = Charsets.UTF_8
