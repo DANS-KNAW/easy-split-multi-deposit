@@ -22,7 +22,7 @@ import org.scalatest.BeforeAndAfter
 
 import scala.util.{ Failure, Success }
 
-class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter {
+class CreateDirectoriesSpec extends UnitSpec with BeforeAndAfter {
 
   implicit val settings = Settings(
     multidepositDir = testDir.resolve("md"),
