@@ -39,8 +39,8 @@ trait CustomMatchers {
   }
   def containTrimmed(content: String) = new ContentMatcher(content)
 
-  class EqualTrimmedMatcher(right: Seq[Node]) extends Matcher[Seq[Node]] {
-    override def apply(left: Seq[Node]): MatchResult = {
+  class EqualTrimmedMatcher(right: Iterable[Node]) extends Matcher[Iterable[Node]] {
+    override def apply(left: Iterable[Node]): MatchResult = {
       MatchResult(
         left.zip(right).forall { case (l, r) => Utility.trim(l).toString() == Utility.trim(r).toString() },
         s"$left did not equal $right",
@@ -48,5 +48,5 @@ trait CustomMatchers {
       )
     }
   }
-  def equalTrimmed(right: Seq[Node]) = new EqualTrimmedMatcher(right)
+  def equalTrimmed(right: Iterable[Node]) = new EqualTrimmedMatcher(right)
 }
