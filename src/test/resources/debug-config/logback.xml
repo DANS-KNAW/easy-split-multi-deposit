@@ -14,7 +14,7 @@
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
-            <pattern>[%thread] %-5level %logger{10} - %msg%n</pattern>
+            <pattern>[%date{ISO8601}] %-5level %logger{10} - %msg%n</pattern>
         </encoder>
     </appender>
     <root level="error">
