@@ -38,7 +38,7 @@ case class AddBagToDeposit(deposit: Deposit)(implicit settings: Settings) extend
 
   override def execute(): Try[Unit] = {
     createBag(deposit).recoverWith {
-      case NonFatal(e) => e.printStackTrace(); Failure(ActionException(deposit.row, s"Error occured in creating the bag for ${ deposit.depositId }: ${ e.getMessage }", e))
+      case NonFatal(e) => Failure(ActionException(deposit.row, s"Error occured in creating the bag for ${ deposit.depositId }: ${ e.getMessage }", e))
     }
   }
 
