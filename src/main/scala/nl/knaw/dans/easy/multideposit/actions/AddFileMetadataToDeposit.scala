@@ -18,8 +18,8 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.{ Files, Path }
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
-import nl.knaw.dans.easy.multideposit.{ Settings, UnitAction, _ }
 import nl.knaw.dans.easy.multideposit.model.{ AVFile, Deposit, FileAccessRights, Subtitles }
+import nl.knaw.dans.easy.multideposit.{ Settings, UnitAction, _ }
 import nl.knaw.dans.lib.error._
 import org.apache.tika.Tika
 

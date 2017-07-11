@@ -132,7 +132,7 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
 
       val filesXml = bag.resolve("metadata/files.xml")
       val expFilesXml = expBag.resolve("metadata/files.xml")
-      (XML.loadFile(filesXml) \ "files").toSet should equalTrimmed((XML.loadFile(expFilesXml) \ "files").toSet)
+      (XML.loadFile(filesXml.toFile) \ "files").toSet should equalTrimmed((XML.loadFile(expFilesXml.toFile) \ "files").toSet)
 
       val props = settings.outputDepositDir.resolve(s"allfields-$bagName/deposit.properties")
       val expProps = expectedOutputDir.resolve(s"input-$bagName/deposit.properties")
