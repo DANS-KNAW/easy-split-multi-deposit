@@ -36,8 +36,8 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
   }
 
   "allfields" should "succeed in transforming the input into a bag" in {
-    // this test does not work on travis, because we don't know the group that we can use for this
-    assume(System.getProperty("user.name") != "travis")
+    assume(System.getProperty("user.name") != "travis",
+      "this test does not work on travis, because we don't know the group that we can use for this")
 
     val ldap = mock[Ldap]
     implicit val settings = Settings(
@@ -122,11 +122,11 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
       val datasetXml = new File(bag, "metadata/dataset.xml")
       val expDatasetXml = new File(expBag, "metadata/dataset.xml")
       val datasetTransformer = removeElemByName("available")
-      datasetTransformer.transform(XML.loadFile(datasetXml)) should equalTrimmed (datasetTransformer.transform(XML.loadFile(expDatasetXml)))
+      datasetTransformer.transform(XML.loadFile(datasetXml)) should equalTrimmed(datasetTransformer.transform(XML.loadFile(expDatasetXml)))
 
       val filesXml = new File(bag, "metadata/files.xml")
       val expFilesXml = new File(expBag, "metadata/files.xml")
-      XML.loadFile(filesXml) should equalTrimmed (XML.loadFile(expFilesXml))
+      (XML.loadFile(filesXml) \ "files").toSet should equalTrimmed((XML.loadFile(expFilesXml) \ "files").toSet)
 
       val props = new File(settings.outputDepositDir, s"allfields-$bagName/deposit.properties")
       val expProps = new File(expectedOutputDir, s"input-$bagName/deposit.properties")

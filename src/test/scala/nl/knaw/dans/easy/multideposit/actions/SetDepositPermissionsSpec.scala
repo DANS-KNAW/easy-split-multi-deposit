@@ -75,7 +75,8 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
   }
 
   "setFilePermissions" should "set the permissions of each of the files and folders to the correct permissions" in {
-    assume(user != "travis")
+    assume(user != "travis",
+      "this test does not work on travis, because we don't know the group that we can use for this")
 
     SetDepositPermissions(1, depositId).execute() shouldBe a[Success[_]]
 
