@@ -15,55 +15,47 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
+import java.nio.file.Files
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.BeforeAndAfter
 
 import scala.util.{ Failure, Success }
 
-class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter {
+class CreateDirectoriesSpec extends UnitSpec with BeforeAndAfter {
 
   implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md"),
-    stagingDir = new File(testDir, "sd")
+    multidepositDir = testDir.resolve("md"),
+    stagingDir = testDir.resolve("sd")
   )
-  val depositId = "ds1"
+  private val depositId = "ds1"
+  private val action = CreateDirectories(stagingDir(depositId), stagingBagDir(depositId))(1, depositId)
 
   before {
     // create depositDir base directory
     val baseDir = settings.stagingDir
-    baseDir.mkdir
-    baseDir should exist
-  }
-
-  after {
-    // clean up stuff after the test is done
-    val baseDir = settings.stagingDir
-    baseDir.deleteDirectory()
-    baseDir shouldNot exist
+    Files.createDirectory(baseDir)
+    baseDir.toFile should exist
   }
 
   "checkPreconditions" should "succeed if the output directories do not yet exist" in {
     // directories do not exist before
-    stagingDir(depositId) shouldNot exist
-    stagingBagDir(depositId) shouldNot exist
-    stagingBagMetadataDir(depositId) shouldNot exist
+    stagingDir(depositId).toFile shouldNot exist
+    stagingBagDir(depositId).toFile shouldNot exist
 
     // creation of directories
-    CreateStagingDir(1, depositId).checkPreconditions shouldBe a[Success[_]]
+    action.checkPreconditions shouldBe a[Success[_]]
   }
 
   it should "fail if either one of the output directories does already exist" in {
-    stagingBagDir(depositId).mkdirs()
+    Files.createDirectories(stagingBagDir(depositId))
 
     // some directories do already exist before
-    stagingDir(depositId) should exist
-    stagingBagDir(depositId) should exist
-    stagingBagMetadataDir(depositId) shouldNot exist
+    stagingDir(depositId).toFile should exist
+    stagingBagDir(depositId).toFile should exist
 
     // creation of directories
-    inside(CreateStagingDir(1, depositId).checkPreconditions) {
+    inside(action.checkPreconditions) {
       case Failure(ActionException(_, message, _)) => message should include(s"The deposit for dataset $depositId already exists")
     }
   }
@@ -79,26 +71,23 @@ class CreateStagingDirSpec extends UnitSpec with BeforeAndAfter {
     executeTest()
 
     // roll back the creation of the directories
-    CreateStagingDir(1, depositId).rollback() shouldBe a[Success[_]]
+    action.rollback() shouldBe a[Success[_]]
 
     // test that the directories are really not there anymore
-    stagingDir(depositId) shouldNot exist
-    stagingBagDir(depositId) shouldNot exist
-    stagingBagMetadataDir(depositId) shouldNot exist
+    stagingDir(depositId).toFile shouldNot exist
+    stagingBagDir(depositId).toFile shouldNot exist
   }
 
   def executeTest(): Unit = {
     // directories do not exist before
-    stagingDir(depositId) shouldNot exist
-    stagingBagDir(depositId) shouldNot exist
-    stagingBagMetadataDir(depositId) shouldNot exist
+    stagingDir(depositId).toFile shouldNot exist
+    stagingBagDir(depositId).toFile shouldNot exist
 
     // creation of directories
-    CreateStagingDir(1, depositId).execute shouldBe a[Success[_]]
+    action.execute shouldBe a[Success[_]]
 
     // test existance after creation
-    stagingDir(depositId) should exist
-    stagingBagDir(depositId) should exist
-    stagingBagMetadataDir(depositId) should exist
+    stagingDir(depositId).toFile should exist
+    stagingBagDir(depositId).toFile should exist
   }
 }

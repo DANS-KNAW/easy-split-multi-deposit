@@ -15,11 +15,11 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
+import java.nio.file.{ Files, Path }
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
-import nl.knaw.dans.easy.multideposit.{ Settings, UnitAction, _ }
 import nl.knaw.dans.easy.multideposit.model.{ AVFile, Deposit, FileAccessRights, Subtitles }
+import nl.knaw.dans.easy.multideposit.{ Settings, UnitAction, _ }
 import nl.knaw.dans.lib.error._
 import org.apache.tika.Tika
 
@@ -33,8 +33,8 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
   case object Audio extends AudioVideo("http://schema.org/AudioObject")
   case object Video extends AudioVideo("http://schema.org/VideoObject")
 
-  class FileMetadata(val filepath: File, val mimeType: MimeType)
-  case class AVFileMetadata(override val filepath: File,
+  class FileMetadata(val filepath: Path, val mimeType: MimeType)
+  case class AVFileMetadata(override val filepath: Path,
                             override val mimeType: MimeType,
                             vocabulary: AudioVideo,
                             title: String,
@@ -42,8 +42,8 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
                             subtitles: Seq[Subtitles]
                            ) extends FileMetadata(filepath, mimeType)
 
-  private lazy val fileInstructions: Map[File, AVFile] = {
-    deposit.audioVideo.avFiles.map(avFile => avFile.file -> avFile).toMap
+  private lazy val fileInstructions: Map[Path, AVFile] = {
+    deposit.audioVideo.avFiles.map(avFile => avFile.path -> avFile).toMap
   }
 
   private lazy val avAccessibility: FileAccessRights.Value = {
@@ -51,14 +51,14 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
       .getOrElse(FileAccessRights.accessibleTo(deposit.profile.accessright))
   }
 
-  private def getFileMetadata(file: File): Try[FileMetadata] = {
+  private def getFileMetadata(file: Path): Try[FileMetadata] = {
     def mkFileMetadata(m: MimeType, voca: AudioVideo): AVFileMetadata = {
       fileInstructions.get(file) match {
         case Some(AVFile(_, optTitle, subtitles)) =>
-          val title = optTitle.getOrElse(file.getName)
+          val title = optTitle.getOrElse(file.getFileName.toString)
           AVFileMetadata(file, m, voca, title, avAccessibility, subtitles)
         case None =>
-          AVFileMetadata(file, m, voca, file.getName, avAccessibility, Seq.empty)
+          AVFileMetadata(file, m, voca, file.getFileName.toString, avAccessibility, Seq.empty)
       }
     }
 
@@ -71,8 +71,8 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
 
   private lazy val fileMetadata: Try[Seq[FileMetadata]] = Try {
     val depositDir = multiDepositDir(deposit.depositId)
-    if (depositDir.exists()) {
-      depositDir.listRecursively
+    if (Files.exists(depositDir)) {
+      depositDir.listRecursively(!Files.isDirectory(_))
         .map(getFileMetadata)
         .collectResults
     }
@@ -105,7 +105,19 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
       }
     }
 
-    fileMetadata.flatMap(checkSFColumnsIfDepositContainsAVFiles)
+    def checkEitherVideoOrAudio(mimetypes: Seq[FileMetadata]): Try[Unit] = {
+      mimetypes.collect { case fmd: AVFileMetadata => fmd.vocabulary }.distinct match {
+        case Nil | Seq(_) => Success(())
+        case _ => Failure(ActionException(deposit.row,
+          "Found both audio and video in this dataset. Only one of them is allowed."))
+      }
+    }
+
+    for {
+      fmds <- fileMetadata
+      _ <- checkSFColumnsIfDepositContainsAVFiles(fmds)
+      _ <- checkEitherVideoOrAudio(fmds)
+    } yield ()
   }
 
   override def execute(): Try[Unit] = {
@@ -132,13 +144,13 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
   }
 
   private def fileXml(fmd: FileMetadata): Elem = {
-    <file filepath={s"data/${ formatFilePath(fmd.filepath) }"}>
+    <file filepath={s"data/${ multiDepositDir(deposit.depositId).relativize(fmd.filepath) }"}>
       <dcterms:format>{fmd.mimeType}</dcterms:format>
     </file>
   }
 
   private def avFileXml(fmd: AVFileMetadata): Elem = {
-    <file filepath={s"data/${ formatFilePath(fmd.filepath) }"}>
+    <file filepath={s"data/${ multiDepositDir(deposit.depositId).relativize(fmd.filepath) }"}>
       <dcterms:type>{fmd.vocabulary.vocabulary}</dcterms:type>
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       <dcterms:title>{fmd.title}</dcterms:title>
@@ -148,18 +160,11 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
   }
 
   private def subtitleXml(subtitle: Subtitles): Elem = {
-    val filepath = formatFilePath(subtitle.file)
+    val filepath = multiDepositDir(deposit.depositId).relativize(subtitle.path)
 
     subtitle.language
       .map(lang => <dcterms:relation xml:lang={lang}>{s"data/$filepath"}</dcterms:relation>)
       .getOrElse(<dcterms:relation>{s"data/$filepath"}</dcterms:relation>)
-  }
-
-  private def formatFilePath(file: File): File = {
-    multiDepositDir(deposit.depositId)
-      .toPath
-      .relativize(file.toPath)
-      .toFile
   }
 }
 
@@ -168,12 +173,12 @@ object AddFileMetadataToDeposit {
   type MimeType = String
 
   /**
-   * Identify the mimeType of a file.
+   * Identify the mimeType of a path.
    *
-   * @param file the file to identify
-   * @return the mimeType of the file if the identification was successful; `Failure` otherwise
+   * @param path the path to identify
+   * @return the mimeType of the path if the identification was successful; `Failure` otherwise
    */
-  def getMimeType(file: File): Try[MimeType] = Try {
-    tika.detect(file)
+  def getMimeType(path: Path): Try[MimeType] = Try {
+    tika.detect(path)
   }
 }

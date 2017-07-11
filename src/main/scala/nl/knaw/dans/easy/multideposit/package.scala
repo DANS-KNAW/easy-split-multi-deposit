@@ -15,18 +15,19 @@
  */
 package nl.knaw.dans.easy
 
-import java.io.{ File, IOException }
+import java.io.IOException
 import java.nio.charset.Charset
+import java.nio.file.{ Files, Path }
 import java.util.Properties
 
 import nl.knaw.dans.easy.multideposit.model.DepositId
-import nl.knaw.dans.lib.error._
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.apache.commons.lang.StringUtils
+import resource._
 
-import scala.collection.JavaConversions.collectionAsScalaIterable
-import scala.util.{ Failure, Success, Try }
-import scala.xml.{ Elem, PrettyPrinter, XML }
+import scala.collection.JavaConverters._
+import scala.util.Try
+import scala.xml.{ Elem, XML }
 
 package object multideposit {
 
@@ -34,12 +35,12 @@ package object multideposit {
   type DatamanagerEmailaddress = String
 
   case class DepositPermissions(permissions: String, group: String)
-  case class Settings(multidepositDir: File = null,
-                      stagingDir: File = null,
-                      outputDepositDir: File = null,
+  case class Settings(multidepositDir: Path = null,
+                      stagingDir: Path = null,
+                      outputDepositDir: Path = null,
                       datamanager: Datamanager = null,
                       depositPermissions: DepositPermissions = null,
-                      private val formatsFile: File = null,
+                      private val formatsFile: Path = null,
                       ldap: Ldap = null) {
     val formats: Set[String] = Option(formatsFile).fold(Set.empty[String])(_.read().lines.toSet)
 
@@ -52,7 +53,7 @@ package object multideposit {
         s"formats=${ formats.mkString("{", ", ", "}") })"
   }
 
-  case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")
+  case class EmptyInstructionsFileException(path: Path) extends Exception(s"The given instructions file in '$path' is empty")
   case class ParserFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
   case class PreconditionsFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
   case class ActionRunFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
@@ -104,61 +105,14 @@ package object multideposit {
     }
   }
 
-  implicit class TryExceptionHandling[T](val t: Try[T]) extends AnyVal {
-    /**
-     * Terminating operator for `Try` that converts the `Failure` case in a value.
-     *
-     * @param handle converts `Throwable` to a value of type `T`
-     * @return either the value inside `Try` (on success) or the result of `handle` (on failure)
-     */
-    def onError[S >: T](handle: Throwable => S): S = {
-      t match {
-        case Success(value) => value
-        case Failure(throwable) => handle(throwable)
-      }
-    }
-
-    def ifSuccess(f: T => Unit): Try[T] = {
-      t match {
-        case Success(x) => Try {
-          f(x)
-          x
-        }
-        case e => e
-      }
-    }
-
-    def ifFailure(f: PartialFunction[Throwable, Unit]): Try[T] = {
-      t match {
-        case Failure(e) if f.isDefinedAt(e) => Try {
-          f(e)
-          throw e
-        }
-        case x => x
-      }
-    }
-
-    def combine[S, R](other: Try[S])(implicit ev: T <:< (S => R)): Try[R] = {
-      (t, other) match {
-        case (Success(f), Success(s)) => Try { f(s) }
-        case (Success(_), Failure(e)) => Failure(e)
-        case (Failure(e), Success(_)) => Failure(e)
-        case (Failure(CompositeException(es1)), Failure(CompositeException(es2))) => Failure(CompositeException(es1 ++ es2))
-        case (Failure(CompositeException(es1)), Failure(e2)) => Failure(CompositeException(es1 ++ List(e2)))
-        case (Failure(e1), Failure(CompositeException(es2))) => Failure(CompositeException(List(e1) ++ es2))
-        case (Failure((e1)), Failure((e2))) => Failure(CompositeException(List(e1, e2)))
-      }
-    }
-  }
-
-  implicit class FileExtensions(val file: File) extends AnyVal {
+  implicit class FileExtensions(val file: Path) extends AnyVal {
     /**
      * Writes a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
      *
      * @param data the content to write to the file
      */
     @throws[IOException]("in case of an I/O error")
-    def write(data: String, encoding: Charset = encoding): Unit = FileUtils.write(file, data, encoding)
+    def write(data: String, encoding: Charset = encoding): Unit = FileUtils.write(file.toFile, data, encoding)
 
     /**
      * Writes the xml to `file` and prepends a simple xml header: `<?xml version="1.0" encoding="UTF-8"?>`
@@ -168,7 +122,7 @@ package object multideposit {
      */
     @throws[IOException]("in case of an I/O error")
     def writeXml(elem: Elem, encoding: Charset = encoding): Unit = {
-      file.getParentFile.mkdirs()
+      Files.createDirectories(file.getParent)
       XML.save(file.toString, elem, encoding.toString, xmlDecl = true)
     }
 
@@ -178,7 +132,7 @@ package object multideposit {
      * @param data the content to write to the file
      */
     @throws[IOException]("in case of an I/O error")
-    def append(data: String): Unit = FileUtils.write(file, data, true)
+    def append(data: String): Unit = FileUtils.write(file.toFile, data, true)
 
     /**
      * Reads the contents of a file into a String using the default encoding for the VM.
@@ -187,7 +141,7 @@ package object multideposit {
      * @return the file contents, never ``null``
      */
     @throws[IOException]("in case of an I/O error")
-    def read(encoding: Charset = encoding): String = FileUtils.readFileToString(file, encoding)
+    def read(encoding: Charset = encoding): String = FileUtils.readFileToString(file.toFile, encoding)
 
     /**
      * Determines whether the ``parent`` directory contains the ``child`` element (a file or directory).
@@ -207,7 +161,7 @@ package object multideposit {
      * @return true is the candidate leaf is under by the specified composite. False otherwise.
      */
     @throws[IOException]("if an IO error occurs while checking the files.")
-    def directoryContains(child: File): Boolean = FileUtils.directoryContains(file, child)
+    def directoryContains(child: Path): Boolean = FileUtils.directoryContains(file.toFile, child.toFile)
 
     /**
      * Copies a file to a new location preserving the file date.
@@ -227,7 +181,7 @@ package object multideposit {
     @throws[NullPointerException]("if source or destination is null")
     @throws[IOException]("if source or destination is invalid")
     @throws[IOException]("if an IO error occurs during copying")
-    def copyFile(destFile: File): Unit = FileUtils.copyFile(file, destFile)
+    def copyFile(destFile: Path): Unit = FileUtils.copyFile(file.toFile, destFile.toFile)
 
     /**
      * Copies a whole directory to a new location preserving the file dates.
@@ -250,7 +204,7 @@ package object multideposit {
     @throws[NullPointerException]("if source or destination is null")
     @throws[IOException]("if source or destination is invalid")
     @throws[IOException]("if an IO error occurs during copying")
-    def copyDir(destDir: File): Unit = FileUtils.copyDirectory(file, destDir)
+    def copyDir(destDir: Path): Unit = FileUtils.copyDirectory(file.toFile, destDir.toFile)
 
     /**
      * Moves a directory.
@@ -263,20 +217,23 @@ package object multideposit {
     @throws[FileExistsException]("if the destination directory exists")
     @throws[IOException]("if source or destination is invalid")
     @throws[IOException]("if an IO error occurs moving the file")
-    def moveDir(destDir: File): Unit = FileUtils.moveDirectory(file, destDir)
+    def moveDir(destDir: Path): Unit = FileUtils.moveDirectory(file.toFile, destDir.toFile)
 
     /**
      * Deletes a directory recursively.
      */
     @throws[IOException]("in case deletion is unsuccessful")
-    def deleteDirectory(): Unit = FileUtils.deleteDirectory(file)
+    def deleteDirectory(): Unit = FileUtils.deleteDirectory(file.toFile)
 
     /**
      * Finds files within a given directory and its subdirectories.
      *
-     * @return a ``List`` of ``java.io.File`` with the files
+     * @return a ``List`` of ``java.nio.file.Path`` with the files
      */
-    def listRecursively: List[File] = FileUtils.listFiles(file, null, true).toList
+    def listRecursively(predicate: Path => Boolean = _ => true): List[Path] = {
+      managed(Files.walk(file))
+        .acquireAndGet(_.iterator().asScala.filter(predicate).toList)
+    }
   }
 
   val encoding = Charsets.UTF_8
@@ -289,60 +246,60 @@ package object multideposit {
   val propsFileName = "deposit.properties"
 
   private def datasetDir(depositId: DepositId)(implicit settings: Settings): String = {
-    s"${ settings.multidepositDir.getName }-$depositId"
+    s"${ settings.multidepositDir.getFileName }-$depositId"
   }
 
-  def multiDepositInstructionsFile(baseDir: File): File = {
-    new File(baseDir, instructionsFileName).toPath.normalize().toFile
+  def multiDepositInstructionsFile(baseDir: Path): Path = {
+    baseDir.resolve(instructionsFileName)
   }
 
   // mdDir/depositId/
-  def multiDepositDir(depositId: DepositId)(implicit settings: Settings): File = {
-    new File(settings.multidepositDir, depositId)
+  def multiDepositDir(depositId: DepositId)(implicit settings: Settings): Path = {
+    settings.multidepositDir.resolve(depositId)
   }
 
   // mdDir/instructions.csv
-  def multiDepositInstructionsFile(implicit settings: Settings): File = {
+  def multiDepositInstructionsFile(implicit settings: Settings): Path = {
     multiDepositInstructionsFile(settings.multidepositDir)
   }
 
   // stagingDir/mdDir-depositId/
-  def stagingDir(depositId: DepositId)(implicit settings: Settings): File = {
-    new File(settings.stagingDir, datasetDir(depositId))
+  def stagingDir(depositId: DepositId)(implicit settings: Settings): Path = {
+    settings.stagingDir.resolve(datasetDir(depositId))
   }
 
   // stagingDir/mdDir-depositId/bag/
-  def stagingBagDir(depositId: DepositId)(implicit settings: Settings): File = {
-    new File(stagingDir(depositId), bagDirName)
+  def stagingBagDir(depositId: DepositId)(implicit settings: Settings): Path = {
+    stagingDir(depositId).resolve(bagDirName)
   }
 
   // stagingDir/mdDir-depositId/bag/data/
-  def stagingBagDataDir(depositId: DepositId)(implicit settings: Settings): File = {
-    new File(stagingBagDir(depositId), dataDirName)
+  def stagingBagDataDir(depositId: DepositId)(implicit settings: Settings): Path = {
+    stagingBagDir(depositId).resolve(dataDirName)
   }
 
   // stagingDir/mdDir-depositId/bag/metadata/
-  def stagingBagMetadataDir(depositId: DepositId)(implicit settings: Settings): File = {
-    new File(stagingBagDir(depositId), metadataDirName)
+  def stagingBagMetadataDir(depositId: DepositId)(implicit settings: Settings): Path = {
+    stagingBagDir(depositId).resolve(metadataDirName)
   }
 
   // stagingDir/mdDir-depositId/deposit.properties
-  def stagingPropertiesFile(depositId: DepositId)(implicit settings: Settings): File = {
-    new File(stagingDir(depositId), propsFileName)
+  def stagingPropertiesFile(depositId: DepositId)(implicit settings: Settings): Path = {
+    stagingDir(depositId).resolve(propsFileName)
   }
 
   // stagingDir/mdDir-depositId/bag/metadata/dataset.xml
-  def stagingDatasetMetadataFile(depositId: DepositId)(implicit settings: Settings): File = {
-    new File(stagingBagMetadataDir(depositId), datasetMetadataFileName)
+  def stagingDatasetMetadataFile(depositId: DepositId)(implicit settings: Settings): Path = {
+    stagingBagMetadataDir(depositId).resolve(datasetMetadataFileName)
   }
 
   // stagingDir/mdDir-depositId/bag/metadata/files.xml
-  def stagingFileMetadataFile(depositId: DepositId)(implicit settings: Settings): File = {
-    new File(stagingBagMetadataDir(depositId), fileMetadataFileName)
+  def stagingFileMetadataFile(depositId: DepositId)(implicit settings: Settings): Path = {
+    stagingBagMetadataDir(depositId).resolve(fileMetadataFileName)
   }
 
   // outputDepositDir/mdDir-depositId/
-  def outputDepositDir(depositId: DepositId)(implicit settings: Settings): File = {
-    new File(settings.outputDepositDir, datasetDir(depositId))
+  def outputDepositDir(depositId: DepositId)(implicit settings: Settings): Path = {
+    settings.outputDepositDir.resolve(datasetDir(depositId))
   }
 }

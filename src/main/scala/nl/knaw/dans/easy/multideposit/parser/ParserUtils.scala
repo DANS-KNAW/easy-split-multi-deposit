@@ -51,28 +51,34 @@ trait ParserUtils {
     values.distinct match {
       case Nil => Success(None)
       case t :: Nil => Success(Some(t))
-      case ts if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
-        s"to contain a value for the column '${ columnNames.head }'. Found: ${ ts.mkString("[", ", ", "]") }"))
-      case ts => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
-        s"these columns: ${ columnNames.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
+      case ts => checkMultipleValues(rowNum, columnNames, ts)
     }
   }
 
   def exactlyOne[T](rowNum: => Int, columnNames: => NonEmptyList[MultiDepositKey])(values: List[T]): Try[T] = {
     values.distinct match {
+      case Nil =>
+        columnNames match {
+          case name :: Nil => Failure(ParseException(rowNum, "One row has to contain " +
+            s"a value for the column: '$name'"))
+          case names => Failure(ParseException(rowNum, "One row has to contain a value for these " +
+            s"columns: ${ names.mkString("[", ", ", "]") }"))
+        }
       case t :: Nil => Success(t)
-      case Nil if columnNames.size == 1 => Failure(ParseException(rowNum, "One row has to contain " +
-        s"a value for the column: '${ columnNames.head }'"))
-      case Nil => Failure(ParseException(rowNum, "One row has to contain a value for these " +
-        s"columns: ${ columnNames.mkString("[", ", ", "]") }"))
-      case ts if columnNames.size == 1 => Failure(ParseException(rowNum, "Only one row is allowed " +
-        s"to contain a value for the column '${ columnNames.head }'. Found: ${ ts.mkString("[", ", ", "]") }"))
-      case ts => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
-        s"these columns: ${ columnNames.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
+      case ts => checkMultipleValues(rowNum, columnNames, ts)
     }
   }
 
-  def checkValidChars(rowNum: => Int, column: => MultiDepositKey, value: String): Try[String] = {
+  private def checkMultipleValues[T](rowNum: Int, columnNames: NonEmptyList[MultiDepositKey], ts: List[Any]) = {
+    columnNames match {
+      case name :: Nil => Failure(ParseException(rowNum, "Only one row is allowed " +
+        s"to contain a value for the column '$name'. Found: ${ ts.mkString("[", ", ", "]") }"))
+      case names => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
+        s"these columns: ${ names.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
+    }
+  }
+
+  def checkValidChars(value: String, rowNum: => Int, column: => MultiDepositKey): Try[String] = {
     val invalidCharacters = "[^a-zA-Z0-9_-]".r.findAllIn(value).toSeq.distinct
     if (invalidCharacters.isEmpty) Success(value)
     else Failure(ParseException(rowNum, s"The column '$column' contains the following invalid characters: ${ invalidCharacters.mkString("{", ", ", "}") }"))
@@ -83,10 +89,11 @@ trait ParserUtils {
     val missingColumns = required.diff(row.keySet)
     val missing = blankRequired.toSet ++ missingColumns
     require(missing.nonEmpty, "the list of missing elements is supposed to be non-empty")
-    if (missing.size == 1)
-      Failure(ParseException(rowNum, s"Missing value for: ${ missing.head }"))
-    else
-      Failure(ParseException(rowNum, s"Missing value(s) for: ${ missing.mkString("[", ", ", "]") }"))
+
+    missing.toList match {
+      case value :: Nil => Failure(ParseException(rowNum, s"Missing value for: $value"))
+      case values => Failure(ParseException(rowNum, s"Missing value(s) for: ${ values.mkString("[", ", ", "]") }"))
+    }
   }
 
   def isValidISO639_1Language(lang: String): Boolean = {
@@ -96,16 +103,16 @@ trait ParserUtils {
     b0 && b1
   }
 
-  private lazy val iso639_2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
+  private lazy val iso639v2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
 
   def iso639_2Language(columnName: MultiDepositKey)(rowNum: => Int)(row: DepositRow): Option[Try[String]] = {
     row.find(columnName)
       .map(lang => {
-        // Most ISO 639-2/T languages are contained in the iso639_2Languages Set.
+        // Most ISO 639-2/T languages are contained in the iso639v2Languages Set.
         // However, some of them are not and need to be checked using the second predicate.
         // The latter also allows to check ISO 639-2/B language codes.
         lazy val b0 = lang.length == 3
-        lazy val b1 = iso639_2Languages.contains(lang)
+        lazy val b1 = iso639v2Languages.contains(lang)
         lazy val b2 = new Locale(lang).getDisplayLanguage.toLowerCase != lang.toLowerCase
 
         if (b0 && (b1 || b2)) Success(lang)

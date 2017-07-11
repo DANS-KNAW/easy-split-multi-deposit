@@ -18,24 +18,32 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
         <artifactId>dans-scala-prototype</artifactId>
         <version>1.44</version>
     </parent>
+
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-split-multi-deposit</artifactId>
     <version>1.x-SNAPSHOT</version>
+
     <inceptionYear>2016</inceptionYear>
     <name>EASY Split Multi-Deposit</name>
     <description>Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive</description>
+
     <properties>
         <main-class>nl.knaw.dans.easy.multideposit.Main</main-class>
+        <scala.version>2.11.8</scala.version>
+        <easy.ddm.version>3.2</easy.ddm.version>
     </properties>
+
     <scm>
         <developerConnection>scm:git:https://github.com/DANS-KNAW/${project.artifactId}</developerConnection>
         <tag>HEAD</tag>
     </scm>
+
     <dependencies>
         <!-- testing -->
         <dependency>
@@ -73,19 +81,20 @@
         <dependency>
             <groupId>nl.knaw.dans.lib</groupId>
             <artifactId>dans-scala-lib</artifactId>
+            <version>1.2</version>
         </dependency>
 
         <dependency>
             <groupId>nl.knaw.dans.easy</groupId>
             <artifactId>ddm</artifactId>
-            <version>3.2</version>
+            <version>${easy.ddm.version}</version>
         </dependency>
 
         <!-- BagIt -->
         <dependency>
             <groupId>gov.loc</groupId>
             <artifactId>bagit</artifactId>
-            <version>4.11.0</version>
+            <version>5.0.2</version>
         </dependency>
 
         <!-- apache commons -->
@@ -134,6 +143,7 @@
             <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
+
     <repositories>
         <repository>
             <id>DANS</id>
@@ -143,6 +153,7 @@
             <url>http://maven.dans.knaw.nl/</url>
         </repository>
     </repositories>
+
     <pluginRepositories>
         <pluginRepository>
             <id>DANS</id>
@@ -152,6 +163,7 @@
             <url>http://maven.dans.knaw.nl/</url>
         </pluginRepository>
     </pluginRepositories>
+
     <build>
         <plugins>
             <plugin>
@@ -178,25 +190,6 @@
             <plugin>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.7.9</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

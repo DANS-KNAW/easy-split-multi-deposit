@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit
 import nl.knaw.dans.easy.multideposit.actions._
 import nl.knaw.dans.easy.multideposit.model.Deposit
 import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
+import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.postfixOps
@@ -30,11 +31,11 @@ object Main extends DebugEnhancedLogging {
     implicit val settings = CommandLineOptions.parse(args)
 
     run
-      .ifFailure { case e =>
+      .doIfFailure { case e =>
         logger.error(e.getMessage)
         logger.debug(e.getMessage, e)
       }
-      .ifSuccess(_ => logger.info(s"Finished successfully! The output can be found in ${ settings.outputDepositDir }."))
+      .doIfSuccess(_ => logger.info(s"Finished successfully! The output can be found in ${ settings.outputDepositDir }."))
 
     logger.debug("closing ldap")
     settings.ldap.close()
@@ -52,16 +53,20 @@ object Main extends DebugEnhancedLogging {
 
     val retrieveDatamanagerAction = RetrieveDatamanagerAction()
     val depositActions = deposits.map(deposit => {
-      logger.debug(s"Getting actions for deposit ${ deposit.depositId } ...")
+      val depositId = deposit.depositId
+      val row = deposit.row
 
-      CreateStagingDir(deposit.row, deposit.depositId)
+      logger.debug(s"Getting actions for deposit $depositId ...")
+
+      CreateDirectories(stagingDir(depositId), stagingBagDir(depositId))(row, depositId)
         .combine(AddBagToDeposit(deposit))
+        .combine(CreateDirectories(stagingBagMetadataDir(depositId))(row, depositId))
         .combine(AddDatasetMetadataToDeposit(deposit))
         .combine(AddFileMetadataToDeposit(deposit))
         .combine(retrieveDatamanagerAction)
         .combine(AddPropertiesToDeposit(deposit))
-        .combine(SetDepositPermissions(deposit.row, deposit.depositId))
-        .withLogMessages(s"Checking preconditions for ${ deposit.depositId }", s"Executing ${ deposit.depositId }", s"Rolling back ${ deposit.depositId }")
+        .combine(SetDepositPermissions(row, depositId))
+        .withLogMessages(s"Checking preconditions for $depositId", s"Executing $depositId", s"Rolling back $depositId")
     }).reduceOption(_ combine _)
     val moveActions = deposits.map(deposit => MoveDepositToOutputDir(deposit.row, deposit.depositId): Action[Unit, Unit]).reduceOption(_ combine _)
 

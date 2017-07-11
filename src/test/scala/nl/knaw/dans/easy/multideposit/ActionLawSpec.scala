@@ -20,7 +20,8 @@ import org.scalacheck.Arbitrary._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{ Inside, Matchers, PropSpec }
 
-import scala.util.Try
+import scala.language.{ implicitConversions, reflectiveCalls }
+import scala.util.{ Failure, Success, Try }
 
 class ActionLawSpec extends PropSpec with PropertyChecks with Matchers with Inside with CustomMatchers {
 
@@ -40,13 +41,26 @@ class ActionLawSpec extends PropSpec with PropertyChecks with Matchers with Insi
 
   property("action - semigroup associativity") {
     forAll { (i: Int, a1: Action[Int, String], a2: Action[String, Long], a3: Action[Long, Double]) =>
-      a1.combine(a2).combine(a3).run(i) shouldBe a1.combine(a2.combine(a3)).run(i)
+      compare(
+        a1.combine(a2).combine(a3).run(i),
+        a1.combine(a2.combine(a3)).run(i))
     }
   }
 
   property("action - semigroup combined") {
     forAll { (i: Int, a1: Action[Int, String], a2: Action[String, Long], a3: Action[Long, Double], a4: Action[Double, String]) =>
-      a1.combine(a2).combine(a3.combine(a4)).run(i) shouldBe a1.combine(a2).combine(a3).combine(a4).run(i)
+      compare(
+        a1.combine(a2).combine(a3.combine(a4)).run(i),
+        a1.combine(a2).combine(a3).combine(a4).run(i))
+    }
+  }
+
+  private def compare[T](left: Try[T], right: Try[T]) = {
+    inside(left, right) {
+      case (Success(l), Success(r)) => l shouldBe r
+      case (Failure(l), Failure(r)) =>
+        l shouldBe a[r.type]
+        l.getMessage shouldBe r.getMessage
     }
   }
 }

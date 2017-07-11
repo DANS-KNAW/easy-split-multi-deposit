@@ -15,10 +15,10 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
+import java.nio.file.Files
 import java.security.MessageDigest
 
-import gov.loc.repository.bagit.Manifest.Algorithm
+import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import nl.knaw.dans.easy.multideposit.model.{ Deposit, DepositId }
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.BeforeAndAfter
@@ -28,8 +28,8 @@ import scala.util.Success
 class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
 
   implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md"),
-    stagingDir = new File(testDir, "sd")
+    multidepositDir = testDir.resolve("md"),
+    stagingDir = testDir.resolve("sd")
   )
 
   val depositId = "ruimtereis01"
@@ -41,17 +41,13 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
   val deposit: Deposit = testDeposit1
 
   before {
-    new File(multiDepositDir(depositId), "file1.txt").write(file1Text)
-    new File(multiDepositDir(depositId), "folder1/file2.txt").write(file2Text)
-    new File(multiDepositDir(depositId), "folder1/file3.txt").write(file3Text)
-    new File(multiDepositDir(depositId), "folder2/file4.txt").write(file4Text)
-    new File(multiDepositDir("ruimtereis02"), "folder3/file5.txt").write("file5Text")
+    multiDepositDir(depositId).resolve("file1.txt").write(file1Text)
+    multiDepositDir(depositId).resolve("folder1/file2.txt").write(file2Text)
+    multiDepositDir(depositId).resolve("folder1/file3.txt").write(file3Text)
+    multiDepositDir(depositId).resolve("folder2/file4.txt").write(file4Text)
+    multiDepositDir("ruimtereis02").resolve("folder3/file5.txt").write("file5Text")
 
-    stagingBagDir(depositId).mkdirs
-  }
-
-  after {
-    stagingBagDir(depositId).deleteDirectory()
+    Files.createDirectories(stagingBagDir(depositId))
   }
 
   "execute" should "succeed given the current setup" in {
@@ -62,64 +58,73 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
     AddBagToDeposit(deposit).execute shouldBe a[Success[_]]
 
     val root = stagingBagDir(depositId)
-    root should exist
-    root.listRecursively.map(_.getName) should contain theSameElementsAs
-      List("bag-info.txt",
+    root.toFile should exist
+    root.listRecursively().map {
+      case file if Files.isDirectory(file) => file.getFileName.toString + "/"
+      case file => file.getFileName.toString
+    } should contain theSameElementsAs
+      List("bag/",
+        "bag-info.txt",
         "bagit.txt",
+        "data/",
         "file1.txt",
+        "folder1/",
         "file2.txt",
         "file3.txt",
+        "folder2/",
         "file4.txt",
         "manifest-sha1.txt",
         "tagmanifest-sha1.txt")
-    stagingBagDataDir(depositId) should exist
+    stagingBagDataDir(depositId).toFile should exist
   }
 
   it should "preserve the file content after making the bag" in {
     AddBagToDeposit(deposit).execute shouldBe a[Success[_]]
 
     val root = stagingBagDataDir(depositId)
-    new File(root, "file1.txt").read() shouldBe file1Text
-    new File(root, "folder1/file2.txt").read() shouldBe file2Text
-    new File(root, "folder1/file3.txt").read() shouldBe file3Text
-    new File(root, "folder2/file4.txt").read() shouldBe file4Text
+    root.resolve("file1.txt").read() shouldBe file1Text
+    root.resolve("folder1/file2.txt").read() shouldBe file2Text
+    root.resolve("folder1/file3.txt").read() shouldBe file3Text
+    root.resolve("folder2/file4.txt").read() shouldBe file4Text
   }
 
   it should "create a bag with no files in data when the input directory does not exist" in {
     implicit val settings = Settings(
-      multidepositDir = new File(testDir, "md-empty"),
-      stagingDir = new File(testDir, "sd")
+      multidepositDir = testDir.resolve("md-empty"),
+      stagingDir = testDir.resolve("sd")
     )
 
     val outputDir = stagingBagDir(depositId)
-    outputDir.mkdirs
-    outputDir should exist
+    Files.createDirectories(outputDir)
+    outputDir.toFile should exist
 
-    multiDepositDir(depositId) should not(exist)
+    multiDepositDir(depositId).toFile should not(exist)
 
     AddBagToDeposit(deposit)(settings).execute shouldBe a[Success[_]]
 
-    stagingDir(depositId) should exist
-    stagingBagDataDir(depositId) should exist
-    stagingBagDataDir(depositId).listRecursively shouldBe empty
-    stagingBagDir(depositId).listRecursively.map(_.getName) should contain theSameElementsAs
+    stagingDir(depositId).toFile should exist
+    stagingBagDataDir(depositId).toFile should exist
+    stagingBagDataDir(depositId).listRecursively(!Files.isDirectory(_)) shouldBe empty
+    stagingBagDir(depositId)
+      .listRecursively(!Files.isDirectory(_))
+      .map(_.getFileName.toString) should contain theSameElementsAs
       List("bag-info.txt",
         "bagit.txt",
         "manifest-sha1.txt",
         "tagmanifest-sha1.txt")
 
     val root = stagingBagDir(depositId)
-    new File(root, "manifest-sha1.txt").read() shouldBe empty
-    new File(root, "tagmanifest-sha1.txt").read() should include("bag-info.txt")
-    new File(root, "tagmanifest-sha1.txt").read() should include("bagit.txt")
-    new File(root, "tagmanifest-sha1.txt").read() should include("manifest-sha1.txt")
+    root.resolve("manifest-sha1.txt").read() shouldBe empty
+    root.resolve("tagmanifest-sha1.txt").read() should include("bag-info.txt")
+    root.resolve("tagmanifest-sha1.txt").read() should include("bagit.txt")
+    root.resolve("tagmanifest-sha1.txt").read() should include("manifest-sha1.txt")
   }
 
   it should "contain the date-created in the bag-info.txt" in {
     AddBagToDeposit(deposit).execute() shouldBe a[Success[_]]
 
-    val bagInfo = new File(stagingBagDir(depositId), "bag-info.txt")
-    bagInfo should exist
+    val bagInfo = stagingBagDir(depositId).resolve("bag-info.txt")
+    bagInfo.toFile should exist
 
     bagInfo.read() should include("Created")
   }
@@ -138,17 +143,17 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
 
   def verifyChecksums(depositId: DepositId, manifestFile: String): Unit = {
     val root = stagingBagDir(depositId)
-    new File(root, manifestFile).read()
+    root.resolve(manifestFile).read()
       .split('\n')
       .map(_.split("  "))
       .foreach {
-        case Array(sha1, file) => calcSHA1(new File(root, file).read()) shouldBe sha1
+        case Array(sha1, file) => calcSHA1(root.resolve(file).read()) shouldBe sha1
         case line => fail(s"unexpected line detected: ${ line.mkString("  ") }")
       }
   }
 
   def calcSHA1(string: String): String = {
-    MessageDigest.getInstance(Algorithm.SHA1.javaSecurityAlgorithm)
+    MessageDigest.getInstance(StandardSupportedAlgorithms.SHA1.getMessageDigestName)
       .digest(string.getBytes(encoding))
       .map("%02x".format(_))
       .mkString

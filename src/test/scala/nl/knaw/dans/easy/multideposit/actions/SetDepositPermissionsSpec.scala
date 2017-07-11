@@ -15,7 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
 import java.nio.file.{ FileSystemException, Files }
 import java.nio.file.attribute.{ PosixFileAttributes, PosixFilePermission, UserPrincipalNotFoundException }
 
@@ -34,30 +33,34 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
     val allGroups = "cut -d: -f1 /etc/group".!!.split("\n").filterNot(_ startsWith "#").toList
     val userGroups = s"id -Gn $user".!!.split(" ").toList
 
-    (user, userGroups.head, allGroups.diff(userGroups).head)
+    (userGroups, allGroups.diff(userGroups)) match {
+      case (ug :: _, diff :: _) => (user, ug, diff)
+      case (Nil, _) => throw new AssertionError("no suitable user group found")
+      case (_, Nil) => throw new AssertionError("no suitable unrelated group found")
+    }
   }
 
   implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md"),
-    stagingDir = new File(testDir, "sd"),
+    multidepositDir = testDir.resolve("md"),
+    stagingDir = testDir.resolve("sd"),
     depositPermissions = DepositPermissions("rwxrwx---", userGroup)
   )
 
   private val depositId = "ruimtereis01"
 
   private val base = stagingDir(depositId)
-  private val folder1 = new File(base, "folder1")
-  private val folder2 = new File(base, "folder2")
-  private val file1 = new File(base, "file1.txt")
-  private val file2 = new File(folder1, "file2.txt")
-  private val file3 = new File(folder1, "file3.txt")
-  private val file4 = new File(folder2, "file4.txt")
+  private val folder1 = base.resolve("folder1")
+  private val folder2 = base.resolve("folder2")
+  private val file1 = base.resolve("file1.txt")
+  private val file2 = folder1.resolve("file2.txt")
+  private val file3 = folder1.resolve("file3.txt")
+  private val file4 = folder2.resolve("file4.txt")
   private val filesAndFolders = List(base, folder1, folder2, file1, file2, file3, file4)
 
   before {
-    base.mkdirs()
-    folder1.mkdirs()
-    folder2.mkdirs()
+    Files.createDirectories(base)
+    Files.createDirectories(folder1)
+    Files.createDirectories(folder2)
 
     file1.write("abcdef")
     file2.write("defghi")
@@ -65,22 +68,19 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
     file4.write("jklmno")
 
     for (file <- filesAndFolders) {
-      file shouldBe readable
-      file shouldBe writable
+      file.toFile shouldBe readable
+      file.toFile shouldBe writable
     }
   }
 
-  after {
-    base.deleteDirectory()
-  }
-
   "setFilePermissions" should "set the permissions of each of the files and folders to the correct permissions" in {
-    assume(user != "travis")
+    assume(user != "travis",
+      "this test does not work on travis, because we don't know the group that we can use for this")
 
     SetDepositPermissions(1, depositId).execute() shouldBe a[Success[_]]
 
     for (file <- filesAndFolders) {
-      Files.getPosixFilePermissions(file.toPath) should {
+      Files.getPosixFilePermissions(file) should {
         have size 6 and contain only(
           PosixFilePermission.OWNER_READ,
           PosixFilePermission.OWNER_WRITE,
@@ -95,14 +95,14 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
         )
       }
 
-      Files.readAttributes(file.toPath, classOf[PosixFileAttributes]).group().getName shouldBe userGroup
+      Files.readAttributes(file, classOf[PosixFileAttributes]).group().getName shouldBe userGroup
     }
   }
 
   it should "fail if the group name does not exist" in {
     implicit val settings = Settings(
-      multidepositDir = new File(testDir, "md"),
-      stagingDir = new File(testDir, "sd"),
+      multidepositDir = testDir.resolve("md"),
+      stagingDir = testDir.resolve("sd"),
       depositPermissions = DepositPermissions("rwxrwx---", "non-existing-group-name")
     )
 
@@ -113,8 +113,8 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
 
   it should "fail if the access permissions are invalid" in {
     implicit val settings = Settings(
-      multidepositDir = new File(testDir, "md"),
-      stagingDir = new File(testDir, "sd"),
+      multidepositDir = testDir.resolve("md"),
+      stagingDir = testDir.resolve("sd"),
       depositPermissions = DepositPermissions("abcdefghi", "admin")
     )
 
@@ -125,8 +125,8 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
 
   it should "fail if the user is not part of the given group" in {
     implicit val settings = Settings(
-      multidepositDir = new File(testDir, "md"),
-      stagingDir = new File(testDir, "sd"),
+      multidepositDir = testDir.resolve("md"),
+      stagingDir = testDir.resolve("sd"),
       depositPermissions = DepositPermissions("rwxrwx---", unrelatedGroup)
     )
 

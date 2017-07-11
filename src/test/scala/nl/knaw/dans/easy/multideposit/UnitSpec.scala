@@ -15,28 +15,20 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.io.File
+import java.nio.file.{ Files, Path, Paths }
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
-import org.scalatest._
-
 import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
+import org.scalatest._
 
-abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest with BeforeAndAfterAll {
+abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest {
 
-  val testDir = new File(s"target/test/${ getClass.getSimpleName }")
-  val formatsFile = new File(testDir, "formats.txt")
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    testDir.mkdirs()
-    new File(getClass.getResource("/debug-config/formats.txt").toURI).copyFile(formatsFile)
-  }
-
-  override def afterAll: Unit = {
-    super.afterAll()
-    testDir.getParentFile.deleteDirectory()
+  lazy val testDir: Path = {
+    val path = Paths.get(s"target/test/${ getClass.getSimpleName }").toAbsolutePath
+    path.deleteDirectory()
+    Files.createDirectories(path)
+    path
   }
 
   def testDeposit1: Deposit = {
@@ -67,9 +59,9 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files")),
         avFiles = Set(AVFile(
-          file = new File("ruimtereis01/reisverslag/centaur.mpg"),
+          path = Paths.get("ruimtereis01/reisverslag/centaur.mpg"),
           title = Option("flyby of centaur"),
-          subtitles = List(Subtitles(new File("ruimtereis01/reisverslag/centaur.srt"), Option("en")))
+          subtitles = List(Subtitles(Paths.get("ruimtereis01/reisverslag/centaur.srt"), Option("en")))
         ))
       )
     )

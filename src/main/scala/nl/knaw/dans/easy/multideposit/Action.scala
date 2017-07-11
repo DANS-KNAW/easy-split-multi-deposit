@@ -15,12 +15,11 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import scala.util.{ Failure, Success, Try }
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.annotation.tailrec
 import scala.util.control.NonFatal
+import scala.util.{ Failure, Success, Try }
 
 /*
   To future developers: this class is a Category. It should satisfy the law of composition.
@@ -72,16 +71,6 @@ trait Action[-A, +T] extends DebugEnhancedLogging {
    * @return `Success` if the full execution was successful, `Failure` otherwise
    */
   def run(a: A): Try[T] = {
-    def reportFailure(t: Throwable): Try[T] = {
-      Failure(ActionRunFailedException(
-        report = generateReport(
-          header = "Errors during processing:",
-          throwable = t,
-          footer = "The actions that were already performed, were rolled back."),
-        cause = t
-      ))
-    }
-
     def recoverPreconditions(t: Throwable) = {
       Failure(PreconditionsFailedException(
         report = generateReport(
@@ -91,46 +80,44 @@ trait Action[-A, +T] extends DebugEnhancedLogging {
         cause = t))
     }
 
-    def rollbackComposite(ce: CompositeException) = {
-      rollback() match {
-        case Success(_) => reportFailure(ce)
-        case Failure(CompositeException(es2)) => reportFailure(CompositeException(ce.throwables ++ es2))
-        case Failure(e2) => reportFailure(CompositeException(ce.throwables ++ List(e2)))
-      }
-    }
-
-    def rollbackDefault(t: Throwable) = {
-      rollback() match {
-        case Success(_) => reportFailure(t)
-        case Failure(CompositeException(es)) => reportFailure(CompositeException(List(t) ++ es))
-        case Failure(e) => reportFailure(CompositeException(List(t, e)))
-      }
+    def recoverRun(t: Throwable) = {
+      Failure(ActionRunFailedException(
+        report = generateReport(
+          header = "Errors during processing:",
+          throwable = t,
+          footer = "The actions that were already performed, were rolled back."),
+        cause = t
+      ))
     }
 
     for {
       _ <- innerCheckPreconditions.recoverWith { case NonFatal(e) => recoverPreconditions(e) }
       t <- innerExecute(a).recoverWith {
-        case ce: CompositeException => rollbackComposite(ce)
-        case NonFatal(e) => rollbackDefault(e)
+        case NonFatal(e) =>
+          rollback() match {
+            case Success(_) => recoverRun(e)
+            case Failure(e2) => recoverRun(new CompositeException(e, e2))
+          }
       }
     } yield t
   }
 
   private def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
-
-    @tailrec
-    def report(es: List[Throwable], rpt: List[String] = Nil): List[String] = {
-      es match {
-        case Nil => rpt
-        case ActionException(-1, msg, _) :: xs => report(xs, s" - cmd line: $msg" :: rpt)
-        case ActionException(row, msg, _) :: xs => report(xs, s" - row $row: $msg" :: rpt)
-        case CompositeException(ths) :: xs => report(ths.toList ::: xs, rpt)
-        case NonFatal(ex) :: xs => report(xs, s" - unexpected error: ${ ex.getMessage }" :: rpt)
-      }
+    def report(throwable: Throwable): Seq[String] = {
+      List(throwable)
+        .flatMap {
+          case es: CompositeException => es.throwables
+          case e => Seq(e)
+        }
+        .map {
+          case ActionException(-1, msg, _) => s" - cmd line: $msg"
+          case ActionException(row, msg, _) => s" - row $row: $msg"
+          case NonFatal(ex) => s" - unexpected error: ${ ex.getMessage }"
+        }
     }
 
     header.toOption.fold("")(_ + "\n") +
-      report(List(throwable)).distinct.reverse.mkString("\n") +
+      report(throwable).distinct.mkString("\n") +
       footer.toOption.fold("")("\n" + _)
   }
 
