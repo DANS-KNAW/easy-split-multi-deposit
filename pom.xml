@@ -35,8 +35,7 @@
 
     <properties>
         <main-class>nl.knaw.dans.easy.multideposit.Main</main-class>
-        <scala.version>2.11.8</scala.version>
-        <easy.ddm.version>3.2</easy.ddm.version>
+        <easy.ddm.version>3.3</easy.ddm.version>
     </properties>
 
     <scm>
