@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.io.File
+import java.nio.file.{ Files, Path, Paths }
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
 import org.scalamock.scalatest.MockFactory
@@ -24,15 +24,19 @@ import org.scalatest.BeforeAndAfter
 import scala.util.{ Failure, Success }
 import scala.xml.transform.{ RewriteRule, RuleTransformer }
 import scala.xml.{ Elem, Node, NodeSeq, XML }
+import resource._
+import scala.collection.JavaConverters._
 
 class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with CustomMatchers {
 
-  private val allfields = new File(testDir, "md/allfields").getAbsoluteFile
-  private val invalidCSV = new File(testDir, "md/invalidCSV").getAbsoluteFile
+  private val formatsFile: Path = testDir.resolve("formats.txt")
+  private val allfields = testDir.resolve("md/allfields").toAbsolutePath
+  private val invalidCSV = testDir.resolve("md/invalidCSV").toAbsolutePath
 
   before {
-    new File(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
-    new File(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
+    Paths.get(getClass.getResource("/debug-config/formats.txt").toURI).copyFile(formatsFile)
+    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
+    Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
   }
 
   "allfields" should "succeed in transforming the input into a bag" in {
@@ -42,14 +46,14 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
     val ldap = mock[Ldap]
     implicit val settings = Settings(
       multidepositDir = allfields,
-      stagingDir = new File(testDir, "sd").getAbsoluteFile,
-      outputDepositDir = new File(testDir, "od").getAbsoluteFile,
+      stagingDir = testDir.resolve("sd").toAbsolutePath,
+      outputDepositDir = testDir.resolve("od").toAbsolutePath,
       datamanager = "easyadmin",
       depositPermissions = DepositPermissions("rwxrwx---", "admin"),
       formatsFile = formatsFile,
       ldap = ldap
     )
-    val expectedOutputDir = new File(getClass.getResource("/allfields/output").toURI)
+    val expectedOutputDir = Paths.get(getClass.getResource("/allfields/output").toURI)
 
     def createDatamanagerAttributes: BasicAttributes = {
       new BasicAttributes() {
@@ -81,10 +85,12 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
     for (bagName <- Seq("ruimtereis01", "ruimtereis02", "ruimtereis03", "ruimtereis04")) {
       // TODO I'm not happy with this way of testing the content of each file, especially with ignoring specific lines,
       // but I'm in a hurry, so I'll think of a better way later
-      val bag = new File(settings.outputDepositDir, s"allfields-$bagName/bag")
-      val expBag = new File(expectedOutputDir, s"input-$bagName/bag")
+      val bag = settings.outputDepositDir.resolve(s"allfields-$bagName/bag")
+      val expBag = expectedOutputDir.resolve(s"input-$bagName/bag")
 
-      bag.listFiles().map(_.getName) should contain only(
+      managed(Files.list(bag))
+        .acquireAndGet(_.iterator().asScala.toList)
+        .map(_.getFileName.toString) should contain only(
         "bag-info.txt",
         "bagit.txt",
         "manifest-sha1.txt",
@@ -92,44 +98,44 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
         "data",
         "metadata")
 
-      val bagInfo = new File(bag, "bag-info.txt")
-      val expBagInfo = new File(expBag, "bag-info.txt")
+      val bagInfo = bag.resolve("bag-info.txt")
+      val expBagInfo = expBag.resolve("bag-info.txt")
       bagInfo.read().lines.toSeq should contain allElementsOf expBagInfo.read().lines.filterNot(_ contains "Bagging-Date").toSeq
 
-      val bagit = new File(bag, "bagit.txt")
-      val expBagit = new File(expBag, "bagit.txt")
+      val bagit = bag.resolve("bagit.txt")
+      val expBagit = expBag.resolve("bagit.txt")
       bagit.read().lines.toSeq should contain allElementsOf expBagit.read().lines.toSeq
 
-      val manifest = new File(bag, "manifest-sha1.txt")
-      val expManifest = new File(expBag, "manifest-sha1.txt")
+      val manifest = bag.resolve("manifest-sha1.txt")
+      val expManifest = expBag.resolve("manifest-sha1.txt")
       manifest.read().lines.toSeq should contain allElementsOf expManifest.read().lines.toSeq
 
-      val tagManifest = new File(bag, "tagmanifest-sha1.txt")
-      val expTagManifest = new File(expBag, "tagmanifest-sha1.txt")
+      val tagManifest = bag.resolve("tagmanifest-sha1.txt")
+      val expTagManifest = expBag.resolve("tagmanifest-sha1.txt")
       tagManifest.read().lines.toSeq should contain allElementsOf expTagManifest.read().lines.filterNot(_ contains "bag-info.txt").filterNot(_ contains "manifest-sha1.txt").toSeq
 
-      val dataDir = new File(bag, "data")
-      dataDir should exist
+      val dataDir = bag.resolve("data/")
+      dataDir.toFile should exist
       dataDir.listRecursively().map {
-        case file if file.isDirectory => file.getName + "/"
-        case file => file.getName
+        case file if Files.isDirectory(file) => file.getFileName.toString + "/"
+        case file => file.getFileName.toString
       } should contain theSameElementsAs expectedDataContent(bagName)
 
-      new File(bag, "metadata")
-        .listFiles()
-        .map(_.getName) should contain only("dataset.xml", "files.xml")
+      managed(Files.list(bag.resolve("metadata")))
+        .acquireAndGet(_.iterator().asScala.toList)
+        .map(_.getFileName.toString) should contain only("dataset.xml", "files.xml")
 
-      val datasetXml = new File(bag, "metadata/dataset.xml")
-      val expDatasetXml = new File(expBag, "metadata/dataset.xml")
+      val datasetXml = bag.resolve("metadata/dataset.xml")
+      val expDatasetXml = expBag.resolve("metadata/dataset.xml")
       val datasetTransformer = removeElemByName("available")
-      datasetTransformer.transform(XML.loadFile(datasetXml)) should equalTrimmed(datasetTransformer.transform(XML.loadFile(expDatasetXml)))
+      datasetTransformer.transform(XML.loadFile(datasetXml.toFile)) should equalTrimmed (datasetTransformer.transform(XML.loadFile(expDatasetXml.toFile)))
 
-      val filesXml = new File(bag, "metadata/files.xml")
-      val expFilesXml = new File(expBag, "metadata/files.xml")
-      (XML.loadFile(filesXml) \ "files").toSet should equalTrimmed((XML.loadFile(expFilesXml) \ "files").toSet)
+      val filesXml = bag.resolve("metadata/files.xml")
+      val expFilesXml = expBag.resolve("metadata/files.xml")
+      (XML.loadFile(filesXml.toFile) \ "files").toSet should equalTrimmed((XML.loadFile(expFilesXml.toFile) \ "files").toSet)
 
-      val props = new File(settings.outputDepositDir, s"allfields-$bagName/deposit.properties")
-      val expProps = new File(expectedOutputDir, s"input-$bagName/deposit.properties")
+      val props = settings.outputDepositDir.resolve(s"allfields-$bagName/deposit.properties")
+      val expProps = expectedOutputDir.resolve(s"input-$bagName/deposit.properties")
       props.read().lines.toSeq should contain allElementsOf expProps.read().lines.filterNot(_ startsWith "#").filterNot(_ contains "bag-store.bag-id").toSeq
     }
   }
@@ -143,17 +149,17 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
       case Failure(ParserFailedException(report, _)) =>
         report.lines.toSeq should contain inOrderOnly(
           "CSV failures:",
-          " - row 2: AV_FILE 'path/to/audiofile/that/does/not/exist.mp3' does not exist",
-          " - row 2: Missing value for: SF_USER",
-          " - row 2: Value 'NL' is not a valid value for DC_LANGUAGE",
-          " - row 2: Value 'random test data' is not a valid type",
-          " - row 2: Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'. Found: [OPEN_ACCESS, GROUP_ACCESS]",
-          " - row 2: DDM_CREATED value 'invalid-date' does not represent a date",
           " - row 2: Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [user001, invalid-user]",
-          " - row 3: No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined",
-          " - row 3: Value 'encoding=UTF-8' is not a valid value for DC_LANGUAGE",
-          " - row 3: Missing value for: DC_IDENTIFIER",
+          " - row 2: DDM_CREATED value 'invalid-date' does not represent a date",
+          " - row 2: Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'. Found: [OPEN_ACCESS, GROUP_ACCESS]",
+          " - row 2: Value 'random test data' is not a valid type",
+          " - row 2: Value 'NL' is not a valid value for DC_LANGUAGE",
+          " - row 2: Missing value for: SF_USER",
+          " - row 2: AV_FILE 'path/to/audiofile/that/does/not/exist.mp3' does not exist",
           " - row 3: DDM_AVAILABLE value 'invalid-date' does not represent a date",
+          " - row 3: Missing value for: DC_IDENTIFIER",
+          " - row 3: Value 'encoding=UTF-8' is not a valid value for DC_LANGUAGE",
+          " - row 3: No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined",
           "Due to these errors in the 'instructions.csv', nothing was done."
         )
     }

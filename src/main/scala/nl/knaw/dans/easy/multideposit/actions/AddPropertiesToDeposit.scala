@@ -38,7 +38,7 @@ case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings)
    * Checks whether there is only one unique DEPOSITOR_ID set in the `Deposit` (there can be multiple values but the must all be equal!).
    */
   private def validateDepositorUserId: Try[Unit] = {
-    settings.ldap.query(deposit.depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get.toString == "ACTIVE"))
+    settings.ldap.query(deposit.depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE"))
       .flatMap {
         case Seq() => Failure(ActionException(deposit.row, s"depositorUserId '${ deposit.depositorUserId }' is unknown"))
         case Seq(head) => Success(head)
@@ -57,7 +57,9 @@ case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings)
     }
 
     Try { addProperties(props, emailaddress) }
-      .flatMap(_ => Using.fileWriter(encoding)(stagingPropertiesFile(deposit.depositId)).map(out => props.store(out, "")).tried)
+      .flatMap(_ => Using.fileWriter(encoding)(stagingPropertiesFile(deposit.depositId).toFile)
+        .map(out => props.store(out, ""))
+        .tried)
       .recoverWith {
         case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write properties to file: $e", e))
       }

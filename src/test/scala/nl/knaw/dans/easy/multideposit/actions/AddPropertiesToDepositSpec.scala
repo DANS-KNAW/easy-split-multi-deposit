@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
+import java.nio.file.Files
 import javax.naming.directory.Attributes
 
 import nl.knaw.dans.easy.multideposit.model.AudioVideo
@@ -25,12 +25,12 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 
 import scala.util.{ Failure, Success }
 
-class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with BeforeAndAfterAll with MockFactory {
+class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with MockFactory {
 
   val ldapMock: Ldap = mock[Ldap]
   implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md"),
-    stagingDir = new File(testDir, "sd"),
+    multidepositDir = testDir.resolve("md"),
+    stagingDir = testDir.resolve("sd"),
     datamanager = "dm",
     ldap = ldapMock
   )
@@ -41,10 +41,8 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
   }
 
   before {
-    new File(settings.stagingDir, s"md-$depositId").mkdirs
+    Files.createDirectories(settings.stagingDir.resolve(s"md-$depositId"))
   }
-
-  override def afterAll: Unit = testDir.getParentFile.deleteDirectory()
 
   "checkPreconditions" should "succeed if ldap identifies the depositorUserId as active" in {
     mockLdapForDepositor(true)
@@ -80,7 +78,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     AddPropertiesToDeposit(testDeposit1.copy(audioVideo = AudioVideo())).execute("dm@test.org") shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(testDeposit1.depositId)
-    props should exist
+    props.toFile should exist
 
     props.read() should {
       include("state.label") and
@@ -98,7 +96,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with Befor
     AddPropertiesToDeposit(testDeposit1).execute("dm@test.org") shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(testDeposit1.depositId)
-    props should exist
+    props.toFile should exist
 
     props.read() should {
       include("state.label") and

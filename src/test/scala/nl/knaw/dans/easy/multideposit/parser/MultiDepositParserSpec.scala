@@ -15,11 +15,12 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.io.File
+import java.nio.file.Paths
 
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.{ ParseException, _ }
 import nl.knaw.dans.lib.error.CompositeException
+import org.scalatest.BeforeAndAfter
 
 import scala.util.{ Failure, Success }
 
@@ -40,23 +41,22 @@ trait DepositTestObjects extends AudioVideoTestObjects with MetadataTestObjects 
   )
 }
 
-class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
+class MultiDepositParserSpec extends UnitSpec with DepositTestObjects with BeforeAndAfter {
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    new File(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
+  before {
+    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
   }
 
   override implicit val settings = Settings(
-    multidepositDir = new File(testDir, "md").getAbsoluteFile
+    multidepositDir = testDir.resolve("md").toAbsolutePath
   )
   private val parser = MultiDepositParser()
 
   import parser._
 
   "parse" should "load the input csv file into the object model" in {
-    val file = new File(settings.multidepositDir, "instructions.csv")
-    file should exist
+    val file = settings.multidepositDir.resolve("instructions.csv")
+    file.toFile should exist
 
     inside(parse(file)) {
       case Success(datasets) =>
@@ -90,7 +90,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
         |yzy,xwv,uts,rqp
         |onm,lkj,ihg,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = new File(testDir, "input.csv")
+    val file = testDir.resolve("input.csv")
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -114,7 +114,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
         |yzy,xwv,uts,rqp
         |onm,lkj,ihg,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = new File(testDir, "input.csv")
+    val file = testDir.resolve("input.csv")
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -137,7 +137,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
         |yzy,xwv,uts,rqp
         |onm,lkj,,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = new File(testDir, "input.csv")
+    val file = testDir.resolve("input.csv")
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -160,7 +160,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
         |,xwv,uts,rqp
         |onm,lkj, ,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = new File(testDir, "input.csv")
+    val file = testDir.resolve("input.csv")
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -183,7 +183,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
         |
         |onm,lkj,ihg,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = new File(testDir, "input.csv")
+    val file = testDir.resolve("input.csv")
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -199,7 +199,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
 
   it should "parse the input if it only contains a row of headers and no data" in {
     val csv = "DATASET,DEPOSITOR_ID,SF_USER,SF_DOMAIN"
-    val file = new File(testDir, "input.csv")
+    val file = testDir.resolve("input.csv")
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -210,7 +210,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
 
   it should "fail when the input csv file is empty" in {
     val csv = ""
-    val file = new File(testDir, "input.csv")
+    val file = testDir.resolve("input.csv")
     file.write(csv)
 
     read(file) should matchPattern { case Failure(EmptyInstructionsFileException(`file`)) => }
@@ -224,7 +224,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
         |yzy,xwv,uts,rqp
         |onm,lkj,ihg,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = new File(testDir, "input.csv")
+    val file = testDir.resolve("input.csv")
     file.write(csv)
 
     inside(read(file)) {
@@ -241,7 +241,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
         |yzy,xwv,uts,rqp
         |onm,lkj,ihg,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = new File(testDir, "input.csv")
+    val file = testDir.resolve("input.csv")
     file.write(csv)
 
     inside(read(file)) {
@@ -260,9 +260,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects {
     val dsIds = List("ds1", "", "ds2", "ds2", "   ", "ds3")
 
     inside(detectEmptyDepositCells(dsIds)) {
-      case Failure(CompositeException(es)) =>
-        val e1 :: e2 :: Nil = es.toList
-
+      case Failure(CompositeException(e1 :: e2 :: Nil)) =>
         e1 should have message "Row 3 does not have a depositId in column DATASET"
         e2 should have message "Row 6 does not have a depositId in column DATASET"
     }

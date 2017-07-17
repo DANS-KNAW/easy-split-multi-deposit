@@ -15,11 +15,10 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.io.File
+import java.nio.file.{ Files, Path, Paths }
 
-import nl.knaw.dans.easy.multideposit.{ ParseException, Settings }
 import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.easy.multideposit._
+import nl.knaw.dans.easy.multideposit.{ ParseException, Settings, _ }
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -46,19 +45,20 @@ trait AudioVideoParser {
         .flatMap(atMostOne(rowNum, List("SF_ACCESSIBILITY"))))
       .combine(extractList(rows)(avFile(depositId))
         .flatMap(_.groupBy { case (file, _, _) => file }
-          .map {
-            case (file, (instrPerFile: Seq[(File, Option[String], Option[Subtitles])])) =>
-              val fileTitle = instrPerFile.collect { case (_, Some(title), _) => title } match {
-                case Seq() => Success(None)
-                case Seq(title) => Success(Some(title))
-                case Seq(_, _ @ _*) => Failure(ParseException(rowNum, s"The column 'AV_FILE_TITLE' " +
-                  s"can only have one value for file '$file'"))
-              }
-              val subtitles = instrPerFile.collect { case (_, _, Some(instr)) => instr }
-
-              fileTitle.map(AVFile(file, _, subtitles))
-          }.collectResults.map(_.toSet)))
+          .map((toAVFile(rowNum) _).tupled)
+          .collectResults
+          .map(_.toSet)))
       .flatten
+  }
+
+  private def toAVFile(rowNum: => Int)(file: Path, instrPerFile: List[(Path, Option[String], Option[Subtitles])]): Try[AVFile] = {
+    val subtitles = instrPerFile.collect { case (_, _, Some(instr)) => instr }
+    instrPerFile.collect { case (_, Some(title), _) => title } match {
+      case Seq() => Success(AVFile(file, None, subtitles))
+      case Seq(title) => Success(AVFile(file, Some(title), subtitles))
+      case Seq(_, _ @ _*) => Failure(ParseException(rowNum, s"The column 'AV_FILE_TITLE' " +
+        s"can only have one value for file '$file'"))
+    }
   }
 
   def springfield(rowNum: => Int)(row: DepositRow): Option[Try[Springfield]] = {
@@ -68,15 +68,15 @@ trait AudioVideoParser {
 
     def springfield(domain: String, user: String, collection: String): Try[Springfield] = {
       Try { Springfield.curried }
-        .combine(checkValidChars(rowNum, "SF_DOMAIN", domain))
-        .combine(checkValidChars(rowNum, "SF_USER", user))
-        .combine(checkValidChars(rowNum, "SF_COLLECTION", collection))
+        .combine(checkValidChars(domain, rowNum, "SF_DOMAIN"))
+        .combine(checkValidChars(user, rowNum, "SF_USER"))
+        .combine(checkValidChars(collection, rowNum, "SF_COLLECTION"))
     }
 
     def springfieldWithDefaultDomain(user: String, collection: String): Try[Springfield] = {
       Try { ((user: String, collection: String) => Springfield(user = user, collection = collection)).curried }
-        .combine(checkValidChars(rowNum, "SF_USER", user))
-        .combine(checkValidChars(rowNum, "SF_COLLECTION", collection))
+        .combine(checkValidChars(user, rowNum, "SF_USER"))
+        .combine(checkValidChars(collection, rowNum, "SF_COLLECTION"))
     }
 
     (domain, user, collection) match {
@@ -102,39 +102,63 @@ trait AudioVideoParser {
    * @param path the path to a file, as provided by the user input
    * @return the absolute path to this file, if it exists
    */
-  private def findPath(depositId: DepositId)(path: String): File = {
-    lazy val option1 = new File(multiDepositDir(depositId), path)
-    lazy val option2 = new File(settings.multidepositDir, path)
+  private def findPath(depositId: DepositId)(path: String): Path = {
+    lazy val option1 = multiDepositDir(depositId).resolve(path)
+    lazy val option2 = settings.multidepositDir.resolve(path)
 
-    if (option1.exists())
-      option1
-    else if (option2.exists()) {
-      logger.warn(s"path '$path' is not relative to its depositId '$depositId', but rather relative to the multideposit")
-      option2
+    (option1, option2) match {
+      case (path1, _) if Files.exists(path1) => path1
+      case (_, path2) if Files.exists(path2) =>
+        logger.warn(s"path '$path' is not relative to its depositId '$depositId', but rather relative to the multideposit")
+        path2
+      case (_, _) => Paths.get(path)
     }
-    else
-      new File(path)
   }
 
-  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[Subtitles])]] = {
+  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(Path, Option[String], Option[Subtitles])]] = {
     val file = row.find("AV_FILE").map(findPath(depositId))
     val title = row.find("AV_FILE_TITLE")
     val subtitle = row.find("AV_SUBTITLES").map(findPath(depositId))
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, title, subtitle, subtitleLang) match {
-      case (Some(p), t, Some(sub), subLang) if p.exists() && p.isFile && sub.exists() && sub.isFile && subLang.forall(isValidISO639_1Language) => Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
-      case (Some(p), _, Some(_), _) if !p.exists() => Some(Failure(ParseException(rowNum, s"AV_FILE '$p' does not exist")))
-      case (Some(p), _, Some(_), _) if !p.isFile => Some(Failure(ParseException(rowNum, s"AV_FILE '$p' is not a file")))
-      case (Some(_), _, Some(sub), _) if !sub.exists() => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' does not exist")))
-      case (Some(_), _, Some(sub), _) if !sub.isFile => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' is not a file")))
-      case (Some(_), _, Some(_), subLang) if subLang.exists(!isValidISO639_1Language(_)) => Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '${ subLang.get }' doesn't have a valid ISO 639-1 language value")))
-      case (Some(_), _, None, Some(subLang)) => Some(Failure(ParseException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
-      case (Some(p), t, None, None) if p.exists() && p.isFile => Some(Success((p, t, None)))
-      case (Some(p), _, None, None) if !p.exists() => Some(Failure(ParseException(rowNum, s"AV_FILE '$p' does not exist")))
-      case (Some(p), _, None, None) if !p.isFile => Some(Failure(ParseException(rowNum, s"AV_FILE '$p' is not a file")))
+      case (Some(p), t, Some(sub), subLang)
+        if Files.exists(p) &&
+          Files.isRegularFile(p) &&
+          Files.exists(sub) &&
+          Files.isRegularFile(sub) &&
+          subLang.forall(isValidISO639_1Language) =>
+        Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
+      case (Some(p), _, Some(_), _)
+        if !Files.exists(p) =>
+        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' does not exist")))
+      case (Some(p), _, Some(_), _)
+        if !Files.isRegularFile(p) =>
+        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' is not a file")))
+      case (Some(_), _, Some(sub), _)
+        if !Files.exists(sub) =>
+        Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' does not exist")))
+      case (Some(_), _, Some(sub), _)
+        if !Files.isRegularFile(sub) =>
+        Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' is not a file")))
+      case (Some(_), _, Some(_), Some(subLang))
+        if !isValidISO639_1Language(subLang) =>
+        Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '$subLang' doesn't have a valid ISO 639-1 language value")))
+      case (Some(_), _, None, Some(subLang)) =>
+        Some(Failure(ParseException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
+      case (Some(p), t, None, None)
+        if Files.exists(p) &&
+          Files.isRegularFile(p) =>
+        Some(Success((p, t, None)))
+      case (Some(p), _, None, None)
+        if !Files.exists(p) =>
+        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' does not exist")))
+      case (Some(p), _, None, None)
+        if !Files.isRegularFile(p) =>
+        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' is not a file")))
       case (None, None, None, None) => None
-      case (None, _, _, _) => Some(Failure(ParseException(rowNum, "No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined")))
+      case (None, _, _, _) =>
+        Some(Failure(ParseException(rowNum, "No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined")))
     }
   }
 

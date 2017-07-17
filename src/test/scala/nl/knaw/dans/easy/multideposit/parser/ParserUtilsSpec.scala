@@ -90,9 +90,7 @@ class ParserUtilsSpec extends UnitSpec with LanguageBehavior {
     )
 
     inside(extractNEL(rows)(i => _ => Some(Failure(new Exception(s"foo $i"))))) {
-      case Failure(CompositeException(es)) =>
-        val e1 :: e2 :: Nil = es.toList
-
+      case Failure(CompositeException(e1 :: e2 :: Nil)) =>
         e1 should have message "foo 2"
         e2 should have message "foo 3"
     }
@@ -177,9 +175,7 @@ class ParserUtilsSpec extends UnitSpec with LanguageBehavior {
     )
 
     inside(extractList(rows)(i => _ => Some(Failure(new Exception(s"foo $i"))))) {
-      case Failure(CompositeException(es)) =>
-        val e1 :: e2 :: Nil = es.toList
-
+      case Failure(CompositeException(e1 :: e2 :: Nil)) =>
         e1 should have message "foo 2"
         e2 should have message "foo 3"
     }
@@ -270,11 +266,11 @@ class ParserUtilsSpec extends UnitSpec with LanguageBehavior {
   }
 
   "checkValidChars" should "succeed with the input value when all characters are valid" in {
-    checkValidChars(2, "TEST", "valid-input") should matchPattern { case Success("valid-input") => }
+    checkValidChars("valid-input", 2, "TEST") should matchPattern { case Success("valid-input") => }
   }
 
   it should "fail when the input contains invalid characters" in {
-    checkValidChars(2, "TEST", "#$%") should matchPattern {
+    checkValidChars("#$%", 2, "TEST") should matchPattern {
       case Failure(ParseException(2, "The column 'TEST' contains the following invalid characters: {#, $, %}", _)) =>
     }
   }

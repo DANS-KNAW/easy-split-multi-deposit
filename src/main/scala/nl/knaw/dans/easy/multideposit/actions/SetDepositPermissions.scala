@@ -15,12 +15,13 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.{ File, IOException }
+import java.io.IOException
 import java.nio.file._
 import java.nio.file.attribute._
 
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.easy.multideposit.{ UnitAction, _ }
+import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.postfixOps
@@ -40,13 +41,15 @@ case class SetDepositPermissions(row: Int, depositId: DepositId)(implicit settin
     val stagingDirectory = stagingDir(depositId)
     isOnPosixFileSystem(stagingDirectory)
       .flatMap {
-        case true => Try { Files.walkFileTree(stagingDirectory.toPath, PermissionFileVisitor(settings.depositPermissions)) }
+        case true => Try {
+          Files.walkFileTree(stagingDirectory, PermissionFileVisitor(settings.depositPermissions))
+        }
         case false => Success(())
       }
   }
 
-  private def isOnPosixFileSystem(file: File): Try[Boolean] = Try {
-    Files.getPosixFilePermissions(file.toPath)
+  private def isOnPosixFileSystem(file: Path): Try[Boolean] = Try {
+    Files.getPosixFilePermissions(file)
     true
   } recover {
     case _: UnsupportedOperationException => false
@@ -58,8 +61,9 @@ case class SetDepositPermissions(row: Int, depositId: DepositId)(implicit settin
     }
 
     override def postVisitDirectory(dir: Path, exception: IOException): FileVisitResult = {
-      if (exception == null) changePermissions(dir)
-      else FileVisitResult.TERMINATE
+      Option(exception)
+        .map(_ => FileVisitResult.TERMINATE)
+        .getOrElse(changePermissions(dir))
     }
 
     private def changePermissions(path: Path): FileVisitResult = {
@@ -70,7 +74,7 @@ case class SetDepositPermissions(row: Int, depositId: DepositId)(implicit settin
         Files.getFileAttributeView(path, classOf[PosixFileAttributeView], LinkOption.NOFOLLOW_LINKS).setGroup(group)
 
         FileVisitResult.CONTINUE
-      } onError {
+      } getOrRecover {
         case upnf: UserPrincipalNotFoundException => throw ActionException(row, s"Group ${ depositPermissions.group } could not be found", upnf)
         case usoe: UnsupportedOperationException => throw ActionException(row, "Not on a POSIX supported file system", usoe)
         case cce: ClassCastException => throw ActionException(row, "No file permission elements in set", cce)

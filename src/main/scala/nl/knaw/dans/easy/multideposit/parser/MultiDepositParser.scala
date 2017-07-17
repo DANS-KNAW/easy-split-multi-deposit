@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.io.File
+import java.nio.file.Path
 
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model._
@@ -24,7 +24,6 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
 import resource._
 
-import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
@@ -32,11 +31,11 @@ import scala.util.{ Failure, Success, Try }
 
 trait MultiDepositParser extends ParserUtils with AudioVideoParser with MetadataParser with ProfileParser with DebugEnhancedLogging {
 
-  def parse(file: File): Try[Seq[Deposit]] = {
-    logger.info(s"Parsing $file")
+  def parse(path: Path): Try[Seq[Deposit]] = {
+    logger.info(s"Parsing $path")
 
     val deposits = for {
-      (headers, content) <- read(file)
+      (headers, content) <- read(path)
       depositIdIndex = headers.indexOf("DATASET")
       _ <- detectEmptyDepositCells(content.map(_ (depositIdIndex)))
       result <- content.groupBy(_ (depositIdIndex))
@@ -49,12 +48,12 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
     deposits.recoverWith { case NonFatal(e) => recoverParsing(e) }
   }
 
-  def read(file: File): Try[(List[MultiDepositKey], List[List[String]])] = {
-    managed(CSVParser.parse(file, encoding, CSVFormat.RFC4180))
+  def read(path: Path): Try[(List[MultiDepositKey], List[List[String]])] = {
+    managed(CSVParser.parse(path.toFile, encoding, CSVFormat.RFC4180))
       .map(csvParse)
       .tried
       .flatMap {
-        case Nil => Failure(EmptyInstructionsFileException(file))
+        case Nil => Failure(EmptyInstructionsFileException(path))
         case headers :: rows =>
           validateDepositHeaders(headers)
             .map(_ => ("ROW" :: headers, rows.zipWithIndex.collect {
@@ -77,16 +76,18 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
     val invalidHeaders = headers.filterNot(validHeaders.contains)
     lazy val uniqueHeaders = headers.distinct
 
-    if (invalidHeaders.nonEmpty)
-      Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
-        s"${ invalidHeaders.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
-        s"consult the documentation for the list of valid headers."))
-    else if (headers.size != uniqueHeaders.size) {
-      Failure(ParseException(0, "SIP Instructions file contains duplicate headers: " +
-        s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
+    invalidHeaders match {
+      case Nil =>
+        headers match {
+          case hs if hs.size != uniqueHeaders.size =>
+            Failure(ParseException(0, "SIP Instructions file contains duplicate headers: " +
+              s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
+          case _ => Success(())
+        }
+      case invalids => Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
+        s"${ invalids.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
+        "consult the documentation for the list of valid headers."))
     }
-    else
-      Success(())
   }
 
   def detectEmptyDepositCells(depositIds: List[String]): Try[Unit] = {
@@ -100,7 +101,7 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
   def extractDeposit(depositId: DepositId, rows: DepositRows): Try[Deposit] = {
     val rowNum = rows.map(getRowNum).min
 
-    checkValidChars(rowNum, "DATASET", depositId)
+    checkValidChars(depositId, rowNum, "DATASET")
       .flatMap(dsId => Try { Deposit.curried }
         .map(_ (dsId))
         .map(_ (rowNum))
@@ -111,18 +112,13 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
   }
 
   private def recoverParsing(t: Throwable): Failure[Nothing] = {
-    @tailrec
-    def flattenException(es: List[Throwable], result: List[Throwable] = Nil): List[Throwable] = {
-      es match {
-        case Nil => result
-        case CompositeException(ths) :: exs => flattenException(ths.toList ::: exs, result)
-        case NonFatal(ex) :: exs => flattenException(exs, ex :: result)
-      }
-    }
-
     def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
       header.toOption.fold("")(_ + "\n") +
-        flattenException(List(throwable))
+        List(throwable)
+          .flatMap {
+            case es: CompositeException => es.throwables
+            case e => Seq(e)
+          }
           .sortBy {
             case ParseException(row, _, _) => row
             case _ => -1

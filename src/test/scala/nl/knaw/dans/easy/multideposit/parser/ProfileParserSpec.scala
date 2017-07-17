@@ -67,9 +67,7 @@ class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
   it should "fail if there are no values for DC_TITLE, DC_DESCRIPTION, creator, DDM_CREATED, DDM_AUDIENCE and DDM_ACCESSRIGHTS" in {
     val rows = Map.empty[MultiDepositKey, String] :: Map.empty[MultiDepositKey, String] :: Nil
     inside(extractProfile(rows, 2)) {
-      case Failure(CompositeException(es)) =>
-        val e1 :: e2 :: e3 :: e4 :: e5 :: e6 :: Nil = es.toList
-
+      case Failure(CompositeException(e1 :: e2 :: e3 :: e4 :: e5 :: e6 :: Nil)) =>
         e1 should have message "There should be at least one non-empty value for DC_TITLE"
         e2 should have message "There should be at least one non-empty value for DC_DESCRIPTION"
         e3 should have message "There should be at least one non-empty value for the creator fields"
@@ -86,9 +84,7 @@ class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
         .updated("DDM_ACCESSRIGHTS", "NO_ACCESS") :: Nil
 
     inside(extractProfile(rows, 2)) {
-      case Failure(CompositeException(es)) =>
-        val e1 :: e2 :: e3 :: Nil = es.toList
-
+      case Failure(CompositeException(e1 :: e2 :: e3 :: Nil)) =>
         e1.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_CREATED'")
         e2.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_AVAILABLE'")
         e3.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'")

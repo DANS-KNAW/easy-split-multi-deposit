@@ -15,35 +15,38 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.io.File
+import java.nio.file.{ Files, Path }
 
-import nl.knaw.dans.lib.error._
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model.DepositId
+import nl.knaw.dans.lib.error._
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-case class CreateDirectories(filesToCreate: File*)(row: Int, depositId: DepositId)(implicit settings: Settings) extends UnitAction[Unit] {
+case class CreateDirectories(pathsToCreate: Path*)(row: Int, depositId: DepositId)(implicit settings: Settings) extends UnitAction[Unit] {
 
   override def checkPreconditions: Try[Unit] = checkDirectoriesDoNotExist
 
   private def checkDirectoriesDoNotExist: Try[Unit] = {
-    filesToCreate.find(_.exists)
+    pathsToCreate.find(Files.exists(_))
       .map(file => Failure(ActionException(row, s"The deposit for dataset $depositId already exists in $file.")))
       .getOrElse(Success(()))
   }
 
   override def execute(): Try[Unit] = {
-    val paths = filesToCreate.mkString("{", ", ", "}")
+    val paths = pathsToCreate.mkString("{", ", ", "}")
     debug(s"making directories: $paths")
-    if (filesToCreate.forall(_.mkdirs)) Success(())
-    else Failure(ActionException(row, s"Could not create the staging directory at $paths"))
+    Try {
+      pathsToCreate.foreach(Files.createDirectories(_))
+    } recoverWith {
+      case NonFatal(e) => Failure(ActionException(row, s"Could not create the directories at $paths", e))
+    }
   }
 
   override def rollback(): Try[Unit] = {
-    filesToCreate.reverse
-      .withFilter(_.exists)
+    pathsToCreate.reverse
+      .withFilter(Files.exists(_))
       .map(path => Try { path.deleteDirectory() } recoverWith {
         case NonFatal(e) => Failure(ActionException(row, s"Could not delete $path, exception: $e", e))
       })

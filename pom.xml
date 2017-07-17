@@ -18,25 +18,31 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
         <artifactId>dans-scala-prototype</artifactId>
         <version>1.44</version>
     </parent>
+
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-split-multi-deposit</artifactId>
     <version>1.x-SNAPSHOT</version>
+
     <inceptionYear>2016</inceptionYear>
     <name>EASY Split Multi-Deposit</name>
     <description>Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive</description>
+
     <properties>
         <main-class>nl.knaw.dans.easy.multideposit.Main</main-class>
         <easy.ddm.version>3.3</easy.ddm.version>
     </properties>
+
     <scm>
         <developerConnection>scm:git:https://github.com/DANS-KNAW/${project.artifactId}</developerConnection>
         <tag>HEAD</tag>
     </scm>
+
     <dependencies>
         <!-- testing -->
         <dependency>
@@ -74,6 +80,7 @@
         <dependency>
             <groupId>nl.knaw.dans.lib</groupId>
             <artifactId>dans-scala-lib</artifactId>
+            <version>1.2</version>
         </dependency>
 
         <dependency>
@@ -135,6 +142,7 @@
             <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
+
     <repositories>
         <repository>
             <id>DANS</id>
@@ -144,6 +152,7 @@
             <url>http://maven.dans.knaw.nl/</url>
         </repository>
     </repositories>
+
     <pluginRepositories>
         <pluginRepository>
             <id>DANS</id>
@@ -153,6 +162,7 @@
             <url>http://maven.dans.knaw.nl/</url>
         </pluginRepository>
     </pluginRepositories>
+
     <build>
         <plugins>
             <plugin>

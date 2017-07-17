@@ -35,20 +35,22 @@ case class RetrieveDatamanagerAction(implicit settings: Settings) extends UnitAc
    * Tries to retrieve the email address of the datamanager
    * Also used for validation: checks if the datamanager is an active archivist with an email address
    */
-  private def getDatamanagerMailadres(implicit settings: Settings): Try[DatamanagerEmailaddress] = {
+  private def getDatamanagerMailadres: Try[DatamanagerEmailaddress] = {
     val row = -1
     // Note that the datamanager 'precondition' is checked when datamanagerEmailaddress is evaluated the first time
     val datamanagerId = settings.datamanager
 
     def getFirstAttrs(attrsSeq: Seq[Attributes]) = {
-      if (attrsSeq.isEmpty) Failure(ActionException(row, s"""The datamanager "$datamanagerId" is unknown"""))
-      else if (attrsSeq.size > 1) Failure(ActionException(row, s"""There appear to be multiple users with id "$datamanagerId""""))
-      else Success(attrsSeq.head)
+      attrsSeq match {
+        case Seq() => Failure(ActionException(row, s"""The datamanager "$datamanagerId" is unknown"""))
+        case Seq(attr) => Success(attr)
+        case _ => Failure(ActionException(row, s"""There appear to be multiple users with id "$datamanagerId""""))
+      }
     }
 
     def datamanagerIsActive(attrs: Attributes) = {
       Option(attrs.get("dansState"))
-        .filter(_.get.toString == "ACTIVE")
+        .filter(_.get().toString == "ACTIVE")
         .map(_ => Success(attrs))
         .getOrElse(Failure(ActionException(row, s"""The datamanager "$datamanagerId" is not an active user""")))
     }
