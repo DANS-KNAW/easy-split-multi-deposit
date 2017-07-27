@@ -132,7 +132,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
   }
 
   "depositToDDM" should "return the expected xml" in {
-    depositToDDM(deposit) should equalTrimmed (expectedXml)
+    depositToDDM(deposit) should equalTrimmed(expectedXml)
   }
 
   it should "return xml on reading from the allfields input instructions csv" in {
@@ -274,20 +274,20 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       <dcterms:temporal>some arbitrary text</dcterms:temporal>
     </ddm:dcmiMetadata>
 
-    actual should equalTrimmed (expectedXml)
+    actual should equalTrimmed(expectedXml)
   }
 
   "createSurrogateRelation" should "return the expected streaming surrogate relation" in {
     val springfield = Springfield("randomdomainname", "randomusername", "randomcollectionname")
     val expectedXml = <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
 
-    AddDatasetMetadataToDeposit.createSurrogateRelation(springfield) should equalTrimmed (expectedXml)
+    AddDatasetMetadataToDeposit.createSurrogateRelation(springfield) should equalTrimmed(expectedXml)
   }
 
   it should "return a path with the default domain when no domain is specified" in {
     val springfield = Springfield(user = "randomusername", collection = "randomcollectionname")
     val expectedXml = <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
 
-    AddDatasetMetadataToDeposit.createSurrogateRelation(springfield) should equalTrimmed (expectedXml)
+    AddDatasetMetadataToDeposit.createSurrogateRelation(springfield) should equalTrimmed(expectedXml)
   }
 }

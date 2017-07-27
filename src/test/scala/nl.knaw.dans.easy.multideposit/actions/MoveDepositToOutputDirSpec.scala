@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.{ Files, Paths }
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
+import org.scalatest.BeforeAndAfter
 
 import scala.util.{ Failure, Success }
 

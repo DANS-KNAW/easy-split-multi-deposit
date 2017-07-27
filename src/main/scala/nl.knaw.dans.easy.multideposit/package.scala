@@ -176,7 +176,7 @@ package object multideposit {
      * it is not guaranteed that the operation will succeed.
      * If the modification operation fails, no indication is provided.
      *
-     * @param destFile  the new file, must not be ``null``
+     * @param destFile the new file, must not be ``null``
      */
     @throws[NullPointerException]("if source or destination is null")
     @throws[IOException]("if source or destination is invalid")

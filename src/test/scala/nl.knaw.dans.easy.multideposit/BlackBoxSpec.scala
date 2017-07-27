@@ -20,12 +20,12 @@ import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfter
+import resource._
 
+import scala.collection.JavaConverters._
 import scala.util.{ Failure, Success }
 import scala.xml.transform.{ RewriteRule, RuleTransformer }
 import scala.xml.{ Elem, Node, NodeSeq, XML }
-import resource._
-import scala.collection.JavaConverters._
 
 class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with CustomMatchers {
 
@@ -128,7 +128,7 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
       val datasetXml = bag.resolve("metadata/dataset.xml")
       val expDatasetXml = expBag.resolve("metadata/dataset.xml")
       val datasetTransformer = removeElemByName("available")
-      datasetTransformer.transform(XML.loadFile(datasetXml.toFile)) should equalTrimmed (datasetTransformer.transform(XML.loadFile(expDatasetXml.toFile)))
+      datasetTransformer.transform(XML.loadFile(datasetXml.toFile)) should equalTrimmed(datasetTransformer.transform(XML.loadFile(expDatasetXml.toFile)))
 
       val filesXml = bag.resolve("metadata/files.xml")
       val expFilesXml = expBag.resolve("metadata/files.xml")

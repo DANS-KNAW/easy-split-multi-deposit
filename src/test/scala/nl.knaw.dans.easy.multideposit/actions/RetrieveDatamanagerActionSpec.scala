@@ -19,7 +19,6 @@ import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
 import nl.knaw.dans.easy.multideposit.{ Ldap, Settings, UnitSpec, _ }
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.BeforeAndAfterAll
 
 import scala.util.{ Failure, Success }
 

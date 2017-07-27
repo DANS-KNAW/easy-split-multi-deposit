@@ -21,7 +21,8 @@ import nl.knaw.dans.lib.error.CompositeException
 
 import scala.util.{ Failure, Success }
 
-trait LanguageBehavior { this: UnitSpec =>
+trait LanguageBehavior {
+  this: UnitSpec =>
   def validLanguage3Tag(parser: ParserUtils, lang: String): Unit = {
     it should "succeed when the language tag is valid" in {
       val row = Map("taal" -> lang)

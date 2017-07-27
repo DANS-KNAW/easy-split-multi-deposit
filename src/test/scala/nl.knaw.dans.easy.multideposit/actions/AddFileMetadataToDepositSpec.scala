@@ -170,7 +170,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
     val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI).toFile)
     val actual = XML.loadFile(stagingFileMetadataFile(depositId).toFile)
 
-    actual should equalTrimmed (expected)
+    actual should equalTrimmed(expected)
   }
 
   it should "produce the xml for a deposit with no A/V files" in {
@@ -181,7 +181,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
     val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI).toFile)
     val actual = XML.loadFile(stagingFileMetadataFile(depositId).toFile)
 
-    actual should equalTrimmed (expected)
+    actual should equalTrimmed(expected)
   }
 
   it should "produce the xml for a deposit with no files" in {
@@ -192,7 +192,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
     val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis03/bag/metadata/files.xml").toURI).toFile)
     val actual = XML.loadFile(stagingFileMetadataFile(depositId).toFile)
 
-    actual should equalTrimmed (expected)
+    actual should equalTrimmed(expected)
   }
 
   "getMimeType" should "produce the correct doc mimetype" in {

@@ -15,8 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.{ FileSystemException, Files }
 import java.nio.file.attribute.{ PosixFileAttributes, PosixFilePermission, UserPrincipalNotFoundException }
+import java.nio.file.{ FileSystemException, Files }
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.BeforeAndAfter

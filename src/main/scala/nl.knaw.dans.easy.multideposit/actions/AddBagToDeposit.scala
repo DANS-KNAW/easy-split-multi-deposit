@@ -81,14 +81,15 @@ case class AddBagToDeposit(deposit: Deposit)(implicit settings: Settings) extend
         case o if o < mb => ("KB", kb)
         case o if o < gb => ("MB", mb)
         case o if o < tb => ("GB", gb)
-        case _           => ("TB", tb)
+        case _ => ("TB", tb)
       }
     }
 
     val (unit, div) = approximate(octets)
     val size = octets / div
     val sizeString = f"$size%1.1f"
-    val string = if (sizeString endsWith ".0") size.toInt.toString else sizeString
+    val string = if (sizeString endsWith ".0") size.toInt.toString
+                 else sizeString
 
     s"$string $unit"
   }
