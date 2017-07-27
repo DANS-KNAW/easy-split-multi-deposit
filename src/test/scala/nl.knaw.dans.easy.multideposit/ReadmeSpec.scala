@@ -24,10 +24,10 @@ import org.scalatest._
 class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
   private val resourceDirString: String = Paths.get(getClass.getResource("/").toURI).toAbsolutePath.toString
 
-  private val mockedProps = new PropertiesConfiguration() {
+  private val mockedProps = new Configuration("version x.y.z", new PropertiesConfiguration() {
     setDelimiterParsingDisabled(true)
     load(Paths.get(resourceDirString + "/debug-config", "application.properties").toFile)
-  }
+  })
 
   val mockedArgs = Array("-s", resourceDirString,
     resourceDirString + "/allfields/input",

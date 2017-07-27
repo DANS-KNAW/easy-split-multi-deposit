@@ -20,18 +20,13 @@ import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
 
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-import org.apache.commons.configuration.PropertiesConfiguration
 import org.rogach.scallop.{ ScallopConf, ScallopOption }
 
 object CommandLineOptions extends DebugEnhancedLogging {
 
   def parse(args: Array[String]): Settings = {
     debug("Loading application.properties ...")
-    val homeDir = Paths.get(System.getProperty("app.home"))
-    val props = new PropertiesConfiguration() {
-      setDelimiterParsingDisabled(true)
-      load(homeDir.resolve("cfg/application.properties").toFile)
-    }
+    val props = Configuration()
     debug("Parsing command line ...")
     val opts = new ScallopCommandLine(props, args)
 
@@ -40,14 +35,14 @@ object CommandLineOptions extends DebugEnhancedLogging {
       stagingDir = opts.stagingDir().toAbsolutePath,
       outputDepositDir = opts.outputDepositDir().toAbsolutePath,
       datamanager = opts.datamanager(),
-      depositPermissions = DepositPermissions(props.getString("deposit.permissions.access"), props.getString("deposit.permissions.group")),
-      formatsFile = homeDir.resolve("cfg/formats.txt"),
+      depositPermissions = DepositPermissions(props.properties.getString("deposit.permissions.access"), props.properties.getString("deposit.permissions.group")),
+      formatsFile = Paths.get(System.getProperty("app.home"), "cfg/formats.txt"),
       ldap = {
         val env = new java.util.Hashtable[String, String]
-        env.put(Context.PROVIDER_URL, props.getString("auth.ldap.url"))
+        env.put(Context.PROVIDER_URL, props.properties.getString("auth.ldap.url"))
         env.put(Context.SECURITY_AUTHENTICATION, "simple")
-        env.put(Context.SECURITY_PRINCIPAL, props.getString("auth.ldap.user"))
-        env.put(Context.SECURITY_CREDENTIALS, props.getString("auth.ldap.password"))
+        env.put(Context.SECURITY_PRINCIPAL, props.properties.getString("auth.ldap.user"))
+        env.put(Context.SECURITY_CREDENTIALS, props.properties.getString("auth.ldap.password"))
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
 
         LdapImpl(new InitialLdapContext(env, null))
@@ -59,13 +54,13 @@ object CommandLineOptions extends DebugEnhancedLogging {
   }
 }
 
-class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) extends ScallopConf(args) {
+class ScallopCommandLine(configuration: Configuration, args: Array[String]) extends ScallopConf(args) {
 
   appendDefaultToDescription = true
   editBuilder(_.setHelpWidth(110))
 
   printedName = "easy-split-multi-deposit"
-  version(s"$printedName ${ Version() }")
+  version(s"$printedName ${ configuration.version }")
   val description = "Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive"
   val synopsis = s"""$printedName.sh [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>"""
   banner(
@@ -93,7 +88,7 @@ class ScallopCommandLine(props: PropertiesConfiguration, args: Array[String]) ex
     descr = "A directory in which the deposit directories are created, after which they will be " +
       "moved to the 'output-deposit-dir'. If not specified, the value of 'staging-dir' in " +
       "'application.properties' is used.",
-    default = Some(Paths.get(props.getString("staging-dir"))))
+    default = Some(Paths.get(configuration.properties.getString("staging-dir"))))
 
   val outputDepositDir: ScallopOption[Path] = trailArg[Path](
     name = "output-deposit-dir",
