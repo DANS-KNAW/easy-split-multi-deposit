@@ -20,20 +20,27 @@ OUTPUT=data/output
 STAGING=data/staging
 RUN_SCRIPT=run.sh
 
-if [[ " ${LOCAL_ARGS[*]} " != *"--help"* ]] && [[ " ${LOCAL_ARGS[*]} " != *"--version"* ]]; then
-    if [ "$(ls -A ${OUTPUT})" ]; then
-        NEWOUTPUT=${OUTPUT}-$(date  +"%Y-%m-%d@%H:%M:%S")
-        mv ${OUTPUT} ${NEWOUTPUT}
-        mkdir ${OUTPUT}
-        echo "the old output folder has been moved to $NEWOUTPUT"
+ping -t 1 -c 1 test.dans.knaw.nl >/dev/null
+
+if [[ $? == 0 ]]; then
+    if [[ " ${LOCAL_ARGS[*]} " != *"--help"* ]] && [[ " ${LOCAL_ARGS[*]} " != *"--version"* ]]; then
+        if [ "$(ls -A ${OUTPUT})" ]; then
+            NEWOUTPUT=${OUTPUT}-$(date  +"%Y-%m-%d@%H:%M:%S")
+            mv ${OUTPUT} ${NEWOUTPUT}
+            mkdir ${OUTPUT}
+            echo "the old output folder has been moved to $NEWOUTPUT"
+        fi
+
+        if [ "$(ls -A ${STAGING})" ]; then
+            NEWSTAGING=${STAGING}-$(date  +"%Y-%m-%d@%H:%M:%S")
+            mv ${STAGING} ${NEWSTAGING}
+            mkdir ${STAGING}
+            echo "the old staging folder has been moved to $NEWSTAGING"
+        fi
     fi
 
-    if [ "$(ls -A ${STAGING})" ]; then
-        NEWSTAGING=${STAGING}-$(date  +"%Y-%m-%d@%H:%M:%S")
-        mv ${STAGING} ${NEWSTAGING}
-        mkdir ${STAGING}
-        echo "the old staging folder has been moved to $NEWSTAGING"
-    fi
+    source ${RUN_SCRIPT}
+else
+    echo "The server at test.dans.knaw.nl is not running."
+    echo "Please make sure this is running before executing this application."
 fi
-
-source ${RUN_SCRIPT}
