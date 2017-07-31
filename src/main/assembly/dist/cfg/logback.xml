@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <Pattern>[%-5level] %msg %n</Pattern>
+            <Pattern>[%date{ISO8601}] %-5level %msg %n</Pattern>
         </encoder>
     </appender>
 
@@ -14,12 +14,12 @@
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
-            <pattern>%-4relative [%date{ISO8601}] %-5level %logger{35} - %msg%n</pattern>
+            <pattern>[%date{ISO8601}] %-5level %msg%n</pattern>
         </encoder>
     </appender>
-    <root level="error">
+    <root level="warn">
         <appender-ref ref="FILE" />
-        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="STDOUT" />
     </root>
-    <logger name="nl.knaw.dans.easy.multideposit" level="info" />
+    <logger name="nl.knaw.dans.easy" level="info" />
 </configuration>
