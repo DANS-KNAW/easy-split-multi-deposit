@@ -108,7 +108,8 @@ object Headers {
     "SF_DOMAIN",
     "SF_USER",
     "SF_COLLECTION",
-    "SF_ACCESSIBILITY"
+    "SF_ACCESSIBILITY",
+    "SF_PLAY_MODE"
   )
 
   private lazy val audioVideoHeaders = Set(
