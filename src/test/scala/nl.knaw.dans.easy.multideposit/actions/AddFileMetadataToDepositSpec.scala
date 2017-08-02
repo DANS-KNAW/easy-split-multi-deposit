@@ -38,7 +38,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
     Paths.get(getClass.getResource("/mimetypes").toURI).copyDir(testDir.resolve("mimetypes"))
   }
 
-  "checkPreconditions" should "succeed if the deposit contains the SF_* fields in case a A/V file is found" in {
+  "checkPreconditions" should "succeed if the deposit contains the SF_* fields in case an A/V file is found" in {
     val deposit = testDeposit1.copy(
       depositId = depositId,
       audioVideo = testDeposit1.audioVideo.copy(

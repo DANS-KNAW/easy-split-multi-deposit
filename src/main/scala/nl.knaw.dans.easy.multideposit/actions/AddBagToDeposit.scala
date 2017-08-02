@@ -37,12 +37,12 @@ case class AddBagToDeposit(deposit: Deposit)(implicit settings: Settings) extend
   }
 
   override def execute(): Try[Unit] = {
-    createBag(deposit).recoverWith {
+    createBag().recoverWith {
       case NonFatal(e) => Failure(ActionException(deposit.row, s"Error occured in creating the bag for ${ deposit.depositId }: ${ e.getMessage }", e))
     }
   }
 
-  private def createBag(deposit: Deposit)(implicit settings: Settings): Try[Unit] = Try {
+  private def createBag(): Try[Unit] = Try {
     val depositId = deposit.depositId
     val inputDir = multiDepositDir(depositId)
     val stageDir = stagingBagDir(depositId)

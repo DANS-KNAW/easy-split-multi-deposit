@@ -22,7 +22,7 @@ import nl.knaw.dans.easy.multideposit.{ ParseException, Settings, UnitSpec, _ }
 import nl.knaw.dans.lib.error.CompositeException
 import org.scalatest.BeforeAndAfter
 
-import scala.util.{ Failure, Properties, Success }
+import scala.util.{ Failure, Success }
 
 trait AudioVideoTestObjects {
 

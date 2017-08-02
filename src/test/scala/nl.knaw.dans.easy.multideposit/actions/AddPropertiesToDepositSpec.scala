@@ -88,7 +88,8 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with MockF
         include("datamanager.userId=dm") and
         not include "springfield.domain" and
         not include "springfield.user" and
-        not include "springfield.collection"
+        not include "springfield.collection" and
+        not include "springfield.playmode"
     }
   }
 
@@ -107,6 +108,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with MockF
         include("springfield.domain=dans") and
         include("springfield.user=janvanmansum") and
         include("springfield.collection=Jans-test-files") and
+        include("springfield.playmode=menu") and
         include regex "bag-store.bag-id=[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"
     }
   }
