@@ -60,14 +60,6 @@ package object multideposit {
   case class ParseException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
   case class ActionException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
 
-  object Version {
-    def apply(): String = {
-      val properties = new Properties()
-      properties.load(getClass.getResourceAsStream("/Version.properties"))
-      properties.getProperty("process-sip.version")
-    }
-  }
-
   implicit class StringExtensions(val s: String) extends AnyVal {
     /**
      * Checks whether the `String` is blank

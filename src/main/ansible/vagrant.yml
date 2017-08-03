@@ -17,51 +17,32 @@
 - hosts: "test"
   become: yes
   vars:
-    deployer_email: "{{ deployer_captured_email.stdout }}"
+    local_test_vm_install_httpd: no
+    easy_ldap_dir_ldapadmin_password: "ldapadmin"
+    easy_ldap_dir_easyadmin_password: "easyadmin"
+    easy_test_users_email: "{{ deployer_email }}"
+    easy_test_users_ldapadmin_password: "{{ easy_ldap_dir_ldapadmin_password }}"
+  roles:
+    - dans.capture-deployer-email
+    - dans.local-test-vm-base
+    - dans.local-yum-repo
+    - dans.easy-ldap-dir
+    - dans.easy-test-users
+
+- hosts: "test"
+  become: yes
   tasks:
-  - name: Install standard software
-    yum: name="{{ item }}"
-    with_items:
-      - libselinux-python
-      - libsemanage-python
-      - tree
-      - tmux
-
-  - name: Enable SELinux
-    selinux:
-       policy: targeted
-       state: enforcing
-
-  - name: Add /opt/bin to PATH
-    copy:
-      src: opt.sh
-      dest: /etc/profile.d/
-      mode: "755"
-
-  - include_role:
-      name: yum-repo
-
-  - include_role:
-      name: _capture_deployer_email
-
-  - include_role:
-      name: openldap
-
-  - include_role:
-      name: easy_ldap_dir
-
-  - include_role:
-      name: easy_test_users
-
   - name: Installing packages
     yum:
       name: dans.knaw.nl-easy-split-multi-deposit
       state: latest
 
-  - name: Configure application (split-multi-deposit application.properties)
-    replace:
-      dest: '/etc/opt/dans.knaw.nl/easy-split-multi-deposit/application.properties'
-      regexp: '^{{ item.key }}.*$'
-      replace: '{{ item.key }}={{ item.value }}'
-    with_items:
-      - { key: 'staging-dir', value: '/var/opt/dans.knaw.nl/tmp/easy-split-multi-deposit-staging' }
+  - name: Create group deposits
+    group:
+      name: deposits
+
+  - name: Append group deposits to vagrant's groups
+    user:
+      name: vagrant
+      groups: deposits
+      append: yes
