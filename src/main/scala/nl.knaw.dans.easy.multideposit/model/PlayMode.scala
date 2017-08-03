@@ -22,6 +22,6 @@ object PlayMode extends Enumeration {
   val Menu = Value("menu")
 
   def valueOf(s: String): Option[PlayMode.Value] = {
-    PlayMode.values.find(_.toString == s)
+    PlayMode.values.find(_.toString == s.toLowerCase)
   }
 }

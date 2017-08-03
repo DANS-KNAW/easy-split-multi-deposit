@@ -494,6 +494,16 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
     playMode(2)(row).value should matchPattern { case Success(PlayMode.Menu) => }
   }
 
+  it should "return the correct PlayMode if I use all-uppercase in the SF_PLAY_MODE value" in {
+    val row = Map("SF_PLAY_MODE" -> "CONTINUOUS")
+    playMode(2)(row).value should matchPattern { case Success(PlayMode.Continuous) => }
+  }
+
+  it should "return the correct PlayMode if I use some weird casing in the SF_PLAY_MODE value" in {
+    val row = Map("SF_PLAY_MODE" -> "mEnU")
+    playMode(2)(row).value should matchPattern { case Success(PlayMode.Menu) => }
+  }
+
   it should "return None if SF_PLAY_MODE is not defined" in {
     val row = Map("SF_PLAY_MODE" -> "")
     playMode(2)(row) shouldBe empty
