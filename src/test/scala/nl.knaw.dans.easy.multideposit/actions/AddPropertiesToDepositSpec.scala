@@ -21,11 +21,11 @@ import javax.naming.directory.Attributes
 import nl.knaw.dans.easy.multideposit.model.AudioVideo
 import nl.knaw.dans.easy.multideposit.{ ActionException, Settings, UnitSpec, _ }
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
 
-class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with MockFactory {
+class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfterEach with MockFactory {
 
   val ldapMock: Ldap = mock[Ldap]
   implicit val settings = Settings(
@@ -40,7 +40,7 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfter with MockF
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Success(Seq(b))
   }
 
-  before {
+  override def beforeEach(): Unit = {
     Files.createDirectories(settings.stagingDir.resolve(s"md-$depositId"))
   }
 

@@ -21,11 +21,11 @@ import java.security.MessageDigest
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import nl.knaw.dans.easy.multideposit.model.{ Deposit, DepositId }
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
-import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterEach
 
-import scala.util.Success
+import scala.util.{ Failure, Success }
 
-class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
+class AddBagToDepositSpec extends UnitSpec with BeforeAndAfterEach {
 
   implicit val settings = Settings(
     multidepositDir = testDir.resolve("md"),
@@ -40,7 +40,9 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
   val file5Text = "mnopqr"
   val deposit: Deposit = testDeposit1
 
-  before {
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+
     multiDepositDir(depositId).resolve("file1.txt").write(file1Text)
     multiDepositDir(depositId).resolve("folder1/file2.txt").write(file2Text)
     multiDepositDir(depositId).resolve("folder1/file3.txt").write(file3Text)
@@ -55,7 +57,11 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
   }
 
   it should "create a bag with the files from ruimtereis01 in it and some meta-files around" in {
-    AddBagToDeposit(deposit).execute shouldBe a[Success[_]]
+//    AddBagToDeposit(deposit).execute shouldBe a[Success[_]]
+    AddBagToDeposit(deposit).execute match {
+      case Failure(e) => fail(e)
+      case Success(_) =>
+    }
 
     val root = stagingBagDir(depositId)
     root.toFile should exist

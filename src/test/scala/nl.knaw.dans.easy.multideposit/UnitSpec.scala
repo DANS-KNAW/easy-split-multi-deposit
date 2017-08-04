@@ -22,7 +22,7 @@ import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
 import org.scalatest._
 
-abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest {
+abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside {
 
   lazy val testDir: Path = {
     val path = Paths.get(s"target/test/${ getClass.getSimpleName }").toAbsolutePath

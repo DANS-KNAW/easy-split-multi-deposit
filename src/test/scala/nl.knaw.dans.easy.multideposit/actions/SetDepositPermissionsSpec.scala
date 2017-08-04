@@ -19,11 +19,11 @@ import java.nio.file.attribute.{ PosixFileAttributes, PosixFilePermission, UserP
 import java.nio.file.{ FileSystemException, Files }
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
-import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
 
-class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
+class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfterEach {
 
   private val (user, userGroup, unrelatedGroup) = {
     import scala.sys.process._
@@ -57,7 +57,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfter {
   private val file4 = folder2.resolve("file4.txt")
   private val filesAndFolders = List(base, folder1, folder2, file1, file2, file3, file4)
 
-  before {
+  override def beforeEach(): Unit = {
     Files.createDirectories(base)
     Files.createDirectories(folder1)
     Files.createDirectories(folder2)

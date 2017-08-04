@@ -20,12 +20,12 @@ import java.nio.file.{ NoSuchFileException, Paths }
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model.{ AVFile, AudioVideo, FileAccessRights, Springfield, Subtitles }
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
-import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
 import scala.xml.XML
 
-class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with CustomMatchers {
+class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with CustomMatchers {
 
   implicit val settings = Settings(
     multidepositDir = testDir.resolve("md").toAbsolutePath,
@@ -33,7 +33,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
   )
   val depositId = "ruimtereis01"
 
-  before {
+  override def beforeEach(): Unit = {
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
     Paths.get(getClass.getResource("/mimetypes").toURI).copyDir(testDir.resolve("mimetypes"))
   }
