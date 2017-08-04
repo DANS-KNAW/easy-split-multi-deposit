@@ -50,6 +50,11 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
     Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
   }
 
+  private def doNotRunOnTravis() = {
+    assume(System.getProperty("user.name") != "travis",
+      "this test does not work on travis, because we don't know the group that we can use for this")
+  }
+
   private lazy val getFileSystemGroup: String = {
     import scala.sys.process._
 
@@ -88,6 +93,8 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
     }
 
     it should "succeed running the application" in {
+      doNotRunOnTravis()
+
       (ldap.query(_: String)(_: Attributes => Attributes)) expects(settings.datamanager, *) returning Success(Seq(createDatamanagerAttributes))
       (ldap.query(_: String)(_: Attributes => Boolean)) expects("user001", *) repeat 4 returning Success(Seq(true))
 
@@ -108,6 +115,8 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       val expBag = expectedOutputDir.resolve(s"input-$bagName/bag")
 
       it should "check the files present in the bag" in {
+        doNotRunOnTravis()
+
         managed(Files.list(bag))
           .acquireAndGet(_.iterator().asScala.toList)
           .map(_.getFileName.toString) should contain only(
@@ -120,6 +129,8 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       }
 
       it should "check bag-info.txt" in {
+        doNotRunOnTravis()
+
         val bagInfo = bag.resolve("bag-info.txt")
         val expBagInfo = expBag.resolve("bag-info.txt")
 
@@ -129,6 +140,8 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       }
 
       it should "check bagit.txt" in {
+        doNotRunOnTravis()
+
         val bagit = bag.resolve("bagit.txt")
         val expBagit = expBag.resolve("bagit.txt")
 
@@ -136,6 +149,8 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       }
 
       it should "check manifest-sha1.txt" in {
+        doNotRunOnTravis()
+
         val manifest = bag.resolve("manifest-sha1.txt")
         val expManifest = expBag.resolve("manifest-sha1.txt")
 
@@ -143,6 +158,8 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       }
 
       it should "check tagmanifest-sha1.txt" in {
+        doNotRunOnTravis()
+
         val tagManifest = bag.resolve("tagmanifest-sha1.txt")
         val expTagManifest = expBag.resolve("tagmanifest-sha1.txt")
 
@@ -155,6 +172,8 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       }
 
       it should "check the files in data/" in {
+        doNotRunOnTravis()
+
         val dataDir = bag.resolve("data/")
         dataDir.toFile should exist
         dataDir.listRecursively().map {
@@ -164,12 +183,16 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       }
 
       it should "check the files in metadata/" in {
+        doNotRunOnTravis()
+
         managed(Files.list(bag.resolve("metadata")))
           .acquireAndGet(_.iterator().asScala.toList)
           .map(_.getFileName.toString) should contain only("dataset.xml", "files.xml")
       }
 
       it should "check metadata/dataset.xml" in {
+        doNotRunOnTravis()
+
         def removeElemByName(label: String) = new RuleTransformer(new RewriteRule {
           override def transform(n: Node): Seq[Node] = {
             n match {
@@ -189,6 +212,8 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       }
 
       it should "check metadata/files.xml" in {
+        doNotRunOnTravis()
+
         val filesXml = bag.resolve("metadata/files.xml")
         val expFilesXml = expBag.resolve("metadata/files.xml")
 
@@ -196,6 +221,8 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       }
 
       it should "check deposit.properties" in {
+        doNotRunOnTravis()
+
         val props = settings.outputDepositDir.resolve(s"allfields-$bagName/deposit.properties")
         val expProps = expectedOutputDir.resolve(s"input-$bagName/deposit.properties")
 
