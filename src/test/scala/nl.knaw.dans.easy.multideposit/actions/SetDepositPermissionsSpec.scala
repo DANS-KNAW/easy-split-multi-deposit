@@ -21,7 +21,7 @@ import java.nio.file.{ FileSystemException, Files }
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.{ Failure, Success }
+import scala.util.{ Failure, Properties, Success }
 
 class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfterEach {
 
@@ -29,7 +29,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfterEach {
     import scala.sys.process._
 
     // don't hardcode users and groups, since we don't know what we have on travis
-    val user = System.getProperty("user.name")
+    val user = Properties.userName
     val allGroups = "cut -d: -f1 /etc/group".!!.split("\n").filterNot(_ startsWith "#").toList
     val userGroups = s"id -Gn $user".!!.split(" ").toList
 
