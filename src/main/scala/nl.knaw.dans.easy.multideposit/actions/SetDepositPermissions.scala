@@ -70,6 +70,11 @@ case class SetDepositPermissions(row: Int, depositId: DepositId)(implicit settin
       Try {
         Files.setPosixFilePermissions(path, PosixFilePermissions.fromString(depositPermissions.permissions))
 
+        import scala.sys.process._
+        val cmd = s"stat -c \"%U %G\" $path"
+        println(cmd)
+        println(cmd.!!)
+
         val group = path.getFileSystem.getUserPrincipalLookupService.lookupPrincipalByGroupName(depositPermissions.group)
         Files.getFileAttributeView(path, classOf[PosixFileAttributeView], LinkOption.NOFOLLOW_LINKS).setGroup(group)
 

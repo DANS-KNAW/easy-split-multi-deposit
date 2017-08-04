@@ -58,7 +58,7 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
 
     val groups = s"id -Gn ${ userName }".!!
     println(s"groups = $groups")
-    
+
     groups.split(" ").headOption
       .getOrElse(throw new AssertionError("no suitable user group found"))
   }
