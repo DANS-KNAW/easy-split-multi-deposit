@@ -80,11 +80,12 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       }
     }
 
-    (ldap.query(_: String)(_: Attributes => Attributes)) expects(settings.datamanager, *) returning Success(Seq(createDatamanagerAttributes))
-    (ldap.query(_: String)(_: Attributes => Boolean)) expects("user001", *) repeat 4 returning Success(Seq(true))
-
     it should "succeed running the application" in {
       doNotRunOnTravis()
+
+      (ldap.query(_: String)(_: Attributes => Attributes)) expects(settings.datamanager, *) returning Success(Seq(createDatamanagerAttributes))
+      (ldap.query(_: String)(_: Attributes => Boolean)) expects("user001", *) repeat 4 returning Success(Seq(true))
+
       Main.run shouldBe a[Success[_]]
     }
 

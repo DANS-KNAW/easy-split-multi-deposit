@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.{ NoSuchFileException, Paths }
+import java.nio.file.{ Files, NoSuchFileException, Paths }
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model.{ AVFile, AudioVideo, FileAccessRights, Springfield, Subtitles }
@@ -34,6 +34,10 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
   val depositId = "ruimtereis01"
 
   override def beforeEach(): Unit = {
+    settings.multidepositDir.deleteDirectory()
+    Files.createDirectory(settings.multidepositDir)
+    settings.multidepositDir.toFile should exist
+
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
     Paths.get(getClass.getResource("/mimetypes").toURI).copyDir(testDir.resolve("mimetypes"))
   }

@@ -18,7 +18,6 @@ package nl.knaw.dans.easy
 import java.io.IOException
 import java.nio.charset.Charset
 import java.nio.file.{ Files, Path }
-import java.util.Properties
 
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
@@ -226,8 +225,6 @@ package object multideposit {
       managed(Files.walk(path))
         .acquireAndGet(_.iterator().asScala.filter(predicate).toList)
     }
-
-    def format: String = path.toString.replace('\\', '/')
   }
 
   val encoding = Charsets.UTF_8
