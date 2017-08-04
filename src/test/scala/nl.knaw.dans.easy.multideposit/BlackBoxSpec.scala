@@ -53,7 +53,13 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
   private lazy val getFileSystemGroup: String = {
     import scala.sys.process._
 
-    s"id -Gn ${ Properties.userName }".!!.split(" ").headOption
+    val userName = Properties.userName
+    println(s"userName = $userName")
+
+    val groups = s"id -Gn ${ userName }".!!
+    println(s"groups = $groups")
+    
+    groups.split(" ").headOption
       .getOrElse(throw new AssertionError("no suitable user group found"))
   }
 
