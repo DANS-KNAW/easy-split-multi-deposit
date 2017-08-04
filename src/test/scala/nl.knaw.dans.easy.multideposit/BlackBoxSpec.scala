@@ -39,7 +39,8 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
     Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
   }
 
-  "allfields" should "succeed in transforming the input into a bag" in {
+//  "allfields" should "succeed in transforming the input into a bag" in {
+    ignore should "succeed in transforming the input into a bag" in {
     assume(System.getProperty("user.name") != "travis",
       "this test does not work on travis, because we don't know the group that we can use for this")
 
