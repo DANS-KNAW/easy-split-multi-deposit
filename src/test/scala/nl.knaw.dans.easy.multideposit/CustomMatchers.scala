@@ -49,4 +49,15 @@ trait CustomMatchers {
     }
   }
   def equalTrimmed(right: Iterable[Node]) = new EqualTrimmedMatcher(right)
+
+  class EqualMatcher(right: Iterable[Node]) extends Matcher[Iterable[Node]] {
+    override def apply(left: Iterable[Node]): MatchResult = {
+      MatchResult(
+        left.zip(right).forall { case (l, r) => l.toString() == r.toString() },
+        s"$left did not equal $right",
+        s"$left did equal $right"
+      )
+    }
+  }
+  def equal(right: Iterable[Node]) = new EqualMatcher(right)
 }

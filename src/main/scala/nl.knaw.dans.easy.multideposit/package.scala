@@ -27,7 +27,7 @@ import resource._
 
 import scala.collection.JavaConverters._
 import scala.util.Try
-import scala.xml.{ Elem, XML }
+import scala.xml.{ Elem, PrettyPrinter, Utility, XML }
 
 package object multideposit {
 
@@ -115,7 +115,7 @@ package object multideposit {
     @throws[IOException]("in case of an I/O error")
     def writeXml(elem: Elem, encoding: Charset = encoding): Unit = {
       Files.createDirectories(file.getParent)
-      XML.save(file.toString, elem, encoding.toString, xmlDecl = true)
+      XML.save(file.toString, XML.loadString(new PrettyPrinter(160, 2).format(Utility.trim(elem))), encoding.toString, xmlDecl = true)
     }
 
     /**
