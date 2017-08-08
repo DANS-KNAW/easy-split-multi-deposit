@@ -29,12 +29,25 @@ import scala.xml.{ Elem, Node, NodeSeq, XML }
 
 class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with CustomMatchers {
 
-  private val formatsFile: Path = testDir.resolve("formats.txt")
+  private val formats = """
+                          |application/postscript
+                          |application/rtf
+                          |application/pdf
+                          |application/msword
+                          |text/plain
+                          |text/html
+                          |text/sgml
+                          |text/xml
+                          |image/jpeg
+                          |image/gif
+                          |image/tiff
+                          |video/quicktime
+                          |video/mpeg1
+                        """.stripMargin.split("\n").map(_.trim).toSet
   private val allfields = testDir.resolve("md/allfields").toAbsolutePath
   private val invalidCSV = testDir.resolve("md/invalidCSV").toAbsolutePath
 
   before {
-    Paths.get(getClass.getResource("/debug-config/formats.txt").toURI).copyFile(formatsFile)
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
     Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
   }
@@ -51,7 +64,7 @@ class BlackBoxSpec extends UnitSpec with BeforeAndAfter with MockFactory with Cu
       outputDepositDir = testDir.resolve("od").toAbsolutePath,
       datamanager = "easyadmin",
       depositPermissions = DepositPermissions("rwxrwx---", "admin"),
-      formatsFile = formatsFile,
+      formats = formats,
       ldap = ldap
     )
     val expectedOutputDir = Paths.get(getClass.getResource("/allfields/output").toURI)

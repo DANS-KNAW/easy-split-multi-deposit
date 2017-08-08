@@ -40,10 +40,8 @@ package object multideposit {
                       outputDepositDir: Path = null,
                       datamanager: Datamanager = null,
                       depositPermissions: DepositPermissions = null,
-                      private val formatsFile: Path = null,
+                      formats: Set[String] = Set.empty[String],
                       ldap: Ldap = null) {
-    val formats: Set[String] = Option(formatsFile).fold(Set.empty[String])(_.read().lines.toSet)
-
     override def toString: String =
       s"Settings(multideposit-dir=$multidepositDir, " +
         s"staging-dir=$stagingDir, " +
