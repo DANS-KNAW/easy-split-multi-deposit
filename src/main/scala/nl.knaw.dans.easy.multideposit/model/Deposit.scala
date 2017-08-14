@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit.model
 import java.nio.file.Path
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
+import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
 import org.joda.time.DateTime
 
 case class Deposit(depositId: DepositId,
@@ -53,6 +54,7 @@ case class Metadata(alternatives: List[String] = List.empty,
 
 case class AudioVideo(springfield: Option[Springfield] = Option.empty,
                       accessibility: Option[FileAccessRights.Value] = Option.empty,
+                      playMode: Option[PlayMode] = Option.empty,
                       avFiles: Set[AVFile] = Set.empty)
 
 sealed abstract class Creator

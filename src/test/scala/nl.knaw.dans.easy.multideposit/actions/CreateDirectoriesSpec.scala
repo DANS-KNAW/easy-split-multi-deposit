@@ -18,11 +18,11 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.Files
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
-import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
 
-class CreateDirectoriesSpec extends UnitSpec with BeforeAndAfter {
+class CreateDirectoriesSpec extends UnitSpec with BeforeAndAfterEach {
 
   implicit val settings = Settings(
     multidepositDir = testDir.resolve("md"),
@@ -31,9 +31,12 @@ class CreateDirectoriesSpec extends UnitSpec with BeforeAndAfter {
   private val depositId = "ds1"
   private val action = CreateDirectories(stagingDir(depositId), stagingBagDir(depositId))(1, depositId)
 
-  before {
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+
     // create depositDir base directory
     val baseDir = settings.stagingDir
+    baseDir.deleteDirectory()
     Files.createDirectory(baseDir)
     baseDir.toFile should exist
   }

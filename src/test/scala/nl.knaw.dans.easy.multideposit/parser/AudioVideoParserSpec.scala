@@ -20,7 +20,7 @@ import java.nio.file.Paths
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.{ ParseException, Settings, UnitSpec, _ }
 import nl.knaw.dans.lib.error.CompositeException
-import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
 
@@ -34,6 +34,7 @@ trait AudioVideoTestObjects {
       "SF_USER" -> "janvanmansum",
       "SF_COLLECTION" -> "jans-test-files",
       "SF_ACCESSIBILITY" -> "NONE",
+      "SF_PLAY_MODE" -> "menu",
       "AV_FILE" -> "reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "video about the centaur meteorite",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
@@ -44,6 +45,7 @@ trait AudioVideoTestObjects {
       "SF_USER" -> "",
       "SF_COLLECTION" -> "",
       "SF_ACCESSIBILITY" -> "",
+      "SF_PLAY_MODE" -> "",
       "AV_FILE" -> "reisverslag/centaur.mpg",
       "AV_FILE_TITLE" -> "",
       "AV_SUBTITLES" -> "reisverslag/centaur-nederlands.srt",
@@ -54,6 +56,7 @@ trait AudioVideoTestObjects {
   lazy val audioVideo = AudioVideo(
     springfield = Option(Springfield("dans", "janvanmansum", "jans-test-files")),
     accessibility = Option(FileAccessRights.NONE),
+    playMode = Option(PlayMode.Menu),
     avFiles = Set(
       AVFile(
         path = settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath,
@@ -73,9 +76,10 @@ trait AudioVideoTestObjects {
   )
 }
 
-class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with BeforeAndAfter {
+class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with BeforeAndAfterEach {
 
-  before {
+  override def beforeEach(): Unit = {
+    super.beforeEach()
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
   }
 
@@ -96,6 +100,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
       "SF_USER" -> "",
       "SF_COLLECTION" -> "",
       "SF_ACCESSIBILITY" -> "NONE",
+      "SF_PLAY_MODE" -> "",
       "AV_FILE" -> "",
       "AV_FILE_TITLE" -> "",
       "AV_SUBTITLES" -> "",
@@ -127,7 +132,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
     }
   }
 
-  it should "fail if there there are multiple AV_FILE_TITLEs for one file" in {
+  it should "fail if there are multiple AV_FILE_TITLEs for one file" in {
     val rows = audioVideoCSVRow1 ::
       audioVideoCSVRow2.updated("AV_FILE_TITLE", "another title") :: Nil
 
@@ -135,6 +140,42 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
       case Failure(CompositeException(ParseException(2, msg, _) :: Nil)) =>
         val file = settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath
         msg shouldBe s"The column 'AV_FILE_TITLE' can only have one value for file '$file'"
+    }
+  }
+
+  it should "default the SF_PLAY_MODE to 'continuous' when no value is given, but the Springfield fields are present" in {
+    val rows = audioVideoCSVRow1.updated("SF_PLAY_MODE", "") :: audioVideoCSVRow2 :: Nil
+
+    inside(extractAudioVideo(rows, 2, "ruimtereis01")) {
+      case Success(AudioVideo(_, _, Some(playMode), _)) => playMode shouldBe PlayMode.Continuous
+    }
+  }
+
+  it should "default the SF_PLAY_MODE to None when no value is given, and the Springfield fields are not present either" in {
+    val row1 = Map(
+      "SF_DOMAIN" -> "",
+      "SF_USER" -> "",
+      "SF_COLLECTION" -> "",
+      "SF_ACCESSIBILITY" -> "",
+      "SF_PLAY_MODE" -> "",
+      "AV_FILE" -> "",
+      "AV_FILE_TITLE" -> "",
+      "AV_SUBTITLES" -> "",
+      "AV_SUBTITLES_LANGUAGE" -> ""
+    )
+    val rows = row1 :: Nil
+
+    extractAudioVideo(rows, 2, "ruimtereis01") should matchPattern {
+      case Success(AudioVideo(_, _, None, _)) =>
+    }
+  }
+
+  it should "fail if there are multiple SF_PLAY_MODE values" in {
+    val rows = audioVideoCSVRow1 ::
+      audioVideoCSVRow2.updated("SF_PLAY_MODE", "continuous") :: Nil
+
+    extractAudioVideo(rows, 2, "ruimtereis01") should matchPattern {
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'SF_PLAY_MODE'. Found: [menu, continuous]", _)) =>
     }
   }
 
@@ -446,6 +487,33 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
     val row = Map("SF_ACCESSIBILITY" -> "unknown value")
     fileAccessRight(2)(row).value should matchPattern {
       case Failure(ParseException(2, "Value 'unknown value' is not a valid file accessright", _)) =>
+    }
+  }
+
+  "playMode" should "convert the value for SF_PLAY_MODE into the corresponding enum object" in {
+    val row = Map("SF_PLAY_MODE" -> "menu")
+    playMode(2)(row).value should matchPattern { case Success(PlayMode.Menu) => }
+  }
+
+  it should "return the correct PlayMode if I use all-uppercase in the SF_PLAY_MODE value" in {
+    val row = Map("SF_PLAY_MODE" -> "CONTINUOUS")
+    playMode(2)(row).value should matchPattern { case Success(PlayMode.Continuous) => }
+  }
+
+  it should "return the correct PlayMode if I use some weird casing in the SF_PLAY_MODE value" in {
+    val row = Map("SF_PLAY_MODE" -> "mEnU")
+    playMode(2)(row).value should matchPattern { case Success(PlayMode.Menu) => }
+  }
+
+  it should "return None if SF_PLAY_MODE is not defined" in {
+    val row = Map("SF_PLAY_MODE" -> "")
+    playMode(2)(row) shouldBe empty
+  }
+
+  it should "fail if the SF_PLAY_MODE value does not correspond to an object in the enum" in {
+    val row = Map("SF_PLAY_MODE" -> "unknown value")
+    playMode(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Value 'unknown value' is not a valid play mode", _)) =>
     }
   }
 }

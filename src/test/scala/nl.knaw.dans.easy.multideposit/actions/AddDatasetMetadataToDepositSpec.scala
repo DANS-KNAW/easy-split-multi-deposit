@@ -23,12 +23,12 @@ import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.deposi
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.parser._
 import org.joda.time.DateTime
-import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
 import scala.xml.{ Elem, Node }
 
-class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with BeforeAndAfter {
+class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with BeforeAndAfterEach {
 
   implicit val settings = new Settings(
     multidepositDir = testDir.resolve("md"),
@@ -114,7 +114,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
     </ddm:dcmiMetadata>
   </ddm:DDM>
 
-  before {
+  override def beforeEach(): Unit = {
     Paths.get(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.mpg").toURI)
       .copyFile(settings.multidepositDir.resolve(s"$depositId/reisverslag/centaur.mpg"))
     Paths.get(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.srt").toURI)

@@ -21,11 +21,11 @@ import java.security.MessageDigest
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import nl.knaw.dans.easy.multideposit.model.{ Deposit, DepositId }
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
-import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
 
-class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
+class AddBagToDepositSpec extends UnitSpec with BeforeAndAfterEach {
 
   implicit val settings = Settings(
     multidepositDir = testDir.resolve("md"),
@@ -40,13 +40,16 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfter {
   val file5Text = "mnopqr"
   val deposit: Deposit = testDeposit1
 
-  before {
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+
     multiDepositDir(depositId).resolve("file1.txt").write(file1Text)
     multiDepositDir(depositId).resolve("folder1/file2.txt").write(file2Text)
     multiDepositDir(depositId).resolve("folder1/file3.txt").write(file3Text)
     multiDepositDir(depositId).resolve("folder2/file4.txt").write(file4Text)
     multiDepositDir("ruimtereis02").resolve("folder3/file5.txt").write("file5Text")
 
+    settings.stagingDir.deleteDirectory()
     Files.createDirectories(stagingBagDir(depositId))
   }
 

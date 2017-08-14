@@ -61,7 +61,7 @@ The supported metadata elements are subdivided into the following groups:
 * Other DANS specific metadata elements: `DDM_CREATED`, `DDM_AVAILABLE`,
   `DDM_AUDIENCE`, `DDM_ACCESSRIGHTS`, `DEPOSITOR_ID`
 * Fields that specify the relation to a streaming surrogate on the Springfield
-  platform: `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, `SF_ACCESSIBILITY`
+  platform: `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, `SF_ACCESSIBILITY` and `SF_PLAY_MODE`
 * The use of `DC_CREATOR` and `DC_CONTRIBUTOR` is deprecated in favor of the new
   `DCX_CREATOR_*` and `DCX_CONTRIBUTOR_*` fields.
 
@@ -135,7 +135,11 @@ a audio or video presentation contained in the dataset:
 * The data provided in `SF_DOMAIN`, `SF_USER` and `SF_COLLECTION` are stored for further processing
   in the `deposit.properties` file.
 * `SF_ACCESSIBILITY` provides a way to override the file-accessibility from the default
-   `DDM_ACCESSRIGHTS` for all A/V file.
+  `DDM_ACCESSRIGHTS` for all A/V file.
+* `SF_PLAY_MODE` specifies how the video's are played in Springfield. The value must either be
+  `continuous` or `menu`. If no value is specified for a dataset with video/audio, the default will
+  be set to `continuous`. This value is only allowed if `SF_DOMAIN`, `SF_USER` and `SF_COLLECTION`
+  are provided as well.
 * The columns `AV_FILE`, `AV_FILE_TITLE`, `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` are used to
   provide extra metadata specific to audio/video files. For a path to a A/V file in `AV_FILE`,
   the user can specify at most one title in `AV_FILE_TITLE` and one or more combinations of subtitles
