@@ -30,7 +30,21 @@ import scala.xml.transform.{ RewriteRule, RuleTransformer }
 // http://www.scalatest.org/user_guide/sharing_tests
 class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
 
-  private val formatsFile: Path = testDir.resolve("formats.txt")
+  private val formats = """
+                          |application/postscript
+                          |application/rtf
+                          |application/pdf
+                          |application/msword
+                          |text/plain
+                          |text/html
+                          |text/sgml
+                          |text/xml
+                          |image/jpeg
+                          |image/gif
+                          |image/tiff
+                          |video/quicktime
+                          |video/mpeg1
+                        """.stripMargin.split("\n").map(_.trim).toSet
   private val allfields = testDir.resolve("md/allfields").toAbsolutePath
   private val invalidCSV = testDir.resolve("md/invalidCSV").toAbsolutePath
 

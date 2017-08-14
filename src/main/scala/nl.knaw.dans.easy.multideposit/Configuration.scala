@@ -22,7 +22,7 @@ import resource.managed
 
 import scala.io.Source
 
-case class Configuration(version: String, properties: PropertiesConfiguration)
+case class Configuration(version: String, properties: PropertiesConfiguration, formats: Set[String])
 
 object Configuration {
 
@@ -31,13 +31,17 @@ object Configuration {
     val cfgPath = Seq(Paths.get(s"/etc/opt/dans.knaw.nl/easy-split-multi-deposit/"), home.resolve("cfg"))
       .find(Files.exists(_))
       .getOrElse { throw new IllegalStateException("No configuration directory found") }
+    val formatsFile = cfgPath.resolve("formats.txt")
 
     new Configuration(
       version = managed(Source.fromFile(home.resolve("bin/version").toFile)).acquireAndGet(_.mkString),
       properties = new PropertiesConfiguration() {
         setDelimiterParsingDisabled(true)
         load(cfgPath.resolve("application.properties").toFile)
-      }
+      },
+      formats =
+        if (Files.exists(formatsFile)) managed(Source.fromFile(formatsFile.toFile)).acquireAndGet(_.getLines.map(_.trim).toSet)
+        else Set.empty[String]
     )
   }
 }

@@ -27,7 +27,7 @@ class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
   private val mockedProps = new Configuration("version x.y.z", new PropertiesConfiguration() {
     setDelimiterParsingDisabled(true)
     load(Paths.get(resourceDirString + "/debug-config", "application.properties").toFile)
-  })
+  }, formats = Set.empty[String])
 
   val mockedArgs = Array("-s", resourceDirString,
     resourceDirString + "/allfields/input",
