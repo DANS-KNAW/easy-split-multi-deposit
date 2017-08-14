@@ -33,10 +33,6 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfterEach {
     val allGroups = "cut -d: -f1 /etc/group".!!.split("\n").filterNot(_ startsWith "#").toList
     val userGroups = s"id -Gn $user".!!.split(" ").toList
 
-    println(s"user = $user")
-    println(s"allGroups = $allGroups")
-    println(s"userGroups = $userGroups")
-
     (userGroups, allGroups.diff(userGroups)) match {
       case (ug :: _, diff :: _) => (user, ug, diff)
       case (Nil, _) => throw new AssertionError("no suitable user group found")

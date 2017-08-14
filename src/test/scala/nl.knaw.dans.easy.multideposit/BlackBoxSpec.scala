@@ -216,8 +216,8 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
         val datasetTransformer = removeElemByName("available")
 
         // skipping the available field here
-        datasetTransformer.transform(XML.loadFile(datasetXml.toFile)) should
-          equalTrimmed(datasetTransformer.transform(XML.loadFile(expDatasetXml.toFile)))
+        datasetTransformer.transform(XML.loadFile(datasetXml.toFile)) \ "DDM" should
+          equalTrimmed(datasetTransformer.transform(XML.loadFile(expDatasetXml.toFile)) \ "DDM")
       }
 
       it should "check metadata/files.xml" in {
