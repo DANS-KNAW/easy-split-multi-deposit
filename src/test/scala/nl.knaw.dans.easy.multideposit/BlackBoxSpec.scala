@@ -59,7 +59,6 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
     function is called before the shared tests are set up or ran.
    */
   def beforeAll(): Unit = {
-//    Paths.get(getClass.getResource("/debug-config/formats.txt").toURI).copyFile(formats)
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
     Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
   }
@@ -72,13 +71,9 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
   private lazy val getFileSystemGroup: String = {
     import scala.sys.process._
 
-    val userName = Properties.userName
-    println(s"userName = $userName")
-
-    val groups = s"id -Gn ${ userName }".!!
-    println(s"groups = $groups")
-
-    groups.split(" ").headOption
+    s"id -Gn ${ Properties.userName }".!!
+      .split(" ")
+      .headOption
       .getOrElse(throw new AssertionError("no suitable user group found"))
   }
 
