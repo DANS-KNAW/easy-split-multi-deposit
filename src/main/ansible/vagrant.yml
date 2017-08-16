@@ -46,3 +46,10 @@
       name: vagrant
       groups: deposits
       append: yes
+
+  - name: Create staging directory
+    file:
+      path: /var/opt/dans.knaw.nl/tmp/easy-split-multi-deposit-staging
+      recurse: yes
+      state: directory
+      mode: "0777"
