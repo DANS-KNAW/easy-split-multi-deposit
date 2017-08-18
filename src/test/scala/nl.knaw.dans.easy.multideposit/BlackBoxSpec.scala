@@ -226,7 +226,7 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
         val filesXml = bag.resolve("metadata/files.xml")
         val expFilesXml = expBag.resolve("metadata/files.xml")
 
-        XML.loadFile(filesXml.toFile).toSet should equalTrimmed(XML.loadFile(expFilesXml.toFile).toSet)
+        (XML.loadFile(filesXml.toFile) \ "files").toSet should equalTrimmed((XML.loadFile(expFilesXml.toFile) \ "files").toSet)
       }
 
       it should "check deposit.properties" in {
