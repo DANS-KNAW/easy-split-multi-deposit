@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit.parser
 import nl.knaw.dans.easy.multideposit.ParseException
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.error._
+import org.joda.time.DateTime
 
 import scala.util.{ Failure, Success, Try }
 
@@ -36,6 +37,7 @@ trait MetadataParser {
       .map(_ (extractList(rows, "DCT_SPATIAL")))
       .map(_ (extractList(rows, "DCT_RIGHTSHOLDER")))
       .combine(extractList(rows)(relation))
+      .combine(extractList(rows)(dateColumn))
       .combine(extractList(rows)(contributor))
       .combine(extractList(rows)(subject))
       .combine(extractList(rows)(spatialPoint))
@@ -112,6 +114,31 @@ trait MetadataParser {
       case (None, Some(l), None) => Some(Try { LinkRelation(l) })
       case (None, None, Some(t)) => Some(Try { TitleRelation(t) })
       case (None, None, None) => None
+    }
+  }
+
+  def dateColumn(rowNum: => Int)(row: DepositRow): Option[Try[Date]] = {
+    val dateString = row.find("DCT_DATE")
+    val qualifierString = row.find("DCT_DATE_QUALIFIER")
+
+    (dateString, qualifierString) match {
+      case (Some(d), Some(q)) =>
+        DateQualifier.valueOf(q)
+          .map(qualifier => {
+            Try { DateTime.parse(d) }
+              .map(date => Some(Success(QualifiedDate(date, qualifier))))
+              .getOrRecover(e => Some(Failure(ParseException(rowNum, s"DCT_DATE value '$d' does not represent a date", e))))
+          })
+          .getOrElse {
+            q.toLowerCase match {
+              case "created" => Some(Failure(ParseException(rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_CREATED instead.")))
+              case "available" => Some(Failure(ParseException(rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_AVAILABLE instead.")))
+              case _ => Some(Failure(ParseException(rowNum, s"Value '$q' is not a valid date qualifier")))
+            }
+          }
+      case (Some(d), None) => Some(Success(TextualDate(d)))
+      case (None, Some(_)) => Some(Failure(ParseException(rowNum, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it")))
+      case (None, None) => None
     }
   }
 

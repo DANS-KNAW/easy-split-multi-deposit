@@ -159,6 +159,11 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
         QualifiedTitleRelation("q2", "t1"),
         LinkRelation("l2"),
         TitleRelation("t2")),
+      dates = List(
+        QualifiedDate(new DateTime(2017, 7, 30, 0, 0), DateQualifier.VALID),
+        QualifiedDate(new DateTime(2017, 7, 31, 0, 0), DateQualifier.DATE_SUBMITTED),
+        TextualDate("foobar")
+      ),
       contributors = List(
         ContributorOrganization("contr1"),
         ContributorPerson(initials = "A.B.", surname = "Jones"),
@@ -203,6 +208,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       <dcterms:q2>t1</dcterms:q2>
       <dc:relation>l2</dc:relation>
       <dc:relation>t2</dc:relation>
+      <dcterms:valid>2017-07-30</dcterms:valid>
+      <dcterms:dateSubmitted>2017-07-31</dcterms:dateSubmitted>
+      <dc:date>foobar</dc:date>
       <dcx-dai:contributorDetails>
         <dcx-dai:organization>
           <dcx-dai:name xml:lang="en">contr1</dcx-dai:name>

@@ -51,6 +51,9 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dcterms:rightsHolder>joke</dcterms:rightsHolder>
     <dcterms:rightsHolder>vesa</dcterms:rightsHolder>
     <dc:relation>barbapappa</dc:relation>
+    <dcterms:dateAccepted>2017-08-01</dcterms:dateAccepted>
+    <dcterms:date>random text</dcterms:date>
+    <dcterms:dateCopyrighted>2017-08-02</dcterms:dateCopyrighted>
     <dc:subject>astronomie</dc:subject>
     <dc:subject>telescopen</dc:subject>
     <dcterms:temporal>2015-2016</dcterms:temporal>

@@ -19,7 +19,7 @@ import java.nio.file.Path
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, LocalDate }
 
 case class Deposit(depositId: DepositId,
                    row: Int,
@@ -46,6 +46,7 @@ case class Metadata(alternatives: List[String] = List.empty,
                     spatials: List[String] = List.empty,
                     rightsholder: List[String] = List.empty,
                     relations: List[Relation] = List.empty,
+                    dates: List[Date] = List.empty,
                     contributors: List[Contributor] = List.empty,
                     subjects: List[Subject] = List.empty,
                     spatialPoints: List[SpatialPoint] = List.empty,
@@ -82,6 +83,10 @@ case class QualifiedLinkRelation(qualifier: String, link: String) extends Relati
 case class QualifiedTitleRelation(qualifier: String, title: String) extends Relation
 case class LinkRelation(link: String) extends Relation
 case class TitleRelation(title: String) extends Relation
+
+sealed abstract class Date
+case class QualifiedDate(date: DateTime, qualifier: DateQualifier.Value) extends Date
+case class TextualDate(text: String) extends Date
 
 case class Subject(subject: String = "", scheme: Option[String] = Option.empty)
 
