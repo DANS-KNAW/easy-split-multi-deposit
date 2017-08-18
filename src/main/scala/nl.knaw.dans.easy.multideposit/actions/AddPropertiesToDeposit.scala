@@ -76,7 +76,8 @@ case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings)
       "datamanager.email" -> Some(emailaddress),
       "springfield.domain" -> sf.map(_.domain),
       "springfield.user" -> sf.map(_.user),
-      "springfield.collection" -> sf.map(_.collection)
+      "springfield.collection" -> sf.map(_.collection),
+      "springfield.playmode" -> deposit.audioVideo.playMode.map(_.toString)
     )
 
     for ((key, value) <- props.collect { case (k, Some(v)) => (k, v) }) {

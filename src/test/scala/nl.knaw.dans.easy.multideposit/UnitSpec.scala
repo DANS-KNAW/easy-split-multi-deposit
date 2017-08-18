@@ -22,7 +22,7 @@ import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
 import org.scalatest._
 
-abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside with OneInstancePerTest {
+abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside {
 
   lazy val testDir: Path = {
     val path = Paths.get(s"target/test/${ getClass.getSimpleName }").toAbsolutePath
@@ -58,6 +58,7 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
       ),
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files")),
+        playMode = Option(PlayMode.Menu),
         avFiles = Set(AVFile(
           path = Paths.get("ruimtereis01/reisverslag/centaur.mpg"),
           title = Option("flyby of centaur"),

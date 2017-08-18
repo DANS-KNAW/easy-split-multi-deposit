@@ -15,17 +15,17 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.{ NoSuchFileException, Paths }
+import java.nio.file.{ Files, NoSuchFileException, Paths }
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model.{ AVFile, AudioVideo, FileAccessRights, Springfield, Subtitles }
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
-import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
 import scala.xml.XML
 
-class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with CustomMatchers {
+class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with CustomMatchers {
 
   implicit val settings = Settings(
     multidepositDir = testDir.resolve("md").toAbsolutePath,
@@ -33,12 +33,16 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfter with Cus
   )
   val depositId = "ruimtereis01"
 
-  before {
+  override def beforeEach(): Unit = {
+    settings.multidepositDir.deleteDirectory()
+    Files.createDirectory(settings.multidepositDir)
+    settings.multidepositDir.toFile should exist
+
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
     Paths.get(getClass.getResource("/mimetypes").toURI).copyDir(testDir.resolve("mimetypes"))
   }
 
-  "checkPreconditions" should "succeed if the deposit contains the SF_* fields in case a A/V file is found" in {
+  "checkPreconditions" should "succeed if the deposit contains the SF_* fields in case an A/V file is found" in {
     val deposit = testDeposit1.copy(
       depositId = depositId,
       audioVideo = testDeposit1.audioVideo.copy(

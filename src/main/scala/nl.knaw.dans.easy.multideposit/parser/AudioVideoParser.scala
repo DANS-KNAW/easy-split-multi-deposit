@@ -31,11 +31,12 @@ trait AudioVideoParser {
 
   def extractAudioVideo(rows: DepositRows, rowNum: Int, depositId: DepositId): Try[AudioVideo] = {
     Try {
-      ((springf: Option[Springfield], acc: Option[FileAccessRights.Value], avFiles: Set[AVFile]) => {
-        (springf, acc, avFiles) match {
-          case (None, _, fs) if fs.nonEmpty => Failure(ParseException(rowNum, "The column " +
+      ((springf: Option[Springfield], acc: Option[FileAccessRights.Value], playMode: Option[PlayMode.Value], avFiles: Set[AVFile]) => {
+        (springf, acc, playMode, avFiles) match {
+          case (None, _, _,  fs) if fs.nonEmpty => Failure(ParseException(rowNum, "The column " +
             "'AV_FILE' contains values, but the columns [SF_COLLECTION, SF_USER] do not"))
-          case (s, a, fs) => Try { AudioVideo(s, a, fs) }
+          case (s @ Some(_), a, None, fs) => Try { AudioVideo(s, a, Option(PlayMode.Continuous), fs) }
+          case (s, a, pm, fs) => Try { AudioVideo(s, a, pm, fs) }
         }
       }).curried
     }
@@ -43,6 +44,8 @@ trait AudioVideoParser {
         .flatMap(ss => atMostOne(rowNum, List("SF_DOMAIN", "SF_USER", "SF_COLLECTION"))(ss.map { case Springfield(d, u, c) => (d, u, c) }).map(_.map(Springfield.tupled))))
       .combine(extractList(rows)(fileAccessRight)
         .flatMap(atMostOne(rowNum, List("SF_ACCESSIBILITY"))))
+      .combine(extractList(rows)(playMode)
+        .flatMap(atMostOne(rowNum, List("SF_PLAY_MODE"))))
       .combine(extractList(rows)(avFile(depositId))
         .flatMap(_.groupBy { case (file, _, _) => file }
           .map((toAVFile(rowNum) _).tupled)
@@ -167,6 +170,13 @@ trait AudioVideoParser {
       .map(acc => FileAccessRights.valueOf(acc)
         .map(Success(_))
         .getOrElse(Failure(ParseException(rowNum, s"Value '$acc' is not a valid file accessright"))))
+  }
+
+  def playMode(rowNum: => Int)(row: DepositRow): Option[Try[PlayMode.Value]] = {
+    row.find("SF_PLAY_MODE")
+      .map(mode => PlayMode.valueOf(mode)
+        .map(Success(_))
+        .getOrElse(Failure(ParseException(rowNum, s"Value '$mode' is not a valid play mode"))))
   }
 }
 

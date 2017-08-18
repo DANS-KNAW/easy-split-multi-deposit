@@ -18,11 +18,11 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.{ Files, Paths }
 
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
-import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
 
-class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter {
+class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfterEach {
 
   implicit val settings = Settings(
     multidepositDir = testDir.resolve("input"),
@@ -30,9 +30,10 @@ class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter {
     outputDepositDir = testDir.resolve("dd")
   )
 
-  before {
+  override def beforeEach(): Unit = {
     // create stagingDir content
     val baseDir = settings.stagingDir
+    baseDir.deleteDirectory()
     Files.createDirectory(baseDir)
     baseDir.toFile should exist
 
@@ -43,6 +44,10 @@ class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfter {
 
     stagingDir("ruimtereis01").toFile should exist
     stagingDir("ruimtereis02").toFile should exist
+
+    settings.outputDepositDir.deleteDirectory()
+    Files.createDirectory(settings.outputDepositDir)
+    settings.outputDepositDir.toFile should exist
   }
 
   "checkPreconditions" should "verify that the deposit does not yet exist in the outputDepositDir" in {

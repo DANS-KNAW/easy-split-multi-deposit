@@ -18,7 +18,6 @@ package nl.knaw.dans.easy
 import java.io.IOException
 import java.nio.charset.Charset
 import java.nio.file.{ Files, Path }
-import java.util.Properties
 
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
@@ -27,7 +26,7 @@ import resource._
 
 import scala.collection.JavaConverters._
 import scala.util.Try
-import scala.xml.{ Elem, XML }
+import scala.xml.{ Elem, PrettyPrinter, Utility, XML }
 
 package object multideposit {
 
@@ -95,14 +94,14 @@ package object multideposit {
     }
   }
 
-  implicit class FileExtensions(val file: Path) extends AnyVal {
+  implicit class FileExtensions(val path: Path) extends AnyVal {
     /**
      * Writes a CharSequence to a file creating the file if it does not exist using the default encoding for the VM.
      *
      * @param data the content to write to the file
      */
     @throws[IOException]("in case of an I/O error")
-    def write(data: String, encoding: Charset = encoding): Unit = FileUtils.write(file.toFile, data, encoding)
+    def write(data: String, encoding: Charset = encoding): Unit = FileUtils.write(path.toFile, data, encoding)
 
     /**
      * Writes the xml to `file` and prepends a simple xml header: `<?xml version="1.0" encoding="UTF-8"?>`
@@ -112,8 +111,8 @@ package object multideposit {
      */
     @throws[IOException]("in case of an I/O error")
     def writeXml(elem: Elem, encoding: Charset = encoding): Unit = {
-      Files.createDirectories(file.getParent)
-      XML.save(file.toString, elem, encoding.toString, xmlDecl = true)
+      Files.createDirectories(path.getParent)
+      XML.save(path.toString, XML.loadString(new PrettyPrinter(160, 2).format(Utility.trim(elem))), encoding.toString, xmlDecl = true)
     }
 
     /**
@@ -122,7 +121,7 @@ package object multideposit {
      * @param data the content to write to the file
      */
     @throws[IOException]("in case of an I/O error")
-    def append(data: String): Unit = FileUtils.write(file.toFile, data, true)
+    def append(data: String): Unit = FileUtils.write(path.toFile, data, true)
 
     /**
      * Reads the contents of a file into a String using the default encoding for the VM.
@@ -131,7 +130,7 @@ package object multideposit {
      * @return the file contents, never ``null``
      */
     @throws[IOException]("in case of an I/O error")
-    def read(encoding: Charset = encoding): String = FileUtils.readFileToString(file.toFile, encoding)
+    def read(encoding: Charset = encoding): String = FileUtils.readFileToString(path.toFile, encoding)
 
     /**
      * Determines whether the ``parent`` directory contains the ``child`` element (a file or directory).
@@ -151,7 +150,7 @@ package object multideposit {
      * @return true is the candidate leaf is under by the specified composite. False otherwise.
      */
     @throws[IOException]("if an IO error occurs while checking the files.")
-    def directoryContains(child: Path): Boolean = FileUtils.directoryContains(file.toFile, child.toFile)
+    def directoryContains(child: Path): Boolean = FileUtils.directoryContains(path.toFile, child.toFile)
 
     /**
      * Copies a file to a new location preserving the file date.
@@ -171,7 +170,7 @@ package object multideposit {
     @throws[NullPointerException]("if source or destination is null")
     @throws[IOException]("if source or destination is invalid")
     @throws[IOException]("if an IO error occurs during copying")
-    def copyFile(destFile: Path): Unit = FileUtils.copyFile(file.toFile, destFile.toFile)
+    def copyFile(destFile: Path): Unit = FileUtils.copyFile(path.toFile, destFile.toFile)
 
     /**
      * Copies a whole directory to a new location preserving the file dates.
@@ -194,7 +193,7 @@ package object multideposit {
     @throws[NullPointerException]("if source or destination is null")
     @throws[IOException]("if source or destination is invalid")
     @throws[IOException]("if an IO error occurs during copying")
-    def copyDir(destDir: Path): Unit = FileUtils.copyDirectory(file.toFile, destDir.toFile)
+    def copyDir(destDir: Path): Unit = FileUtils.copyDirectory(path.toFile, destDir.toFile)
 
     /**
      * Moves a directory.
@@ -207,13 +206,13 @@ package object multideposit {
     @throws[FileExistsException]("if the destination directory exists")
     @throws[IOException]("if source or destination is invalid")
     @throws[IOException]("if an IO error occurs moving the file")
-    def moveDir(destDir: Path): Unit = FileUtils.moveDirectory(file.toFile, destDir.toFile)
+    def moveDir(destDir: Path): Unit = FileUtils.moveDirectory(path.toFile, destDir.toFile)
 
     /**
      * Deletes a directory recursively.
      */
     @throws[IOException]("in case deletion is unsuccessful")
-    def deleteDirectory(): Unit = FileUtils.deleteDirectory(file.toFile)
+    def deleteDirectory(): Unit = FileUtils.deleteDirectory(path.toFile)
 
     /**
      * Finds files within a given directory and its subdirectories.
@@ -221,7 +220,7 @@ package object multideposit {
      * @return a ``List`` of ``java.nio.file.Path`` with the files
      */
     def listRecursively(predicate: Path => Boolean = _ => true): List[Path] = {
-      managed(Files.walk(file))
+      managed(Files.walk(path))
         .acquireAndGet(_.iterator().asScala.filter(predicate).toList)
     }
   }
