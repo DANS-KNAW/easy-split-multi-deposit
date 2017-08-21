@@ -13,6 +13,16 @@ This dataset contains an `instructions.csv` file that will be marked as invalid 
     * more than one value is defined
 * DDM_AVAILABLE
     * '_invalid-date_' does not represent a date
+* DC_TYPE
+    * not a valid type given
+* DC_LANGUAGE
+    * not a valid (ISO639.2) language
+    * '_encoding=UTF-8_' does not represent a valid language
+* DCT_DATE
+    * '_Text with Qualifier_' does not represent a date
+    * '_30-07-1992_' does not represent a date
+* DCT_DATE_QUALIFIER
+    * missing DCT_DATE value to go with this qualifier
 * SF_USER
     * no value found
 * AV_FILE
@@ -21,6 +31,8 @@ This dataset contains an `instructions.csv` file that will be marked as invalid 
     * filetitle is defined, but no file path is given in AV_FILE
 * DEPOSITOR_ID
     * multiple distinct depositorIDs: {user001, invalid-user}
+* DC_IDENTIFIER
+    * no value found
 
 **Note:** there are more invalid values in `instructions.csv`, but these are only found when this
 first badge of errors is resolved.
