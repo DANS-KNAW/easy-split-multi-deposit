@@ -26,6 +26,7 @@ object Headers {
       composedSpatialPointFields ++
       composedSpatialBoxFields ++
       composedRelationFields ++
+      composedDateFields ++
       composedTemporalFields ++
       composedSubjectFields ++
       springfieldHeaders ++
@@ -92,6 +93,11 @@ object Headers {
     "DCX_RELATION_QUALIFIER",
     "DCX_RELATION_TITLE",
     "DCX_RELATION_LINK"
+  )
+
+  private lazy val composedDateFields = Set(
+    "DCT_DATE",
+    "DCT_DATE_QUALIFIER"
   )
 
   private lazy val composedTemporalFields = Set(

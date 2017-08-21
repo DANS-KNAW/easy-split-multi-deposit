@@ -47,7 +47,7 @@ The supported metadata elements are subdivided into the following groups:
   `DC_CREATOR`*, `DC_CONTRIBUTOR`*, `DC_SUBJECT`, `DC_PUBLISHER`,
   `DC_TYPE`, `DC_FORMAT`, `DC_IDENTIFIER`, `DC_IDENTIFIER_TYPE`, `DC_SOURCE`, `DC_LANGUAGE`;
 * The following [Dublin Core Term elements]: `DCT_ALTERNATIVE`, `DCT_SPATIAL`,
-  `DCT_TEMPORAL`, `DCT_RIGHTSHOLDER`;
+  `DCT_TEMPORAL`, `DCT_RIGHTSHOLDER`, `DCT_DATE`, `DCT_DATE_QUALIFIER`;
 * DANS specific specializations of Dublin Core: `DCX_CREATOR_TITLES`, 
   `DCX_CREATOR_INITIALS`, `DCX_CREATOR_INSERTIONS`,
   `DCX_CREATOR_SURNAME`, `DCX_CREATOR_DAI`, `DCX_CREATOR_ORGANIZATION`,
@@ -115,6 +115,12 @@ In the latter case an extra `xsi:type` is added to the resulting DDM xml.
 `DC_TYPE` can only have a value from the set {`Collection`, `Dataset`, `Event`, `Image`, 
 `InteractiveResource`, `MovingImage`, `PhysicalObject`, `Service`, `Software`, `Sound`, 
 `StillImage`, `Text`}. If no value is given, `Dataset` is choosen as a default.
+
+#### Date
+`DCT_DATE_QUALIFIER` can only have a value from the set {`valid`, `issued`, `modified`,
+`dateAccepted`, `dateCopyrighted`, `dateSubmitted`}. If one of these values is given, `DCT_DATE` has
+to be a date, formatted as `yyyy-mm-dd`. If `DCT_DATE_QUALIFIER` isn't provided but the related
+`DCT_DATE` is, the latter is considered to be free text.
 
 #### Springfield
 [Springfield Web TV] is the platform that DANS uses to host the streaming surrogates (versions)

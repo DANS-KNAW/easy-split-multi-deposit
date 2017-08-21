@@ -65,14 +65,14 @@ object AddDatasetMetadataToDeposit {
       {profile.titles.map(elem("dc:title"))}
       {profile.descriptions.map(elem("dcterms:description"))}
       {profile.creators.map(createCreator)}
-      {elem("ddm:created")(date(profile.created))}
-      {elem("ddm:available")(date(profile.available))}
+      {elem("ddm:created")(formatDate(profile.created))}
+      {elem("ddm:available")(formatDate(profile.available))}
       {profile.audiences.map(elem("ddm:audience"))}
       {elem("ddm:accessRights")(profile.accessright.toString)}
     </ddm:profile>
   }
 
-  def date(dateTime: DateTime): String = {
+  def formatDate(dateTime: DateTime): String = {
     dateTime.toString(ISODateTimeFormat.date())
   }
 
@@ -214,6 +214,13 @@ object AddDatasetMetadataToDeposit {
     }</ddm:relation>
   }
 
+  def createDate(date: Date): Elem = {
+    date match {
+      case QualifiedDate(d, q) => elem(s"dcterms:$q")(formatDate(d))
+      case TextualDate(text) => elem("dc:date")(text)
+    }
+  }
+
   def createIdentifier(identifier: Identifier): Elem = {
     identifier.idType
       .map(idType => <dc:identifier xsi:type={s"id-type:$idType"}>{identifier.id}</dc:identifier>)
@@ -249,6 +256,7 @@ object AddDatasetMetadataToDeposit {
       {metadata.spatials.map(elem("dcterms:spatial"))}
       {metadata.rightsholder.map(elem("dcterms:rightsHolder"))}
       {metadata.relations.map(createRelation) ++ maybeSpringfield.map(createSurrogateRelation) }
+      {metadata.dates.map(createDate)}
       {metadata.contributors.map(createContributor)}
       {metadata.subjects.map(createSubject)}
       {metadata.spatialPoints.map(createSpatialPoint)}

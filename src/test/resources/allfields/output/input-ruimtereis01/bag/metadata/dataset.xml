@@ -43,6 +43,8 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dcterms:isRequiredBy>blabla</dcterms:isRequiredBy>
     <dc:relation>http://x</dc:relation>
     <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$sdo-id</ddm:relation>
+    <dcterms:valid>2017-07-30</dcterms:valid>
+    <dcterms:issued>2017-07-31</dcterms:issued>
     <dcx-dai:contributorDetails>
       <dcx-dai:author>
         <dcx-dai:titles>Prof. Dr. Mr. Ir.</dcx-dai:titles>

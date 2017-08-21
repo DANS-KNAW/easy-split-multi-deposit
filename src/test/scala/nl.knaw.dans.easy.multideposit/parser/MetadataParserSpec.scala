@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.{ ParseException, UnitSpec }
+import org.joda.time.DateTime
 
 import scala.util.{ Failure, Success }
 
@@ -38,6 +39,9 @@ trait MetadataTestObjects {
       // relation
       "DCX_RELATION_QUALIFIER" -> "replaces",
       "DCX_RELATION_LINK" -> "foo",
+      // date
+      "DCT_DATE" -> "2016-02-01",
+      "DCT_DATE_QUALIFIER" -> "Date Submitted",
       // contributor
       "DCX_CONTRIBUTOR_INITIALS" -> "A.",
       "DCX_CONTRIBUTOR_SURNAME" -> "Jones",
@@ -62,6 +66,7 @@ trait MetadataTestObjects {
       "DC_LANGUAGE" -> "nld",
       "DCT_SPATIAL" -> "spat2",
       "DCT_RIGHTSHOLDER" -> "right2",
+      "DCT_DATE" -> "some random text",
       // spatialBox
       "DCX_SPATIAL_WEST" -> "12",
       "DCX_SPATIAL_EAST" -> "23",
@@ -82,6 +87,7 @@ trait MetadataTestObjects {
     spatials = List("spat1", "spat2"),
     rightsholder = List("right1", "right2"),
     relations = List(QualifiedLinkRelation("replaces", "foo")),
+    dates = List(QualifiedDate(new DateTime(2016, 2, 1, 0, 0), DateQualifier.DATE_SUBMITTED), TextualDate("some random text")),
     contributors = List(ContributorPerson(initials = "A.", surname = "Jones")),
     subjects = List(Subject("IX", Option("abr:ABRcomplex"))),
     spatialPoints = List(SpatialPoint("12", "34", Option("degrees"))),
@@ -356,6 +362,123 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     relation(2)(row) shouldBe empty
+  }
+
+  "date" should "convert a textual date into the corresponding object" in {
+    val row = Map(
+      "DCT_DATE" -> "random text",
+      "DCT_DATE_QUALIFIER" -> ""
+    )
+
+    dateColumn(2)(row).value should matchPattern { case Success(TextualDate("random text")) => }
+  }
+
+  it should "fail if it has a correct qualifier but no well formatted date" in {
+    val row = Map(
+      "DCT_DATE" -> "random text",
+      "DCT_DATE_QUALIFIER" -> "Valid"
+    )
+
+    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "DCT_DATE value 'random text' does not represent a date", _)) => }
+  }
+
+  it should "convert a date with qualifier into the corresponding object" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "Issued"
+    )
+
+    inside(dateColumn(2)(row).value) {
+      case Success(QualifiedDate(date, DateQualifier.ISSUED)) =>
+        date shouldBe new DateTime(2016, 7, 30, 0, 0)
+    }
+  }
+
+  it should "succeed when the qualifier is formatted differently (capitals)" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "dateAccepted"
+    )
+
+    inside(dateColumn(2)(row).value) {
+      case Success(QualifiedDate(date, DateQualifier.DATE_ACCEPTED)) =>
+        date shouldBe new DateTime(2016, 7, 30, 0, 0)
+    }
+  }
+
+  it should "succeed when the qualifier contains spaces instead of CamelCase" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "date accepted"
+    )
+
+    inside(dateColumn(2)(row).value) {
+      case Success(QualifiedDate(date, DateQualifier.DATE_ACCEPTED)) =>
+        date shouldBe new DateTime(2016, 7, 30, 0, 0)
+    }
+  }
+
+  it should "succeed if the qualifier isn't given, but the date is (properly formatted)" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> ""
+    )
+
+    dateColumn(2)(row).value should matchPattern { case Success(TextualDate("2016-07-30")) => }
+  }
+
+  it should "fail if the qualifier is unknown" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "unknown"
+    )
+
+    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "Value 'unknown' is not a valid date qualifier", _)) => }
+  }
+
+  it should "fail if the date isn't properly formatted" in {
+    val row = Map(
+      "DCT_DATE" -> "30-07-2016",
+      "DCT_DATE_QUALIFIER" -> "Issued"
+    )
+
+    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "DCT_DATE value '30-07-2016' does not represent a date", _)) => }
+  }
+
+  it should "fail if no date is given, but a valid qualifier is given" in {
+    val row = Map(
+      "DCT_DATE" -> "",
+      "DCT_DATE_QUALIFIER" -> "Issued"
+    )
+
+    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it", _)) => }
+  }
+
+  it should "fail if the qualifier is equal to 'available' since we use a different keyword for that" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "Available"
+    )
+
+    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "DCT_DATE_QUALIFIER value 'Available' is not allowed here. Use column DDM_AVAILABLE instead.", _)) => }
+  }
+
+  it should "fail if the qualifier is equal to 'created' since we use a different keyword for that" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "Created"
+    )
+
+    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "DCT_DATE_QUALIFIER value 'Created' is not allowed here. Use column DDM_CREATED instead.", _)) => }
+  }
+
+  it should "return an empty value if both values are empty" in {
+    val row = Map(
+      "DCT_DATE" -> "",
+      "DCT_DATE_QUALIFIER" -> ""
+    )
+
+    dateColumn(2)(row) shouldBe empty
   }
 
   "subject" should "convert the csv input into the corresponding object" in {
