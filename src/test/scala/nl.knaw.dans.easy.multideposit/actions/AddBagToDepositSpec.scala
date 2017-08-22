@@ -27,7 +27,7 @@ import scala.util.Success
 
 class AddBagToDepositSpec extends UnitSpec with BeforeAndAfterEach {
 
-  implicit val settings = Settings(
+  implicit val settings: Settings = Settings(
     multidepositDir = testDir.resolve("md"),
     stagingDir = testDir.resolve("sd")
   )
@@ -92,7 +92,7 @@ class AddBagToDepositSpec extends UnitSpec with BeforeAndAfterEach {
   }
 
   it should "create a bag with no files in data when the input directory does not exist" in {
-    implicit val settings = Settings(
+    implicit val settings: Settings = Settings(
       multidepositDir = testDir.resolve("md-empty"),
       stagingDir = testDir.resolve("sd")
     )

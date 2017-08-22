@@ -25,7 +25,7 @@ import scala.util.{ Failure, Success }
 class RetrieveDatamanagerActionSpec extends UnitSpec with MockFactory {
 
   val ldapMock: Ldap = mock[Ldap]
-  implicit val settings = Settings(
+  implicit val settings: Settings = Settings(
     datamanager = "dm",
     ldap = ldapMock
   )

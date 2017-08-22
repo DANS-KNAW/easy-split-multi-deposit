@@ -28,7 +28,7 @@ object Main extends DebugEnhancedLogging {
 
   def main(args: Array[String]): Unit = {
     debug("Starting application")
-    implicit val settings = CommandLineOptions.parse(args)
+    implicit val settings: Settings = CommandLineOptions.parse(args)
 
     run
       .doIfFailure { case e =>

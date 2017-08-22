@@ -29,6 +29,7 @@ object Headers {
       composedDateFields ++
       composedTemporalFields ++
       composedSubjectFields ++
+      fileDescriptorHeaders ++
       springfieldHeaders ++
       audioVideoHeaders
   }
@@ -110,17 +111,21 @@ object Headers {
     "DC_SUBJECT_SCHEME"
   )
 
+  private lazy val fileDescriptorHeaders = Set(
+    "FILE_PATH",
+    "FILE_TITLE",
+    "FILE_ACCESSIBILITY"
+  )
+
   private lazy val springfieldHeaders = Set(
     "SF_DOMAIN",
     "SF_USER",
     "SF_COLLECTION",
-    "SF_ACCESSIBILITY",
     "SF_PLAY_MODE"
   )
 
   private lazy val audioVideoHeaders = Set(
-    "AV_FILE",
-    "AV_FILE_TITLE",
+    "AV_FILE", // TODO rename to AV_FILE_PATH
     "AV_SUBTITLES",
     "AV_SUBTITLES_LANGUAGE"
   )

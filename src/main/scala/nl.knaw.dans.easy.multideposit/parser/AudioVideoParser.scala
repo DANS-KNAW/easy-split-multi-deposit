@@ -15,161 +15,77 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.{ Files, Path, Paths }
+import java.nio.file.{ Files, Path }
 
+import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
 import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.easy.multideposit.{ ParseException, Settings, _ }
+import nl.knaw.dans.easy.multideposit.{ ParseException, Settings }
 import nl.knaw.dans.lib.error._
-import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
 
 trait AudioVideoParser {
-  this: ParserUtils with DebugEnhancedLogging =>
+  this: ParserUtils =>
 
   implicit val settings: Settings
 
   def extractAudioVideo(rows: DepositRows, rowNum: Int, depositId: DepositId): Try[AudioVideo] = {
     Try {
-      ((springf: Option[Springfield], acc: Option[FileAccessRights.Value], playMode: Option[PlayMode.Value], avFiles: Set[AVFile]) => {
-        (springf, acc, playMode, avFiles) match {
-          case (None, _, _,  fs) if fs.nonEmpty => Failure(ParseException(rowNum, "The column " +
+      ((springf: Option[Springfield], avFiles: Map[Path, Set[Subtitles]]) => {
+        (springf, avFiles) match {
+          case (None, avs) if avs.nonEmpty => Failure(ParseException(rowNum, "The column " +
             "'AV_FILE' contains values, but the columns [SF_COLLECTION, SF_USER] do not"))
-          case (s @ Some(_), a, None, fs) => Try { AudioVideo(s, a, Option(PlayMode.Continuous), fs) }
-          case (s, a, pm, fs) => Try { AudioVideo(s, a, pm, fs) }
+          case (s, avs) => Try { AudioVideo(s, avs) }
         }
       }).curried
     }
       .combine(extractList(rows)(springfield)
-        .flatMap(ss => atMostOne(rowNum, List("SF_DOMAIN", "SF_USER", "SF_COLLECTION"))(ss.map { case Springfield(d, u, c) => (d, u, c) }).map(_.map(Springfield.tupled))))
-      .combine(extractList(rows)(fileAccessRight)
-        .flatMap(atMostOne(rowNum, List("SF_ACCESSIBILITY"))))
-      .combine(extractList(rows)(playMode)
-        .flatMap(atMostOne(rowNum, List("SF_PLAY_MODE"))))
+        .flatMap(ss => atMostOne(rowNum, List("SF_DOMAIN", "SF_USER", "SF_COLLECTION", "SF_PLAY_MODE"))(ss.map { case Springfield(d, u, c, pm) => (d, u, c, pm) }).map(_.map(Springfield.tupled))))
       .combine(extractList(rows)(avFile(depositId))
-        .flatMap(_.groupBy { case (file, _, _) => file }
-          .map((toAVFile(rowNum) _).tupled)
-          .collectResults
-          .map(_.toSet)))
+        .map(_.groupBy { case (file, _) => file }
+          .mapValues(_.collect { case (_, subtitles) => subtitles }.toSet)))
       .flatten
-  }
-
-  private def toAVFile(rowNum: => Int)(file: Path, instrPerFile: List[(Path, Option[String], Option[Subtitles])]): Try[AVFile] = {
-    val subtitles = instrPerFile.collect { case (_, _, Some(instr)) => instr }
-    instrPerFile.collect { case (_, Some(title), _) => title } match {
-      case Seq() => Success(AVFile(file, None, subtitles))
-      case Seq(title) => Success(AVFile(file, Some(title), subtitles))
-      case Seq(_, _ @ _*) => Failure(ParseException(rowNum, s"The column 'AV_FILE_TITLE' " +
-        s"can only have one value for file '$file'"))
-    }
   }
 
   def springfield(rowNum: => Int)(row: DepositRow): Option[Try[Springfield]] = {
     val domain = row.find("SF_DOMAIN")
     val user = row.find("SF_USER")
     val collection = row.find("SF_COLLECTION")
+    val plm = playMode(rowNum)(row)
 
-    def springfield(domain: String, user: String, collection: String): Try[Springfield] = {
-      Try { Springfield.curried }
-        .combine(checkValidChars(domain, rowNum, "SF_DOMAIN"))
+    def springfield(domain: Option[String], user: String, collection: String, plm: PlayMode): Try[Springfield] = {
+      domain
+        .map(d => Try { Springfield.curried }
+          .combine(checkValidChars(d, rowNum, "SF_DOMAIN")))
+        .getOrElse(Try { ((user: String, collection: String, playMode: PlayMode) => Springfield(user = user, collection = collection, playMode = playMode)).curried })
+        .combine(checkValidChars(user, rowNum, "SF_USER"))
+        .combine(checkValidChars(collection, rowNum, "SF_COLLECTION"))
+        .map(_(plm))
+    }
+
+    def springfieldWithoutPlayMode(domain: Option[String], user: String, collection: String): Try[Springfield] = {
+      domain
+        .map(d => Try { ((domain: String, user: String, collection: String) => Springfield(domain, user, collection)).curried }
+          .combine(checkValidChars(d, rowNum, "SF_DOMAIN")))
+        .getOrElse(Try { ((user: String, collection: String) => Springfield(user = user, collection = collection)).curried })
         .combine(checkValidChars(user, rowNum, "SF_USER"))
         .combine(checkValidChars(collection, rowNum, "SF_COLLECTION"))
     }
 
-    def springfieldWithDefaultDomain(user: String, collection: String): Try[Springfield] = {
-      Try { ((user: String, collection: String) => Springfield(user = user, collection = collection)).curried }
-        .combine(checkValidChars(user, rowNum, "SF_USER"))
-        .combine(checkValidChars(collection, rowNum, "SF_COLLECTION"))
+    lazy val collectionException = ParseException(rowNum, "Missing value for: SF_COLLECTION")
+    lazy val userException = ParseException(rowNum, "Missing value for: SF_USER")
+
+    (domain, user, collection, plm) match {
+      case (d, Some(u), Some(c), Some(Success(pm))) => Some(springfield(d, u, c, pm))
+      case (d, Some(u), Some(c), None) => Some(springfieldWithoutPlayMode(d, u, c))
+      case (_, Some(_), None, Some(Failure(e))) => Some(Failure(new CompositeException(collectionException, e)))
+      case (_, Some(_), None, _) => Some(Failure(collectionException))
+      case (_, None, Some(_), Some(Failure(e))) => Some(Failure(new CompositeException(userException, e)))
+      case (_, None, Some(_), _) => Some(Failure(userException))
+      case (_, _, _, Some(Failure(e))) => Some(Failure(e))
+      case (_, None, None, Some(Success(pm))) => Some(Failure(ParseException(rowNum, "Missing values for these columns: [SF_COLLECTION, SF_USER]")))
+      case (_, None, None, _) => None
     }
-
-    (domain, user, collection) match {
-      case (Some(d), Some(u), Some(c)) => Some(springfield(d, u, c))
-      case (None, Some(u), Some(c)) => Some(springfieldWithDefaultDomain(u, c))
-      case (_, Some(_), None) => Some(Failure(ParseException(rowNum, "Missing value for: SF_COLLECTION")))
-      case (_, None, Some(_)) => Some(Failure(ParseException(rowNum, "Missing value for: SF_USER")))
-      case (_, None, None) => None
-    }
-  }
-
-  /**
-   * Returns the absolute file for the given `path`. If the input is correct, `path` is relative
-   * to the deposit it is in.
-   *
-   * By means of backwards compatibility, the `path` might also be
-   * relative to the multideposit. In this case the correct absolute file is returned as well,
-   * besides which a warning is logged, notifying the user that `path` should be relative to the
-   * deposit instead.
-   *
-   * If both options do not suffice, the path is just wrapped in a `File`.
-   *
-   * @param path the path to a file, as provided by the user input
-   * @return the absolute path to this file, if it exists
-   */
-  private def findPath(depositId: DepositId)(path: String): Path = {
-    lazy val option1 = multiDepositDir(depositId).resolve(path)
-    lazy val option2 = settings.multidepositDir.resolve(path)
-
-    (option1, option2) match {
-      case (path1, _) if Files.exists(path1) => path1
-      case (_, path2) if Files.exists(path2) =>
-        logger.warn(s"path '$path' is not relative to its depositId '$depositId', but rather relative to the multideposit")
-        path2
-      case (_, _) => Paths.get(path)
-    }
-  }
-
-  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(Path, Option[String], Option[Subtitles])]] = {
-    val file = row.find("AV_FILE").map(findPath(depositId))
-    val title = row.find("AV_FILE_TITLE")
-    val subtitle = row.find("AV_SUBTITLES").map(findPath(depositId))
-    val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
-
-    (file, title, subtitle, subtitleLang) match {
-      case (Some(p), t, Some(sub), subLang)
-        if Files.exists(p) &&
-          Files.isRegularFile(p) &&
-          Files.exists(sub) &&
-          Files.isRegularFile(sub) &&
-          subLang.forall(isValidISO639_1Language) =>
-        Some(Try { (p, t, Some(Subtitles(sub, subLang))) })
-      case (Some(p), _, Some(_), _)
-        if !Files.exists(p) =>
-        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' does not exist")))
-      case (Some(p), _, Some(_), _)
-        if !Files.isRegularFile(p) =>
-        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' is not a file")))
-      case (Some(_), _, Some(sub), _)
-        if !Files.exists(sub) =>
-        Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' does not exist")))
-      case (Some(_), _, Some(sub), _)
-        if !Files.isRegularFile(sub) =>
-        Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' is not a file")))
-      case (Some(_), _, Some(_), Some(subLang))
-        if !isValidISO639_1Language(subLang) =>
-        Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '$subLang' doesn't have a valid ISO 639-1 language value")))
-      case (Some(_), _, None, Some(subLang)) =>
-        Some(Failure(ParseException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
-      case (Some(p), t, None, None)
-        if Files.exists(p) &&
-          Files.isRegularFile(p) =>
-        Some(Success((p, t, None)))
-      case (Some(p), _, None, None)
-        if !Files.exists(p) =>
-        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' does not exist")))
-      case (Some(p), _, None, None)
-        if !Files.isRegularFile(p) =>
-        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' is not a file")))
-      case (None, None, None, None) => None
-      case (None, _, _, _) =>
-        Some(Failure(ParseException(rowNum, "No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined")))
-    }
-  }
-
-  def fileAccessRight(rowNum: => Int)(row: DepositRow): Option[Try[FileAccessRights.Value]] = {
-    row.find("SF_ACCESSIBILITY")
-      .map(acc => FileAccessRights.valueOf(acc)
-        .map(Success(_))
-        .getOrElse(Failure(ParseException(rowNum, s"Value '$acc' is not a valid file accessright"))))
   }
 
   def playMode(rowNum: => Int)(row: DepositRow): Option[Try[PlayMode.Value]] = {
@@ -178,10 +94,55 @@ trait AudioVideoParser {
         .map(Success(_))
         .getOrElse(Failure(ParseException(rowNum, s"Value '$mode' is not a valid play mode"))))
   }
+
+  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(Path, Subtitles)]] = {
+    val file = row.find("AV_FILE").map(findPath(depositId))
+    val subtitle = row.find("AV_SUBTITLES").map(findPath(depositId))
+    val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
+
+    (file, subtitle, subtitleLang) match {
+      case (Some(p), Some(sub), subLang)
+        if Files.exists(p) &&
+          Files.isRegularFile(p) &&
+          Files.exists(sub) &&
+          Files.isRegularFile(sub) &&
+          subLang.forall(isValidISO639_1Language) =>
+        Some(Success { (p, Subtitles(sub, subLang)) })
+      case (Some(p), Some(_), _)
+        if !Files.exists(p) =>
+        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' does not exist")))
+      case (Some(p), Some(_), _)
+        if !Files.isRegularFile(p) =>
+        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' is not a file")))
+      case (Some(_), Some(sub), _)
+        if !Files.exists(sub) =>
+        Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' does not exist")))
+      case (Some(_), Some(sub), _)
+        if !Files.isRegularFile(sub) =>
+        Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' is not a file")))
+      case (Some(_), Some(_), Some(subLang))
+        if !isValidISO639_1Language(subLang) =>
+        Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '$subLang' doesn't have a valid ISO 639-1 language value")))
+      case (Some(_), None, Some(subLang)) =>
+        Some(Failure(ParseException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
+      case (Some(p), None, None)
+        if Files.exists(p) &&
+          Files.isRegularFile(p) => None
+      case (Some(p), None, None)
+        if !Files.exists(p) =>
+        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' does not exist")))
+      case (Some(p), None, None)
+        if !Files.isRegularFile(p) =>
+        Some(Failure(ParseException(rowNum, s"AV_FILE '$p' is not a file")))
+      case (None, None, None) => None
+      case (None, _, _) =>
+        Some(Failure(ParseException(rowNum, "No value is defined for AV_FILE, while some of [AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined")))
+    }
+  }
 }
 
 object AudioVideoParser {
-  def apply()(implicit ss: Settings): AudioVideoParser = new AudioVideoParser with ParserUtils with DebugEnhancedLogging {
+  def apply()(implicit ss: Settings): AudioVideoParser = new AudioVideoParser with ParserUtils {
     override val settings: Settings = ss
   }
 }

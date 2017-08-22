@@ -56,14 +56,14 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
         languages = List("NL", "encoding=UTF-8"),
         subjects = List(Subject("astronomie"), Subject("ruimtevaart"), Subject("planetoïden"))
       ),
+      files = Map(
+        Paths.get("ruimtereis01/reisverslag/centaur.mpg") -> FileDescriptor(Option("flyby of centaur"))
+      ),
       audioVideo = AudioVideo(
-        springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files")),
-        playMode = Option(PlayMode.Menu),
-        avFiles = Set(AVFile(
-          path = Paths.get("ruimtereis01/reisverslag/centaur.mpg"),
-          title = Option("flyby of centaur"),
-          subtitles = List(Subtitles(Paths.get("ruimtereis01/reisverslag/centaur.srt"), Option("en")))
-        ))
+        springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files", PlayMode.Menu)),
+        avFiles = Map(
+          Paths.get("ruimtereis01/reisverslag/centaur.mpg") -> Set(Subtitles(Paths.get("ruimtereis01/reisverslag/centaur.srt"), Option("en")))
+        )
       )
     )
   }

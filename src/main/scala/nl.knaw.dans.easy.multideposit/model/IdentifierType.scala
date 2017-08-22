@@ -18,10 +18,12 @@ package nl.knaw.dans.easy.multideposit.model
 object IdentifierType extends Enumeration {
 
   type IdentifierType = Value
-  val ISBN = Value("ISBN")
-  val ISSN = Value("ISSN")
-  val NWO_PROJECTNR = Value("NWO-PROJECTNR")
-  val ARCHIS_ZAAK_IDENTIFICATIE = Value("ARCHIS-ZAAK-IDENTIFICATIE")
+  // @formatter:off
+  val ISBN: Value                      = Value("ISBN")
+  val ISSN: Value                      = Value("ISSN")
+  val NWO_PROJECTNR: Value             = Value("NWO-PROJECTNR")
+  val ARCHIS_ZAAK_IDENTIFICATIE: Value = Value("ARCHIS-ZAAK-IDENTIFICATIE")
+  // @formatter:on
 
   def valueOf(s: String): Option[IdentifierType.Value] = {
     IdentifierType.values.find(_.toString == s)

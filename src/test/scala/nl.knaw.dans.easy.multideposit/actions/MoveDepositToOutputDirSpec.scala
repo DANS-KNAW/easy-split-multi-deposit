@@ -24,7 +24,7 @@ import scala.util.{ Failure, Success }
 
 class MoveDepositToOutputDirSpec extends UnitSpec with BeforeAndAfterEach {
 
-  implicit val settings = Settings(
+  implicit val settings: Settings = Settings(
     multidepositDir = testDir.resolve("input"),
     stagingDir = testDir.resolve("sd"),
     outputDepositDir = testDir.resolve("dd")

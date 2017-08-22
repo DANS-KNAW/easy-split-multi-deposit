@@ -24,7 +24,7 @@ import scala.util.{ Failure, Success }
 
 class CreateDirectoriesSpec extends UnitSpec with BeforeAndAfterEach {
 
-  implicit val settings = Settings(
+  implicit val settings: Settings = Settings(
     multidepositDir = testDir.resolve("md"),
     stagingDir = testDir.resolve("sd")
   )

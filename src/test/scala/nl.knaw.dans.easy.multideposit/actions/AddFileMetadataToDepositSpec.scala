@@ -17,8 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.{ Files, NoSuchFileException, Paths }
 
-import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit.model.{ AVFile, AudioVideo, FileAccessRights, Springfield, Subtitles }
+import nl.knaw.dans.easy.multideposit.model.{ AudioVideo, FileAccessRights, FileDescriptor, Springfield, Subtitles }
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
 import org.scalatest.BeforeAndAfterEach
 
@@ -27,7 +26,7 @@ import scala.xml.XML
 
 class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with CustomMatchers {
 
-  implicit val settings = Settings(
+  implicit val settings: Settings = Settings(
     multidepositDir = testDir.resolve("md").toAbsolutePath,
     stagingDir = testDir.resolve("sd").toAbsolutePath
   )
@@ -46,8 +45,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
     val deposit = testDeposit1.copy(
       depositId = depositId,
       audioVideo = testDeposit1.audioVideo.copy(
-        springfield = Option(Springfield("domain", "user", "collection")),
-        accessibility = Option(FileAccessRights.NONE)
+        springfield = Option(Springfield("domain", "user", "collection"))
       )
     )
     AddFileMetadataToDeposit(deposit).checkPreconditions shouldBe a[Success[_]]
@@ -56,7 +54,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
   it should "fail if the deposit contains A/V files but the SF_* fields are not present" in {
     val deposit = testDeposit1.copy(
       depositId = depositId,
-      audioVideo = AudioVideo(springfield = Option.empty, accessibility = Option(FileAccessRights.NONE))
+      audioVideo = AudioVideo(springfield = Option.empty)
     )
     inside(AddFileMetadataToDeposit(deposit).checkPreconditions) {
       case Failure(ActionException(_, message, _)) =>
@@ -66,18 +64,6 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
             include("path/to/a/random/video/hubble.mpg")
         }
     }
-  }
-
-  it should "succeed if the deposit contains A/V files and SF_ACCESSIBILITY isn't present, but DDM_ACCESSRIGHTS is present" in {
-    val deposit = testDeposit1.copy(
-      depositId = depositId,
-      profile = testDeposit1.profile.copy(accessright = AccessCategory.NO_ACCESS),
-      audioVideo = AudioVideo(
-        springfield = Option(Springfield("domain", "user", "collection")),
-        accessibility = Option.empty
-      )
-    )
-    AddFileMetadataToDeposit(deposit).checkPreconditions shouldBe a[Success[_]]
   }
 
   it should "succeed if the deposit contains no A/V files and the SF_* fields are not present" in {
@@ -122,10 +108,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
     testDir.resolve(s"md/ruimtereis04/path/to/a/random/sound/chicken.mp3").copyFile(audioFile)
 
     val currentAV = deposit.audioVideo.avFiles
-    val newAV = currentAV + AVFile(
-      path = audioFile,
-      title = Option("our daily wake up call"),
-      subtitles = List.empty)
+    val newAV = currentAV + (audioFile -> Set.empty[Subtitles])
     val failingDeposit = deposit.copy(audioVideo = deposit.audioVideo.copy(avFiles = newAV))
 
     inside(AddFileMetadataToDeposit(failingDeposit).checkPreconditions) {
@@ -137,9 +120,8 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
   "execute" should "write the file metadata to an xml file" in {
     val deposit = testDeposit1.copy(
       depositId = depositId,
-      audioVideo = testDeposit1.audioVideo.copy(
-        accessibility = Option(FileAccessRights.NONE),
-        avFiles = Set(AVFile(Paths.get("ruimtereis01/reisverslag/centaur.mpg")))
+      files = Map(
+        Paths.get("ruimtereis01/reisverslag/centaur.mpg") -> FileDescriptor(accessibility = Option(FileAccessRights.NONE))
       )
     )
     val action = AddFileMetadataToDeposit(deposit)
@@ -154,18 +136,20 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
   it should "produce the xml for all the files" in {
     val deposit = testDeposit1.copy(
       depositId = depositId,
+      files = Map(
+        settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath ->
+          FileDescriptor(Option("video about the centaur meteorite"), Option(FileAccessRights.RESTRICTED_GROUP)),
+        settings.multidepositDir.resolve("ruimtereis01/path/to/a/random/video/hubble.mpg").toAbsolutePath ->
+          FileDescriptor(accessibility = Option(FileAccessRights.RESTRICTED_GROUP))
+      ),
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files")),
-        accessibility = Option(FileAccessRights.RESTRICTED_GROUP),
-        avFiles = Set(
-          AVFile(
-            path = settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath,
-            title = Option("video about the centaur meteorite"),
-            subtitles = List(
+        avFiles = Map(
+          settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath ->
+            Set(
               Subtitles(settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath, Option("en")),
               Subtitles(settings.multidepositDir.resolve("ruimtereis01/reisverslag/centaur-nederlands.srt").toAbsolutePath, Option("nl"))
             )
-          )
         )
       )
     )

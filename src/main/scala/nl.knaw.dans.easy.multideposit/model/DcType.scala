@@ -19,18 +19,18 @@ object DcType extends Enumeration {
 
   type DcType = Value
   // @formatter:off
-  val COLLECTION          = Value("Collection")
-  val DATASET             = Value("Dataset")
-  val EVENT               = Value("Event")
-  val IMAGE               = Value("Image")
-  val INTERACTIVERESOURCE = Value("InteractiveResource")
-  val MOVINGIMAGE         = Value("MovingImage")
-  val PHYSICALOBJECT      = Value("PhysicalObject")
-  val SERVICE             = Value("Service")
-  val SOFTWARE            = Value("Software")
-  val SOUND               = Value("Sound")
-  val STILLIMAGE          = Value("StillImage")
-  val TEXT                = Value("Text")
+  val COLLECTION: Value          = Value("Collection")
+  val DATASET: Value             = Value("Dataset")
+  val EVENT: Value               = Value("Event")
+  val IMAGE: Value               = Value("Image")
+  val INTERACTIVERESOURCE: Value = Value("InteractiveResource")
+  val MOVINGIMAGE: Value         = Value("MovingImage")
+  val PHYSICALOBJECT: Value      = Value("PhysicalObject")
+  val SERVICE: Value             = Value("Service")
+  val SOFTWARE: Value            = Value("Software")
+  val SOUND: Value               = Value("Sound")
+  val STILLIMAGE: Value          = Value("StillImage")
+  val TEXT: Value                = Value("Text")
   // @formatter:on
 
   def valueOf(s: String): Option[DcType.Value] = {

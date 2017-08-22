@@ -19,15 +19,17 @@ import java.nio.file.Path
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
-import org.joda.time.{ DateTime, LocalDate }
+import org.joda.time.DateTime
 
 case class Deposit(depositId: DepositId,
                    row: Int,
                    depositorUserId: DepositorUserId,
                    profile: Profile,
                    metadata: Metadata = Metadata(),
+                   files: Map[Path, FileDescriptor] = Map.empty,
                    audioVideo: AudioVideo = AudioVideo())
 
+// Profile
 case class Profile(titles: NonEmptyList[String],
                    descriptions: NonEmptyList[String],
                    creators: NonEmptyList[Creator],
@@ -36,6 +38,16 @@ case class Profile(titles: NonEmptyList[String],
                    audiences: NonEmptyList[String], // or List[enum values]?
                    accessright: AccessCategory) // only one allowed? not yet in validation
 
+sealed abstract class Creator
+case class CreatorOrganization(organization: String) extends Creator
+case class CreatorPerson(titles: Option[String] = Option.empty,
+                         initials: String,
+                         insertions: Option[String] = Option.empty,
+                         surname: String,
+                         organization: Option[String] = Option.empty,
+                         dai: Option[String] = Option.empty) extends Creator
+
+// Metadata
 case class Metadata(alternatives: List[String] = List.empty,
                     publishers: List[String] = List.empty,
                     types: NonEmptyList[DcType.Value] = List(DcType.DATASET),
@@ -53,29 +65,6 @@ case class Metadata(alternatives: List[String] = List.empty,
                     spatialBoxes: List[SpatialBox] = List.empty,
                     temporal: List[Temporal] = List.empty)
 
-case class AudioVideo(springfield: Option[Springfield] = Option.empty,
-                      accessibility: Option[FileAccessRights.Value] = Option.empty,
-                      playMode: Option[PlayMode] = Option.empty,
-                      avFiles: Set[AVFile] = Set.empty)
-
-sealed abstract class Creator
-case class CreatorOrganization(organization: String) extends Creator
-case class CreatorPerson(titles: Option[String] = Option.empty,
-                         initials: String,
-                         insertions: Option[String] = Option.empty,
-                         surname: String,
-                         organization: Option[String] = Option.empty,
-                         dai: Option[String] = Option.empty) extends Creator
-
-sealed abstract class Contributor
-case class ContributorOrganization(organization: String) extends Contributor
-case class ContributorPerson(titles: Option[String] = Option.empty,
-                             initials: String,
-                             insertions: Option[String] = Option.empty,
-                             surname: String,
-                             organization: Option[String] = Option.empty,
-                             dai: Option[String] = Option.empty) extends Contributor
-
 case class Identifier(id: String, idType: Option[IdentifierType.Value] = Option.empty)
 
 sealed abstract class Relation
@@ -88,16 +77,38 @@ sealed abstract class Date
 case class QualifiedDate(date: DateTime, qualifier: DateQualifier.Value) extends Date
 case class TextualDate(text: String) extends Date
 
-case class Subject(subject: String = "", scheme: Option[String] = Option.empty)
+sealed abstract class Contributor
+case class ContributorOrganization(organization: String) extends Contributor
+case class ContributorPerson(titles: Option[String] = Option.empty,
+                             initials: String,
+                             insertions: Option[String] = Option.empty,
+                             surname: String,
+                             organization: Option[String] = Option.empty,
+                             dai: Option[String] = Option.empty) extends Contributor
 
-case class Temporal(temporal: String = "", scheme: Option[String] = Option.empty)
+case class Subject(subject: String = "", scheme: Option[String] = Option.empty)
 
 case class SpatialPoint(x: String, y: String, scheme: Option[String] = Option.empty)
 
-case class SpatialBox(north: String, south: String, east: String, west: String, scheme: Option[String] = Option.empty)
+case class SpatialBox(north: String,
+                      south: String,
+                      east: String,
+                      west: String,
+                      scheme: Option[String] = Option.empty)
 
-case class Springfield(domain: String = "dans", user: String, collection: String)
+case class Temporal(temporal: String = "", scheme: Option[String] = Option.empty)
+
+// files
+case class FileDescriptor(title: Option[String] = Option.empty,
+                          accessibility: Option[FileAccessRights.Value] = Option.empty)
+
+// Audio/Video
+case class AudioVideo(springfield: Option[Springfield] = Option.empty,
+                      avFiles: Map[Path, Set[Subtitles]] = Map.empty)
+
+case class Springfield(domain: String = "dans",
+                       user: String,
+                       collection: String,
+                       playMode: PlayMode = PlayMode.Continuous)
 
 case class Subtitles(path: Path, language: Option[String] = Option.empty)
-
-case class AVFile(path: Path, title: Option[String] = Option.empty, subtitles: Seq[Subtitles] = Seq.empty)

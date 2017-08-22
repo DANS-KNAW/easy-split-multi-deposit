@@ -30,7 +30,9 @@ import scala.xml.{ Elem, Node }
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with BeforeAndAfterEach {
 
-  implicit val settings = new Settings(
+  implicit val settings: Settings {
+    val formats: Set[String]
+  } = new Settings(
     multidepositDir = testDir.resolve("md"),
     stagingDir = testDir.resolve("sd")
   ) {

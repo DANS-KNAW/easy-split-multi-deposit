@@ -29,7 +29,12 @@ import scala.language.implicitConversions
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-trait MultiDepositParser extends ParserUtils with AudioVideoParser with MetadataParser with ProfileParser with DebugEnhancedLogging {
+trait MultiDepositParser extends ParserUtils
+  with AudioVideoParser
+  with FileDescriptorParser
+  with MetadataParser
+  with ProfileParser
+  with DebugEnhancedLogging {
 
   def parse(path: Path): Try[Seq[Deposit]] = {
     logger.info(s"Parsing $path")
@@ -108,6 +113,7 @@ trait MultiDepositParser extends ParserUtils with AudioVideoParser with Metadata
         .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
         .combine(extractProfile(rows, rowNum))
         .combine(extractMetadata(rows))
+        .combine(extractFileDescriptors(rows, rowNum, depositId))
         .combine(extractAudioVideo(rows, rowNum, depositId)))
   }
 
