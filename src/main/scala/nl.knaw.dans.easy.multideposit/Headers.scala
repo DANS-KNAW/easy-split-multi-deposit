@@ -125,7 +125,7 @@ object Headers {
   )
 
   private lazy val audioVideoHeaders = Set(
-    "AV_FILE", // TODO rename to AV_FILE_PATH
+    "AV_FILE_PATH",
     "AV_SUBTITLES",
     "AV_SUBTITLES_LANGUAGE"
   )

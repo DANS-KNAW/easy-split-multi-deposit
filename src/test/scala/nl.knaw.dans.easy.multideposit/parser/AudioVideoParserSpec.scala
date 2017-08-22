@@ -34,7 +34,7 @@ trait AudioVideoTestObjects {
       "SF_USER" -> "janvanmansum",
       "SF_COLLECTION" -> "jans-test-files",
       "SF_PLAY_MODE" -> "menu",
-      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     ),
@@ -43,7 +43,7 @@ trait AudioVideoTestObjects {
       "SF_USER" -> "",
       "SF_COLLECTION" -> "",
       "SF_PLAY_MODE" -> "",
-      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "reisverslag/centaur-nederlands.srt",
       "AV_SUBTITLES_LANGUAGE" -> "nl"
     )
@@ -85,20 +85,20 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
     extractAudioVideo(audioVideoCSV, 2, "ruimtereis01") should matchPattern { case Success(`audioVideo`) => }
   }
 
-  it should "fail if there are AV_FILE values but there is no Springfield data" in {
+  it should "fail if there are AV_FILE_PATH values but there is no Springfield data" in {
     val rows = Map(
       "SF_DOMAIN" -> "",
       "SF_USER" -> "",
       "SF_COLLECTION" -> "",
       "SF_ACCESSIBILITY" -> "NONE",
       "SF_PLAY_MODE" -> "",
-      "AV_FILE" -> "",
+      "AV_FILE_PATH" -> "",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
     ) :: audioVideoCSVRow2 :: Nil
 
     extractAudioVideo(rows, 2, "ruimtereis01") should matchPattern {
-      case Failure(ParseException(2, "The column 'AV_FILE' contains values, but the columns [SF_COLLECTION, SF_USER] do not", _)) =>
+      case Failure(ParseException(2, "The column 'AV_FILE_PATH' contains values, but the columns [SF_COLLECTION, SF_USER] do not", _)) =>
     }
   }
 
@@ -288,7 +288,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
 
   "avFile" should "convert the csv input into the corresponding object" in {
     val row = Map(
-      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
@@ -298,9 +298,9 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
     avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `subtitles`)) => }
   }
 
-  it should "succeed if the value for AV_FILE is relative to the multideposit rather than the deposit" in {
+  it should "succeed if the value for AV_FILE_PATH is relative to the multideposit rather than the deposit" in {
     val row = Map(
-      "AV_FILE" -> "ruimtereis01/reisverslag/centaur.mpg",
+      "AV_FILE_PATH" -> "ruimtereis01/reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
@@ -312,7 +312,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
 
   it should "succeed if the value for AV_SUBTITLES is relative to the multideposit rather than the deposit" in {
     val row = Map(
-      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "ruimtereis01/reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
@@ -322,61 +322,61 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
     avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `subtitles`)) => }
   }
 
-  it should "fail if the value for AV_FILE represents a path that does not exist" in {
+  it should "fail if the value for AV_FILE_PATH represents a path that does not exist" in {
     val row = Map(
-      "AV_FILE" -> "path/to/file/that/does/not/exist.mpg",
+      "AV_FILE_PATH" -> "path/to/file/that/does/not/exist.mpg",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
     inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe "AV_FILE 'path/to/file/that/does/not/exist.mpg' does not exist"
+        msg shouldBe "AV_FILE_PATH 'path/to/file/that/does/not/exist.mpg' does not exist"
     }
   }
 
-  it should "fail if the value for AV_FILE represents a folder" in {
+  it should "fail if the value for AV_FILE_PATH represents a folder" in {
     val row = Map(
-      "AV_FILE" -> "reisverslag/",
+      "AV_FILE_PATH" -> "reisverslag/",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
     val file = settings.multidepositDir.resolve("ruimtereis01/reisverslag/").toAbsolutePath
     inside(avFile("ruimtereis01")(2)(row).value) {
-      case Failure(ParseException(2, msg, _)) => msg shouldBe s"AV_FILE '$file' is not a file"
+      case Failure(ParseException(2, msg, _)) => msg shouldBe s"AV_FILE_PATH '$file' is not a file"
     }
   }
 
-  it should "fail if the value for AV_FILE represents a path that does not exist when AV_SUBTITLES is not defined" in {
+  it should "fail if the value for AV_FILE_PATH represents a path that does not exist when AV_SUBTITLES is not defined" in {
     val row = Map(
-      "AV_FILE" -> "path/to/file/that/does/not/exist.mpg",
+      "AV_FILE_PATH" -> "path/to/file/that/does/not/exist.mpg",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
     inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe "AV_FILE 'path/to/file/that/does/not/exist.mpg' does not exist"
+        msg shouldBe "AV_FILE_PATH 'path/to/file/that/does/not/exist.mpg' does not exist"
     }
   }
 
-  it should "fail if the value for AV_FILE represents a folder when AV_SUBTITLES is not defined" in {
+  it should "fail if the value for AV_FILE_PATH represents a folder when AV_SUBTITLES is not defined" in {
     val row = Map(
-      "AV_FILE" -> "reisverslag/",
+      "AV_FILE_PATH" -> "reisverslag/",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
     val file = settings.multidepositDir.resolve("ruimtereis01/reisverslag/").toAbsolutePath
     inside(avFile("ruimtereis01")(2)(row).value) {
-      case Failure(ParseException(2, msg, _)) => msg shouldBe s"AV_FILE '$file' is not a file"
+      case Failure(ParseException(2, msg, _)) => msg shouldBe s"AV_FILE_PATH '$file' is not a file"
     }
   }
 
   it should "fail if the value for AV_SUBTITLES represents a path that does not exist" in {
     val row = Map(
-      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "path/to/file/that/does/not/exist.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
@@ -389,7 +389,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
 
   it should "fail if the value for AV_SUBTITLES represents a folder" in {
     val row = Map(
-      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "reisverslag/",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
@@ -402,7 +402,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
 
   it should "fail if the value for AV_SUBTITLES_LANGUAGE does not represent an ISO 639-1 language value" in {
     val row = Map(
-      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "ac"
     )
@@ -414,7 +414,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
 
   it should "fail if there is no AV_SUBTITLES value, but there is a AV_SUBTITLES_LANGUAGE" in {
     val row = Map(
-      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
@@ -427,7 +427,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
 
   it should "succeed if there is a value for AV_SUBTITLES, but no value for AV_SUBTITLES_LANGUAGE" in {
     val row = Map(
-      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
@@ -439,7 +439,7 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
 
   it should "succeed if there is no value for both AV_SUBTITLES and AV_SUBTITLES_LANGUAGE" in {
     val row = Map(
-      "AV_FILE" -> "reisverslag/centaur.mpg",
+      "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
@@ -447,22 +447,22 @@ class AudioVideoParserSpec extends UnitSpec with AudioVideoTestObjects with Befo
     avFile("ruimtereis01")(2)(row) shouldBe empty
   }
 
-  it should "fail if there is no value for AV_FILE, but the other two do have values" in {
+  it should "fail if there is no value for AV_FILE_PATH, but the other two do have values" in {
     val row = Map(
-      "AV_FILE" -> "",
+      "AV_FILE_PATH" -> "",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
     inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) =>
-        msg should include("No value is defined for AV_FILE")
+        msg should include("No value is defined for AV_FILE_PATH")
     }
   }
 
   it should "return None if all four values do not have any value" in {
     val row = Map(
-      "AV_FILE" -> "",
+      "AV_FILE_PATH" -> "",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
     )

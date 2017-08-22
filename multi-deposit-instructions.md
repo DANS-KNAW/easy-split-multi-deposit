@@ -147,7 +147,7 @@ a audio or video presentation contained in the dataset:
   be set to `continuous`. This value is only allowed if `SF_DOMAIN`, `SF_USER` and `SF_COLLECTION`
   are provided as well.
 * The columns `AV_FILE`, `AV_FILE_TITLE`, `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` are used to
-  provide extra metadata specific to audio/video files. For a path to a A/V file in `AV_FILE`,
+  provide extra metadata specific to audio/video files. For a path to a A/V file in `AV_FILE_PATH`,
   the user can specify at most one title in `AV_FILE_TITLE` and one or more combinations of subtitles
   and the corresponding language tag in `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` respectively.
   Note that the latter has to be formatted as an [ISO 639-1](https://www.loc.gov/standards/iso639-2/php/code_list.php).
