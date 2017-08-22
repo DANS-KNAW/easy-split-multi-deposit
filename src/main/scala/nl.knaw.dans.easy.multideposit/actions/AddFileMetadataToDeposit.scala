@@ -53,24 +53,22 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
   }
 
   private def getFileMetadata(path: Path): Try[FileMetadata] = {
-    def mkAVFileMetadata(m: MimeType, voca: AudioVideo): AVFileMetadata = {
-      val fileDescriptor = deposit.files.get(path)
-      val subtitles = deposit.audioVideo.avFiles.getOrElse(path, Set.empty)
-
-      fileDescriptor match {
-        case Some(FileDescriptor(optTitle, optAccessibility)) =>
-          val title = optTitle.getOrElse(path.getFileName.toString)
-          val accessibility = optAccessibility.getOrElse(defaultAccessibility)
-          AVFileMetadata(path, m, voca, title, accessibility, subtitles)
-        case None =>
-          AVFileMetadata(path, m, voca, path.getFileName.toString, defaultAccessibility, subtitles)
-      }
-    }
-
     def mkDefaultFileMetadata(m: MimeType): FileMetadata = {
       deposit.files.get(path)
         .map(fd => DefaultFileMetadata(path, m, fd.title, fd.accessibility))
         .getOrElse(DefaultFileMetadata(path, m))
+    }
+
+    def mkAVFileMetadata(m: MimeType, voca: AudioVideo): AVFileMetadata = {
+      val subtitles = deposit.audioVideo.avFiles.getOrElse(path, Set.empty)
+
+      deposit.files.get(path)
+        .map(fd => {
+          val title = fd.title.getOrElse(path.getFileName.toString)
+          val accessibility = fd.accessibility.getOrElse(defaultAccessibility)
+          AVFileMetadata(path, m, voca, title, accessibility, subtitles)
+        })
+        .getOrElse(AVFileMetadata(path, m, voca, path.getFileName.toString, defaultAccessibility, subtitles))
     }
 
     getMimeType(path).map {
