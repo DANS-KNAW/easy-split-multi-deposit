@@ -201,10 +201,19 @@ object AddDatasetMetadataToDeposit {
 
   def createRelation(relation: Relation): Elem = {
     relation match {
-      case QualifiedLinkRelation(qualifier, link) => elem(s"dcterms:$qualifier")(link)
-      case QualifiedTitleRelation(qualifier, title) => elem(s"dcterms:$qualifier")(title)
-      case LinkRelation(link) => elem("dc:relation")(link)
-      case TitleRelation(title) => elem("dc:relation")(title)
+      case QualifiedRelation(qualifier, Some(link), Some(title)) =>
+        <key href={link}>{title}</key>.copy(label = s"ddm:$qualifier")
+      case QualifiedRelation(qualifier, Some(link), None) =>
+        <key href={link}/>.copy(label = s"ddm:$qualifier")
+      case QualifiedRelation(qualifier, None, Some(title)) =>
+        <key>{title}</key>.copy(label = s"dcterms:$qualifier")
+      case UnqualifiedRelation(Some(link), Some(title)) =>
+        <ddm:relation href={link}>{title}</ddm:relation>
+      case UnqualifiedRelation(Some(link), None) =>
+        <ddm:relation href={link}/>
+      case UnqualifiedRelation(None, Some(title)) =>
+        <dc:relation>{title}</dc:relation>
+      case other => throw new UnsupportedOperationException(s"Relation $other is not supported. You should not even be able to create this object!")
     }
   }
 

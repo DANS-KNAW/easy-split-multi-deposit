@@ -68,10 +68,15 @@ case class Metadata(alternatives: List[String] = List.empty,
 case class Identifier(id: String, idType: Option[IdentifierType.Value] = Option.empty)
 
 sealed abstract class Relation
-case class QualifiedLinkRelation(qualifier: String, link: String) extends Relation
-case class QualifiedTitleRelation(qualifier: String, title: String) extends Relation
-case class LinkRelation(link: String) extends Relation
-case class TitleRelation(title: String) extends Relation
+case class QualifiedRelation(qualifier: String,
+                             link: Option[String] = Option.empty,
+                             title: Option[String] = Option.empty) extends Relation {
+  require(link.isDefined || title.isDefined, "at least one of [link, title] must be filled in")
+}
+case class UnqualifiedRelation(link: Option[String] = Option.empty,
+                               title: Option[String] = Option.empty) extends Relation {
+  require(link.isDefined || title.isDefined, "at least one of [link, title] must be filled in")
+}
 
 sealed abstract class Date
 case class QualifiedDate(date: DateTime, qualifier: DateQualifier.Value) extends Date
