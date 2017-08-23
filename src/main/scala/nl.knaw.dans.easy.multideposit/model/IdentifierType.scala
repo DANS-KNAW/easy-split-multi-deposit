@@ -26,6 +26,6 @@ object IdentifierType extends Enumeration {
   // @formatter:on
 
   def valueOf(s: String): Option[IdentifierType.Value] = {
-    IdentifierType.values.find(_.toString == s)
+    IdentifierType.values.find(_.toString equalsIgnoreCase s)
   }
 }

@@ -24,6 +24,6 @@ object PlayMode extends Enumeration {
   // @formatter:on
 
   def valueOf(s: String): Option[PlayMode.Value] = {
-    PlayMode.values.find(_.toString == s.toLowerCase)
+    PlayMode.values.find(_.toString equalsIgnoreCase s)
   }
 }

@@ -34,6 +34,6 @@ object DcType extends Enumeration {
   // @formatter:on
 
   def valueOf(s: String): Option[DcType.Value] = {
-    DcType.values.find(_.toString == s)
+    DcType.values.find(_.toString equalsIgnoreCase s.replace(" ", ""))
   }
 }

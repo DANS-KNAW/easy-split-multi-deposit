@@ -28,7 +28,6 @@ object DateQualifier extends Enumeration {
   // @formatter:on
 
   def valueOf(s: String): Option[DateQualifier.Value] = {
-    val value = s.toLowerCase.replace(" ", "")
-    DateQualifier.values.find(_.toString.toLowerCase() == value)
+    DateQualifier.values.find(_.toString equalsIgnoreCase s.replace(" ", ""))
   }
 }

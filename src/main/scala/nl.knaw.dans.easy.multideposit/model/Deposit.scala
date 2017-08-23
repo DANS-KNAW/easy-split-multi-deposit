@@ -68,7 +68,7 @@ case class Metadata(alternatives: List[String] = List.empty,
 case class Identifier(id: String, idType: Option[IdentifierType.Value] = Option.empty)
 
 sealed abstract class Relation
-case class QualifiedRelation(qualifier: String,
+case class QualifiedRelation(qualifier: RelationQualifier.Value,
                              link: Option[String] = Option.empty,
                              title: Option[String] = Option.empty) extends Relation {
   require(link.isDefined || title.isDefined, "at least one of [link, title] must be filled in")

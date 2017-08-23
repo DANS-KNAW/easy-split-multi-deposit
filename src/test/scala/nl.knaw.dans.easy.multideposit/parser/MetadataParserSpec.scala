@@ -89,7 +89,7 @@ trait MetadataTestObjects {
     languages = List("dut", "nld"),
     spatials = List("spat1", "spat2"),
     rightsholder = List("right1", "right2"),
-    relations = List(QualifiedRelation("replaces", link = Some("foo"), title = Some("bar")), UnqualifiedRelation(link = Some("foo"), title = Some("bar"))),
+    relations = List(QualifiedRelation(RelationQualifier.Replaces, link = Some("foo"), title = Some("bar")), UnqualifiedRelation(link = Some("foo"), title = Some("bar"))),
     dates = List(QualifiedDate(new DateTime(2016, 2, 1, 0, 0), DateQualifier.DATE_SUBMITTED), TextualDate("some random text")),
     contributors = List(ContributorPerson(initials = "A.", surname = "Jones")),
     subjects = List(Subject("IX", Option("abr:ABRcomplex"))),
@@ -297,7 +297,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     relation(2)(row).value should matchPattern {
-      case Success(QualifiedRelation("replaces", Some("foo"), Some("bar"))) =>
+      case Success(QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))) =>
     }
   }
 
@@ -309,7 +309,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     relation(2)(row).value should matchPattern {
-      case Success(QualifiedRelation("replaces", Some("foo"), None)) =>
+      case Success(QualifiedRelation(RelationQualifier.Replaces, Some("foo"), None)) =>
     }
   }
 
@@ -321,7 +321,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     relation(2)(row).value should matchPattern {
-      case Success(QualifiedRelation("replaces", None, Some("bar"))) =>
+      case Success(QualifiedRelation(RelationQualifier.Replaces, None, Some("bar"))) =>
     }
   }
 
@@ -334,6 +334,30 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
 
     relation(2)(row).value should matchPattern {
       case Failure(ParseException(2, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well", _)) =>
+    }
+  }
+
+  it should "fail if an invalid qualifier is given" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "invalid",
+      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> "bar"
+    )
+
+    relation(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Value 'invalid' is not a valid relation qualifier", _)) =>
+    }
+  }
+
+  it should "succeed if the qualifier is formatted differently" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "rEplAcEs",
+      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> "bar"
+    )
+
+    relation(2)(row).value should matchPattern {
+      case Success(QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))) =>
     }
   }
 

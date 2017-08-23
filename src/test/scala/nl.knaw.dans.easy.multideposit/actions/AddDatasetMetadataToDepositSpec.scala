@@ -157,9 +157,9 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       spatials = List("sp1"),
       rightsholder = List("rh1"),
       relations = List(
-        QualifiedRelation("replaces", link = Some("l1"), title = Some("t1")),
-        QualifiedRelation("isVersionOf", link = Some("l2")),
-        QualifiedRelation("hasVersion", title = Some("t3")),
+        QualifiedRelation(RelationQualifier.Replaces, link = Some("l1"), title = Some("t1")),
+        QualifiedRelation(RelationQualifier.IsVersionOf, link = Some("l2")),
+        QualifiedRelation(RelationQualifier.HasVersion, title = Some("t3")),
         UnqualifiedRelation(link = Some("l4"), title = Some("t4")),
         UnqualifiedRelation(link = Some("l5")),
         UnqualifiedRelation(title = Some("t6"))),

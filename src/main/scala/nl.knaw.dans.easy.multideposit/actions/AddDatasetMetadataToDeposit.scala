@@ -202,11 +202,11 @@ object AddDatasetMetadataToDeposit {
   def createRelation(relation: Relation): Elem = {
     relation match {
       case QualifiedRelation(qualifier, Some(link), Some(title)) =>
-        <key href={link}>{title}</key>.copy(label = s"ddm:$qualifier")
+        <key href={link}>{title}</key>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, Some(link), None) =>
-        <key href={link}/>.copy(label = s"ddm:$qualifier")
+        <key href={link}/>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, None, Some(title)) =>
-        <key>{title}</key>.copy(label = s"dcterms:$qualifier")
+        <key>{title}</key>.copy(label = s"dcterms:${ qualifier.toString }")
       case UnqualifiedRelation(Some(link), Some(title)) =>
         <ddm:relation href={link}>{title}</ddm:relation>
       case UnqualifiedRelation(Some(link), None) =>
