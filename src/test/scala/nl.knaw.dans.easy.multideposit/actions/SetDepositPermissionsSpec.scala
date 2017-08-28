@@ -40,7 +40,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfterEach {
     }
   }
 
-  implicit val settings = Settings(
+  implicit val settings: Settings = Settings(
     multidepositDir = testDir.resolve("md"),
     stagingDir = testDir.resolve("sd"),
     depositPermissions = DepositPermissions("rwxrwx---", userGroup)
@@ -100,7 +100,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfterEach {
   }
 
   it should "fail if the group name does not exist" in {
-    implicit val settings = Settings(
+    implicit val settings: Settings = Settings(
       multidepositDir = testDir.resolve("md"),
       stagingDir = testDir.resolve("sd"),
       depositPermissions = DepositPermissions("rwxrwx---", "non-existing-group-name")
@@ -112,7 +112,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfterEach {
   }
 
   it should "fail if the access permissions are invalid" in {
-    implicit val settings = Settings(
+    implicit val settings: Settings = Settings(
       multidepositDir = testDir.resolve("md"),
       stagingDir = testDir.resolve("sd"),
       depositPermissions = DepositPermissions("abcdefghi", "admin")
@@ -124,7 +124,7 @@ class SetDepositPermissionsSpec extends UnitSpec with BeforeAndAfterEach {
   }
 
   it should "fail if the user is not part of the given group" in {
-    implicit val settings = Settings(
+    implicit val settings: Settings = Settings(
       multidepositDir = testDir.resolve("md"),
       stagingDir = testDir.resolve("sd"),
       depositPermissions = DepositPermissions("rwxrwx---", unrelatedGroup)

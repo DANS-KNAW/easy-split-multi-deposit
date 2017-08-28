@@ -24,11 +24,14 @@ import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
 
-trait DepositTestObjects extends AudioVideoTestObjects with MetadataTestObjects with ProfileTestObjects {
+trait DepositTestObjects extends AudioVideoTestObjects
+  with FileDescriptorTestObjects
+  with MetadataTestObjects
+  with ProfileTestObjects {
 
   lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: Nil = List(
-    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ metadataCSVRow1 ++ audioVideoCSVRow1,
-    Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ metadataCSVRow2 ++ audioVideoCSVRow2
+    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
+    Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
   )
 
   lazy val deposit = Deposit(
@@ -37,6 +40,7 @@ trait DepositTestObjects extends AudioVideoTestObjects with MetadataTestObjects 
     depositorUserId = "ikke",
     profile = profile,
     metadata = metadata,
+    files = fileDescriptors,
     audioVideo = audioVideo
   )
 }
@@ -48,7 +52,7 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects with Befor
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
   }
 
-  override implicit val settings = Settings(
+  override implicit val settings: Settings = Settings(
     multidepositDir = testDir.resolve("md").toAbsolutePath
   )
   private val parser = MultiDepositParser()

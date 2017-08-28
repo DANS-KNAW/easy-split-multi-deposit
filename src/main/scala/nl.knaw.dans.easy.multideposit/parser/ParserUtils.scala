@@ -15,16 +15,18 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import java.nio.file.{ Files, Path, Paths }
 import java.util.Locale
 
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.error._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.implicitConversions
 import scala.util.{ Failure, Success, Try }
 
-trait ParserUtils {
+trait ParserUtils extends DebugEnhancedLogging {
 
   def getRowNum(row: DepositRow): Int = row("ROW").toInt
 
@@ -69,7 +71,7 @@ trait ParserUtils {
     }
   }
 
-  private def checkMultipleValues[T](rowNum: Int, columnNames: NonEmptyList[MultiDepositKey], ts: List[Any]) = {
+  private def checkMultipleValues[T](rowNum:Int, columnNames: NonEmptyList[MultiDepositKey], ts: List[Any]) = {
     columnNames match {
       case name :: Nil => Failure(ParseException(rowNum, "Only one row is allowed " +
         s"to contain a value for the column '$name'. Found: ${ ts.mkString("[", ", ", "]") }"))
@@ -118,5 +120,32 @@ trait ParserUtils {
         if (b0 && (b1 || b2)) Success(lang)
         else Failure(ParseException(rowNum, s"Value '$lang' is not a valid value for $columnName"))
       })
+  }
+
+  /**
+   * Returns the absolute file for the given `path`. If the input is correct, `path` is relative
+   * to the deposit it is in.
+   *
+   * By means of backwards compatibility, the `path` might also be
+   * relative to the multideposit. In this case the correct absolute file is returned as well,
+   * besides which a warning is logged, notifying the user that `path` should be relative to the
+   * deposit instead.
+   *
+   * If both options do not suffice, the path is just wrapped in a `File`.
+   *
+   * @param path the path to a file, as provided by the user input
+   * @return the absolute path to this file, if it exists
+   */
+  def findPath(depositId: DepositId)(path: String)(implicit settings: Settings): Path = {
+    val option1 = multiDepositDir(depositId).resolve(path)
+    val option2 = settings.multidepositDir.resolve(path)
+
+    (option1, option2) match {
+      case (path1, _) if Files.exists(path1) => path1
+      case (_, path2) if Files.exists(path2) =>
+        logger.warn(s"path '$path' is not relative to its depositId '$depositId', but rather relative to the multideposit")
+        path2
+      case (_, _) => Paths.get(path)
+    }
   }
 }

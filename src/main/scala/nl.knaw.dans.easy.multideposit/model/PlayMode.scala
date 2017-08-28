@@ -18,10 +18,12 @@ package nl.knaw.dans.easy.multideposit.model
 object PlayMode extends Enumeration {
 
   type PlayMode = Value
-  val Continuous = Value("continuous")
-  val Menu = Value("menu")
+  // @formatter:off
+  val Continuous: Value = Value("continuous")
+  val Menu: Value       = Value("menu")
+  // @formatter:on
 
   def valueOf(s: String): Option[PlayMode.Value] = {
-    PlayMode.values.find(_.toString == s.toLowerCase)
+    PlayMode.values.find(_.toString equalsIgnoreCase s)
   }
 }

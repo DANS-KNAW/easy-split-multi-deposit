@@ -225,7 +225,7 @@ package object multideposit {
     }
   }
 
-  val encoding = Charsets.UTF_8
+  val encoding: Charset = Charsets.UTF_8
   val bagDirName = "bag"
   val dataDirName = "data"
   val metadataDirName = "metadata"

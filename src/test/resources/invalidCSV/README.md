@@ -25,10 +25,8 @@ This dataset contains an `instructions.csv` file that will be marked as invalid 
     * missing DCT_DATE value to go with this qualifier
 * SF_USER
     * no value found
-* AV_FILE
+* FILE_PATH
     * 'path/to/audiofile/that/does/not/exist.mp3' does not exist
-* AV_FILE_TITLE/AV_FILE
-    * filetitle is defined, but no file path is given in AV_FILE
 * DEPOSITOR_ID
     * multiple distinct depositorIDs: {user001, invalid-user}
 * DC_IDENTIFIER

@@ -39,6 +39,7 @@ trait MetadataTestObjects {
       // relation
       "DCX_RELATION_QUALIFIER" -> "replaces",
       "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> "bar",
       // date
       "DCT_DATE" -> "2016-02-01",
       "DCT_DATE_QUALIFIER" -> "Date Submitted",
@@ -66,6 +67,8 @@ trait MetadataTestObjects {
       "DC_LANGUAGE" -> "nld",
       "DCT_SPATIAL" -> "spat2",
       "DCT_RIGHTSHOLDER" -> "right2",
+      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> "bar",
       "DCT_DATE" -> "some random text",
       // spatialBox
       "DCX_SPATIAL_WEST" -> "12",
@@ -86,7 +89,7 @@ trait MetadataTestObjects {
     languages = List("dut", "nld"),
     spatials = List("spat1", "spat2"),
     rightsholder = List("right1", "right2"),
-    relations = List(QualifiedLinkRelation("replaces", "foo")),
+    relations = List(QualifiedRelation(RelationQualifier.Replaces, link = Some("foo"), title = Some("bar")), UnqualifiedRelation(link = Some("foo"), title = Some("bar"))),
     dates = List(QualifiedDate(new DateTime(2016, 2, 1, 0, 0), DateQualifier.DATE_SUBMITTED), TextualDate("some random text")),
     contributors = List(ContributorPerson(initials = "A.", surname = "Jones")),
     subjects = List(Subject("IX", Option("abr:ABRcomplex"))),
@@ -274,7 +277,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     }
   }
 
-  "relation" should "fail if both the link and title are defined" in {
+  "relation" should "succeed if both the link and title are defined" in {
     val row = Map(
       "DCX_RELATION_QUALIFIER" -> "",
       "DCX_RELATION_LINK" -> "foo",
@@ -282,11 +285,11 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     relation(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined", _)) =>
+      case Success(UnqualifiedRelation(Some("foo"), Some("bar"))) =>
     }
   }
 
-  it should "fail if the qualifier and both the link and title are defined" in {
+  it should "succeed if the qualifier and both the link and title are defined" in {
     val row = Map(
       "DCX_RELATION_QUALIFIER" -> "replaces",
       "DCX_RELATION_LINK" -> "foo",
@@ -294,7 +297,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     relation(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined", _)) =>
+      case Success(QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))) =>
     }
   }
 
@@ -306,7 +309,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     relation(2)(row).value should matchPattern {
-      case Success(QualifiedLinkRelation("replaces", "foo")) =>
+      case Success(QualifiedRelation(RelationQualifier.Replaces, Some("foo"), None)) =>
     }
   }
 
@@ -318,7 +321,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     relation(2)(row).value should matchPattern {
-      case Success(QualifiedTitleRelation("replaces", "bar")) =>
+      case Success(QualifiedRelation(RelationQualifier.Replaces, None, Some("bar"))) =>
     }
   }
 
@@ -334,6 +337,30 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     }
   }
 
+  it should "fail if an invalid qualifier is given" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "invalid",
+      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> "bar"
+    )
+
+    relation(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Value 'invalid' is not a valid relation qualifier", _)) =>
+    }
+  }
+
+  it should "succeed if the qualifier is formatted differently" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "rEplAcEs",
+      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> "bar"
+    )
+
+    relation(2)(row).value should matchPattern {
+      case Success(QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))) =>
+    }
+  }
+
   it should "succeed if only the link is defined" in {
     val row = Map(
       "DCX_RELATION_QUALIFIER" -> "",
@@ -341,7 +368,9 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
       "DCX_RELATION_TITLE" -> ""
     )
 
-    relation(2)(row).value should matchPattern { case Success(LinkRelation("foo")) => }
+    relation(2)(row).value should matchPattern {
+      case Success(UnqualifiedRelation(Some("foo"), None)) =>
+    }
   }
 
   it should "succeed if only the title is defined" in {
@@ -351,7 +380,9 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
       "DCX_RELATION_TITLE" -> "bar"
     )
 
-    relation(2)(row).value should matchPattern { case Success(TitleRelation("bar")) => }
+    relation(2)(row).value should matchPattern {
+      case Success(UnqualifiedRelation(None, Some("bar"))) =>
+    }
   }
 
   it should "return None if none of these fields are defined" in {

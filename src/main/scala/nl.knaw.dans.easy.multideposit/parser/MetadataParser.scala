@@ -87,33 +87,19 @@ trait MetadataParser {
         .getOrElse(Failure(ParseException(rowNum, s"Value '$t' is not a valid type"))))
   }
 
-  /*
-    qualifier   link   title   valid
-        1        1       1       0
-        1        1       0       1
-        1        0       1       1
-        1        0       0       0
-        0        1       1       0
-        0        1       0       1
-        0        0       1       1
-        0        0       0       1
-
-    observation: if the qualifier is present, either DCX_RELATION_LINK or DCX_RELATION_TITLE must be defined
-                 if the qualifier is not defined, DCX_RELATION_LINK and DCX_RELATION_TITLE must not both be defined
-   */
   def relation(rowNum: => Int)(row: DepositRow): Option[Try[Relation]] = {
     val qualifier = row.find("DCX_RELATION_QUALIFIER")
     val link = row.find("DCX_RELATION_LINK")
     val title = row.find("DCX_RELATION_TITLE")
 
     (qualifier, link, title) match {
-      case (Some(_), Some(_), Some(_)) | (None, Some(_), Some(_)) => Some(Failure(ParseException(rowNum, "Only one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined")))
-      case (Some(q), Some(l), None) => Some(Try { QualifiedLinkRelation(q, l) })
-      case (Some(q), None, Some(t)) => Some(Try { QualifiedTitleRelation(q, t) })
       case (Some(_), None, None) => Some(Failure(ParseException(rowNum, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well")))
-      case (None, Some(l), None) => Some(Try { LinkRelation(l) })
-      case (None, None, Some(t)) => Some(Try { TitleRelation(t) })
+      case (Some(q), l, t) =>
+        RelationQualifier.valueOf(q)
+          .map(qf => Success(QualifiedRelation(qf, l, t)))
+          .orElse(Some(Failure(ParseException(rowNum, s"Value '$q' is not a valid relation qualifier"))))
       case (None, None, None) => None
+      case (None, l, t) => Some(Try { UnqualifiedRelation(l, t) })
     }
   }
 

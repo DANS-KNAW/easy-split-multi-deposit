@@ -30,12 +30,11 @@ import scala.xml.{ Elem, Node }
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with BeforeAndAfterEach {
 
-  implicit val settings = new Settings(
+  implicit val settings: Settings = Settings(
     multidepositDir = testDir.resolve("md"),
-    stagingDir = testDir.resolve("sd")
-  ) {
-    override val formats: Set[String] = Set("text/xml")
-  }
+    stagingDir = testDir.resolve("sd"),
+    formats = Set("text/xml")
+  )
 
   val depositId = "ds1"
   val deposit: Deposit = Deposit(
@@ -155,10 +154,12 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       spatials = List("sp1"),
       rightsholder = List("rh1"),
       relations = List(
-        QualifiedLinkRelation("q1", "l1"),
-        QualifiedTitleRelation("q2", "t1"),
-        LinkRelation("l2"),
-        TitleRelation("t2")),
+        QualifiedRelation(RelationQualifier.Replaces, link = Some("l1"), title = Some("t1")),
+        QualifiedRelation(RelationQualifier.IsVersionOf, link = Some("l2")),
+        QualifiedRelation(RelationQualifier.HasVersion, title = Some("t3")),
+        UnqualifiedRelation(link = Some("l4"), title = Some("t4")),
+        UnqualifiedRelation(link = Some("l5")),
+        UnqualifiedRelation(title = Some("t6"))),
       dates = List(
         QualifiedDate(new DateTime(2017, 7, 30, 0, 0), DateQualifier.VALID),
         QualifiedDate(new DateTime(2017, 7, 31, 0, 0), DateQualifier.DATE_SUBMITTED),
@@ -204,10 +205,12 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       <dc:language xsi:type='dcterms:ISO639-2'>nld</dc:language>
       <dcterms:spatial>sp1</dcterms:spatial>
       <dcterms:rightsHolder>rh1</dcterms:rightsHolder>
-      <dcterms:q1>l1</dcterms:q1>
-      <dcterms:q2>t1</dcterms:q2>
-      <dc:relation>l2</dc:relation>
-      <dc:relation>t2</dc:relation>
+      <ddm:replaces href="l1">t1</ddm:replaces>
+      <ddm:isVersionOf href="l2"/>
+      <dcterms:hasVersion>t3</dcterms:hasVersion>
+      <ddm:relation href="l4">t4</ddm:relation>
+      <ddm:relation href="l5"/>
+      <dc:relation>t6</dc:relation>
       <dcterms:valid>2017-07-30</dcterms:valid>
       <dcterms:dateSubmitted>2017-07-31</dcterms:dateSubmitted>
       <dc:date>foobar</dc:date>

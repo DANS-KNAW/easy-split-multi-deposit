@@ -28,7 +28,7 @@ import scala.util.{ Failure, Success }
 class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfterEach with MockFactory {
 
   val ldapMock: Ldap = mock[Ldap]
-  implicit val settings = Settings(
+  implicit val settings: Settings = Settings(
     multidepositDir = testDir.resolve("md"),
     stagingDir = testDir.resolve("sd"),
     datamanager = "dm",

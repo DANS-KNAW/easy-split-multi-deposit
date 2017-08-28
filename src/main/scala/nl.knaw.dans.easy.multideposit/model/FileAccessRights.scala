@@ -57,7 +57,7 @@ object FileAccessRights extends Enumeration {
    * @return
    */
   def valueOf(s: String): Option[FileAccessRights.Value] =
-    FileAccessRights.values.find(v => v.toString == s)
+    FileAccessRights.values.find(_.toString equalsIgnoreCase s)
 
   /** gets the default category of users that have download permission for files in a new dataset,
    * an archivist may decide differently

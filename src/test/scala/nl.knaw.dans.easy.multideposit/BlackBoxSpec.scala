@@ -79,7 +79,7 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
 
   def allfieldsSpec(): Unit = {
     val ldap = mock[Ldap]
-    implicit val settings = Settings(
+    implicit val settings: Settings = Settings(
       multidepositDir = allfields,
       stagingDir = testDir.resolve("sd").toAbsolutePath,
       outputDepositDir = testDir.resolve("od").toAbsolutePath,
@@ -255,7 +255,7 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
   "allfields" should behave like allfieldsSpec()
 
   "invalidCSV" should "fail in the parser step and return a report of the errors" in {
-    implicit val settings = Settings(
+    implicit val settings: Settings = Settings(
       multidepositDir = invalidCSV
     )
 
@@ -269,13 +269,13 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
           " - row 2: Value 'random test data' is not a valid type",
           " - row 2: Value 'NL' is not a valid value for DC_LANGUAGE",
           " - row 2: DCT_DATE value 'Text with Qualifier' does not represent a date",
+          " - row 2: FILE_PATH 'path/to/audiofile/that/does/not/exist.mp3' does not exist",
           " - row 2: Missing value for: SF_USER",
-          " - row 2: AV_FILE 'path/to/audiofile/that/does/not/exist.mp3' does not exist",
           " - row 3: DDM_AVAILABLE value 'invalid-date' does not represent a date",
           " - row 3: Missing value for: DC_IDENTIFIER",
           " - row 3: Value 'encoding=UTF-8' is not a valid value for DC_LANGUAGE",
           " - row 3: DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it",
-          " - row 3: No value is defined for AV_FILE, while some of [AV_FILE_TITLE, AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined",
+          " - row 3: FILE_TITLE is not allowed, since FILE_PATH isn't given",
           " - row 4: DCT_DATE value '30-07-1992' does not represent a date",
           "Due to these errors in the 'instructions.csv', nothing was done."
         )
