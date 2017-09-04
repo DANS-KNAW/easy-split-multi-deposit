@@ -57,12 +57,12 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
         subjects = List(Subject("astronomie"), Subject("ruimtevaart"), Subject("planetoïden"))
       ),
       files = Map(
-        Paths.get("ruimtereis01/reisverslag/centaur.mpg") -> FileDescriptor(Option("flyby of centaur"))
+        testDir.resolve("md/ruimtereis01/reisverslag/centaur.mpg") -> FileDescriptor(Option("flyby of centaur"))
       ),
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files", PlayMode.Menu)),
         avFiles = Map(
-          Paths.get("ruimtereis01/reisverslag/centaur.mpg") -> Set(Subtitles(Paths.get("ruimtereis01/reisverslag/centaur.srt"), Option("en")))
+          testDir.resolve("md/ruimtereis01/reisverslag/centaur.mpg") -> Set(Subtitles(testDir.resolve("md/ruimtereis01/reisverslag/centaur.srt"), Option("en")))
         )
       )
     )
@@ -88,6 +88,9 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
         publishers = List("publisher 1"),
         types = List(DcType.STILLIMAGE),
         identifiers = List(Identifier("id1234"))
+      ),
+      files = Map(
+        testDir.resolve("md/ruimtereis02/path/to/images/Hubble_01.jpg") -> FileDescriptor(Some("Hubble"), Some(FileAccessRights.RESTRICTED_REQUEST))
       )
     )
   }

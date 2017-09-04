@@ -1,10 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<files xmlns:dcterms="http://purl.org/dc/terms/">
+<files xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/">
   <file filepath="data/path/to/a/random/video/hubble.mpg">
     <dcterms:type>http://schema.org/VideoObject</dcterms:type>
     <dcterms:format>video/mpeg</dcterms:format>
     <dcterms:title>hubble.mpg</dcterms:title>
-    <dcterms:accessRights>RESTRICTED_GROUP</dcterms:accessRights>
+    <accessibleToRights>RESTRICTED_GROUP</accessibleToRights>
+    <visibleToRights>RESTRICTED_GROUP</visibleToRights>
   </file>
   <file filepath="data/reisverslag/centaur-nederlands.srt">
     <dcterms:format>text/plain</dcterms:format>
@@ -13,7 +14,8 @@
     <dcterms:type>http://schema.org/VideoObject</dcterms:type>
     <dcterms:format>video/mpeg</dcterms:format>
     <dcterms:title>video about the centaur meteorite</dcterms:title>
-    <dcterms:accessRights>RESTRICTED_GROUP</dcterms:accessRights>
+    <accessibleToRights>RESTRICTED_GROUP</accessibleToRights>
+    <visibleToRights>RESTRICTED_GROUP</visibleToRights>
     <dcterms:relation xml:lang="en">data/reisverslag/centaur.srt</dcterms:relation>
     <dcterms:relation xml:lang="nl">data/reisverslag/centaur-nederlands.srt</dcterms:relation>
   </file>

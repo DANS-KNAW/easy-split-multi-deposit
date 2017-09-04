@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files xmlns:dcterms="http://purl.org/dc/terms/">
+<files xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/">
   <file filepath="data/hubble-wiki-en.txt">
     <dcterms:format>text/plain</dcterms:format>
   </file>
@@ -8,6 +8,9 @@
   </file>
   <file filepath="data/path/to/images/Hubble_01.jpg">
     <dcterms:format>image/jpeg</dcterms:format>
+    <dcterms:title>Hubble</dcterms:title>
+    <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
+    <visibleToRights>RESTRICTED_REQUEST</visibleToRights>
   </file>
   <file filepath="data/path/to/images/Hubbleshots.jpg">
     <dcterms:format>image/jpeg</dcterms:format>

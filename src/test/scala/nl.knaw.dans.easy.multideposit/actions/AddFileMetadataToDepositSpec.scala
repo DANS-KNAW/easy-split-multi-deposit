@@ -155,8 +155,8 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
     )
     AddFileMetadataToDeposit(deposit).execute() shouldBe a[Success[_]]
 
-    val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI).toFile)
     val actual = XML.loadFile(stagingFileMetadataFile(depositId).toFile)
+    val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI).toFile)
 
     actual should equalTrimmed(expected)
   }
@@ -166,8 +166,8 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
     val deposit = testDeposit2.copy(depositId = depositId)
     AddFileMetadataToDeposit(deposit).execute() shouldBe a[Success[_]]
 
-    val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI).toFile)
     val actual = XML.loadFile(stagingFileMetadataFile(depositId).toFile)
+    val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI).toFile)
 
     actual should equalTrimmed(expected)
   }
@@ -177,8 +177,8 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
     val deposit = testDeposit2.copy(depositId = depositId)
     AddFileMetadataToDeposit(deposit).execute() shouldBe a[Success[_]]
 
-    val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis03/bag/metadata/files.xml").toURI).toFile)
     val actual = XML.loadFile(stagingFileMetadataFile(depositId).toFile)
+    val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis03/bag/metadata/files.xml").toURI).toFile)
 
     actual should equalTrimmed(expected)
   }

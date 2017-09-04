@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.{ Files, Path }
 
 import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
-import nl.knaw.dans.easy.multideposit.model.{ Deposit, FileAccessRights, FileDescriptor, Subtitles }
+import nl.knaw.dans.easy.multideposit.model.{ Deposit, FileAccessRights, Subtitles }
 import nl.knaw.dans.easy.multideposit.{ Settings, UnitAction, _ }
 import nl.knaw.dans.lib.error._
 import org.apache.tika.Tika
@@ -139,9 +139,9 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
 
   def depositToFileXml: Try[Elem] = {
     fileMetadata.map(fileXmls(_) match {
-      case Nil => <files xmlns:dcterms="http://purl.org/dc/terms/"/>
+      case Nil => <files xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"/>
       case files =>
-        <files xmlns:dcterms="http://purl.org/dc/terms/">{files}</files>
+        <files xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/">{files}</files>
     })
   }
 
@@ -156,7 +156,7 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
     <file filepath={s"data/${ multiDepositDir(deposit.depositId).relativize(fmd.filepath) }"}>
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       {fmd.title.map(title => <dcterms:title>{title}</dcterms:title>).getOrElse(NodeSeq.Empty)}
-      {fmd.accessibleTo.map(act => <dcterms:accessRights>{act}</dcterms:accessRights>).getOrElse(NodeSeq.Empty)}
+      {fmd.accessibleTo.map(act => <accessibleToRights>{act}</accessibleToRights><visibleToRights>{act}</visibleToRights>).getOrElse(NodeSeq.Empty)}
     </file>
   }
 
@@ -165,7 +165,8 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
       <dcterms:type>{fmd.vocabulary.vocabulary}</dcterms:type>
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       <dcterms:title>{fmd.title}</dcterms:title>
-      <dcterms:accessRights>{fmd.accessibleTo}</dcterms:accessRights>
+      <accessibleToRights>{fmd.accessibleTo}</accessibleToRights>
+      <visibleToRights>{fmd.accessibleTo}</visibleToRights>
       {fmd.subtitles.map(subtitleXml)}
     </file>
   }

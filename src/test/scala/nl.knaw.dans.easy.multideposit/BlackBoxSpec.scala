@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.{ Files, Path, Paths }
+import java.nio.file.{ Files, Paths }
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
 import org.scalamock.scalatest.MockFactory
@@ -23,8 +23,8 @@ import resource.managed
 
 import scala.collection.JavaConverters._
 import scala.util.{ Failure, Properties, Success }
-import scala.xml.{ Elem, Node, NodeSeq, XML }
 import scala.xml.transform.{ RewriteRule, RuleTransformer }
+import scala.xml.{ Elem, Node, NodeSeq, XML }
 
 // Note to developers: this classes uses shared tests as described in
 // http://www.scalatest.org/user_guide/sharing_tests
@@ -211,22 +211,22 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
           }
         })
 
-        val datasetXml = bag.resolve("metadata/dataset.xml")
-        val expDatasetXml = expBag.resolve("metadata/dataset.xml")
+        val datasetXml = XML.loadFile(bag.resolve("metadata/dataset.xml").toFile)
+        val expDatasetXml = XML.loadFile(expBag.resolve("metadata/dataset.xml").toFile)
         val datasetTransformer = removeElemByName("available")
 
         // skipping the available field here
-        datasetTransformer.transform(XML.loadFile(datasetXml.toFile)) \ "DDM" should
-          equalTrimmed(datasetTransformer.transform(XML.loadFile(expDatasetXml.toFile)) \ "DDM")
+        datasetTransformer.transform(datasetXml) should
+          equalTrimmed(datasetTransformer.transform(expDatasetXml))
       }
 
       it should "check metadata/files.xml" in {
         doNotRunOnTravis()
 
-        val filesXml = bag.resolve("metadata/files.xml")
-        val expFilesXml = expBag.resolve("metadata/files.xml")
+        val filesXml = XML.loadFile(bag.resolve("metadata/files.xml").toFile)
+        val expFilesXml = XML.loadFile(expBag.resolve("metadata/files.xml").toFile)
 
-        (XML.loadFile(filesXml.toFile) \ "files").toSet should equalTrimmed((XML.loadFile(expFilesXml.toFile) \ "files").toSet)
+        filesXml should equalTrimmed(expFilesXml)
       }
 
       it should "check deposit.properties" in {
