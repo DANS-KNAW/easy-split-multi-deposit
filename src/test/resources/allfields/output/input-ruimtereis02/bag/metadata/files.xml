@@ -10,7 +10,6 @@
     <dcterms:format>image/jpeg</dcterms:format>
     <dcterms:title>Hubble</dcterms:title>
     <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
-    <visibleToRights>RESTRICTED_REQUEST</visibleToRights>
   </file>
   <file filepath="data/path/to/images/Hubbleshots.jpg">
     <dcterms:format>image/jpeg</dcterms:format>

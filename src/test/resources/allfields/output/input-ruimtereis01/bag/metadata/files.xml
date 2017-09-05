@@ -5,7 +5,6 @@
     <dcterms:format>video/mpeg</dcterms:format>
     <dcterms:title>hubble.mpg</dcterms:title>
     <accessibleToRights>RESTRICTED_GROUP</accessibleToRights>
-    <visibleToRights>RESTRICTED_GROUP</visibleToRights>
   </file>
   <file filepath="data/reisverslag/centaur-nederlands.srt">
     <dcterms:format>text/plain</dcterms:format>
@@ -15,7 +14,6 @@
     <dcterms:format>video/mpeg</dcterms:format>
     <dcterms:title>video about the centaur meteorite</dcterms:title>
     <accessibleToRights>RESTRICTED_GROUP</accessibleToRights>
-    <visibleToRights>RESTRICTED_GROUP</visibleToRights>
     <dcterms:relation xml:lang="en">data/reisverslag/centaur.srt</dcterms:relation>
     <dcterms:relation xml:lang="nl">data/reisverslag/centaur-nederlands.srt</dcterms:relation>
   </file>

@@ -156,7 +156,7 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
     <file filepath={s"data/${ multiDepositDir(deposit.depositId).relativize(fmd.filepath) }"}>
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       {fmd.title.map(title => <dcterms:title>{title}</dcterms:title>).getOrElse(NodeSeq.Empty)}
-      {fmd.accessibleTo.map(act => <accessibleToRights>{act}</accessibleToRights><visibleToRights>{act}</visibleToRights>).getOrElse(NodeSeq.Empty)}
+      {fmd.accessibleTo.map(act => <accessibleToRights>{act}</accessibleToRights>).getOrElse(NodeSeq.Empty)}
     </file>
   }
 
@@ -166,7 +166,6 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       <dcterms:title>{fmd.title}</dcterms:title>
       <accessibleToRights>{fmd.accessibleTo}</accessibleToRights>
-      <visibleToRights>{fmd.accessibleTo}</visibleToRights>
       {fmd.subtitles.map(subtitleXml)}
     </file>
   }
