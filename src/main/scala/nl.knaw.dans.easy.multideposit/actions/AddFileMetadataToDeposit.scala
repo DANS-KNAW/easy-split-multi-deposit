@@ -139,9 +139,18 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
 
   def depositToFileXml: Try[Elem] = {
     fileMetadata.map(fileXmls(_) match {
-      case Nil => <files xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"/>
-      case files =>
-        <files xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/">{files}</files>
+      case Nil => <files
+        xmlns:dcterms="http://purl.org/dc/terms/"
+        xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation={"http://purl.org/dc/terms/ http://dublincore.org/schemas/xmls/qdc/2008/02/11/dcterms.xsd " +
+          "http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd"}/>
+      case files => <files
+        xmlns:dcterms="http://purl.org/dc/terms/"
+        xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation={"http://purl.org/dc/terms/ http://dublincore.org/schemas/xmls/qdc/2008/02/11/dcterms.xsd " +
+          "http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd"}>{files}</files>
     })
   }
 
