@@ -132,7 +132,7 @@ need to be provided. A file can only have one value for `FILE_TITLE` or `FILE_AC
 `DDM_ACCESSRIGHTS` for the specified file only.
 The information found in the `FILE_*` columns is put into `files.xml` to better describe the file
 at hand. The `FILE_TITLE` relation is put inside a `dcterms:title` element; the `FILE_ACCESSIBILITY`
-relation is put inside a `dcterms:accessRights` element. Note that if no `FILE_TITLE` is described
+relation is put inside the `accessibleToRights` element. Note that if no `FILE_TITLE` is described
 for an audio/video file (see section on Springfield below), the file's name itself is used here.
 Similar for `FILE_ACCESSIBILITY`: if it is not given for an audio/video file, the dataset's default
 `DDM_ACCESSRIGHTS` is used instead.

@@ -1,38 +1,39 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<files xmlns:dcterms="http://purl.org/dc/terms/">
-  <file filepath="data/path/to/a/random/video/hubble.mpg">
-    <dcterms:type>http://schema.org/VideoObject</dcterms:type>
-    <dcterms:format>video/mpeg</dcterms:format>
-    <dcterms:title>hubble.mpg</dcterms:title>
-    <dcterms:accessRights>RESTRICTED_GROUP</dcterms:accessRights>
-  </file>
-  <file filepath="data/reisverslag/centaur-nederlands.srt">
-    <dcterms:format>text/plain</dcterms:format>
-  </file>
-  <file filepath="data/reisverslag/centaur.mpg">
-    <dcterms:type>http://schema.org/VideoObject</dcterms:type>
-    <dcterms:format>video/mpeg</dcterms:format>
-    <dcterms:title>video about the centaur meteorite</dcterms:title>
-    <dcterms:accessRights>RESTRICTED_GROUP</dcterms:accessRights>
-    <dcterms:relation xml:lang="en">data/reisverslag/centaur.srt</dcterms:relation>
-    <dcterms:relation xml:lang="nl">data/reisverslag/centaur-nederlands.srt</dcterms:relation>
-  </file>
-  <file filepath="data/reisverslag/centaur.srt">
-    <dcterms:format>text/plain</dcterms:format>
-  </file>
-  <file filepath="data/reisverslag/deel01.docx">
-    <dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format>
-  </file>
-  <file filepath="data/reisverslag/deel01.txt">
-    <dcterms:format>text/plain</dcterms:format>
-  </file>
-  <file filepath="data/reisverslag/deel02.txt">
-    <dcterms:format>text/plain</dcterms:format>
-  </file>
-  <file filepath="data/reisverslag/deel03.txt">
-    <dcterms:format>text/plain</dcterms:format>
-  </file>
-  <file filepath="data/ruimtereis01_verklaring.txt">
-    <dcterms:format>text/plain</dcterms:format>
-  </file>
+<files xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://purl.org/dc/terms/ http://dublincore.org/schemas/xmls/qdc/2008/02/11/dcterms.xsd http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd">
+    <file filepath="data/path/to/a/random/video/hubble.mpg">
+        <dcterms:type>http://schema.org/VideoObject</dcterms:type>
+        <dcterms:format>video/mpeg</dcterms:format>
+        <dcterms:title>hubble.mpg</dcterms:title>
+        <accessibleToRights>RESTRICTED_GROUP</accessibleToRights>
+    </file>
+    <file filepath="data/reisverslag/centaur-nederlands.srt">
+        <dcterms:format>text/plain</dcterms:format>
+    </file>
+    <file filepath="data/reisverslag/centaur.mpg">
+        <dcterms:type>http://schema.org/VideoObject</dcterms:type>
+        <dcterms:format>video/mpeg</dcterms:format>
+        <dcterms:title>video about the centaur meteorite</dcterms:title>
+        <accessibleToRights>RESTRICTED_GROUP</accessibleToRights>
+        <dcterms:relation xml:lang="en">data/reisverslag/centaur.srt</dcterms:relation>
+        <dcterms:relation xml:lang="nl">data/reisverslag/centaur-nederlands.srt</dcterms:relation>
+    </file>
+    <file filepath="data/reisverslag/centaur.srt">
+        <dcterms:format>text/plain</dcterms:format>
+    </file>
+    <file filepath="data/reisverslag/deel01.docx">
+        <dcterms:format>application/vnd.openxmlformats-officedocument.wordprocessingml.document</dcterms:format>
+    </file>
+    <file filepath="data/reisverslag/deel01.txt">
+        <dcterms:format>text/plain</dcterms:format>
+    </file>
+    <file filepath="data/reisverslag/deel02.txt">
+        <dcterms:format>text/plain</dcterms:format>
+    </file>
+    <file filepath="data/reisverslag/deel03.txt">
+        <dcterms:format>text/plain</dcterms:format>
+    </file>
+    <file filepath="data/ruimtereis01_verklaring.txt">
+        <dcterms:format>text/plain</dcterms:format>
+    </file>
 </files>

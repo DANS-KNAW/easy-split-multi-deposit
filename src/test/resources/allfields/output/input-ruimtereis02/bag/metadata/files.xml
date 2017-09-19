@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files xmlns:dcterms="http://purl.org/dc/terms/">
-  <file filepath="data/hubble-wiki-en.txt">
-    <dcterms:format>text/plain</dcterms:format>
-  </file>
-  <file filepath="data/hubble-wiki-nl.txt">
-    <dcterms:format>text/plain</dcterms:format>
-  </file>
-  <file filepath="data/path/to/images/Hubble_01.jpg">
-    <dcterms:format>image/jpeg</dcterms:format>
-  </file>
-  <file filepath="data/path/to/images/Hubbleshots.jpg">
-    <dcterms:format>image/jpeg</dcterms:format>
-  </file>
+<files xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://purl.org/dc/terms/ http://dublincore.org/schemas/xmls/qdc/2008/02/11/dcterms.xsd http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd">
+    <file filepath="data/hubble-wiki-en.txt">
+        <dcterms:format>text/plain</dcterms:format>
+    </file>
+    <file filepath="data/hubble-wiki-nl.txt">
+        <dcterms:format>text/plain</dcterms:format>
+    </file>
+    <file filepath="data/path/to/images/Hubble_01.jpg">
+        <dcterms:format>image/jpeg</dcterms:format>
+        <dcterms:title>Hubble</dcterms:title>
+        <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
+    </file>
+    <file filepath="data/path/to/images/Hubbleshots.jpg">
+        <dcterms:format>image/jpeg</dcterms:format>
+    </file>
 </files>

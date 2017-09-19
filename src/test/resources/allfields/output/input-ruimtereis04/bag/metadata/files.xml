@@ -1,15 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<files xmlns:dcterms="http://purl.org/dc/terms/">
-  <file filepath="data/path/to/a/random/file/file.txt">
-    <dcterms:format>text/plain</dcterms:format>
-  </file>
-  <file filepath="data/path/to/a/random/sound/chicken.mp3">
-    <dcterms:type>http://schema.org/AudioObject</dcterms:type>
-    <dcterms:format>audio/mpeg</dcterms:format>
-    <dcterms:title>our daily wake up call</dcterms:title>
-    <dcterms:accessRights>KNOWN</dcterms:accessRights>
-  </file>
-  <file filepath="data/Quicksort.hs">
-    <dcterms:format>text/x-haskell</dcterms:format>
-  </file>
+<files xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://purl.org/dc/terms/ http://dublincore.org/schemas/xmls/qdc/2008/02/11/dcterms.xsd http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd">
+    <file filepath="data/path/to/a/random/file/file.txt">
+        <dcterms:format>text/plain</dcterms:format>
+    </file>
+    <file filepath="data/path/to/a/random/sound/chicken.mp3">
+        <dcterms:type>http://schema.org/AudioObject</dcterms:type>
+        <dcterms:format>audio/mpeg</dcterms:format>
+        <dcterms:title>our daily wake up call</dcterms:title>
+        <accessibleToRights>KNOWN</accessibleToRights>
+    </file>
+    <file filepath="data/Quicksort.hs">
+        <dcterms:format>text/x-haskell</dcterms:format>
+    </file>
 </files>

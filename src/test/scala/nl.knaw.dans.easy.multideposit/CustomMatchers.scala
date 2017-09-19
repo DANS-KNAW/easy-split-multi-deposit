@@ -20,7 +20,7 @@ import java.nio.file.Path
 import org.scalatest.matchers.{ MatchResult, Matcher }
 
 import scala.io.Source
-import scala.xml.{ Node, Utility }
+import scala.xml._
 
 /** Does not dump the full file but just the searched content if it is not found.
  *
@@ -42,22 +42,14 @@ trait CustomMatchers {
   class EqualTrimmedMatcher(right: Iterable[Node]) extends Matcher[Iterable[Node]] {
     override def apply(left: Iterable[Node]): MatchResult = {
       MatchResult(
-        left.zip(right).forall { case (l, r) => Utility.trim(l).toString() == Utility.trim(r).toString() },
+        left.zip(right).forall { case (l, r) =>
+          val pp = new PrettyPrinter(160, 2)
+          XML.loadString(pp.format(l)) == XML.loadString(pp.format(r))
+        },
         s"$left did not equal $right",
         s"$left did equal $right"
       )
     }
   }
   def equalTrimmed(right: Iterable[Node]) = new EqualTrimmedMatcher(right)
-
-  class EqualMatcher(right: Iterable[Node]) extends Matcher[Iterable[Node]] {
-    override def apply(left: Iterable[Node]): MatchResult = {
-      MatchResult(
-        left.zip(right).forall { case (l, r) => l.toString() == r.toString() },
-        s"$left did not equal $right",
-        s"$left did equal $right"
-      )
-    }
-  }
-  def equal(right: Iterable[Node]) = new EqualMatcher(right)
 }
