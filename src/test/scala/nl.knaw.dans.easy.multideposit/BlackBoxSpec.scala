@@ -220,13 +220,27 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
           equalTrimmed(datasetTransformer.transform(expDatasetXml))
       }
 
+      // in this test we cannot compare the actual contents, since the order of the <file>
+      // elements might differ per machine. Therefore we compare all the <file> elements separately.
       it should "check metadata/files.xml" in {
         doNotRunOnTravis()
 
         val filesXml = XML.loadFile(bag.resolve("metadata/files.xml").toFile)
         val expFilesXml = XML.loadFile(expBag.resolve("metadata/files.xml").toFile)
 
-        filesXml should equalTrimmed(expFilesXml)
+        val files = filesXml \ "file"
+        val expFiles = expFilesXml \ "file"
+
+        def getPath(node: Node): String = node \@ "filepath"
+
+        // if we check the sizes first, we only have to compare in one way
+        files.size shouldBe expFiles.size
+        for (file <- files) {
+          val path = getPath(file)
+          expFiles.find(expectedFile => getPath(expectedFile) == path)
+            .map(expectedFile => file should equalTrimmed(expectedFile))
+            .getOrElse(fail(s"the expected output did not contain a <file> for $path"))
+        }
       }
 
       it should "check deposit.properties" in {
