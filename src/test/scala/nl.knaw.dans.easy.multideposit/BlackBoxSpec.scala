@@ -54,7 +54,7 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
     Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
 
-    it should "contain all Formats" in {
+    it should "contain certain Formats" in {
       formats.contains("audio/mpeg3") shouldBe true
     }
   }
