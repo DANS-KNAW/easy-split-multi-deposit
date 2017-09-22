@@ -94,6 +94,7 @@ trait MetadataParser {
 
     (qualifier, link, title) match {
       case (Some(_), None, None) => Some(Failure(ParseException(rowNum, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well")))
+      case (_, Some(_), None) => Some(Failure(ParseException(rowNum, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context")))
       case (Some(q), l, t) =>
         RelationQualifier.valueOf(q)
           .map(qf => Success(QualifiedRelation(qf, l, t)))
