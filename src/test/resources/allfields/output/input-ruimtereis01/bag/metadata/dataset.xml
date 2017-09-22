@@ -41,7 +41,7 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dcterms:rightsHolder>linda</dcterms:rightsHolder>
     <ddm:replaces href="foobar">dummy</ddm:replaces>
     <dcterms:isRequiredBy>blabla</dcterms:isRequiredBy>
-    <ddm:relation href="http://x"/>
+    <ddm:relation href="http://x">x</ddm:relation>
     <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$sdo-id</ddm:relation>
     <dcterms:valid>2017-07-30</dcterms:valid>
     <dcterms:issued>2017-07-31</dcterms:issued>

@@ -301,7 +301,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     }
   }
 
-  it should "succeed when only the qualifier and link are defined" in {
+  it should "fail when only the qualifier and link are defined" in {
     val row = Map(
       "DCX_RELATION_QUALIFIER" -> "replaces",
       "DCX_RELATION_LINK" -> "foo",
@@ -309,7 +309,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     relation(2)(row).value should matchPattern {
-      case Success(QualifiedRelation(RelationQualifier.Replaces, Some("foo"), None)) =>
+      case Failure(ParseException(2, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context", _)) =>
     }
   }
 
@@ -361,7 +361,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     }
   }
 
-  it should "succeed if only the link is defined" in {
+  it should "fail if only the link is defined" in {
     val row = Map(
       "DCX_RELATION_QUALIFIER" -> "",
       "DCX_RELATION_LINK" -> "foo",
@@ -369,7 +369,7 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
     )
 
     relation(2)(row).value should matchPattern {
-      case Success(UnqualifiedRelation(Some("foo"), None)) =>
+      case Failure(ParseException(2, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context", _)) =>
     }
   }
 
