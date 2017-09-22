@@ -110,13 +110,13 @@ following four values: {`ISBN`, `ISSN`, `NWO-PROJECTNR`, `ARCHIS-ZAAK-IDENTIFICA
 `AV_SUBTITLE_LANGUAGE` should be formatted as an [ISO 639-1](https://www.loc.gov/standards/iso639-2/php/code_list.php).
 
 #### Format
-`DC_FORMAT` can either have free text or be one of the elements listed in the [formats list](src/main/assembly/dist/cfg/formats.txt).
+`DC_FORMAT` can either have free text or be one of the elements listed in the [formats list](src/main/assembly/dist/cfg/acceptedMediaTypes.txt).
 In the latter case an extra `xsi:type` is added to the resulting DDM xml.
 
 #### Type
 `DC_TYPE` can only have a value from the set {`Collection`, `Dataset`, `Event`, `Image`, 
 `InteractiveResource`, `MovingImage`, `PhysicalObject`, `Service`, `Software`, `Sound`, 
-`StillImage`, `Text`}. If no value is given, `Dataset` is choosen as a default.
+`StillImage`, `Text`}. If no value is given, `Dataset` is chosen as a default.
 
 #### Date
 `DCT_DATE_QUALIFIER` can only have a value from the set {`valid`, `issued`, `modified`,
