@@ -99,7 +99,7 @@ The generic `relation` element from Dublin Core is not supported. Only relations
 form of URL's are accepted. `DCX_RELATION_QUALIFIER` is one of the 
 [refinements of the relation element]. `DCX_RELATION_TITLE` is the title of the 
 hyperlink if it is displayed on a web page and `DCX_RELATION_LINK` the URL to the
-related resource.
+related resource. If a link is provided, a title should be given to provide context.
 
 #### Identifier
 `DC_IDENTIFIER_TYPE` gives extra meaning to the `DC_IDENTIFIER`. It can only have either one of the
