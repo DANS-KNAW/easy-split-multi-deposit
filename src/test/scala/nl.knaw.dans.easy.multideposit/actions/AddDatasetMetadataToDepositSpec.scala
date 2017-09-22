@@ -67,7 +67,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
         formats = List("text/plain")
       )
     )
-    inside(AddDatasetMetadataToDeposit(deposit).checkPreconditions) {
+    inside(AddDatasetMetadataToDeposit.checkSpringFieldDepositHasAVformat(deposit)) {
       case Failure(ActionException(_, message, _)) =>
         message should include("No audio/video Format found for this column: [DC_FORMAT]")
     }
