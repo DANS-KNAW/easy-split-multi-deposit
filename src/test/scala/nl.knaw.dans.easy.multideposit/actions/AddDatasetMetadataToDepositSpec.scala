@@ -69,9 +69,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
     )
     inside(AddDatasetMetadataToDeposit(deposit).checkPreconditions) {
       case Failure(ActionException(_, message, _)) =>
-        message should {
-          include("No audio/video Format found for this column: [DC_FORMAT]")
-        }
+        message should include("No audio/video Format found for this column: [DC_FORMAT]")
     }
   }
 

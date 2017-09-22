@@ -34,8 +34,11 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
   private val formatsFile: Path = Paths.get("src/main/assembly/dist/cfg/acceptedMediaTypes.txt").toAbsolutePath
   private val formats =
     if (Files.exists(formatsFile)) managed(Source.fromFile(formatsFile.toFile)).acquireAndGet(_.getLines.map(_.trim).toSet)
-    else Set.empty[String]
+    else fail("Cannot find file: acceptedMediaTypes.txt")
 
+  "acceptedMediaFiles" should "contain certain Formats" in {
+    formats.contains("audio/mpeg3") shouldBe true
+  }
 
   private val allfields = testDir.resolve("md/allfields").toAbsolutePath
   private val invalidCSV = testDir.resolve("md/invalidCSV").toAbsolutePath
@@ -54,9 +57,6 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
     Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
 
-    it should "contain certain Formats" in {
-      formats.contains("audio/mpeg3") shouldBe true
-    }
   }
 
   private def doNotRunOnTravis() = {

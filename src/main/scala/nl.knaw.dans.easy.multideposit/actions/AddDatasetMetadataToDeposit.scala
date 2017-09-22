@@ -34,22 +34,7 @@ case class AddDatasetMetadataToDeposit(deposit: Deposit)(implicit settings: Sett
    * @return `Success` when all preconditions are met, `Failure` otherwise
    */
   override def checkPreconditions: Try[Unit] = {
-    def checkSpringFieldDepositHasAVformat(): Try[Unit] = {
-
-      (deposit.audioVideo.springfield.isDefined, deposit.metadata.formats.filter(s => s.startsWith("audio/")||s.startsWith("video/")).isEmpty) match {
-        case(false, _) => Success(())
-        case(true, false) => Success(())
-        case(true, true) =>
-          Failure(ActionException(deposit.row,
-            "No audio/video Format found for this column: [DC_FORMAT]\n" +
-              "cause: this column should contain at least one " +
-              "audio/ or video/ value because SF columns are present"))
-      }
-    }
-
-    for {
-      _ <- checkSpringFieldDepositHasAVformat()
-    } yield ()
+    checkSpringFieldDepositHasAVformat(deposit)
   }
 
   override def execute(): Try[Unit] = writeDatasetMetadataXml(deposit)
@@ -61,6 +46,20 @@ object AddDatasetMetadataToDeposit {
       stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
     } recoverWith {
       case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write deposit metadata: $e", e))
+    }
+  }
+
+  def checkSpringFieldDepositHasAVformat(deposit: Deposit): Try[Unit] = {
+
+    deposit.audioVideo.springfield match {
+      case None => Success(())
+      case Some(_) => deposit.metadata.formats
+        .find(s => s.startsWith("audio/") || s.startsWith("video/"))
+        .map(_ => Success(()))
+        .getOrElse(Failure(ActionException(deposit.row,
+          "No audio/video Format found for this column: [DC_FORMAT]\n" +
+            "cause: this column should contain at least one " +
+            "audio/ or video/ value because SF columns are present")))
     }
   }
 
