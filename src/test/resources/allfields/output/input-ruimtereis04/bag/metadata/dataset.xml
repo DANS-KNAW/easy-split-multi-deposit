@@ -23,6 +23,7 @@
   </ddm:profile>
   <ddm:dcmiMetadata>
     <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
+    <dc:format xsi:type="dcterms:IMT">audio/mpeg3</dc:format>
     <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/janvanmansum/collection/Jans-test-files/presentation/$sdo-id</ddm:relation>
   </ddm:dcmiMetadata>
 </ddm:DDM>

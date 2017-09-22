@@ -31,7 +31,7 @@ object Configuration {
     val cfgPath = Seq(Paths.get(s"/etc/opt/dans.knaw.nl/easy-split-multi-deposit/"), home.resolve("cfg"))
       .find(Files.exists(_))
       .getOrElse { throw new IllegalStateException("No configuration directory found") }
-    val formatsFile = cfgPath.resolve("formats.txt")
+    val formatsFile = cfgPath.resolve("acceptedMediaTypes.txt")
 
     new Configuration(
       version = managed(Source.fromFile(home.resolve("bin/version").toFile)).acquireAndGet(_.mkString),
