@@ -25,7 +25,7 @@ import nl.knaw.dans.easy.multideposit.parser._
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.Success
+import scala.util.{ Failure, Success }
 import scala.xml.{ Elem, Node }
 
 class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with BeforeAndAfterEach {
@@ -59,6 +59,29 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       identifiers = List(Identifier("123456", Some(IdentifierType.ISBN)), Identifier("id"))
     )
   )
+
+  "checkSpringFieldDepositHasAVformat" should "fail if the deposit contains SF_* fields, but no AV DC_FORMAT is given" in {
+    val deposit = testDeposit1.copy(
+      depositId = depositId,
+      metadata = Metadata(
+        formats = List("text/plain")
+      )
+    )
+    inside(AddDatasetMetadataToDeposit.checkSpringFieldDepositHasAVformat(deposit)) {
+      case Failure(ActionException(_, message, _)) =>
+        message should include("No audio/video Format found for this column: [DC_FORMAT]")
+    }
+  }
+
+  it should "succeed if the deposit contains SF_* fields, and the DC_FORMAT contains audio/" in {
+    val deposit = testDeposit1.copy(
+      depositId = depositId,
+      metadata = Metadata(
+        formats = List("audio/mpeg3")
+      )
+    )
+    AddDatasetMetadataToDeposit.checkSpringFieldDepositHasAVformat(deposit) shouldBe a[Success[_]]
+  }
 
   val expectedXml: Elem = <ddm:DDM
   xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"

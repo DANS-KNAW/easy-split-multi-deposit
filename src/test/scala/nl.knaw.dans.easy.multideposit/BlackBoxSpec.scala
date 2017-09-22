@@ -15,13 +15,14 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.{ Files, Paths }
+import java.nio.file.{ Files, Path, Paths }
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
 import org.scalamock.scalatest.MockFactory
 import resource.managed
 
 import scala.collection.JavaConverters._
+import scala.io.Source
 import scala.util.{ Failure, Properties, Success }
 import scala.xml.transform.{ RewriteRule, RuleTransformer }
 import scala.xml.{ Elem, Node, NodeSeq, XML }
@@ -30,21 +31,15 @@ import scala.xml.{ Elem, Node, NodeSeq, XML }
 // http://www.scalatest.org/user_guide/sharing_tests
 class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
 
-  private val formats = """
-                          |application/postscript
-                          |application/rtf
-                          |application/pdf
-                          |application/msword
-                          |text/plain
-                          |text/html
-                          |text/sgml
-                          |text/xml
-                          |image/jpeg
-                          |image/gif
-                          |image/tiff
-                          |video/quicktime
-                          |video/mpeg1
-                        """.stripMargin.split("\n").map(_.trim).toSet
+  private val formatsFile: Path = Paths.get("src/main/assembly/dist/cfg/acceptedMediaTypes.txt").toAbsolutePath
+  private val formats =
+    if (Files.exists(formatsFile)) managed(Source.fromFile(formatsFile.toFile)).acquireAndGet(_.getLines.map(_.trim).toSet)
+    else fail("Cannot find file: acceptedMediaTypes.txt")
+
+  "acceptedMediaFiles" should "contain certain Formats" in {
+    formats.contains("audio/mpeg3") shouldBe true
+  }
+
   private val allfields = testDir.resolve("md/allfields").toAbsolutePath
   private val invalidCSV = testDir.resolve("md/invalidCSV").toAbsolutePath
 
@@ -61,6 +56,7 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
   def beforeAll(): Unit = {
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
     Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
+
   }
 
   private def doNotRunOnTravis() = {

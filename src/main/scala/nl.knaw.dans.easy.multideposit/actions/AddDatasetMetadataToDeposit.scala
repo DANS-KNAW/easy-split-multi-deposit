@@ -23,10 +23,19 @@ import org.joda.time.format.ISODateTimeFormat
 
 import scala.language.postfixOps
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Try }
+import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, Null, PrefixedAttribute }
 
 case class AddDatasetMetadataToDeposit(deposit: Deposit)(implicit settings: Settings) extends UnitAction[Unit] {
+
+  /**
+   * Verifies whether all preconditions are met for this specific action.
+   *
+   * @return `Success` when all preconditions are met, `Failure` otherwise
+   */
+  override def checkPreconditions: Try[Unit] = {
+    checkSpringFieldDepositHasAVformat(deposit)
+  }
 
   override def execute(): Try[Unit] = writeDatasetMetadataXml(deposit)
 }
@@ -37,6 +46,20 @@ object AddDatasetMetadataToDeposit {
       stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
     } recoverWith {
       case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write deposit metadata: $e", e))
+    }
+  }
+
+  def checkSpringFieldDepositHasAVformat(deposit: Deposit): Try[Unit] = {
+
+    deposit.audioVideo.springfield match {
+      case None => Success(())
+      case Some(_) => deposit.metadata.formats
+        .find(s => s.startsWith("audio/") || s.startsWith("video/"))
+        .map(_ => Success(()))
+        .getOrElse(Failure(ActionException(deposit.row,
+          "No audio/video Format found for this column: [DC_FORMAT]\n" +
+            "cause: this column should contain at least one " +
+            "audio/ or video/ value because SF columns are present")))
     }
   }
 
