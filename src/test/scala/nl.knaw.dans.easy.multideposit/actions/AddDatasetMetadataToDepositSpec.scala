@@ -60,7 +60,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
     )
   )
 
-  "checkPreconditions" should "fail if the deposit contains SF_* fields, but no AV DC_FORMAT is given" in {
+  "checkSpringFieldDepositHasAVformat" should "fail if the deposit contains SF_* fields, but no AV DC_FORMAT is given" in {
     val deposit = testDeposit1.copy(
       depositId = depositId,
       metadata = Metadata(
@@ -71,6 +71,16 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       case Failure(ActionException(_, message, _)) =>
         message should include("No audio/video Format found for this column: [DC_FORMAT]")
     }
+  }
+
+  it should "succeed if the deposit contains SF_* fields, and the DC_FORMAT contains audio/" in {
+    val deposit = testDeposit1.copy(
+      depositId = depositId,
+      metadata = Metadata(
+        formats = List("audio/mpeg3")
+      )
+    )
+    AddDatasetMetadataToDeposit.checkSpringFieldDepositHasAVformat(deposit) shouldBe a[Success[_]]
   }
 
   val expectedXml: Elem = <ddm:DDM
