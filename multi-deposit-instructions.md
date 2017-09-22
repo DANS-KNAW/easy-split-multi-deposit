@@ -166,6 +166,7 @@ a audio or video presentation contained in the dataset:
 * The information found in the `AV_*` columns is put into `files.xml` to better describe the file
   at hand. The `AV_SUBTITLE` and `AV_SUBTITLE_LANGUAGE` are declared in a `dcterms:relation` and
   its `xml:lang` attribute respectively.
+* If SF_* fields are present, a `DC_FORMAT` for audio/ or video/ Internet Media Types is expected  
 
 
 3. File Processing Instructions
