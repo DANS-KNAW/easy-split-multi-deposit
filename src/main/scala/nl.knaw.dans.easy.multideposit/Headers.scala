@@ -64,7 +64,8 @@ object Headers {
     "DCX_CREATOR_INSERTIONS",
     "DCX_CREATOR_SURNAME",
     "DCX_CREATOR_DAI",
-    "DCX_CREATOR_ORGANIZATION"
+    "DCX_CREATOR_ORGANIZATION",
+    "DCX_CREATOR_ROLE"
   )
 
   private lazy val composedContributorFields = Set(
@@ -73,7 +74,8 @@ object Headers {
     "DCX_CONTRIBUTOR_INSERTIONS",
     "DCX_CONTRIBUTOR_SURNAME",
     "DCX_CONTRIBUTOR_DAI",
-    "DCX_CONTRIBUTOR_ORGANIZATION"
+    "DCX_CONTRIBUTOR_ORGANIZATION",
+    "DCX_CONTRIBUTOR_ROLE"
   )
 
   private lazy val composedSpatialPointFields = Set(
