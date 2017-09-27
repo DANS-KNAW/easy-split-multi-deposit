@@ -11,7 +11,7 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
         <dcx-dai:titles>Captain</dcx-dai:titles>
         <dcx-dai:initials>J.T.</dcx-dai:initials>
         <dcx-dai:surname>Kirk</dcx-dai:surname>
-        <dcx-dai:role scheme="DATACITE">RegistrationAuthority</dcx-dai:role>
+        <dcx-dai:role>RegistrationAuthority</dcx-dai:role>
         <dcx-dai:organization>
           <dcx-dai:name xml:lang="en">United Federation of Planets</dcx-dai:name>
         </dcx-dai:organization>
@@ -62,7 +62,7 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
         <dcx-dai:initials>O.</dcx-dai:initials>
         <dcx-dai:insertions>van</dcx-dai:insertions>
         <dcx-dai:surname>Belix</dcx-dai:surname>
-        <dcx-dai:role scheme="DATACITE">WorkPackageLeader</dcx-dai:role>
+        <dcx-dai:role>WorkPackageLeader</dcx-dai:role>
       </dcx-dai:author>
     </dcx-dai:contributorDetails>
     <dc:subject>astronomie</dc:subject>

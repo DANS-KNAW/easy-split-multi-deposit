@@ -107,7 +107,7 @@ object AddDatasetMetadataToDeposit {
   }
 
   private def createRole(role: ContributorRole.Value): Elem = {
-    <dcx-dai:role scheme="DATACITE">{role.toString}</dcx-dai:role>
+    <dcx-dai:role>{role.toString}</dcx-dai:role>
   }
 
   def createCreator(creator: Creator): Elem = {

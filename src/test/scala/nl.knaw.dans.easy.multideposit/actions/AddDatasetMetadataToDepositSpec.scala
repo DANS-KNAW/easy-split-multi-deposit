@@ -113,7 +113,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       <dcx-dai:creatorDetails>
         <dcx-dai:organization>
           <dcx-dai:name xml:lang="en">consectetur adipiscing elit</dcx-dai:name>
-          <dcx-dai:role scheme="DATACITE">Supervisor</dcx-dai:role>
+          <dcx-dai:role>Supervisor</dcx-dai:role>
         </dcx-dai:organization>
       </dcx-dai:creatorDetails>
       <dcx-dai:creatorDetails>
@@ -139,7 +139,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
         <dcx-dai:author>
           <dcx-dai:initials>B.</dcx-dai:initials>
           <dcx-dai:surname>Smith</dcx-dai:surname>
-          <dcx-dai:role scheme="DATACITE">DataCollector</dcx-dai:role>
+          <dcx-dai:role>DataCollector</dcx-dai:role>
           <dcx-dai:organization><dcx-dai:name xml:lang="en">Lorem ipsum dolor sit amet</dcx-dai:name></dcx-dai:organization>
         </dcx-dai:author>
       </dcx-dai:contributorDetails>
@@ -264,7 +264,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
           <dcx-dai:initials>C.</dcx-dai:initials>
           <dcx-dai:insertions>X</dcx-dai:insertions>
           <dcx-dai:surname>Jones</dcx-dai:surname>
-          <dcx-dai:role scheme="DATACITE">ProjectManager</dcx-dai:role>
+          <dcx-dai:role>ProjectManager</dcx-dai:role>
           <dcx-dai:DAI>dai</dcx-dai:DAI>
           <dcx-dai:organization>
             <dcx-dai:name xml:lang="en">contr2</dcx-dai:name>

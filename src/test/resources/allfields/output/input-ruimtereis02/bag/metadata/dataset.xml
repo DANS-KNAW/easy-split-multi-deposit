@@ -15,7 +15,7 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
         <dcx-dai:titles>Dr</dcx-dai:titles>
         <dcx-dai:initials>C</dcx-dai:initials>
         <dcx-dai:surname>Sagan</dcx-dai:surname>
-        <dcx-dai:role scheme="DATACITE">RightsHolder</dcx-dai:role>
+        <dcx-dai:role>RightsHolder</dcx-dai:role>
         <dcx-dai:organization>
           <dcx-dai:name xml:lang="en">Cornell University</dcx-dai:name>
         </dcx-dai:organization>
@@ -26,7 +26,7 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
         <dcx-dai:initials>A.W.M.</dcx-dai:initials>
         <dcx-dai:insertions>van</dcx-dai:insertions>
         <dcx-dai:surname>tseeH</dcx-dai:surname>
-        <dcx-dai:role scheme="DATACITE">ProjectManager</dcx-dai:role>
+        <dcx-dai:role>ProjectManager</dcx-dai:role>
         <dcx-dai:DAI>info:eu-repo/dai/nl/012345678</dcx-dai:DAI>
         <dcx-dai:organization>
           <dcx-dai:name xml:lang="en">WANK/SNAD</dcx-dai:name>
