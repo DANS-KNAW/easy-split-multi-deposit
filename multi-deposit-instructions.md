@@ -50,10 +50,10 @@ The supported metadata elements are subdivided into the following groups:
   `DCT_TEMPORAL`, `DCT_RIGHTSHOLDER`, `DCT_DATE`, `DCT_DATE_QUALIFIER`;
 * DANS specific specializations of Dublin Core: `DCX_CREATOR_TITLES`, 
   `DCX_CREATOR_INITIALS`, `DCX_CREATOR_INSERTIONS`,
-  `DCX_CREATOR_SURNAME`, `DCX_CREATOR_DAI`, `DCX_CREATOR_ORGANIZATION`,
+  `DCX_CREATOR_SURNAME`, `DCX_CREATOR_DAI`, `DCX_CREATOR_ORGANIZATION`, `DCX_CREATOR_ROLE`,
   `DCX_CONTRIBUTOR_TITLES`, `DCX_CONTRIBUTOR_INITIALS`,
   `DCX_CONTRIBUTOR_INSERTIONS`, `DCX_CONTRIBUTOR_SURNAME`, `DCX_CONTRIBUTOR_DAI`,
-  `DCX_CONTRIBUTOR_ORGANIZATION`,
+  `DCX_CONTRIBUTOR_ORGANIZATION`, `DCX_CONTRIBUTOR_ROLE`,
   `DCX_SPATIAL_SCHEME`, `DCX_SPATIAL_X`, `DCX_SPATIAL_Y`, `DCX_SPATIAL_NORTH`,
   `DCX_SPATIAL_SOUTH`, `DCX_SPATIAL_EAST`, `DCX_SPATIAL_WEST`,
   `DCT_TEMPORAL_SCHEME`, `DC_SUBJECT_SCHEME`,
@@ -81,6 +81,9 @@ defined on the Dublin Core website.
 The `DCX_CREATOR_*` and `DCX_CONTRIBUTOR_*` elements follow the semantics of the 
 corresponding Dublin Core elements. The only difference is that the description is
 split into subfields that are fairly self-describing.
+
+Note that the columns `DCX_CREATOR_ROLE` and `DCX_CONTRIBUTOR_ROLE` have to contain values from
+the [DataCite ContributorType list].
 
 #### Spatial
 `DCT_SPATIAL` can contain any value that can be construed as "spatial characteristic" of the
@@ -256,3 +259,4 @@ combined with the `DATASET` value.
 [Rijksdriehoekscoördinaten]: https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten
 [refinements of the relation element]: http://dublincore.org/documents/usageguide/qualifiers.shtml#isVersionOf
 [Springfield Web TV]: http://noterik.github.io/
+[DataCite ContributorType list]: http://schema.datacite.org/meta/kernel-4.0/include/datacite-contributorType-v4.xsd

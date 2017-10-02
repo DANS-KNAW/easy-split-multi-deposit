@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit.model
 import java.nio.file.Path
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
+import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
 import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
 import org.joda.time.DateTime
 
@@ -39,12 +40,14 @@ case class Profile(titles: NonEmptyList[String],
                    accessright: AccessCategory) // only one allowed? not yet in validation
 
 sealed abstract class Creator
-case class CreatorOrganization(organization: String) extends Creator
+case class CreatorOrganization(organization: String,
+                               role: Option[ContributorRole] = Option.empty) extends Creator
 case class CreatorPerson(titles: Option[String] = Option.empty,
                          initials: String,
                          insertions: Option[String] = Option.empty,
                          surname: String,
                          organization: Option[String] = Option.empty,
+                         role: Option[ContributorRole] = Option.empty,
                          dai: Option[String] = Option.empty) extends Creator
 
 // Metadata
@@ -83,12 +86,14 @@ case class QualifiedDate(date: DateTime, qualifier: DateQualifier.Value) extends
 case class TextualDate(text: String) extends Date
 
 sealed abstract class Contributor
-case class ContributorOrganization(organization: String) extends Contributor
+case class ContributorOrganization(organization: String,
+                                   role: Option[ContributorRole] = Option.empty) extends Contributor
 case class ContributorPerson(titles: Option[String] = Option.empty,
                              initials: String,
                              insertions: Option[String] = Option.empty,
                              surname: String,
                              organization: Option[String] = Option.empty,
+                             role: Option[ContributorRole] = Option.empty,
                              dai: Option[String] = Option.empty) extends Contributor
 
 case class Subject(subject: String = "", scheme: Option[String] = Option.empty)

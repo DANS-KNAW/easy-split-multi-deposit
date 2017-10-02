@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import nl.knaw.dans.easy.multideposit.ParseException
-import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.easy.multideposit.model.{ ContributorRole, _ }
 import nl.knaw.dans.lib.error._
 import org.joda.time.DateTime
 
@@ -52,13 +52,35 @@ trait MetadataParser {
     val surname = row.find("DCX_CONTRIBUTOR_SURNAME")
     val organization = row.find("DCX_CONTRIBUTOR_ORGANIZATION")
     val dai = row.find("DCX_CONTRIBUTOR_DAI")
+    val cRole = row.find("DCX_CONTRIBUTOR_ROLE")
 
-    (titles, initials, insertions, surname, organization, dai) match {
-      case (None, None, None, None, None, None) => None
-      case (None, None, None, None, Some(org), None) => Some(Try { ContributorOrganization(org) })
-      case (_, Some(init), _, Some(sur), _, _) => Some(Try { ContributorPerson(titles, init, insertions, sur, organization, dai) })
-      case (_, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")))
+    (titles, initials, insertions, surname, organization, dai, cRole) match {
+      case (None, None, None, None, None, None, None) => None
+      case (None, None, None, None, Some(org), None, _) => Some {
+        cRole.map(contributorRole(rowNum))
+          .map(Try { ContributorOrganization.curried }.map(_ (org)).combine(_))
+          .getOrElse(Try { ContributorOrganization(org) })
+      }
+      case (_, Some(init), _, Some(sur), _, _, _) => Some {
+        cRole.map(contributorRole(rowNum))
+          .map(Try { ContributorPerson.curried }
+            .map(_ (titles))
+            .map(_ (init))
+            .map(_ (insertions))
+            .map(_ (sur))
+            .map(_ (organization))
+            .combine(_)
+            .map(_ (dai)))
+          .getOrElse(Try { ContributorPerson(titles, init, insertions, sur, organization, dai = dai) })
+      }
+      case (_, _, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")))
     }
+  }
+
+  def contributorRole(rowNum: => Int)(role: String): Try[Option[ContributorRole.Value]] = {
+    ContributorRole.valueOf(role)
+      .map(v => Success(Option(v)))
+      .getOrElse(Failure(ParseException(rowNum, s"Value '$role' is not a valid contributor role")))
   }
 
   def identifier(rowNum: => Int)(row: DepositRow): Option[Try[Identifier]] = {

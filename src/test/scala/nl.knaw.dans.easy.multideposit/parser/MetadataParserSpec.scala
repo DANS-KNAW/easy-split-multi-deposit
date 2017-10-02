@@ -46,6 +46,7 @@ trait MetadataTestObjects {
       // contributor
       "DCX_CONTRIBUTOR_INITIALS" -> "A.",
       "DCX_CONTRIBUTOR_SURNAME" -> "Jones",
+      "DCX_CONTRIBUTOR_ROLE" -> "RelatedPerson",
       // subject
       "DC_SUBJECT" -> "IX",
       "DC_SUBJECT_SCHEME" -> "abr:ABRcomplex",
@@ -91,7 +92,7 @@ trait MetadataTestObjects {
     rightsholder = List("right1", "right2"),
     relations = List(QualifiedRelation(RelationQualifier.Replaces, link = Some("foo"), title = Some("bar")), UnqualifiedRelation(link = Some("foo"), title = Some("bar"))),
     dates = List(QualifiedDate(new DateTime(2016, 2, 1, 0, 0), DateQualifier.DATE_SUBMITTED), TextualDate("some random text")),
-    contributors = List(ContributorPerson(initials = "A.", surname = "Jones")),
+    contributors = List(ContributorPerson(initials = "A.", surname = "Jones", role = Some(ContributorRole.RELATED_PERSON))),
     subjects = List(Subject("IX", Option("abr:ABRcomplex"))),
     spatialPoints = List(SpatialPoint("12", "34", Option("degrees"))),
     spatialBoxes = List(SpatialBox("45", "34", "23", "12", Option("RD"))),
@@ -122,7 +123,8 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
       "DCX_CONTRIBUTOR_INSERTIONS" -> "",
       "DCX_CONTRIBUTOR_SURNAME" -> "",
       "DCX_CONTRIBUTOR_ORGANIZATION" -> "",
-      "DCX_CONTRIBUTOR_DAI" -> ""
+      "DCX_CONTRIBUTOR_DAI" -> "",
+      "DCX_CONTRIBUTOR_ROLE" -> ""
     )
 
     contributor(2)(row) shouldBe empty
@@ -135,10 +137,25 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
       "DCX_CONTRIBUTOR_INSERTIONS" -> "",
       "DCX_CONTRIBUTOR_SURNAME" -> "",
       "DCX_CONTRIBUTOR_ORGANIZATION" -> "org",
-      "DCX_CONTRIBUTOR_DAI" -> ""
+      "DCX_CONTRIBUTOR_DAI" -> "",
+      "DCX_CONTRIBUTOR_ROLE" -> ""
     )
 
-    contributor(2)(row).value should matchPattern { case Success(ContributorOrganization("org")) => }
+    contributor(2)(row).value should matchPattern { case Success(ContributorOrganization("org", None)) => }
+  }
+
+  it should "succeed with an organisation when only the DCX_CONTRIBUTOR_ORGANIZATION and DCX_CONTRIBUTOR_ROLE are defined" in {
+    val row = Map(
+      "DCX_CONTRIBUTOR_TITLES" -> "",
+      "DCX_CONTRIBUTOR_INITIALS" -> "",
+      "DCX_CONTRIBUTOR_INSERTIONS" -> "",
+      "DCX_CONTRIBUTOR_SURNAME" -> "",
+      "DCX_CONTRIBUTOR_ORGANIZATION" -> "org",
+      "DCX_CONTRIBUTOR_DAI" -> "",
+      "DCX_CONTRIBUTOR_ROLE" -> "RelatedPERSON"
+    )
+
+    contributor(2)(row).value should matchPattern { case Success(ContributorOrganization("org", Some(ContributorRole.RELATED_PERSON))) => }
   }
 
   it should "succeed with a person when only DCX_CONTRIBUTOR_INITIALS and DCX_CONTRIBUTOR_SURNAME are defined" in {
@@ -148,11 +165,12 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
       "DCX_CONTRIBUTOR_INSERTIONS" -> "",
       "DCX_CONTRIBUTOR_SURNAME" -> "Jones",
       "DCX_CONTRIBUTOR_ORGANIZATION" -> "",
-      "DCX_CONTRIBUTOR_DAI" -> ""
+      "DCX_CONTRIBUTOR_DAI" -> "",
+      "DCX_CONTRIBUTOR_ROLE" -> ""
     )
 
     contributor(2)(row).value should matchPattern {
-      case Success(ContributorPerson(None, "A.", None, "Jones", None, None)) =>
+      case Success(ContributorPerson(None, "A.", None, "Jones", None, None, None)) =>
     }
   }
 
@@ -163,11 +181,12 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
       "DCX_CONTRIBUTOR_INSERTIONS" -> "X",
       "DCX_CONTRIBUTOR_SURNAME" -> "Jones",
       "DCX_CONTRIBUTOR_ORGANIZATION" -> "org",
-      "DCX_CONTRIBUTOR_DAI" -> "dai123"
+      "DCX_CONTRIBUTOR_DAI" -> "dai123",
+      "DCX_CONTRIBUTOR_ROLE" -> "related person"
     )
 
     contributor(2)(row).value should matchPattern {
-      case Success(ContributorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some("dai123"))) =>
+      case Success(ContributorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some(ContributorRole.RELATED_PERSON), Some("dai123"))) =>
     }
   }
 
@@ -178,7 +197,8 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
       "DCX_CONTRIBUTOR_INSERTIONS" -> "",
       "DCX_CONTRIBUTOR_SURNAME" -> "Jones",
       "DCX_CONTRIBUTOR_ORGANIZATION" -> "",
-      "DCX_CONTRIBUTOR_DAI" -> ""
+      "DCX_CONTRIBUTOR_DAI" -> "",
+      "DCX_CONTRIBUTOR_ROLE" -> ""
     )
 
     contributor(2)(row).value should matchPattern {
@@ -193,7 +213,8 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
       "DCX_CONTRIBUTOR_INSERTIONS" -> "",
       "DCX_CONTRIBUTOR_SURNAME" -> "",
       "DCX_CONTRIBUTOR_ORGANIZATION" -> "",
-      "DCX_CONTRIBUTOR_DAI" -> ""
+      "DCX_CONTRIBUTOR_DAI" -> "",
+      "DCX_CONTRIBUTOR_ROLE" -> ""
     )
 
     contributor(2)(row).value should matchPattern {
@@ -208,11 +229,28 @@ class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
       "DCX_CONTRIBUTOR_INSERTIONS" -> "",
       "DCX_CONTRIBUTOR_SURNAME" -> "",
       "DCX_CONTRIBUTOR_ORGANIZATION" -> "",
-      "DCX_CONTRIBUTOR_DAI" -> ""
+      "DCX_CONTRIBUTOR_DAI" -> "",
+      "DCX_CONTRIBUTOR_ROLE" -> ""
     )
 
     contributor(2)(row).value should matchPattern {
       case Failure(ParseException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME, DCX_CONTRIBUTOR_INITIALS]", _)) =>
+    }
+  }
+
+  it should "fail if DCX_CREATOR_ROLE has an invalid value" in {
+    val row = Map(
+      "DCX_CONTRIBUTOR_TITLES" -> "Dr.",
+      "DCX_CONTRIBUTOR_INITIALS" -> "A.",
+      "DCX_CONTRIBUTOR_INSERTIONS" -> "",
+      "DCX_CONTRIBUTOR_SURNAME" -> "Jones",
+      "DCX_CONTRIBUTOR_ORGANIZATION" -> "",
+      "DCX_CONTRIBUTOR_DAI" -> "",
+      "DCX_CONTRIBUTOR_ROLE" -> "invalid!"
+    )
+
+    contributor(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Value 'invalid!' is not a valid contributor role", _)) =>
     }
   }
 
