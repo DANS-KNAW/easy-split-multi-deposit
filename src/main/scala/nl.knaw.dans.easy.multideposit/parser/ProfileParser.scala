@@ -75,12 +75,34 @@ trait ProfileParser {
     val surname = row.find("DCX_CREATOR_SURNAME")
     val organization = row.find("DCX_CREATOR_ORGANIZATION")
     val dai = row.find("DCX_CREATOR_DAI")
+    val cRole = row.find("DCX_CREATOR_ROLE")
 
-    (titles, initials, insertions, surname, organization, dai) match {
-      case (None, None, None, None, None, None) => None
-      case (None, None, None, None, Some(org), None) => Some(Try { CreatorOrganization(org) })
-      case (_, Some(init), _, Some(sur), _, _) => Some(Try { CreatorPerson(titles, init, insertions, sur, organization, dai) })
-      case (_, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME")))
+    (titles, initials, insertions, surname, organization, dai, cRole) match {
+      case (None, None, None, None, None, None, None) => None
+      case (None, None, None, None, Some(org), None, _) => Some {
+        cRole.map(creatorRole(rowNum))
+          .map(Try { CreatorOrganization.curried }.map(_ (org)).combine(_))
+          .getOrElse(Try { CreatorOrganization(org) })
+      }
+      case (_, Some(init), _, Some(sur), _, _, _) => Some {
+        cRole.map(creatorRole(rowNum))
+          .map(Try { CreatorPerson.curried }
+            .map(_ (titles))
+            .map(_ (init))
+            .map(_ (insertions))
+            .map(_ (sur))
+            .map(_ (organization))
+            .combine(_)
+            .map(_ (dai)))
+          .getOrElse(Try { CreatorPerson(titles, init, insertions, sur, organization, dai = dai) })
+      }
+      case (_, _, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME")))
     }
+  }
+
+  def creatorRole(rowNum: => Int)(role: String): Try[Option[ContributorRole.Value]] = {
+    ContributorRole.valueOf(role)
+      .map(v => Success(Option(v)))
+      .getOrElse(Failure(ParseException(rowNum, s"Value '$role' is not a valid creator role")))
   }
 }

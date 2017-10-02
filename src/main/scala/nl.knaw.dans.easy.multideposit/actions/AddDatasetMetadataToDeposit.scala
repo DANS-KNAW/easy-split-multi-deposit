@@ -99,25 +99,31 @@ object AddDatasetMetadataToDeposit {
     dateTime.toString(ISODateTimeFormat.date())
   }
 
-  private def createOrganisation(org: String): Elem = {
-    <dcx-dai:organization>
-      <dcx-dai:name xml:lang="en">{org}</dcx-dai:name>
-    </dcx-dai:organization>
+  private def createOrganisation(org: String, role: Option[ContributorRole.Value] = Option.empty): Elem = {
+    <dcx-dai:organization>{
+      <dcx-dai:name xml:lang="en">{org}</dcx-dai:name> ++
+      role.map(createRole)
+    }</dcx-dai:organization>
+  }
+
+  private def createRole(role: ContributorRole.Value): Elem = {
+    <dcx-dai:role>{role.toString}</dcx-dai:role>
   }
 
   def createCreator(creator: Creator): Elem = {
     creator match {
-      case CreatorOrganization(org) =>
-        <dcx-dai:creatorDetails>{createOrganisation(org)}</dcx-dai:creatorDetails>
-      case CreatorPerson(titles, initials, insertions, surname, organization, dai) =>
+      case CreatorOrganization(org, role) =>
+        <dcx-dai:creatorDetails>{createOrganisation(org, role)}</dcx-dai:creatorDetails>
+      case CreatorPerson(titles, initials, insertions, surname, organization, role, dai) =>
         <dcx-dai:creatorDetails>
           <dcx-dai:author>{
             titles.map(ts => <dcx-dai:titles>{ts}</dcx-dai:titles>) ++
               <dcx-dai:initials>{initials}</dcx-dai:initials> ++
               insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
               <dcx-dai:surname>{surname}</dcx-dai:surname> ++
+              role.map(createRole) ++
               dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
-              organization.map(createOrganisation)
+              organization.map(createOrganisation(_))
           }</dcx-dai:author>
         </dcx-dai:creatorDetails>
     }
@@ -125,17 +131,18 @@ object AddDatasetMetadataToDeposit {
 
   def createContributor(contributor: Contributor): Elem = {
     contributor match {
-      case ContributorOrganization(org) =>
-        <dcx-dai:contributorDetails>{createOrganisation(org)}</dcx-dai:contributorDetails>
-      case ContributorPerson(titles, initials, insertions, surname, organization, dai) =>
+      case ContributorOrganization(org, role) =>
+        <dcx-dai:contributorDetails>{createOrganisation(org, role)}</dcx-dai:contributorDetails>
+      case ContributorPerson(titles, initials, insertions, surname, organization, role, dai) =>
         <dcx-dai:contributorDetails>
           <dcx-dai:author>{
             titles.map(ts => <dcx-dai:titles>{ts}</dcx-dai:titles>) ++
               <dcx-dai:initials>{initials}</dcx-dai:initials> ++
               insertions.map(is => <dcx-dai:insertions>{is}</dcx-dai:insertions>) ++
               <dcx-dai:surname>{surname}</dcx-dai:surname> ++
+              role.map(createRole) ++
               dai.map(d => <dcx-dai:DAI>{d}</dcx-dai:DAI>) ++
-              organization.map(createOrganisation)
+              organization.map(createOrganisation(_))
           }</dcx-dai:author>
         </dcx-dai:contributorDetails>
     }

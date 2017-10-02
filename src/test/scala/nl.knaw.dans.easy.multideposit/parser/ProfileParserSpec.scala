@@ -31,6 +31,7 @@ trait ProfileTestObjects {
       "DC_DESCRIPTION" -> "descr1",
       "DCX_CREATOR_INITIALS" -> "A.",
       "DCX_CREATOR_SURNAME" -> "Jones",
+      "DCX_CREATOR_ROLE" -> "Supervisor",
       "DDM_CREATED" -> "2016-07-30",
       "DDM_AVAILABLE" -> "2016-07-31",
       "DDM_AUDIENCE" -> "D30000",
@@ -46,7 +47,7 @@ trait ProfileTestObjects {
   lazy val profile = Profile(
     titles = List("title1", "title2"),
     descriptions = List("descr1", "descr2"),
-    creators = List(CreatorPerson(initials = "A.", surname = "Jones")),
+    creators = List(CreatorPerson(initials = "A.", surname = "Jones", role = Option(ContributorRole.SUPERVISOR))),
     created = DateTime.parse("2016-07-30"),
     available = DateTime.parse("2016-07-31"),
     audiences = List("D30000", "D37000"),
@@ -151,7 +152,8 @@ class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
       "DCX_CREATOR_INSERTIONS" -> "",
       "DCX_CREATOR_SURNAME" -> "",
       "DCX_CREATOR_ORGANIZATION" -> "",
-      "DCX_CREATOR_DAI" -> ""
+      "DCX_CREATOR_DAI" -> "",
+      "DCX_CREATOR_ROLE" -> ""
     )
 
     creator(2)(row) shouldBe empty
@@ -164,10 +166,25 @@ class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
       "DCX_CREATOR_INSERTIONS" -> "",
       "DCX_CREATOR_SURNAME" -> "",
       "DCX_CREATOR_ORGANIZATION" -> "org",
-      "DCX_CREATOR_DAI" -> ""
+      "DCX_CREATOR_DAI" -> "",
+      "DCX_CREATOR_ROLE" -> ""
     )
 
-    creator(2)(row).value should matchPattern { case Success(CreatorOrganization("org")) => }
+    creator(2)(row).value should matchPattern { case Success(CreatorOrganization("org", None)) => }
+  }
+
+  it should "succeed with an organisation when only the DCX_CREATOR_ORGANIZATION and DCX_CREATOR_ROLE are defined" in {
+    val row = Map(
+      "DCX_CREATOR_TITLES" -> "",
+      "DCX_CREATOR_INITIALS" -> "",
+      "DCX_CREATOR_INSERTIONS" -> "",
+      "DCX_CREATOR_SURNAME" -> "",
+      "DCX_CREATOR_ORGANIZATION" -> "org",
+      "DCX_CREATOR_DAI" -> "",
+      "DCX_CREATOR_ROLE" -> "ProjectManager"
+    )
+
+    creator(2)(row).value should matchPattern { case Success(CreatorOrganization("org", Some(ContributorRole.PROJECT_MANAGER))) => }
   }
 
   it should "succeed with a person when only DCX_CREATOR_INITIALS and DCX_CREATOR_SURNAME are defined" in {
@@ -177,11 +194,12 @@ class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
       "DCX_CREATOR_INSERTIONS" -> "",
       "DCX_CREATOR_SURNAME" -> "Jones",
       "DCX_CREATOR_ORGANIZATION" -> "",
-      "DCX_CREATOR_DAI" -> ""
+      "DCX_CREATOR_DAI" -> "",
+      "DCX_CREATOR_ROLE" -> ""
     )
 
     creator(2)(row).value should matchPattern {
-      case Success(CreatorPerson(None, "A.", None, "Jones", None, None)) =>
+      case Success(CreatorPerson(None, "A.", None, "Jones", None, None, None)) =>
     }
   }
 
@@ -192,11 +210,12 @@ class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
       "DCX_CREATOR_INSERTIONS" -> "X",
       "DCX_CREATOR_SURNAME" -> "Jones",
       "DCX_CREATOR_ORGANIZATION" -> "org",
-      "DCX_CREATOR_DAI" -> "dai123"
+      "DCX_CREATOR_DAI" -> "dai123",
+      "DCX_CREATOR_ROLE" -> "rElAtEdpErsOn"
     )
 
     creator(2)(row).value should matchPattern {
-      case Success(CreatorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some("dai123"))) =>
+      case Success(CreatorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some(ContributorRole.RELATED_PERSON), Some("dai123"))) =>
     }
   }
 
@@ -207,7 +226,8 @@ class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
       "DCX_CREATOR_INSERTIONS" -> "",
       "DCX_CREATOR_SURNAME" -> "Jones",
       "DCX_CREATOR_ORGANIZATION" -> "",
-      "DCX_CREATOR_DAI" -> ""
+      "DCX_CREATOR_DAI" -> "",
+      "DCX_CREATOR_ROLE" -> ""
     )
 
     creator(2)(row).value should matchPattern {
@@ -222,7 +242,8 @@ class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
       "DCX_CREATOR_INSERTIONS" -> "",
       "DCX_CREATOR_SURNAME" -> "",
       "DCX_CREATOR_ORGANIZATION" -> "",
-      "DCX_CREATOR_DAI" -> ""
+      "DCX_CREATOR_DAI" -> "",
+      "DCX_CREATOR_ROLE" -> ""
     )
 
     creator(2)(row).value should matchPattern {
@@ -237,11 +258,28 @@ class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
       "DCX_CREATOR_INSERTIONS" -> "",
       "DCX_CREATOR_SURNAME" -> "",
       "DCX_CREATOR_ORGANIZATION" -> "",
-      "DCX_CREATOR_DAI" -> ""
+      "DCX_CREATOR_DAI" -> "",
+      "DCX_CREATOR_ROLE" -> ""
     )
 
     creator(2)(row).value should matchPattern {
       case Failure(ParseException(2, "Missing value(s) for: [DCX_CREATOR_SURNAME, DCX_CREATOR_INITIALS]", _)) =>
+    }
+  }
+
+  it should "fail if DCX_CREATOR_ROLE has an invalid value" in {
+    val row = Map(
+      "DCX_CREATOR_TITLES" -> "Dr.",
+      "DCX_CREATOR_INITIALS" -> "A.",
+      "DCX_CREATOR_INSERTIONS" -> "",
+      "DCX_CREATOR_SURNAME" -> "Jones",
+      "DCX_CREATOR_ORGANIZATION" -> "",
+      "DCX_CREATOR_DAI" -> "",
+      "DCX_CREATOR_ROLE" -> "invalid!"
+    )
+
+    creator(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Value 'invalid!' is not a valid creator role", _)) =>
     }
   }
 }

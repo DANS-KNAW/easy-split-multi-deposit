@@ -46,7 +46,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       descriptions = List("omschr1"),
       creators = List(
         CreatorPerson(initials = "A.", surname = "Jones", organization = Option("Lorem ipsum dolor sit amet")),
-        CreatorOrganization("consectetur adipiscing elit"),
+        CreatorOrganization("consectetur adipiscing elit", Some(ContributorRole.SUPERVISOR)),
         CreatorOrganization("sed do eiusmod tempor incididunt ut labore et dolore magna aliqua")),
       created = DateTime.parse("1992-07-30"),
       available = DateTime.parse("1992-07-31"),
@@ -54,6 +54,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       accessright = AccessCategory.NO_ACCESS
     ),
     metadata = Metadata(
+      contributors = List(ContributorPerson(initials = "B.", surname = "Smith", organization = Option("Lorem ipsum dolor sit amet"), role = Some(ContributorRole.DATA_COLLECTOR))),
       alternatives = List("foobar"),
       publishers = List("random publisher"),
       identifiers = List(Identifier("123456", Some(IdentifierType.ISBN)), Identifier("id"))
@@ -112,6 +113,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       <dcx-dai:creatorDetails>
         <dcx-dai:organization>
           <dcx-dai:name xml:lang="en">consectetur adipiscing elit</dcx-dai:name>
+          <dcx-dai:role>Supervisor</dcx-dai:role>
         </dcx-dai:organization>
       </dcx-dai:creatorDetails>
       <dcx-dai:creatorDetails>
@@ -133,6 +135,14 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
       <dc:identifier xsi:type="id-type:ISBN">123456</dc:identifier>
       <dc:identifier>id</dc:identifier>
+      <dcx-dai:contributorDetails>
+        <dcx-dai:author>
+          <dcx-dai:initials>B.</dcx-dai:initials>
+          <dcx-dai:surname>Smith</dcx-dai:surname>
+          <dcx-dai:role>DataCollector</dcx-dai:role>
+          <dcx-dai:organization><dcx-dai:name xml:lang="en">Lorem ipsum dolor sit amet</dcx-dai:name></dcx-dai:organization>
+        </dcx-dai:author>
+      </dcx-dai:contributorDetails>
     </ddm:dcmiMetadata>
   </ddm:DDM>
 
@@ -194,7 +204,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       contributors = List(
         ContributorOrganization("contr1"),
         ContributorPerson(initials = "A.B.", surname = "Jones"),
-        ContributorPerson(Option("dr."), "C.", Option("X"), "Jones", Option("contr2"), Option("dai"))),
+        ContributorPerson(Option("dr."), "C.", Option("X"), "Jones", Option("contr2"), Option(ContributorRole.PROJECT_MANAGER), Option("dai"))),
       subjects = List(
         Subject("me"),
         Subject("you"),
@@ -258,6 +268,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
           <dcx-dai:initials>C.</dcx-dai:initials>
           <dcx-dai:insertions>X</dcx-dai:insertions>
           <dcx-dai:surname>Jones</dcx-dai:surname>
+          <dcx-dai:role>ProjectManager</dcx-dai:role>
           <dcx-dai:DAI>dai</dcx-dai:DAI>
           <dcx-dai:organization>
             <dcx-dai:name xml:lang="en">contr2</dcx-dai:name>
