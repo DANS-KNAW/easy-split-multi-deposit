@@ -23,6 +23,7 @@ object IdentifierType extends Enumeration {
   val ISSN: Value                      = Value("ISSN")
   val NWO_PROJECTNR: Value             = Value("NWO-PROJECTNR")
   val ARCHIS_ZAAK_IDENTIFICATIE: Value = Value("ARCHIS-ZAAK-IDENTIFICATIE")
+  val E_DNA: Value                     = Value("eDNA-project")
   // @formatter:on
 
   def valueOf(s: String): Option[IdentifierType.Value] = {

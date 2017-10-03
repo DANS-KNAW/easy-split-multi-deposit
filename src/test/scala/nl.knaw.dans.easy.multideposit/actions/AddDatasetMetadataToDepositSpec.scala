@@ -181,7 +181,10 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       publishers = List("pub1"),
       types = List(DcType.INTERACTIVERESOURCE, DcType.SOFTWARE),
       formats = List("arbitrary format", "text/xml"),
-      identifiers = List(Identifier("123456", Some(IdentifierType.ISBN)), Identifier("id")),
+      identifiers = List(
+        Identifier("123456", Some(IdentifierType.ISBN)),
+        Identifier("id"),
+        Identifier("987654", Some(IdentifierType.E_DNA))),
       sources = List("src", "test"),
       languages = List("eng", "nld"),
       spatials = List("sp1"),
@@ -232,6 +235,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
       <dc:format xsi:type="dcterms:IMT">text/xml</dc:format>
       <dc:identifier xsi:type="id-type:ISBN">123456</dc:identifier>
       <dc:identifier>id</dc:identifier>
+      <dc:identifier xsi:type="id-type:eDNA-project">987654</dc:identifier>
       <dc:source>src</dc:source>
       <dc:source>test</dc:source>
       <dc:language xsi:type='dcterms:ISO639-2'>eng</dc:language>
