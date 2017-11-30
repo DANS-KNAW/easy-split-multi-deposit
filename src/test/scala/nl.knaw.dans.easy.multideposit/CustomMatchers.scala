@@ -20,6 +20,7 @@ import java.nio.file.Path
 import org.scalatest.matchers.{ MatchResult, Matcher }
 
 import scala.io.Source
+import scala.language.postfixOps
 import scala.xml._
 
 /** Does not dump the full file but just the searched content if it is not found.
@@ -52,4 +53,17 @@ trait CustomMatchers {
     }
   }
   def equalTrimmed(right: Iterable[Node]) = new EqualTrimmedMatcher(right)
+
+  class ContainAllTrimmed(right: Iterable[Node]) extends Matcher[Iterable[Node]] {
+    override def apply(left: Iterable[Node]): MatchResult = {
+      MatchResult(
+        {
+          left.size == right.size && left.map(l => right.exists(l ==)).forall(true ==)
+        },
+        s"$left did not contain the same elements as $right",
+        s"$left did contain the same elements as $right"
+      )
+    }
+  }
+  def containAllNodes(right: Iterable[Node]) = new ContainAllTrimmed(right)
 }
