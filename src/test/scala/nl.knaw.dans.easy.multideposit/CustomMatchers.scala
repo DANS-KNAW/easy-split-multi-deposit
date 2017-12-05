@@ -60,9 +60,27 @@ trait CustomMatchers {
         {
           left.size == right.size && left.map(l => right.exists(l ==)).forall(true ==)
         },
-        s"$left did not contain the same elements as $right",
+        // TODO showing the diffs should be done better, but I don't know yet how to use the IntelliJ supported solution to get a nice diff
+        // need to look deeper into that.
+        s"$left did not contain the same elements as $right: ${ missingLeft(left, right) }; ${ missingRight(left, right) }",
         s"$left did contain the same elements as $right"
       )
+    }
+
+    private def missingLeft(left: Iterable[Node], right: Iterable[Node]) = {
+      val diff = right.toList diff left.toList
+      diff match {
+        case Nil => ""
+        case _ => s"Missing in left: ${ diff.mkString("[", ", ", "]") }"
+      }
+    }
+
+    private def missingRight(left: Iterable[Node], right: Iterable[Node]) = {
+      val diff = left.toList diff right.toList
+      diff match {
+        case Nil => ""
+        case _ => s"Missing in right: ${ diff.mkString("[", ", ", "]") }"
+      }
     }
   }
   def containAllNodes(right: Iterable[Node]) = new ContainAllTrimmed(right)
