@@ -133,8 +133,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
     stagingFileMetadataFile(deposit.depositId).toFile should exist
   }
 
-  // TODO: Fix this test, see EASY-1397
-  ignore should "produce the xml for all the files" in {
+  it should "produce the xml for all the files" in {
     val deposit = testDeposit1.copy(
       depositId = depositId,
       files = Map(
@@ -159,11 +158,10 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
     val actual = XML.loadFile(stagingFileMetadataFile(depositId).toFile)
     val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI).toFile)
 
-    actual should equalTrimmed(expected)
+    actual \ "files" should containAllNodes(expected \ "files")
   }
 
-  // TODO: Fix this test, see EASY-1397
-  ignore should "produce the xml for a deposit with no A/V files" in {
+  it should "produce the xml for a deposit with no A/V files" in {
     val depositId = "ruimtereis02"
     val deposit = testDeposit2.copy(depositId = depositId)
     AddFileMetadataToDeposit(deposit).execute() shouldBe a[Success[_]]
@@ -171,7 +169,7 @@ class AddFileMetadataToDepositSpec extends UnitSpec with BeforeAndAfterEach with
     val actual = XML.loadFile(stagingFileMetadataFile(depositId).toFile)
     val expected = XML.loadFile(Paths.get(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI).toFile)
 
-    actual should equalTrimmed(expected)
+    actual \ "files" should containAllNodes(expected \ "files")
   }
 
   it should "produce the xml for a deposit with no files" in {

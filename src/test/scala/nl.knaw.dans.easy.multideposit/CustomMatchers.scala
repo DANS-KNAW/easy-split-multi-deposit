@@ -20,6 +20,7 @@ import java.nio.file.Path
 import org.scalatest.matchers.{ MatchResult, Matcher }
 
 import scala.io.Source
+import scala.language.postfixOps
 import scala.xml._
 
 /** Does not dump the full file but just the searched content if it is not found.
@@ -52,4 +53,35 @@ trait CustomMatchers {
     }
   }
   def equalTrimmed(right: Iterable[Node]) = new EqualTrimmedMatcher(right)
+
+  class ContainAllTrimmed(right: Iterable[Node]) extends Matcher[Iterable[Node]] {
+    override def apply(left: Iterable[Node]): MatchResult = {
+      MatchResult(
+        {
+          left.size == right.size && left.map(l => right.exists(l ==)).forall(true ==)
+        },
+        // TODO showing the diffs should be done better, but I don't know yet how to use the IntelliJ supported solution to get a nice diff
+        // need to look deeper into that.
+        s"$left did not contain the same elements as $right: ${ missingLeft(left, right) }; ${ missingRight(left, right) }",
+        s"$left did contain the same elements as $right"
+      )
+    }
+
+    private def missingLeft(left: Iterable[Node], right: Iterable[Node]) = {
+      val diff = right.toList diff left.toList
+      diff match {
+        case Nil => ""
+        case _ => s"Missing in left: ${ diff.mkString("[", ", ", "]") }"
+      }
+    }
+
+    private def missingRight(left: Iterable[Node], right: Iterable[Node]) = {
+      val diff = left.toList diff right.toList
+      diff match {
+        case Nil => ""
+        case _ => s"Missing in right: ${ diff.mkString("[", ", ", "]") }"
+      }
+    }
+  }
+  def containAllNodes(right: Iterable[Node]) = new ContainAllTrimmed(right)
 }
