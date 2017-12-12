@@ -21,7 +21,7 @@ import nl.knaw.dans.easy.multideposit.{ ActionException, DatamanagerEmailaddress
 
 import scala.util.{ Failure, Success, Try }
 
-case class RetrieveDatamanagerAction(implicit settings: Settings) extends UnitAction[DatamanagerEmailaddress] {
+case class RetrieveDatamanagerAction()(implicit settings: Settings) extends UnitAction[DatamanagerEmailaddress] {
 
   private lazy val datamanagerEmailaddress = getDatamanagerMailadres
 
