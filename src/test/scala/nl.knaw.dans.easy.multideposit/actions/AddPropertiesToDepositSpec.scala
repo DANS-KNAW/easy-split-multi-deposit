@@ -81,7 +81,8 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfterEach with M
     props.toFile should exist
 
     props.read() should {
-      include("state.label") and
+      include("creation.timestamp") and
+        include("state.label") and
         include("state.description") and
         include(s"depositor.userId=${ testDeposit1.depositorUserId }") and
         include("datamanager.email=dm@test.org") and
@@ -100,7 +101,8 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfterEach with M
     props.toFile should exist
 
     props.read() should {
-      include("state.label") and
+      include("creation.timestamp") and
+        include("state.label") and
         include("state.description") and
         include("depositor.userId=ruimtereiziger1") and
         include("datamanager.email=dm@test.org") and
