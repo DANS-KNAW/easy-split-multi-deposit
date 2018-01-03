@@ -20,6 +20,7 @@ import java.{ util => ju }
 
 import nl.knaw.dans.easy.multideposit.model.Deposit
 import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
+import org.joda.time.{ DateTime, DateTimeZone }
 import resource._
 
 import scala.language.postfixOps
@@ -69,6 +70,7 @@ case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings)
     val sf = deposit.audioVideo.springfield
     val props: Map[String, Option[String]] = Map(
       "bag-store.bag-id" -> Some(UUID.randomUUID().toString),
+      "creation.timestamp" -> Some(DateTime.now(DateTimeZone.UTC).toString),
       "state.label" -> Some("SUBMITTED"),
       "state.description" -> Some("Deposit is valid and ready for post-submission processing"),
       "depositor.userId" -> Some(deposit.depositorUserId),
