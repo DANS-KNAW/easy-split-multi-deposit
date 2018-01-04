@@ -21,11 +21,9 @@ import java.nio.file.{ Files, Path }
 
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
-import org.apache.commons.lang.StringUtils
 import resource._
 
 import scala.collection.JavaConverters._
-import scala.util.Try
 import scala.xml.{ Elem, PrettyPrinter, Utility, XML }
 
 package object multideposit {
@@ -56,43 +54,6 @@ package object multideposit {
   case class ActionRunFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
   case class ParseException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
   case class ActionException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
-
-  implicit class StringExtensions(val s: String) extends AnyVal {
-    /**
-     * Checks whether the `String` is blank
-     * (according to org.apache.commons.lang.StringUtils.isBlank)
-     *
-     * @return
-     */
-    def isBlank: Boolean = StringUtils.isBlank(s)
-
-    /**
-     * Converts a `String` to an `Option[String]`. If the `String` is blank
-     * (according to org.apache.commons.lang.StringUtils.isBlank)
-     * the empty `Option` is returned, otherwise the `String` is returned
-     * wrapped in an `Option`.
-     *
-     * @return an `Option` of the input string that indicates whether it is blank
-     */
-    def toOption: Option[String] = {
-      if (s.isBlank) Option.empty
-      else Option(s)
-    }
-
-    /**
-     * Converts a `String` into an `Option[Int]` if it is not blank
-     * (according to org.apache.commons.lang.StringUtils.isBlank).
-     * Strings that do not represent a number will yield an empty `Option`.
-     *
-     * @return an `Option` of the input string, converted as a number if it is not blank
-     */
-    def toIntOption: Option[Int] = {
-      Try {
-        if (s.isBlank) Option.empty
-        else Option(s.toInt)
-      } getOrElse Option.empty
-    }
-  }
 
   implicit class FileExtensions(val path: Path) extends AnyVal {
     /**

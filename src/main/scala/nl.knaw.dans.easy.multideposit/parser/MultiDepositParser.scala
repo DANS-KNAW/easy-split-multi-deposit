@@ -21,6 +21,7 @@ import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import nl.knaw.dans.lib.string.StringExtensions
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
 import resource._
 
