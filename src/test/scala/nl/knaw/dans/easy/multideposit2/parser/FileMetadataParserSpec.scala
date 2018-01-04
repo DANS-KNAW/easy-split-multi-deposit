@@ -1,0 +1,198 @@
+/**
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package nl.knaw.dans.easy.multideposit2.parser
+
+import java.nio.file.{ Path, Paths }
+
+import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit2.TestSupportFixture
+import nl.knaw.dans.easy.multideposit2.model.{ AVFileMetadata, Audio, AudioVideo, DefaultFileMetadata, FileAccessRights, Springfield, Subtitles, Video }
+import org.scalatest.BeforeAndAfterEach
+
+import scala.util.{ Failure, Success }
+
+trait FileMetadataTestObjects {
+
+  val mdDir: Path
+
+  lazy val fileMetadata @ fileMetadata1 :: fileMetadata2 :: fileMetadata4 :: Nil = List(
+    List(
+      AVFileMetadata(
+        filepath = mdDir.resolve("ruimtereis01/path/to/a/random/video/hubble.mpg"),
+        mimeType = "video/mpeg",
+        vocabulary = Video,
+        title = "hubble.mpg",
+        accessibleTo = FileAccessRights.ANONYMOUS,
+        subtitles = Set.empty
+      ),
+      AVFileMetadata(
+        filepath = mdDir.resolve("ruimtereis01/reisverslag/centaur.mpg"),
+        mimeType = "video/mpeg",
+        vocabulary = Video,
+        title = "flyby of centaur",
+        accessibleTo = FileAccessRights.ANONYMOUS,
+        subtitles = Set(
+          Subtitles(mdDir.resolve("ruimtereis01/reisverslag/centaur.srt"), Some("en")),
+          Subtitles(mdDir.resolve("ruimtereis01/reisverslag/centaur-nederlands.srt"), Some("nl"))
+        )
+      ),
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis01/reisverslag/centaur.srt"),
+        mimeType = "text/plain"
+      ),
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis01/reisverslag/centaur-nederlands.srt"),
+        mimeType = "text/plain"
+      ),
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis01/reisverslag/deel01.docx"),
+        mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ),
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis01/reisverslag/deel01.txt"),
+        mimeType = "text/plain"
+      ),
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis01/reisverslag/deel02.txt"),
+        mimeType = "text/plain"
+      ),
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis01/reisverslag/deel03.txt"),
+        mimeType = "text/plain"
+      ),
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis01/ruimtereis01_verklaring.txt"),
+        mimeType = "text/plain"
+      )
+    ),
+    List(
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis02/path/to/images/Hubble_01.jpg"),
+        mimeType = "image/jpeg"
+      ),
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis02/path/to/images/Hubbleshots.jpg"),
+        mimeType = "image/jpeg"
+      ),
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis02/hubble-wiki-en.txt"),
+        mimeType = "text/plain"
+      ),
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis02/hubble-wiki-nl.txt"),
+        mimeType = "text/plain"
+      )
+    ),
+    List(
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis04/path/to/a/random/file/file.txt"),
+        mimeType = "text/plain"
+      ),
+      AVFileMetadata(
+        filepath = mdDir.resolve("ruimtereis04/path/to/a/random/sound/chicken.mp3"),
+        mimeType = "audio/mpeg",
+        vocabulary = Audio,
+        title = "chicken.mp3",
+        accessibleTo = FileAccessRights.ANONYMOUS,
+        subtitles = Set.empty
+      ),
+      DefaultFileMetadata(
+        filepath = mdDir.resolve("ruimtereis04/Quicksort.hs"),
+        mimeType = "text/x-haskell"
+      )
+    )
+  )
+}
+
+class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObjects with BeforeAndAfterEach {
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(mdDir)
+  }
+
+  override val mdDir: Path = testDir.resolve("md")
+  private val parser = new FileMetadataParser {}
+
+  import parser._
+
+  "extractFileMetadata" should "collect the metadata for all files in ruimtereis01" in {
+    inside(extractFileMetadata(mdDir.resolve("ruimtereis01"), testInstructions1)) {
+      case Success(fms) =>
+        fms should { have size 9 and contain allElementsOf fileMetadata1 }
+    }
+  }
+
+  it should "return an empty list if the directory does not exist" in {
+    extractFileMetadata(mdDir.resolve("ruimtereis03"), testInstructions1) should matchPattern {
+      case Success(Nil) =>
+    }
+  }
+
+  it should "collect the metadata for all files in ruimtereis04" in {
+    inside(extractFileMetadata(mdDir.resolve("ruimtereis04"), testInstructions1)) {
+      case Success(fms) =>
+        fms should { have size 3 and contain allElementsOf fileMetadata4 }
+    }
+  }
+
+  it should "fail if the deposit contains A/V files but the SF_* fields are not present" in {
+    val instructions = testInstructions1.copy(
+      depositId = "ruimtereis01",
+      audioVideo = AudioVideo(springfield = Option.empty)
+    )
+    inside(extractFileMetadata(mdDir.resolve("ruimtereis01"), instructions)) {
+      case Failure(ParseException(_, message, _)) =>
+        message should {
+          include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
+            include("reisverslag/centaur.mpg") and
+            include("path/to/a/random/video/hubble.mpg")
+        }
+    }
+  }
+
+  it should "fail if the deposit contains no A/V files but any of the SF_* fields are not present" in {
+    val instructions = testInstructions2.copy(
+      depositId = "ruimtereis02",
+      audioVideo = testInstructions2.audioVideo.copy(
+        springfield = Option(Springfield(user = "user", collection = "collection"))
+      )
+    )
+    inside(extractFileMetadata(mdDir.resolve("ruimtereis02"), instructions)) {
+      case Failure(ParseException(_, message, _)) =>
+        message should {
+          include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]") and
+            include("these columns should be empty because there are no audio/video files found in this deposit")
+        }
+    }
+  }
+
+  it should "fail if a dataset has both audio and video material in it" in {
+    val instructions = testInstructions1.copy(depositId = "ruimtereis01")
+
+    val audioFile = mdDir.resolve("ruimtereis01/path/to/a/random/audio/chicken.mp3")
+    mdDir.resolve("ruimtereis04/path/to/a/random/sound/chicken.mp3").copyFile(audioFile)
+
+    val currentAV = instructions.audioVideo.avFiles
+    val newAV = currentAV + (audioFile -> Set.empty[Subtitles])
+    val failingInstructions = instructions.copy(audioVideo = instructions.audioVideo.copy(avFiles = newAV))
+
+    inside(extractFileMetadata(mdDir.resolve("ruimtereis01"), failingInstructions)) {
+      case Failure(ParseException(_, message, _)) =>
+        message shouldBe "Found both audio and video in this dataset. Only one of them is allowed."
+    }
+  }
+}
