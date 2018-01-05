@@ -49,22 +49,21 @@ trait DepositTestObjects extends AudioVideoTestObjects
   )
 }
 
-class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects with BeforeAndAfterEach {
+class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects with BeforeAndAfterEach { self =>
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(mdDir)
+    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(multiDepositDir)
   }
 
-  override val mdDir: Path = testDir.resolve("md")
   private val parser = new MultiDepositParser with InputPathExplorer {
-    val multiDepositDir: Path = mdDir
+    val multiDepositDir: Path = self.multiDepositDir
   }
 
   import parser._
 
   "parse" should "load the input csv file into the object model" in {
-    val instructionsFile = mdDir.resolve("instructions.csv")
+    val instructionsFile = multiDepositDir.resolve("instructions.csv")
     instructionsFile.toFile should exist
 
     inside(MultiDepositParser.parse(testDir.resolve("md"))) {

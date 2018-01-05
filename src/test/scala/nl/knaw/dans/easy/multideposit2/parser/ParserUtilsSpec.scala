@@ -42,10 +42,10 @@ trait LanguageBehavior {
   }
 }
 
-class ParserUtilsSpec extends TestSupportFixture with LanguageBehavior {
+class ParserUtilsSpec extends TestSupportFixture with LanguageBehavior { self =>
 
   private val parser = new ParserUtils with InputPathExplorer {
-    val multiDepositDir: Path = testDir.resolve("md")
+    val multiDepositDir: Path = self.multiDepositDir
   }
 
   import parser._

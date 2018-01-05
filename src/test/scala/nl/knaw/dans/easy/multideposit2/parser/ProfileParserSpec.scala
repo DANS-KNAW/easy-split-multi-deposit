@@ -58,10 +58,10 @@ trait ProfileTestObjects {
   )
 }
 
-class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
+class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { self =>
 
   private val parser = new ProfileParser with ParserUtils with InputPathExplorer {
-    val multiDepositDir: Path = testDir.resolve("md")
+    val multiDepositDir: Path = self.multiDepositDir
   }
 
   import parser._

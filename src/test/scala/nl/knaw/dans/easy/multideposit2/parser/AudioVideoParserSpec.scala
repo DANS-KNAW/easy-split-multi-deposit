@@ -29,8 +29,6 @@ import scala.util.{ Failure, Success }
 trait AudioVideoTestObjects {
   this: TestSupportFixture =>
 
-  val mdDir: Path
-
   lazy val audioVideoCSV @ audioVideoCSVRow1 :: audioVideoCSVRow2 :: Nil = List(
     Map(
       "SF_DOMAIN" -> "dans",
@@ -55,14 +53,14 @@ trait AudioVideoTestObjects {
   lazy val audioVideo = AudioVideo(
     springfield = Option(Springfield("dans", "janvanmansum", "jans-test-files", PlayMode.Menu)),
     avFiles = Map(
-        mdDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath ->
+        multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath ->
           Set(
             Subtitles(
-              path = mdDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath,
+              path = multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath,
               language = Option("en")
             ),
             Subtitles(
-              path = mdDir.resolve("ruimtereis01/reisverslag/centaur-nederlands.srt").toAbsolutePath,
+              path = multiDepositDir.resolve("ruimtereis01/reisverslag/centaur-nederlands.srt").toAbsolutePath,
               language = Option("nl")
             )
           )
@@ -70,16 +68,15 @@ trait AudioVideoTestObjects {
   )
 }
 
-class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects with BeforeAndAfterEach {
+class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects with BeforeAndAfterEach { self =>
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(mdDir)
+    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(multiDepositDir)
   }
 
-  override val mdDir: Path = testDir.resolve("md")
   private val parser = new AudioVideoParser with ParserUtils with InputPathExplorer {
-    val multiDepositDir: Path = mdDir
+    val multiDepositDir: Path = self.multiDepositDir
   }
 
   import parser._
@@ -296,8 +293,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = mdDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath
-    val subtitles = Subtitles(mdDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath, Some("en"))
+    val file = multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath
+    val subtitles = Subtitles(multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath, Some("en"))
     avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `subtitles`)) => }
   }
 
@@ -321,7 +318,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = mdDir.resolve("ruimtereis01/reisverslag/").toAbsolutePath
+    val file = multiDepositDir.resolve("ruimtereis01/reisverslag/").toAbsolutePath
     inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) => msg shouldBe s"AV_FILE_PATH '$file' is not a file"
     }
@@ -347,7 +344,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    val file = mdDir.resolve("ruimtereis01/reisverslag/").toAbsolutePath
+    val file = multiDepositDir.resolve("ruimtereis01/reisverslag/").toAbsolutePath
     inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) => msg shouldBe s"AV_FILE_PATH '$file' is not a file"
     }
@@ -373,7 +370,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = mdDir.resolve("ruimtereis01/reisverslag/").toAbsolutePath
+    val file = multiDepositDir.resolve("ruimtereis01/reisverslag/").toAbsolutePath
     inside(avFile("ruimtereis01")(2)(row).value) {
       case Failure(ParseException(2, msg, _)) => msg shouldBe s"AV_SUBTITLES '$file' is not a file"
     }
@@ -411,8 +408,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    val file = mdDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath
-    val subtitles = Subtitles(mdDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath)
+    val file = multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath
+    val subtitles = Subtitles(multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath)
     avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `subtitles`)) => }
   }
 

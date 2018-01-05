@@ -19,11 +19,12 @@ import java.nio.file.{ Files, Path, Paths }
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit2.model._
 import org.joda.time.DateTime
 import org.scalatest.{ FlatSpec, Inside, Matchers, OptionValues }
 
-trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with Inside {
+trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
 
   lazy val testDir: Path = {
     val path = Paths.get(s"target/test/${ getClass.getSimpleName }").toAbsolutePath
@@ -31,6 +32,9 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
     Files.createDirectories(path)
     path
   }
+  override val multiDepositDir: Path = testDir.resolve("md")
+  override val stagingDir: Path = testDir.resolve("md")
+  override val outputDepositDir: Path = testDir.resolve("od")
 
   def testInstructions1: Instructions = {
     Instructions(

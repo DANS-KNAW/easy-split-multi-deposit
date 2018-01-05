@@ -103,10 +103,10 @@ trait MetadataTestObjects {
   )
 }
 
-class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
+class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects { self =>
 
   private val parser = new MetadataParser with ParserUtils with InputPathExplorer {
-    val multiDepositDir: Path = testDir.resolve("md")
+    val multiDepositDir: Path = self.multiDepositDir
   }
 
   import parser._
