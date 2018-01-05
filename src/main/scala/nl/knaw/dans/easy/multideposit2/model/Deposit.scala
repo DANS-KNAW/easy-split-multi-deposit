@@ -17,11 +17,6 @@ package nl.knaw.dans.easy.multideposit2.model
 
 import java.nio.file.Path
 
-import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
-import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
-import org.joda.time.DateTime
-
 case class Instructions(depositId: DepositId,
                         row: Int,
                         depositorUserId: DepositorUserId,
@@ -30,7 +25,7 @@ case class Instructions(depositId: DepositId,
                         files: Map[Path, FileDescriptor] = Map.empty,
                         audioVideo: AudioVideo = AudioVideo()) {
   def toDeposit(fms: Seq[FileMetadata]): Deposit = {
-    Deposit(depositId, row, depositorUserId, profile, metadata, fms, audioVideo)
+    Deposit(depositId, row, depositorUserId, profile, metadata, fms, audioVideo.springfield)
   }
 }
 
@@ -40,4 +35,4 @@ case class Deposit(depositId: DepositId,
                    profile: Profile,
                    metadata: Metadata = Metadata(),
                    files: Seq[FileMetadata] = Seq.empty,
-                   audioVideo: AudioVideo = AudioVideo())
+                   springfield: Option[Springfield] = Option.empty)
