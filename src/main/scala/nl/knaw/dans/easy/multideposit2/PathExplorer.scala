@@ -21,6 +21,8 @@ import nl.knaw.dans.easy.multideposit.model.DepositId
 
 object PathExplorer {
 
+  trait PathExplorers extends InputPathExplorer with StagingPathExplorer with OutputPathExplorer
+
   trait InputPathExplorer {
     def multiDepositDir: Path
 

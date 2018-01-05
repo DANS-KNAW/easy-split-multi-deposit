@@ -19,7 +19,13 @@ import java.nio.charset.Charset
 
 import org.apache.commons.io.Charsets
 
+import scala.util.Try
+
 package object multideposit2 {
 
   val encoding: Charset = Charsets.UTF_8
+
+  implicit class SeqExtensions[T](val seq: Seq[T]) extends AnyVal {
+    def mapUntilFailure[S](f: T => Try[S]): Try[Seq[S]] = Try { seq.toStream.map(f(_).get) }
+  }
 }

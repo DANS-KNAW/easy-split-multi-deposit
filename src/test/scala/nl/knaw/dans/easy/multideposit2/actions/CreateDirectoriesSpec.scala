@@ -40,7 +40,7 @@ class CreateDirectoriesSpec extends TestSupportFixture with BeforeAndAfterEach {
     Files.createDirectories(stagingBagDir(depositId))
 
     inside(action.createDepositDirectories(depositId)) {
-      case Failure(ActionException(msg, _)) => msg should include("The deposit $depositId already exists")
+      case Failure(ActionException(msg, _)) => msg should include(s"The deposit $depositId already exists")
     }
   }
 }
