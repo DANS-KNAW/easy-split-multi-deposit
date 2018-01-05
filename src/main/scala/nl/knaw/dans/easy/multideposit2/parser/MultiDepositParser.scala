@@ -39,6 +39,8 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
   with DebugEnhancedLogging {
 
   def parse: Try[Seq[Deposit]] = {
+    logger.info(s"Reading data in $multiDepositDir")
+
     val instructions = instructionsFile
     if (Files.exists(instructions)) {
       logger.info(s"Parsing $instructions")

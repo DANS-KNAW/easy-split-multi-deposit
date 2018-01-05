@@ -20,12 +20,14 @@ import java.nio.file.{ Files, Path }
 import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit2.model._
 import nl.knaw.dans.lib.error._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
 
-trait FileMetadataParser {
+trait FileMetadataParser extends DebugEnhancedLogging {
 
   def extractFileMetadata(depositDir: Path, instructions: Instructions): Try[Seq[FileMetadata]] = {
+    logger.info(s"extracting metadata from files in $depositDir")
     if (Files.exists(depositDir))
       for {
         fms <- depositDir.listRecursively(! Files.isDirectory(_))
