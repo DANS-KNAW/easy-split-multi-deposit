@@ -22,6 +22,7 @@ import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import nl.knaw.dans.lib.string.StringExtensions
 
 import scala.language.implicitConversions
 import scala.util.{ Failure, Success, Try }
@@ -71,7 +72,7 @@ trait ParserUtils extends DebugEnhancedLogging {
     }
   }
 
-  private def checkMultipleValues[T](rowNum:Int, columnNames: NonEmptyList[MultiDepositKey], ts: List[Any]) = {
+  private def checkMultipleValues[T](rowNum: Int, columnNames: NonEmptyList[MultiDepositKey], ts: List[Any]) = {
     columnNames match {
       case name :: Nil => Failure(ParseException(rowNum, "Only one row is allowed " +
         s"to contain a value for the column '$name'. Found: ${ ts.mkString("[", ", ", "]") }"))
