@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit
 
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import nl.knaw.dans.lib.string.StringExtensions
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
