@@ -9,12 +9,13 @@ import nl.knaw.dans.easy.multideposit.FileExtensions
 
 import scala.util.{ Failure, Success }
 
-class CreateDirectoriesSpec extends TestSupportFixture with BeforeAndAfterEach { self =>
+class CreateDirectoriesSpec extends TestSupportFixture with BeforeAndAfterEach {
+  self =>
 
   private val depositId = "dsId1"
   private val action = new CreateDirectories with StagingPathExplorer with InputPathExplorer {
-    val multiDepositDir: Path = self.multiDepositDir
-    val stagingDir: Path = self.stagingDir
+    override val multiDepositDir: Path = self.multiDepositDir
+    override val stagingDir: Path = self.stagingDir
   }
 
   override def beforeEach(): Unit = {

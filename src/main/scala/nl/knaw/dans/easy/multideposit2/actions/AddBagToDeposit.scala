@@ -13,12 +13,19 @@ import nl.knaw.dans.easy.multideposit2.model.DepositId
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
-import scala.util.Try
+import scala.util.control.NonFatal
+import scala.util.{ Failure, Try }
 
 trait AddBagToDeposit {
   this: InputPathExplorer with StagingPathExplorer =>
 
-  def addBagToDeposit(depositId: DepositId, created: DateTime): Try[Unit] = Try {
+  def addBagToDeposit(depositId: DepositId, created: DateTime): Try[Unit] = {
+    createBag(depositId, created) recoverWith {
+      case NonFatal(e) => Failure(ActionException(s"Error occured in creating the bag for $depositId", e))
+    }
+  }
+
+  private def createBag(depositId: DepositId, created: DateTime): Try[Unit] = Try {
     val inputDir = depositDir(depositId)
     val stageDir = stagingBagDir(depositId)
 

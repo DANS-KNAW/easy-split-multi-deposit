@@ -13,7 +13,8 @@ import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
 
-class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach { self =>
+class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
+  self =>
 
   private val depositId = "dsId1"
   private val date = new DateTime(1992, 7, 30, 0, 0)
@@ -23,8 +24,8 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach { s
   private val file4Text = "jklmno"
   private val file5Text = "mnopqr"
   private val action = new AddBagToDeposit with StagingPathExplorer with InputPathExplorer {
-    val multiDepositDir: Path = self.multiDepositDir
-    val stagingDir: Path = self.stagingDir
+    override val multiDepositDir: Path = self.multiDepositDir
+    override val stagingDir: Path = self.stagingDir
   }
 
   override def beforeEach(): Unit = {
