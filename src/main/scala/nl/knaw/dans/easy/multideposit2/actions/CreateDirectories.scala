@@ -5,11 +5,12 @@ import java.nio.file.{ Files, Path }
 import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit2.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit2.model.DepositId
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
-trait CreateDirectories {
+trait CreateDirectories extends DebugEnhancedLogging {
   this: StagingPathExplorer =>
 
   def createDepositDirectories(depositId: DepositId): Try[Unit] = {
@@ -21,6 +22,7 @@ trait CreateDirectories {
   }
 
   private def createDirectories(depositId: DepositId)(paths: Path*): Try[Unit] = {
+    logger.debug(s"creating directories: ${ paths.toString() }")
     paths.find(Files.exists(_))
       .map(file => Failure(ActionException(s"The deposit $depositId already exists in $file.")))
       .getOrElse {

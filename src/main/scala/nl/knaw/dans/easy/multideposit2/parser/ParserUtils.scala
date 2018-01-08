@@ -18,11 +18,11 @@ package nl.knaw.dans.easy.multideposit2.parser
 import java.nio.file.{ Files, Path, Paths }
 import java.util.Locale
 
-import nl.knaw.dans.easy.multideposit2.model._
-import nl.knaw.dans.easy.multideposit.StringExtensions
 import nl.knaw.dans.easy.multideposit2.PathExplorer.InputPathExplorer
+import nl.knaw.dans.easy.multideposit2.model._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import nl.knaw.dans.lib.string.StringExtensions
 
 import scala.language.implicitConversions
 import scala.util.{ Failure, Success, Try }

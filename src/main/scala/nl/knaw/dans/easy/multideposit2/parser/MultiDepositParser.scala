@@ -17,12 +17,12 @@ package nl.knaw.dans.easy.multideposit2.parser
 
 import java.nio.file.{ Files, NoSuchFileException, Path }
 
-import nl.knaw.dans.easy.multideposit.StringExtensions
 import nl.knaw.dans.easy.multideposit2.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit2.encoding
 import nl.knaw.dans.easy.multideposit2.model.{ Deposit, DepositId, Instructions, MultiDepositKey, listToNEL }
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import nl.knaw.dans.lib.string.StringExtensions
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
 import resource.managed
 

@@ -19,13 +19,23 @@ import java.nio.charset.Charset
 
 import org.apache.commons.io.Charsets
 
-import scala.util.Try
+import scala.collection.generic.CanBuildFrom
+import scala.util.{ Failure, Success, Try }
 
 package object multideposit2 {
 
   val encoding: Charset = Charsets.UTF_8
 
   implicit class SeqExtensions[T](val seq: Seq[T]) extends AnyVal {
-    def mapUntilFailure[S](f: T => Try[S]): Try[Seq[S]] = Try { seq.toStream.map(f(_).get) }
+    def mapUntilFailure[S](f: T => Try[S])(implicit cbf: CanBuildFrom[Seq[T], S, Seq[S]]): Try[Seq[S]] = {
+      val bf = cbf()
+      for (t <- seq) {
+        f(t) match {
+          case Success(x) => bf += x
+          case Failure(e) => return Failure(e)
+        }
+      }
+      Success(bf.result())
+    }
   }
 }

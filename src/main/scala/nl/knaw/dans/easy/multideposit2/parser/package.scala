@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit2
 import java.nio.file.Path
 
 import nl.knaw.dans.easy.multideposit2.model.MultiDepositKey
-import nl.knaw.dans.easy.multideposit.StringExtensions
+import nl.knaw.dans.lib.string.StringExtensions
 
 package object parser {
 
