@@ -1,40 +1,42 @@
+/**
+ * Copyright (C) 2016 DANS - Data Archiving and Networked Services (info@dans.knaw.nl)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package nl.knaw.dans.easy.multideposit2.actions
 
 import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit2.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit2.model._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Try }
 import scala.xml.{ Elem, Null, PrefixedAttribute }
 
-trait AddDatasetMetadataToDeposit {
+trait AddDatasetMetadataToDeposit extends DebugEnhancedLogging {
   this: StagingPathExplorer =>
 
   val formats: Set[String]
 
-  def addDatasetMetadata(deposit: Deposit): Try[Unit] = {
-    checkSpringFieldDepositHasAVformat(deposit)
-      .map(_ => stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit)))
-      .recoverWith {
-        case NonFatal(e) => Failure(ActionException(s"Could not write deposit metadata for ${ deposit.depositId }", e))
-      }
-  }
+  def addDatasetMetadata(deposit: Deposit): Try[Unit] = Try {
+    logger.debug(s"add dataset metadata for ${ deposit.depositId }")
 
-  // TODO move this check somewhere else if possible
-  def checkSpringFieldDepositHasAVformat(deposit: Deposit): Try[Unit] = {
-    deposit.springfield match {
-      case None => Success(())
-      case Some(_) => deposit.metadata.formats
-        .find(s => s.startsWith("audio/") || s.startsWith("video/"))
-        .map(_ => Success(()))
-        .getOrElse(Failure(ActionException(
-          "No audio/video Format found for this column: [DC_FORMAT]\n" +
-            "cause: this column should contain at least one " +
-            "audio/ or video/ value because SF columns are present")))
-    }
+    stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
+  } recoverWith {
+    case NonFatal(e) => Failure(ActionException(s"Could not write deposit metadata for ${ deposit.depositId }", e))
   }
 
   def depositToDDM(deposit: Deposit): Elem = {

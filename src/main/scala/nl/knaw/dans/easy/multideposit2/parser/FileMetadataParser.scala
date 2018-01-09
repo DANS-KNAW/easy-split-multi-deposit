@@ -27,7 +27,7 @@ import scala.util.{ Failure, Success, Try }
 trait FileMetadataParser extends DebugEnhancedLogging {
 
   def extractFileMetadata(depositDir: Path, instructions: Instructions): Try[Seq[FileMetadata]] = {
-    logger.info(s"extracting metadata from files in $depositDir")
+    logger.info(s"extract metadata from files in $depositDir")
     if (Files.exists(depositDir))
       for {
         fms <- depositDir.listRecursively(! Files.isDirectory(_))
