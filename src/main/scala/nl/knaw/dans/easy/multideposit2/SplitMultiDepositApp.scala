@@ -19,7 +19,7 @@ import java.nio.file.Path
 import java.util.Locale
 
 import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
-import nl.knaw.dans.easy.multideposit2.actions.{ AddBagToDeposit, AddDatasetMetadataToDeposit, CreateDirectories, ValidatePreconditions }
+import nl.knaw.dans.easy.multideposit2.actions._
 import nl.knaw.dans.easy.multideposit2.model.Deposit
 import nl.knaw.dans.easy.multideposit2.parser.MultiDepositParser
 import nl.knaw.dans.lib.error.TraversableTryExtensions
@@ -32,7 +32,8 @@ trait SplitMultiDepositApp extends DebugEnhancedLogging {
     with ValidatePreconditions
     with CreateDirectories
     with AddBagToDeposit
-    with AddDatasetMetadataToDeposit =>
+    with AddDatasetMetadataToDeposit
+    with AddFileMetadataToDeposit =>
 
   def validate(): Try[Seq[Deposit]] = {
     for {
@@ -58,6 +59,7 @@ trait SplitMultiDepositApp extends DebugEnhancedLogging {
       _ <- addBagToDeposit(deposit.depositId, deposit.profile.created)
       _ <- createMetadataDirectory(deposit.depositId)
       _ <- addDatasetMetadata(deposit)
+      _ <- addFileMetadata(deposit.depositId, deposit.files)
     } yield ()
   }
 }
@@ -66,7 +68,7 @@ object SplitMultiDepositApp {
   def apply(smd: Path, sd: Path, od: Path, fs: Set[String]): SplitMultiDepositApp = {
     new SplitMultiDepositApp with PathExplorers
       with ValidatePreconditions with CreateDirectories with AddBagToDeposit
-      with AddDatasetMetadataToDeposit {
+      with AddDatasetMetadataToDeposit with AddFileMetadataToDeposit {
       def multiDepositDir: Path = smd
 
       def stagingDir: Path = sd

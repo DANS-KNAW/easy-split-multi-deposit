@@ -15,12 +15,12 @@
  */
 package nl.knaw.dans.easy.multideposit2.actions
 
-import java.nio.file.{ Files, Path }
+import java.nio.file.{ Files, Path, Paths }
 
 import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit2.TestSupportFixture
-import nl.knaw.dans.easy.multideposit2.model.Metadata
+import nl.knaw.dans.easy.multideposit2.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, Springfield, Video }
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
@@ -61,7 +61,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
   }
 
   "checkSpringFieldDepositHasAVformat" should "fail if the deposit contains SF_* fields, but no AV DC_FORMAT is given" in {
-    val deposit = testInstructions1.toDeposit(Seq.empty).copy(
+    val deposit = testInstructions1.toDeposit().copy(
       depositId = depositId,
       metadata = Metadata(
         formats = List("text/plain")
@@ -74,12 +74,92 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
   }
 
   it should "succeed if the deposit contains SF_* fields, and the DC_FORMAT contains audio/" in {
-    val deposit = testInstructions1.toDeposit(Seq.empty).copy(
+    val deposit = testInstructions1.toDeposit().copy(
       depositId = depositId,
       metadata = Metadata(
         formats = List("audio/mpeg3")
       )
     )
     action.checkSpringFieldDepositHasAVformat(deposit) shouldBe a[Success[_]]
+  }
+
+  val avFileReferences = Seq(
+    AVFileMetadata(
+      filepath = testDir.resolve("md/ruimtereis01/reisverslag/centaur.mpg"),
+      mimeType = "video/mpeg",
+      vocabulary = Video,
+      title = "flyby of centaur",
+      accessibleTo = FileAccessRights.ANONYMOUS
+    ))
+
+  "checkSFColumnsIfDepositContainsAVFiles" should "succeed if the deposit contains the SF_* fields in case an A/V file is found" in {
+    val deposit = testInstructions1.toDeposit(avFileReferences).copy(
+      depositId = depositId,
+      springfield = Option(Springfield("domain", "user", "collection"))
+    )
+    action.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Success[_]]
+  }
+
+  it should "fail if the deposit contains A/V files but the SF_* fields are not present" in {
+    val deposit = testInstructions1.toDeposit(avFileReferences).copy(
+      depositId = depositId,
+      springfield = Option.empty
+    )
+    inside(action.checkSFColumnsIfDepositContainsAVFiles(deposit)) {
+      case Failure(ActionException(message, _)) =>
+        message should {
+          include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
+            include("reisverslag/centaur.mpg")
+        }
+    }
+  }
+
+  it should "succeed if the deposit contains no A/V files and the SF_* fields are not present" in {
+    val depositId = "ruimtereis02"
+    val deposit = testInstructions2.toDeposit().copy(
+      depositId = depositId,
+      springfield = Option.empty
+    )
+    action.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Success[_]]
+  }
+
+  it should "fail if the deposit contains no A/V files and any of the SF_* fields are present" in {
+    val depositId = "ruimtereis02"
+    val deposit = testInstructions2.toDeposit().copy(
+      row = 1,
+      depositId = depositId,
+      springfield = Option(Springfield(user = "user", collection = "collection"))
+    )
+    inside(action.checkSFColumnsIfDepositContainsAVFiles(deposit)) {
+      case Failure(ActionException(message, _)) =>
+        message should {
+          include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]") and
+            include("these columns should be empty because there are no audio/video files found in this deposit")
+        }
+    }
+  }
+
+  it should "create an empty list of file metadata if the deposit directory corresponding with the depositId does not exist and therefore succeed" in {
+    val depositId = "ruimtereis03"
+    val deposit = testInstructions2.copy(depositId = depositId).toDeposit()
+    depositDir(depositId).toFile should not(exist)
+    action.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Success[_]]
+  }
+
+  it should "fail if a dataset has both audio and video material in it" in {
+    val depositId = "ruimtereis01"
+    val deposit = testInstructions1.copy(depositId = depositId)
+      .toDeposit(avFileReferences :+ AVFileMetadata(
+        filepath = Paths.get(""),
+        mimeType = "audio/mpeg",
+        vocabulary = Audio,
+        title = "mytitle",
+        accessibleTo = FileAccessRights.ANONYMOUS
+      ))
+
+    inside(action.checkEitherVideoOrAudio(deposit)) {
+      case Failure(ActionException(message, _)) =>
+        message shouldBe "Found both audio and video in this dataset. Only one of them is allowed."
+    }
   }
 }

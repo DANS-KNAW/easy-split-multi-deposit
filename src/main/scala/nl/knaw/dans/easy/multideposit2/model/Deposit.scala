@@ -24,7 +24,7 @@ case class Instructions(depositId: DepositId,
                         metadata: Metadata = Metadata(),
                         files: Map[Path, FileDescriptor] = Map.empty,
                         audioVideo: AudioVideo = AudioVideo()) {
-  def toDeposit(fms: Seq[FileMetadata]): Deposit = {
+  def toDeposit(fms: Seq[FileMetadata] = Seq.empty): Deposit = {
     Deposit(depositId, row, depositorUserId, profile, metadata, fms, audioVideo.springfield)
   }
 }
