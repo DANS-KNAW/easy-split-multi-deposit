@@ -10,7 +10,8 @@ import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
 
-class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterEach { self =>
+class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
+  self =>
 
   private val depositId = "ds1"
   private val datamanagerId = "dm"

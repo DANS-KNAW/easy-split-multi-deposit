@@ -26,6 +26,8 @@ package object multideposit2 {
 
   val encoding: Charset = Charsets.UTF_8
 
+  case class DepositPermissions(permissions: String, group: String)
+
   implicit class SeqExtensions[T](val seq: Seq[T]) extends AnyVal {
     def mapUntilFailure[S](f: T => Try[S])(implicit cbf: CanBuildFrom[Seq[T], S, Seq[S]]): Try[Seq[S]] = {
       val bf = cbf()

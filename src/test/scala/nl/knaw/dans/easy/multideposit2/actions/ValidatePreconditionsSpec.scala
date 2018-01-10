@@ -19,9 +19,9 @@ import java.nio.file.{ Files, Path, Paths }
 import javax.naming.directory.Attributes
 
 import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
-import nl.knaw.dans.easy.multideposit2.{ Ldap, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit2.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, Springfield, Video }
+import nl.knaw.dans.easy.multideposit2.{ Ldap, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 
@@ -32,9 +32,10 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
 
   private val depositId = "dsId1"
   private val ldapMock: Ldap = mock[Ldap]
-  private val action = new ValidatePreconditions with StagingPathExplorer with InputPathExplorer {
+  private val action = new ValidatePreconditions with PathExplorers {
     override val multiDepositDir: Path = self.multiDepositDir
     override val stagingDir: Path = self.stagingDir
+    override val outputDepositDir: Path = self.outputDepositDir
     override val ldap: Ldap = ldapMock
   }
 
@@ -45,6 +46,14 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     stagingDir.deleteDirectory()
     Files.createDirectory(stagingDir)
     stagingDir.toFile should exist
+
+    Paths.get(getClass.getResource("/allfields/output/input-ruimtereis01").toURI)
+      .copyDir(stagingDir("ruimtereis01"))
+    stagingDir("ruimtereis01").toFile should exist
+
+    outputDepositDir.deleteDirectory()
+    Files.createDirectory(outputDepositDir)
+    outputDepositDir.toFile should exist
   }
 
   "checkDirectoriesDoNotExist" should "succeed if the directories do not yet exist" in {
@@ -60,6 +69,20 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     dir.toFile should exist
 
     inside(action.checkDirectoriesDoNotExist(depositId)(dir)) {
+      case Failure(ActionException(msg, _)) => msg should include(s"The deposit for dataset $depositId already exists")
+    }
+  }
+
+  "checkPreconditions" should "verify that the deposit does not yet exist in the outputDepositDir" in {
+    action.checkOutputDirectoryExists("ruimtereis01") shouldBe a[Success[_]]
+  }
+
+  it should "fail if the deposit already exists in the outputDepositDir" in {
+    val depositId = "ruimtereis01"
+    stagingDir(depositId).copyDir(outputDepositDir(depositId))
+    outputDepositDir(depositId).toFile should exist
+
+    inside(action.checkOutputDirectoryExists(depositId)) {
       case Failure(ActionException(msg, _)) => msg should include(s"The deposit for dataset $depositId already exists")
     }
   }

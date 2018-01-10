@@ -18,14 +18,14 @@ package nl.knaw.dans.easy.multideposit2.actions
 import java.nio.file.{ Files, Path }
 
 import nl.knaw.dans.easy.multideposit2.Ldap
-import nl.knaw.dans.easy.multideposit2.PathExplorer.StagingPathExplorer
+import nl.knaw.dans.easy.multideposit2.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit2.model.{ AVFileMetadata, Deposit, DepositId }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
 
 trait ValidatePreconditions extends DebugEnhancedLogging {
-  this: StagingPathExplorer =>
+  this: StagingPathExplorer with OutputPathExplorer =>
 
   val ldap: Ldap
 
@@ -33,6 +33,7 @@ trait ValidatePreconditions extends DebugEnhancedLogging {
     val id = deposit.depositId
     for {
       _ <- checkDirectoriesDoNotExist(id)(stagingDir(id), stagingBagDir(id), stagingBagMetadataDir(id))
+      _ <- checkOutputDirectoryExists(id)
       _ <- checkSpringFieldDepositHasAVformat(deposit)
       _ <- checkSFColumnsIfDepositContainsAVFiles(deposit)
       _ <- checkEitherVideoOrAudio(deposit)
@@ -46,6 +47,14 @@ trait ValidatePreconditions extends DebugEnhancedLogging {
     paths.find(Files.exists(_))
       .map(file => Failure(ActionException(s"The deposit for dataset $depositId already exists in $file.")))
       .getOrElse(Success(()))
+  }
+
+  def checkOutputDirectoryExists(depositId: DepositId): Try[Unit] = {
+    Try { Files.exists(outputDepositDir(depositId)) }
+      .flatMap {
+        case true => Failure(ActionException(s"The deposit for dataset $depositId already exists in $outputDepositDir"))
+        case false => Success(())
+      }
   }
 
   def checkSpringFieldDepositHasAVformat(deposit: Deposit): Try[Unit] = {

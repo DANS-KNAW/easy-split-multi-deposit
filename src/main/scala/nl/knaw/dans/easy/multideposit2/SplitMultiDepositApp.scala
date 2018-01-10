@@ -22,10 +22,11 @@ import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit2.actions.{ RetrieveDatamanager, _ }
 import nl.knaw.dans.easy.multideposit2.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.easy.multideposit2.parser.MultiDepositParser
-import nl.knaw.dans.lib.error.TraversableTryExtensions
+import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.util.Try
+import scala.util.{ Failure, Success, Try }
+import scala.util.control.NonFatal
 
 trait SplitMultiDepositApp extends DebugEnhancedLogging {
   this: PathExplorers
@@ -35,7 +36,9 @@ trait SplitMultiDepositApp extends DebugEnhancedLogging {
     with AddBagToDeposit
     with AddDatasetMetadataToDeposit
     with AddFileMetadataToDeposit
-    with AddPropertiesToDeposit =>
+    with AddPropertiesToDeposit
+    with SetDepositPermissions
+    with MoveDepositToOutputDir =>
 
   val datamanagerId: Datamanager
 
@@ -53,30 +56,38 @@ trait SplitMultiDepositApp extends DebugEnhancedLogging {
       _ <- Try { Locale.setDefault(Locale.US) }
       deposits <- MultiDepositParser.parse(multiDepositDir)
       dataManagerEmailAddress <- getDatamanagerEmailaddress(datamanagerId)
-      _ <- deposits.mapUntilFailure(convert(dataManagerEmailAddress))
+      _ <- deposits.mapUntilFailure(convert(dataManagerEmailAddress)).recoverWith {
+        case NonFatal(e) => deposits.mapUntilFailure(d => discardDeposit(d.depositId)) match {
+          case Success(_) => Failure(e)
+          case Failure(e2) => Failure(ActionException("discarding deposits failed after creating deposits failed", new CompositeException(e, e2)))
+        }
+      }
+      _ <- deposits.mapUntilFailure(d => moveDepositsToOutputDir(d.depositId))
     } yield ()
   }
 
   private def convert(dataManagerEmailAddress: DatamanagerEmailaddress)(deposit: Deposit): Try[Unit] = {
-    logger.info(s"convert ${ deposit.depositId }")
+    val depositId = deposit.depositId
+    logger.info(s"convert ${ depositId }")
     for {
       _ <- validateDeposit(deposit)
-      _ <- createDepositDirectories(deposit.depositId)
-      _ <- addBagToDeposit(deposit.depositId, deposit.profile.created)
-      _ <- createMetadataDirectory(deposit.depositId)
+      _ <- createDepositDirectories(depositId)
+      _ <- addBagToDeposit(depositId, deposit.profile.created)
+      _ <- createMetadataDirectory(depositId)
       _ <- addDatasetMetadata(deposit)
-      _ <- addFileMetadata(deposit.depositId, deposit.files)
+      _ <- addFileMetadata(depositId, deposit.files)
       _ <- addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress)
+      _ <- setDepositPermissions(depositId)
     } yield ()
   }
 }
 
 object SplitMultiDepositApp {
-  def apply(smd: Path, sd: Path, od: Path, fs: Set[String], dmId: Datamanager, ldapService: Ldap): SplitMultiDepositApp = {
+  def apply(smd: Path, sd: Path, od: Path, fs: Set[String], dmId: Datamanager, ldapService: Ldap, permissions: DepositPermissions): SplitMultiDepositApp = {
     new SplitMultiDepositApp with PathExplorers
       with ValidatePreconditions with RetrieveDatamanager with CreateDirectories
       with AddBagToDeposit with AddDatasetMetadataToDeposit with AddFileMetadataToDeposit
-      with AddPropertiesToDeposit {
+      with AddPropertiesToDeposit with SetDepositPermissions with MoveDepositToOutputDir {
 
       override val multiDepositDir: Path = smd
       override val stagingDir: Path = sd
@@ -84,6 +95,7 @@ object SplitMultiDepositApp {
       override val formats: Set[String] = fs
       override val datamanagerId: Datamanager = dmId
       override val ldap: Ldap = ldapService
+      override val depositPermissions: DepositPermissions = permissions
     }
   }
 }

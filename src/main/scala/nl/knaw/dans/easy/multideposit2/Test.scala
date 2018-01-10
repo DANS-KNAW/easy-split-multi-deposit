@@ -45,8 +45,9 @@ object Test extends App {
 
     Ldap(new InitialLdapContext(env, null))
   }
+  val depositPermissions = DepositPermissions(configuration.properties.getString("deposit.permissions.access"), configuration.properties.getString("deposit.permissions.group"))
 
-  val app = SplitMultiDepositApp(smd, sd, od, configuration.formats, "archie001", ldap)
+  val app = SplitMultiDepositApp(smd, sd, od, configuration.formats, "archie001", ldap, depositPermissions)
   app.convert()
     .recoverWith { case e => e.printStackTrace(); Failure(e) }
     .foreach(_ => println("success"))
