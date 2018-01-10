@@ -20,6 +20,7 @@ import java.nio.file.Paths
 import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
 import nl.knaw.dans.lib.error.TryExtensions
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import resource.managed
 
 import scala.language.reflectiveCalls
 import scala.util.control.NonFatal
@@ -33,7 +34,8 @@ object Command extends App with DebugEnhancedLogging {
   val commandLine: CommandLineOptions = new CommandLineOptions(args, configuration.version)
   val app = SplitMultiDepositApp(configuration)
 
-  app.acquireAndGet(runSubcommand)
+  managed(app)
+    .acquireAndGet(runSubcommand)
     .doIfSuccess(msg => println(s"OK: $msg"))
     .doIfFailure { case e => logger.error(e.getMessage, e) }
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }

@@ -25,12 +25,11 @@ import nl.knaw.dans.easy.multideposit2.model.{ Datamanager, DatamanagerEmailaddr
 import nl.knaw.dans.easy.multideposit2.parser.MultiDepositParser
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-import resource.{ ManagedResource, managed }
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: DepositPermissions) extends DebugEnhancedLogging {
+class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
   private val validator = new ValidatePreconditions(ldap)
   private val datamanager = new RetrieveDatamanager(ldap)
   private val createDirs = new CreateDirectories()
@@ -40,6 +39,8 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
   private val depositProperties = new AddPropertiesToDeposit()
   private val setPermissions = new SetDepositPermissions(permissions)
   private val moveDeposit = new MoveDepositToOutputDir()
+
+  override def close(): Unit = ldap.close()
 
   def validate(paths: PathExplorers, datamanagerId: Datamanager): Try[Seq[Deposit]] = {
     implicit val input: InputPathExplorer = paths
@@ -97,7 +98,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
 }
 
 object SplitMultiDepositApp {
-  def apply(configuration: Configuration): ManagedResource[SplitMultiDepositApp] = {
+  def apply(configuration: Configuration): SplitMultiDepositApp = {
     val ldap = {
       val env = new java.util.Hashtable[String, String]
       env.put(Context.PROVIDER_URL, configuration.properties.getString("auth.ldap.url"))
@@ -113,6 +114,6 @@ object SplitMultiDepositApp {
       group = configuration.properties.getString("deposit.permissions.group")
     )
 
-    managed(ldap).map(ldap => new SplitMultiDepositApp(configuration.formats, ldap, permissions))
+    new SplitMultiDepositApp(configuration.formats, ldap, permissions)
   }
 }
