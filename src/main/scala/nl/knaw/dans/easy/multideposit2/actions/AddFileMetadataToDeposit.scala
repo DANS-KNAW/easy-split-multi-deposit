@@ -9,18 +9,17 @@ import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 import scala.xml.{ Elem, NodeSeq }
 
-trait AddFileMetadataToDeposit extends DebugEnhancedLogging {
-  this: InputPathExplorer with StagingPathExplorer =>
+class AddFileMetadataToDeposit extends DebugEnhancedLogging {
 
-  def addFileMetadata(depositId: DepositId, fileMetadata: Seq[FileMetadata]): Try[Unit] = Try {
+  def addFileMetadata(depositId: DepositId, fileMetadata: Seq[FileMetadata])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = Try {
     logger.debug(s"add file metadata for $depositId")
 
-    stagingFileMetadataFile(depositId).writeXml(depositToFileXml(depositId, fileMetadata))
+    stage.stagingFileMetadataFile(depositId).writeXml(depositToFileXml(depositId, fileMetadata))
   } recoverWith {
     case NonFatal(e) => Failure(ActionException(s"Could not write file metadata", e))
   }
 
-  private def depositToFileXml(depositId: DepositId, fileMetadata: Seq[FileMetadata]): Elem = {
+  private def depositToFileXml(depositId: DepositId, fileMetadata: Seq[FileMetadata])(implicit input: InputPathExplorer): Elem = {
     fileXmls(depositId, fileMetadata) match {
       case Nil => <files
         xmlns:dcterms="http://purl.org/dc/terms/"
@@ -37,23 +36,23 @@ trait AddFileMetadataToDeposit extends DebugEnhancedLogging {
     }
   }
 
-  private def fileXmls(depositId: DepositId, fmds: Seq[FileMetadata]): Seq[Elem] = {
+  private def fileXmls(depositId: DepositId, fmds: Seq[FileMetadata])(implicit input: InputPathExplorer): Seq[Elem] = {
     fmds.map {
       case av: AVFileMetadata => avFileXml(depositId, av)
       case fmd: DefaultFileMetadata => defaultFileXml(depositId, fmd)
     }
   }
 
-  private def defaultFileXml(depositId: DepositId, fmd: DefaultFileMetadata): Elem = {
-    <file filepath={s"data/${ depositDir(depositId).relativize(fmd.filepath) }"}>
+  private def defaultFileXml(depositId: DepositId, fmd: DefaultFileMetadata)(implicit input: InputPathExplorer): Elem = {
+    <file filepath={s"data/${ input.depositDir(depositId).relativize(fmd.filepath) }"}>
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       {fmd.title.map(title => <dcterms:title>{title}</dcterms:title>).getOrElse(NodeSeq.Empty)}
       {fmd.accessibleTo.map(act => <accessibleToRights>{act}</accessibleToRights>).getOrElse(NodeSeq.Empty)}
     </file>
   }
 
-  private def avFileXml(depositId: DepositId, fmd: AVFileMetadata): Elem = {
-    <file filepath={s"data/${ depositDir(depositId).relativize(fmd.filepath) }"}>
+  private def avFileXml(depositId: DepositId, fmd: AVFileMetadata)(implicit input: InputPathExplorer): Elem = {
+    <file filepath={s"data/${ input.depositDir(depositId).relativize(fmd.filepath) }"}>
       <dcterms:type>{fmd.vocabulary.vocabulary}</dcterms:type>
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       <dcterms:title>{fmd.title}</dcterms:title>
@@ -62,8 +61,8 @@ trait AddFileMetadataToDeposit extends DebugEnhancedLogging {
     </file>
   }
 
-  private def subtitleXml(depositId: DepositId)(subtitle: Subtitles): Elem = {
-    val filepath = depositDir(depositId).relativize(subtitle.path)
+  private def subtitleXml(depositId: DepositId)(subtitle: Subtitles)(implicit input: InputPathExplorer): Elem = {
+    val filepath = input.depositDir(depositId).relativize(subtitle.path)
 
     subtitle.language
       .map(lang => <dcterms:relation xml:lang={lang}>{s"data/$filepath"}</dcterms:relation>)

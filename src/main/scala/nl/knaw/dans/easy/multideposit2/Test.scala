@@ -21,19 +21,22 @@ import javax.naming.ldap.InitialLdapContext
 
 import scala.util.Failure
 import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
 
 object Test extends App {
 
   val configuration = Configuration(Paths.get("src/main/assembly/dist"))
-  val smd = Paths.get("src/test/resources/allfields/input")
-  val sd = Paths.get("target/stagingDir")
-  val od = Paths.get("target/outputDir")
+  val paths = new PathExplorers(
+    Paths.get("src/test/resources/allfields/input"),
+    Paths.get("target/stagingDir"),
+    Paths.get("target/outputDir")
+  )
 
-  sd.deleteDirectory()
-  od.deleteDirectory()
+  paths.stagingDir.deleteDirectory()
+  paths.outputDepositDir.deleteDirectory()
 
-  Files.createDirectories(sd)
-  Files.createDirectories(od)
+  Files.createDirectories(paths.stagingDir)
+  Files.createDirectories(paths.outputDepositDir)
 
   val ldap = {
     val env = new java.util.Hashtable[String, String]
@@ -47,8 +50,8 @@ object Test extends App {
   }
   val depositPermissions = DepositPermissions(configuration.properties.getString("deposit.permissions.access"), configuration.properties.getString("deposit.permissions.group"))
 
-  val app = SplitMultiDepositApp(smd, sd, od, configuration.formats, "archie001", ldap, depositPermissions)
-  app.convert()
+  val app = new SplitMultiDepositApp(configuration.formats, ldap, depositPermissions)
+  app.convert(paths, "archie001")
     .recoverWith { case e => e.printStackTrace(); Failure(e) }
     .foreach(_ => println("success"))
 }

@@ -10,12 +10,11 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
 
-trait MoveDepositToOutputDir extends DebugEnhancedLogging {
-  this: StagingPathExplorer with OutputPathExplorer =>
+class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
-  def moveDepositsToOutputDir(depositId: DepositId): Try[Unit] = {
-    val stagingDirectory = stagingDir(depositId)
-    val outputDir = outputDepositDir(depositId)
+  def moveDepositsToOutputDir(depositId: DepositId)(implicit stage: StagingPathExplorer, output: OutputPathExplorer): Try[Unit] = {
+    val stagingDirectory = stage.stagingDir(depositId)
+    val outputDir = output.outputDepositDir(depositId)
 
     logger.debug(s"moving $stagingDirectory to $outputDir")
 

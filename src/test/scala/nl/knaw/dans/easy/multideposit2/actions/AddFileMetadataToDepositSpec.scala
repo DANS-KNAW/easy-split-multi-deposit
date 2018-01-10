@@ -1,9 +1,8 @@
 package nl.knaw.dans.easy.multideposit2.actions
 
-import java.nio.file.{ Files, Path, Paths }
+import java.nio.file.{ Files, Paths }
 
 import nl.knaw.dans.easy.multideposit.{ CustomMatchers, FileExtensions }
-import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit2.TestSupportFixture
 import nl.knaw.dans.easy.multideposit2.model.{ AVFileMetadata, DefaultFileMetadata, FileAccessRights, Subtitles, Video }
 import org.scalatest.BeforeAndAfterEach
@@ -12,12 +11,8 @@ import scala.util.Success
 import scala.xml.XML
 
 class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatchers with BeforeAndAfterEach {
-  self =>
 
-  private val action: AddFileMetadataToDeposit = new AddFileMetadataToDeposit with InputPathExplorer with StagingPathExplorer {
-    override val multiDepositDir: Path = self.multiDepositDir
-    override val stagingDir: Path = self.stagingDir
-  }
+  private val action = new AddFileMetadataToDeposit
   private val depositId = "ruimtereis01"
 
   override def beforeEach(): Unit = {

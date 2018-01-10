@@ -24,16 +24,13 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
 
-trait ValidatePreconditions extends DebugEnhancedLogging {
-  this: StagingPathExplorer with OutputPathExplorer =>
+class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
 
-  val ldap: Ldap
-
-  def validateDeposit(deposit: Deposit): Try[Unit] = {
+  def validateDeposit(deposit: Deposit)(implicit stage: StagingPathExplorer, output: OutputPathExplorer): Try[Unit] = {
     val id = deposit.depositId
     logger.debug(s"validating deposit $id")
     for {
-      _ <- checkDirectoriesDoNotExist(id)(stagingDir(id), stagingBagDir(id), stagingBagMetadataDir(id))
+      _ <- checkDirectoriesDoNotExist(id)(stage.stagingDir(id), stage.stagingBagDir(id), stage.stagingBagMetadataDir(id))
       _ <- checkOutputDirectoryExists(id)
       _ <- checkSpringFieldDepositHasAVformat(deposit)
       _ <- checkSFColumnsIfDepositContainsAVFiles(deposit)
@@ -50,12 +47,12 @@ trait ValidatePreconditions extends DebugEnhancedLogging {
       .getOrElse(Success(()))
   }
 
-  def checkOutputDirectoryExists(depositId: DepositId): Try[Unit] = {
+  def checkOutputDirectoryExists(depositId: DepositId)(implicit output: OutputPathExplorer): Try[Unit] = {
     logger.debug("check output directory does exist")
 
-    Try { Files.exists(outputDepositDir(depositId)) }
+    Try { Files.exists(output.outputDepositDir(depositId)) }
       .flatMap {
-        case true => Failure(ActionException(s"The deposit for dataset $depositId already exists in $outputDepositDir"))
+        case true => Failure(ActionException(s"The deposit for dataset $depositId already exists in ${ output.outputDepositDir }"))
         case false => Success(())
       }
   }

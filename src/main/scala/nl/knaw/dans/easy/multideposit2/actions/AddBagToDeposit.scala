@@ -32,10 +32,9 @@ import org.joda.time.format.ISODateTimeFormat
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
-trait AddBagToDeposit extends DebugEnhancedLogging {
-  this: InputPathExplorer with StagingPathExplorer =>
+class AddBagToDeposit extends DebugEnhancedLogging {
 
-  def addBagToDeposit(depositId: DepositId, created: DateTime): Try[Unit] = {
+  def addBagToDeposit(depositId: DepositId, created: DateTime)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"construct the bag for $depositId with timestamp ${ created.toString(ISODateTimeFormat.dateTime()) }")
 
     createBag(depositId, created) recoverWith {
@@ -43,9 +42,9 @@ trait AddBagToDeposit extends DebugEnhancedLogging {
     }
   }
 
-  private def createBag(depositId: DepositId, created: DateTime): Try[Unit] = Try {
-    val inputDir = depositDir(depositId)
-    val stageDir = stagingBagDir(depositId)
+  private def createBag(depositId: DepositId, created: DateTime)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = Try {
+    val inputDir = input.depositDir(depositId)
+    val stageDir = stage.stagingBagDir(depositId)
 
     val metadata = new BagitMetadata {
       add("Created", created.toString(ISODateTimeFormat.dateTime()))

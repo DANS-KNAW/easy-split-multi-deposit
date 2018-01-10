@@ -64,7 +64,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
   }
 
   private val parser = new FileDescriptorParser with ParserUtils with InputPathExplorer {
-    def multiDepositDir: Path = self.multiDepositDir
+    override val multiDepositDir: Path = self.multiDepositDir
   }
 
   import parser._

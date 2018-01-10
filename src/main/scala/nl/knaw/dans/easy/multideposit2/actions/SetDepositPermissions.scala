@@ -13,12 +13,9 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-trait SetDepositPermissions extends DebugEnhancedLogging {
-  this: StagingPathExplorer =>
+class SetDepositPermissions(depositPermissions: DepositPermissions) extends DebugEnhancedLogging {
 
-  val depositPermissions: DepositPermissions
-
-  def setDepositPermissions(depositId: DepositId): Try[Unit] = {
+  def setDepositPermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"set deposit permissions for $depositId")
 
     setFilePermissions(depositId: DepositId).recoverWith {
@@ -27,8 +24,8 @@ trait SetDepositPermissions extends DebugEnhancedLogging {
     }
   }
 
-  private def setFilePermissions(depositId: DepositId): Try[Unit] = {
-    val stagingDirectory = stagingDir(depositId)
+  private def setFilePermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+    val stagingDirectory = stage.stagingDir(depositId)
     isOnPosixFileSystem(stagingDirectory)
       .flatMap {
         case true => Try {

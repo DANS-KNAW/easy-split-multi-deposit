@@ -26,15 +26,12 @@ import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 import scala.xml.{ Elem, Null, PrefixedAttribute }
 
-trait AddDatasetMetadataToDeposit extends DebugEnhancedLogging {
-  this: StagingPathExplorer =>
+class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLogging {
 
-  val formats: Set[String]
-
-  def addDatasetMetadata(deposit: Deposit): Try[Unit] = Try {
+  def addDatasetMetadata(deposit: Deposit)(implicit stage: StagingPathExplorer): Try[Unit] = Try {
     logger.debug(s"add dataset metadata for ${ deposit.depositId }")
 
-    stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
+    stage.stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
   } recoverWith {
     case NonFatal(e) => Failure(ActionException(s"Could not write deposit metadata for ${ deposit.depositId }", e))
   }

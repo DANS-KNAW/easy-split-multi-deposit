@@ -36,6 +36,10 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
   override val stagingDir: Path = testDir.resolve("sd")
   override val outputDepositDir: Path = testDir.resolve("od")
 
+  implicit val inputPathExplorer: InputPathExplorer = this
+  implicit val stagingPathExplorer: StagingPathExplorer = this
+  implicit val outputPathExplorer: OutputPathExplorer = this
+
   def testInstructions1: Instructions = {
     Instructions(
       depositId = "ruimtereis01",

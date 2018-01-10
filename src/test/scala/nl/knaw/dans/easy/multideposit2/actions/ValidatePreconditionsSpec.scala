@@ -15,11 +15,10 @@
  */
 package nl.knaw.dans.easy.multideposit2.actions
 
-import java.nio.file.{ Files, Path, Paths }
+import java.nio.file.{ Files, Paths }
 import javax.naming.directory.Attributes
 
 import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit2.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, Springfield, Video }
 import nl.knaw.dans.easy.multideposit2.{ Ldap, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
@@ -28,16 +27,10 @@ import org.scalatest.BeforeAndAfterEach
 import scala.util.{ Failure, Success, Try }
 
 class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEach with MockFactory {
-  self =>
 
   private val depositId = "dsId1"
   private val ldapMock: Ldap = mock[Ldap]
-  private val action = new ValidatePreconditions with PathExplorers {
-    override val multiDepositDir: Path = self.multiDepositDir
-    override val stagingDir: Path = self.stagingDir
-    override val outputDepositDir: Path = self.outputDepositDir
-    override val ldap: Ldap = ldapMock
-  }
+  private val action = new ValidatePreconditions(ldapMock)
 
   override def beforeEach(): Unit = {
     super.beforeEach()

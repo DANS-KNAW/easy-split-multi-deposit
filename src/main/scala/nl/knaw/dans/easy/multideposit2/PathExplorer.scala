@@ -21,12 +21,14 @@ import nl.knaw.dans.easy.multideposit.model.DepositId
 
 object PathExplorer {
 
-  trait PathExplorers extends InputPathExplorer with StagingPathExplorer with OutputPathExplorer
+  class PathExplorers(md: Path, sd: Path, od: Path) extends InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
+    val multiDepositDir: Path = md
+    val stagingDir: Path = sd
+    val outputDepositDir: Path = od
+  }
 
   trait InputPathExplorer {
-    def multiDepositDir: Path
-
-    val instructionsFileName = "instructions.csv"
+    val multiDepositDir: Path
 
     // mdDir/depositId/
     def depositDir(depositId: DepositId): Path = {
@@ -40,7 +42,7 @@ object PathExplorer {
   trait StagingPathExplorer {
     this: InputPathExplorer =>
 
-    def stagingDir: Path
+    val stagingDir: Path
 
     val bagDirName = "bag"
     val dataDirName = "data"
@@ -88,12 +90,18 @@ object PathExplorer {
   trait OutputPathExplorer {
     this: InputPathExplorer =>
 
-    def outputDepositDir: Path
+    val outputDepositDir: Path
 
     // outputDepositDir/mdDir-depositId/
     def outputDepositDir(depositId: DepositId): Path = {
       outputDepositDir.resolve(datasetDir(multiDepositDir, depositId))
     }
+  }
+
+  val instructionsFileName = "instructions.csv"
+
+  def multiDepositInstructionsFile(baseDir: Path): Path = {
+    baseDir.resolve(instructionsFileName)
   }
 
   private def datasetDir(multiDepositDir: Path, depositId: DepositId): String = {

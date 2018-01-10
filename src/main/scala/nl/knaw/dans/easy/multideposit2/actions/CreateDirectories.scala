@@ -25,15 +25,14 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
-trait CreateDirectories extends DebugEnhancedLogging {
-  this: StagingPathExplorer =>
+class CreateDirectories extends DebugEnhancedLogging {
 
-  def createDepositDirectories(depositId: DepositId): Try[Unit] = {
-    createDirectories(stagingDir(depositId), stagingBagDir(depositId))
+  def createDepositDirectories(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+    createDirectories(stage.stagingDir(depositId), stage.stagingBagDir(depositId))
   }
 
-  def createMetadataDirectory(depositId: DepositId): Try[Unit] = {
-    createDirectories(stagingBagMetadataDir(depositId))
+  def createMetadataDirectory(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+    createDirectories(stage.stagingBagMetadataDir(depositId))
   }
 
   private def createDirectories(paths: Path*): Try[Unit] = {
@@ -47,10 +46,10 @@ trait CreateDirectories extends DebugEnhancedLogging {
     }
   }
 
-  def discardDeposit(depositId: DepositId): Try[Unit] = {
+  def discardDeposit(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"delete deposit '$depositId' from staging directory")
 
-    val dir = stagingDir(depositId)
+    val dir = stage.stagingDir(depositId)
     Try { if (Files.exists(dir)) dir.deleteDirectory() } recoverWith {
       case NonFatal(e) => Failure(ActionException(s"Could not delete $dir", e))
     }

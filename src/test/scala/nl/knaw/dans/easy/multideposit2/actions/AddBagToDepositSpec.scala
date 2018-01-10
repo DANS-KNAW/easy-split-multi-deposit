@@ -20,16 +20,15 @@ import java.security.MessageDigest
 
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
-import nl.knaw.dans.easy.multideposit2.{ TestSupportFixture, encoding }
+import nl.knaw.dans.easy.multideposit2.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit2.model.DepositId
+import nl.knaw.dans.easy.multideposit2.{ TestSupportFixture, encoding }
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
 
 class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
-  self =>
 
   private val depositId = "dsId1"
   private val date = new DateTime(1992, 7, 30, 0, 0)
@@ -38,10 +37,7 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
   private val file3Text = "ghijkl"
   private val file4Text = "jklmno"
   private val file5Text = "mnopqr"
-  private val action = new AddBagToDeposit with StagingPathExplorer with InputPathExplorer {
-    override val multiDepositDir: Path = self.multiDepositDir
-    override val stagingDir: Path = self.stagingDir
-  }
+  private val action = new AddBagToDeposit
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -95,22 +91,21 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
   }
 
   it should "create a bag with no files in data when the input directory does not exist" in {
-    val action = new AddBagToDeposit with StagingPathExplorer with InputPathExplorer {
+    implicit val inputPathExplorer: InputPathExplorer = new InputPathExplorer {
       val multiDepositDir: Path = testDir.resolve("md-empty")
-      val stagingDir: Path = self.stagingDir
     }
 
-    val bagDir = action.stagingBagDir(depositId)
+    val bagDir = stagingBagDir(depositId)
     Files.createDirectories(bagDir)
     bagDir.toFile should exist
 
-    action.depositDir(depositId).toFile shouldNot exist
+    inputPathExplorer.depositDir(depositId).toFile shouldNot exist
 
     action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
 
-    action.stagingDir(depositId).toFile should exist
-    action.stagingBagDataDir(depositId).toFile should exist
-    action.stagingBagDataDir(depositId).listRecursively(!Files.isDirectory(_)) shouldBe empty
+    stagingDir(depositId).toFile should exist
+    stagingBagDataDir(depositId).toFile should exist
+    stagingBagDataDir(depositId).listRecursively(!Files.isDirectory(_)) shouldBe empty
     bagDir.listRecursively(!Files.isDirectory(_))
       .map(_.getFileName.toString) should contain theSameElementsAs
       List("bag-info.txt",

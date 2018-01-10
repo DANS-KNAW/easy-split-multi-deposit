@@ -8,9 +8,7 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
 
-trait RetrieveDatamanager extends DebugEnhancedLogging {
-
-  val ldap: Ldap
+class RetrieveDatamanager(ldap: Ldap) extends DebugEnhancedLogging {
 
   /**
    * Tries to retrieve the email address of the datamanager

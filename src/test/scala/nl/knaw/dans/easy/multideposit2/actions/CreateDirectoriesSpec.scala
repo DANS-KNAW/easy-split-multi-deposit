@@ -15,23 +15,18 @@
  */
 package nl.knaw.dans.easy.multideposit2.actions
 
-import java.nio.file.{ Files, Path }
+import java.nio.file.Files
 
 import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit2.TestSupportFixture
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
 
 class CreateDirectoriesSpec extends TestSupportFixture with BeforeAndAfterEach {
-  self =>
 
   private val depositId = "dsId1"
-  private val action = new CreateDirectories with StagingPathExplorer with InputPathExplorer {
-    override val multiDepositDir: Path = self.multiDepositDir
-    override val stagingDir: Path = self.stagingDir
-  }
+  private val action = new CreateDirectories
 
   override def beforeEach(): Unit = {
     super.beforeEach()

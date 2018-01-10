@@ -1,17 +1,15 @@
 package nl.knaw.dans.easy.multideposit2.actions
 
 import java.nio.file.attribute.{ PosixFileAttributes, PosixFilePermission, UserPrincipalNotFoundException }
-import java.nio.file.{ FileSystemException, Files, Path }
+import java.nio.file.{ FileSystemException, Files }
 
 import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit2.{ DepositPermissions, TestSupportFixture }
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Properties, Success }
 
 class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEach {
-  self =>
 
   private val (user, userGroup, unrelatedGroup) = {
     import scala.sys.process._
@@ -26,11 +24,6 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
       case (Nil, _) => throw new AssertionError("no suitable user group found")
       case (_, Nil) => throw new AssertionError("no suitable unrelated group found")
     }
-  }
-  private val action = new SetDepositPermissions with InputPathExplorer with StagingPathExplorer {
-    override val depositPermissions: DepositPermissions = DepositPermissions("rwxrwx---", userGroup)
-    override val multiDepositDir: Path = self.multiDepositDir
-    override val stagingDir: Path = self.stagingDir
   }
 
   private val depositId = "ruimtereis01"
@@ -64,6 +57,8 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
     assume(user != "travis",
       "this test does not work on travis, because we don't know the group that we can use for this")
 
+    val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", userGroup))
+
     action.setDepositPermissions(depositId) shouldBe a[Success[_]]
 
     for (file <- filesAndFolders) {
@@ -87,11 +82,7 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
   }
 
   it should "fail if the group name does not exist" in {
-    val action = new SetDepositPermissions with InputPathExplorer with StagingPathExplorer {
-      override val depositPermissions: DepositPermissions = DepositPermissions("rwxrwx---", "non-existing-group-name")
-      override val multiDepositDir: Path = self.multiDepositDir
-      override val stagingDir: Path = self.stagingDir
-    }
+    val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", "non-existing-group-name"))
 
     inside(action.setDepositPermissions(depositId)) {
       case Failure(ActionException(msg, _: UserPrincipalNotFoundException)) => msg shouldBe "Group non-existing-group-name could not be found"
@@ -99,11 +90,7 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
   }
 
   it should "fail if the access permissions are invalid" in {
-    val action = new SetDepositPermissions with InputPathExplorer with StagingPathExplorer {
-      override val depositPermissions: DepositPermissions = DepositPermissions("abcdefghi", "admin")
-      override val multiDepositDir: Path = self.multiDepositDir
-      override val stagingDir: Path = self.stagingDir
-    }
+    val action = new SetDepositPermissions(DepositPermissions("abcdefghi", "admin"))
 
     inside(action.setDepositPermissions(depositId)) {
       case Failure(ActionException(msg, _: IllegalArgumentException)) => msg shouldBe "Invalid privileges (abcdefghi)"
@@ -111,11 +98,7 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
   }
 
   it should "fail if the user is not part of the given group" in {
-    val action = new SetDepositPermissions with InputPathExplorer with StagingPathExplorer {
-      override val depositPermissions: DepositPermissions = DepositPermissions("rwxrwx---", unrelatedGroup)
-      override val multiDepositDir: Path = self.multiDepositDir
-      override val stagingDir: Path = self.stagingDir
-    }
+    val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", unrelatedGroup))
 
     inside(action.setDepositPermissions(depositId)) {
       case Failure(ActionException(msg, _: FileSystemException)) => msg should include(s"Not able to set the group to $unrelatedGroup")

@@ -1,8 +1,7 @@
 package nl.knaw.dans.easy.multideposit2.actions
 
-import java.nio.file.{ Files, Path, Paths }
+import java.nio.file.{ Files, Paths }
 
-import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit2.TestSupportFixture
 import org.scalatest.BeforeAndAfterEach
@@ -10,14 +9,9 @@ import org.scalatest.BeforeAndAfterEach
 import scala.util.Success
 
 class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterEach {
-  self =>
 
   private val depositId = "ruimtereis01"
-  private val action: MoveDepositToOutputDir = new MoveDepositToOutputDir with PathExplorers {
-    override val multiDepositDir: Path = self.multiDepositDir
-    override val stagingDir: Path = self.stagingDir
-    override val outputDepositDir: Path = self.outputDepositDir
-  }
+  private val action = new MoveDepositToOutputDir
 
   override def beforeEach(): Unit = {
     super.beforeEach()

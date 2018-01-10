@@ -13,10 +13,9 @@ import resource.Using
 import scala.util.{ Failure, Try }
 import scala.util.control.NonFatal
 
-trait AddPropertiesToDeposit extends DebugEnhancedLogging {
-  this: StagingPathExplorer =>
+class AddPropertiesToDeposit extends DebugEnhancedLogging {
 
-  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress): Try[Unit] = {
+  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(implicit stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"add deposit properties for ${ deposit.depositId }")
 
     val props = new Properties {
@@ -25,7 +24,7 @@ trait AddPropertiesToDeposit extends DebugEnhancedLogging {
     }
 
     Try { addProperties(deposit, datamanagerId, emailaddress)(props) }
-      .flatMap(_ => Using.fileWriter(encoding)(stagingPropertiesFile(deposit.depositId).toFile)
+      .flatMap(_ => Using.fileWriter(encoding)(stage.stagingPropertiesFile(deposit.depositId).toFile)
         .map(out => props.store(out, ""))
         .tried)
       .recoverWith {

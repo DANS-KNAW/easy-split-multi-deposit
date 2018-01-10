@@ -15,11 +15,10 @@
  */
 package nl.knaw.dans.easy.multideposit2.actions
 
-import java.nio.file.{ Files, Path, Paths }
+import java.nio.file.{ Files, Paths }
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.{ CustomMatchers, FileExtensions }
-import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit2.TestSupportFixture
 import nl.knaw.dans.easy.multideposit2.model._
 import nl.knaw.dans.easy.multideposit2.parser.MultiDepositParser
@@ -30,13 +29,8 @@ import scala.util.Success
 import scala.xml.{ Elem, Node }
 
 class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatchers with BeforeAndAfterEach {
-  self =>
 
-  private val action: AddDatasetMetadataToDeposit = new AddDatasetMetadataToDeposit with InputPathExplorer with StagingPathExplorer {
-    override val formats: Set[String] = Set("text/xml")
-    override val multiDepositDir: Path = self.multiDepositDir
-    override val stagingDir: Path = self.stagingDir
-  }
+  private val action = new AddDatasetMetadataToDeposit(Set("text/xml"))
   private val depositId = "ds1"
   private val deposit: Deposit = Deposit(
     depositId = depositId,

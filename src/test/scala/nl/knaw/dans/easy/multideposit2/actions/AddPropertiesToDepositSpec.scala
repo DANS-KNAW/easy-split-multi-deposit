@@ -1,24 +1,19 @@
 package nl.knaw.dans.easy.multideposit2.actions
 
-import java.nio.file.{ Files, Path }
+import java.nio.file.Files
 
-import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
+import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit2.TestSupportFixture
 import nl.knaw.dans.easy.multideposit2.model.AudioVideo
-import nl.knaw.dans.easy.multideposit.FileExtensions
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
 
 class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
-  self =>
 
   private val depositId = "ds1"
   private val datamanagerId = "dm"
-  private val action = new AddPropertiesToDeposit with InputPathExplorer with StagingPathExplorer {
-    override val multiDepositDir: Path = self.multiDepositDir
-    override val stagingDir: Path = self.stagingDir
-  }
+  private val action = new AddPropertiesToDeposit
 
   override def beforeEach(): Unit = {
     val path = stagingDir.resolve(s"sd-$depositId")

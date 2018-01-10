@@ -9,11 +9,9 @@ import scala.util.{ Failure, Success, Try }
 
 class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
 
-  val ldapMock: Ldap = mock[Ldap]
-  val datamanagerId = "dm"
-  val action: RetrieveDatamanager = new RetrieveDatamanager {
-    val ldap: Ldap = ldapMock
-  }
+  private val ldapMock: Ldap = mock[Ldap]
+  private val datamanagerId = "dm"
+  private val action = new RetrieveDatamanager(ldapMock)
 
   private val correctDatamanagerAttrs = createDatamanagerAttributes()
 
