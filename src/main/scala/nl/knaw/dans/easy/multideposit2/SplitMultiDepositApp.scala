@@ -34,7 +34,8 @@ trait SplitMultiDepositApp extends DebugEnhancedLogging {
     with CreateDirectories
     with AddBagToDeposit
     with AddDatasetMetadataToDeposit
-    with AddFileMetadataToDeposit =>
+    with AddFileMetadataToDeposit
+    with AddPropertiesToDeposit =>
 
   val datamanagerId: Datamanager
 
@@ -65,6 +66,7 @@ trait SplitMultiDepositApp extends DebugEnhancedLogging {
       _ <- createMetadataDirectory(deposit.depositId)
       _ <- addDatasetMetadata(deposit)
       _ <- addFileMetadata(deposit.depositId, deposit.files)
+      _ <- addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress)
     } yield ()
   }
 }
@@ -73,7 +75,8 @@ object SplitMultiDepositApp {
   def apply(smd: Path, sd: Path, od: Path, fs: Set[String], dmId: Datamanager, ldapService: Ldap): SplitMultiDepositApp = {
     new SplitMultiDepositApp with PathExplorers
       with ValidatePreconditions with RetrieveDatamanager with CreateDirectories
-      with AddBagToDeposit with AddDatasetMetadataToDeposit with AddFileMetadataToDeposit {
+      with AddBagToDeposit with AddDatasetMetadataToDeposit with AddFileMetadataToDeposit
+      with AddPropertiesToDeposit {
 
       override val multiDepositDir: Path = smd
       override val stagingDir: Path = sd
