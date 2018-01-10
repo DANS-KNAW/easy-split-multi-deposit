@@ -16,6 +16,8 @@
 package nl.knaw.dans.easy.multideposit2
 
 import java.nio.file.{ Files, Paths }
+import javax.naming.Context
+import javax.naming.ldap.InitialLdapContext
 
 import scala.util.Failure
 import nl.knaw.dans.easy.multideposit.FileExtensions
@@ -33,7 +35,18 @@ object Test extends App {
   Files.createDirectories(sd)
   Files.createDirectories(od)
 
-  val app = SplitMultiDepositApp(smd, sd, od, configuration.formats)
+  val ldap = {
+    val env = new java.util.Hashtable[String, String]
+    env.put(Context.PROVIDER_URL, configuration.properties.getString("auth.ldap.url"))
+    env.put(Context.SECURITY_AUTHENTICATION, "simple")
+    env.put(Context.SECURITY_PRINCIPAL, configuration.properties.getString("auth.ldap.user"))
+    env.put(Context.SECURITY_CREDENTIALS, configuration.properties.getString("auth.ldap.password"))
+    env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
+
+    Ldap(new InitialLdapContext(env, null))
+  }
+
+  val app = SplitMultiDepositApp(smd, sd, od, configuration.formats, "archie001", ldap)
   app.convert()
     .recoverWith { case e => e.printStackTrace(); Failure(e) }
     .foreach(_ => println("success"))

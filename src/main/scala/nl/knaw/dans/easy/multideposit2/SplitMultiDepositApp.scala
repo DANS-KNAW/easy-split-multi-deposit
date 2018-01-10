@@ -19,8 +19,8 @@ import java.nio.file.Path
 import java.util.Locale
 
 import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
-import nl.knaw.dans.easy.multideposit2.actions._
-import nl.knaw.dans.easy.multideposit2.model.Deposit
+import nl.knaw.dans.easy.multideposit2.actions.{ RetrieveDatamanager, _ }
+import nl.knaw.dans.easy.multideposit2.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.easy.multideposit2.parser.MultiDepositParser
 import nl.knaw.dans.lib.error.TraversableTryExtensions
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -30,16 +30,20 @@ import scala.util.Try
 trait SplitMultiDepositApp extends DebugEnhancedLogging {
   this: PathExplorers
     with ValidatePreconditions
+    with RetrieveDatamanager
     with CreateDirectories
     with AddBagToDeposit
     with AddDatasetMetadataToDeposit
     with AddFileMetadataToDeposit =>
+
+  val datamanagerId: Datamanager
 
   def validate(): Try[Seq[Deposit]] = {
     for {
       _ <- Try { Locale.setDefault(Locale.US) }
       deposits <- MultiDepositParser.parse(multiDepositDir)
       _ <- deposits.map(validateDeposit).collectResults
+      _ <- getDatamanagerEmailaddress(datamanagerId)
     } yield deposits
   }
 
@@ -47,11 +51,12 @@ trait SplitMultiDepositApp extends DebugEnhancedLogging {
     for {
       _ <- Try { Locale.setDefault(Locale.US) }
       deposits <- MultiDepositParser.parse(multiDepositDir)
-      _ <- deposits.mapUntilFailure(convert)
+      dataManagerEmailAddress <- getDatamanagerEmailaddress(datamanagerId)
+      _ <- deposits.mapUntilFailure(convert(dataManagerEmailAddress))
     } yield ()
   }
 
-  private def convert(deposit: Deposit): Try[Unit] = {
+  private def convert(dataManagerEmailAddress: DatamanagerEmailaddress)(deposit: Deposit): Try[Unit] = {
     logger.info(s"convert ${ deposit.depositId }")
     for {
       _ <- validateDeposit(deposit)
@@ -65,17 +70,17 @@ trait SplitMultiDepositApp extends DebugEnhancedLogging {
 }
 
 object SplitMultiDepositApp {
-  def apply(smd: Path, sd: Path, od: Path, fs: Set[String]): SplitMultiDepositApp = {
+  def apply(smd: Path, sd: Path, od: Path, fs: Set[String], dmId: Datamanager, ldapService: Ldap): SplitMultiDepositApp = {
     new SplitMultiDepositApp with PathExplorers
-      with ValidatePreconditions with CreateDirectories with AddBagToDeposit
-      with AddDatasetMetadataToDeposit with AddFileMetadataToDeposit {
-      def multiDepositDir: Path = smd
+      with ValidatePreconditions with RetrieveDatamanager with CreateDirectories
+      with AddBagToDeposit with AddDatasetMetadataToDeposit with AddFileMetadataToDeposit {
 
-      def stagingDir: Path = sd
-
-      def outputDepositDir: Path = od
-
-      val formats: Set[String] = fs
+      override val multiDepositDir: Path = smd
+      override val stagingDir: Path = sd
+      override val outputDepositDir: Path = od
+      override val formats: Set[String] = fs
+      override val datamanagerId: Datamanager = dmId
+      override val ldap: Ldap = ldapService
     }
   }
 }
