@@ -31,6 +31,7 @@ trait ValidatePreconditions extends DebugEnhancedLogging {
 
   def validateDeposit(deposit: Deposit): Try[Unit] = {
     val id = deposit.depositId
+    logger.debug(s"validating deposit $id")
     for {
       _ <- checkDirectoriesDoNotExist(id)(stagingDir(id), stagingBagDir(id), stagingBagMetadataDir(id))
       _ <- checkOutputDirectoryExists(id)
@@ -50,6 +51,8 @@ trait ValidatePreconditions extends DebugEnhancedLogging {
   }
 
   def checkOutputDirectoryExists(depositId: DepositId): Try[Unit] = {
+    logger.debug("check output directory does exist")
+
     Try { Files.exists(outputDepositDir(depositId)) }
       .flatMap {
         case true => Failure(ActionException(s"The deposit for dataset $depositId already exists in $outputDepositDir"))

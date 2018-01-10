@@ -62,6 +62,7 @@ trait SplitMultiDepositApp extends DebugEnhancedLogging {
           case Failure(e2) => Failure(ActionException("discarding deposits failed after creating deposits failed", new CompositeException(e, e2)))
         }
       }
+      _ = logger.info("deposits were created successfully")
       _ <- deposits.mapUntilFailure(d => moveDepositsToOutputDir(d.depositId))
     } yield ()
   }
@@ -78,6 +79,7 @@ trait SplitMultiDepositApp extends DebugEnhancedLogging {
       _ <- addFileMetadata(depositId, deposit.files)
       _ <- addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress)
       _ <- setDepositPermissions(depositId)
+      _ = logger.info(s"deposit was created successfully for $depositId")
     } yield ()
   }
 }

@@ -13,12 +13,14 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-trait SetDepositPermissions {
+trait SetDepositPermissions extends DebugEnhancedLogging {
   this: StagingPathExplorer =>
 
   val depositPermissions: DepositPermissions
 
   def setDepositPermissions(depositId: DepositId): Try[Unit] = {
+    logger.debug(s"set deposit permissions for $depositId")
+
     setFilePermissions(depositId: DepositId).recoverWith {
       case e: ActionException => Failure(e)
       case NonFatal(e) => Failure(ActionException(e.getMessage, e))

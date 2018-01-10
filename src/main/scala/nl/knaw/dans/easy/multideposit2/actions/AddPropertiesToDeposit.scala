@@ -6,16 +6,19 @@ import java.util.{ Collections, Properties, UUID }
 import nl.knaw.dans.easy.multideposit2.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit2.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.easy.multideposit2.encoding
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.{ DateTime, DateTimeZone }
 import resource.Using
 
 import scala.util.{ Failure, Try }
 import scala.util.control.NonFatal
 
-trait AddPropertiesToDeposit {
+trait AddPropertiesToDeposit extends DebugEnhancedLogging {
   this: StagingPathExplorer =>
 
   def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress): Try[Unit] = {
+    logger.debug(s"add deposit properties for ${ deposit.depositId }")
+
     val props = new Properties {
       // Make sure we get sorted output, which is better readable than random
       override def keys(): ju.Enumeration[AnyRef] = Collections.enumeration(new ju.TreeSet[Object](super.keySet()))

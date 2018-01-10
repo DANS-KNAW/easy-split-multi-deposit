@@ -3,15 +3,18 @@ package nl.knaw.dans.easy.multideposit2.actions
 import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit2.model._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 import scala.xml.{ Elem, NodeSeq }
 
-trait AddFileMetadataToDeposit {
+trait AddFileMetadataToDeposit extends DebugEnhancedLogging {
   this: InputPathExplorer with StagingPathExplorer =>
 
   def addFileMetadata(depositId: DepositId, fileMetadata: Seq[FileMetadata]): Try[Unit] = Try {
+    logger.debug(s"add file metadata for $depositId")
+
     stagingFileMetadataFile(depositId).writeXml(depositToFileXml(depositId, fileMetadata))
   } recoverWith {
     case NonFatal(e) => Failure(ActionException(s"Could not write file metadata", e))
