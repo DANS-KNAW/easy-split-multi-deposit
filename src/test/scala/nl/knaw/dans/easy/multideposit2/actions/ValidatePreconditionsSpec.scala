@@ -16,22 +16,26 @@
 package nl.knaw.dans.easy.multideposit2.actions
 
 import java.nio.file.{ Files, Path, Paths }
+import javax.naming.directory.Attributes
 
 import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
-import nl.knaw.dans.easy.multideposit2.TestSupportFixture
+import nl.knaw.dans.easy.multideposit2.{ Ldap, TestSupportFixture }
 import nl.knaw.dans.easy.multideposit2.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, Springfield, Video }
+import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.{ Failure, Success }
+import scala.util.{ Failure, Success, Try }
 
-class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEach {
+class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEach with MockFactory {
   self =>
 
   private val depositId = "dsId1"
+  private val ldapMock: Ldap = mock[Ldap]
   private val action = new ValidatePreconditions with StagingPathExplorer with InputPathExplorer {
     override val multiDepositDir: Path = self.multiDepositDir
     override val stagingDir: Path = self.stagingDir
+    override val ldap: Ldap = ldapMock
   }
 
   override def beforeEach(): Unit = {
@@ -160,6 +164,40 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     inside(action.checkEitherVideoOrAudio(deposit)) {
       case Failure(ActionException(message, _)) =>
         message shouldBe "Found both audio and video in this dataset. Only one of them is allowed."
+    }
+  }
+
+  def mockLdapForDepositor(expectedResult: Try[Seq[Boolean]]): Unit = {
+    (ldapMock.ldapQuery(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning expectedResult
+  }
+
+  "checkPreconditions" should "succeed if ldap identifies the depositorUserId as active" in {
+    mockLdapForDepositor(Success(Seq(true)))
+
+    action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit()) shouldBe a[Success[_]]
+  }
+
+  it should "fail if ldap identifies the depositorUserId as not active" in {
+    mockLdapForDepositor(Success(Seq(false)))
+
+    inside(action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())) {
+      case Failure(ActionException(message, _)) => message should include("depositor 'dp1' is not an active user")
+    }
+  }
+
+  it should "fail if ldap does not return anything for the depositor" in {
+    mockLdapForDepositor(Success(Seq.empty))
+
+    inside(action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())) {
+      case Failure(ActionException(message, _)) => message should include("depositorUserId 'dp1' is unknown")
+    }
+  }
+
+  it should "fail if ldap returns multiple values" in {
+    mockLdapForDepositor(Success(Seq(true, true)))
+
+    inside(action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())) {
+      case Failure(ActionException(message, _)) => message should include("multiple users with id 'dp1'")
     }
   }
 }

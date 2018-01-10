@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit2.actions
 
 import java.nio.file.{ Files, Path }
 
+import nl.knaw.dans.easy.multideposit2.Ldap
 import nl.knaw.dans.easy.multideposit2.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit2.model.{ AVFileMetadata, Deposit, DepositId }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -26,6 +27,8 @@ import scala.util.{ Failure, Success, Try }
 trait ValidatePreconditions extends DebugEnhancedLogging {
   this: StagingPathExplorer =>
 
+  val ldap: Ldap
+
   def validateDeposit(deposit: Deposit): Try[Unit] = {
     val id = deposit.depositId
     for {
@@ -33,6 +36,7 @@ trait ValidatePreconditions extends DebugEnhancedLogging {
       _ <- checkSpringFieldDepositHasAVformat(deposit)
       _ <- checkSFColumnsIfDepositContainsAVFiles(deposit)
       _ <- checkEitherVideoOrAudio(deposit)
+      _ <- checkDepositorUserId(deposit)
     } yield ()
   }
 
@@ -85,5 +89,21 @@ trait ValidatePreconditions extends DebugEnhancedLogging {
       case Nil | Seq(_) => Success(())
       case _ => Failure(ActionException("Found both audio and video in this dataset. Only one of them is allowed."))
     }
+  }
+
+  def checkDepositorUserId(deposit: Deposit): Try[Unit] = {
+    logger.debug("check that the depositor is an active user")
+
+    val depositorUserId = deposit.depositorUserId
+    ldap.ldapQuery(depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE"))
+      .flatMap {
+        case Seq() => Failure(ActionException(s"depositorUserId '$depositorUserId' is unknown"))
+        case Seq(head) => Success(head)
+        case _ => Failure(ActionException(s"There appear to be multiple users with id '$depositorUserId'"))
+      }
+      .flatMap {
+        case true => Success(())
+        case false => Failure(ActionException(s"The depositor '$depositorUserId' is not an active user"))
+      }
   }
 }
