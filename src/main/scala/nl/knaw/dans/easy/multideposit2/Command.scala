@@ -69,17 +69,17 @@ object Command extends App with DebugEnhancedLogging {
   }
 
   private def runAsService(app: SplitMultiDepositApp): Try[FeedBackMessage] = Try {
-    //    val service = new PidGeneratorService(configuration.properties.getInt("pid-generator.daemon.http.port"), app,
-    //      "/" -> new PidGeneratorServlet(app, configuration))
-    //    Runtime.getRuntime.addShutdownHook(new Thread("service-shutdown") {
-    //      override def run(): Unit = {
-    //        service.stop()
-    //        service.destroy()
-    //      }
-    //    })
-    //
-    //    service.start()
-    //    Thread.currentThread.join()
+    val service = new SplitMultiDepositService(configuration.properties.getInt("split-multi-deposit.daemon.http.port"),
+      "/" -> new SplitMultiDepositServlet(app, configuration))
+    Runtime.getRuntime.addShutdownHook(new Thread("service-shutdown") {
+      override def run(): Unit = {
+        service.stop()
+        service.destroy()
+      }
+    })
+
+    service.start()
+    Thread.currentThread.join()
     "Service terminated normally."
   }
 }
