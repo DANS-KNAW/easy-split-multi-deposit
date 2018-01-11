@@ -19,4 +19,6 @@ package object actions {
 
   // TODO add row back in
   case class ActionException(msg: String, cause: Throwable = null) extends Exception(msg, cause)
+  case class InvalidDatamanagerException(msg: String) extends Exception(msg)
+  case class InvalidInputException(row: Int, msg: String) extends Exception(msg)
 }

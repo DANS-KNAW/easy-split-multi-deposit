@@ -18,7 +18,7 @@ class SetDepositPermissions(depositPermissions: DepositPermissions) extends Debu
   def setDepositPermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"set deposit permissions for $depositId")
 
-    setFilePermissions(depositId: DepositId).recoverWith {
+    setFilePermissions(depositId).recoverWith {
       case e: ActionException => Failure(e)
       case NonFatal(e) => Failure(ActionException(e.getMessage, e))
     }

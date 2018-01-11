@@ -46,7 +46,7 @@ class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
     mockLdapForDatamanager(Success(Seq.empty))
 
     inside(action.getDatamanagerEmailaddress(datamanagerId)) {
-      case Failure(ActionException(message, _)) => message should include("The datamanager 'dm' is unknown")
+      case Failure(InvalidDatamanagerException(message)) => message should include("The datamanager 'dm' is unknown")
     }
   }
 
@@ -63,7 +63,7 @@ class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
     mockLdapForDatamanager(Success(Seq(nonActiveDatamanagerAttrs)))
 
     inside(action.getDatamanagerEmailaddress(datamanagerId)) {
-      case Failure(ActionException(message, _)) => message should include("not an active user")
+      case Failure(InvalidDatamanagerException(message)) => message should include("not an active user")
     }
   }
 
@@ -72,7 +72,7 @@ class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
     mockLdapForDatamanager(Success(Seq(nonArchivistDatamanagerAttrs)))
 
     inside(action.getDatamanagerEmailaddress(datamanagerId)) {
-      case Failure(ActionException(message, _)) => message should include("is not an archivist")
+      case Failure(InvalidDatamanagerException(message)) => message should include("is not an archivist")
     }
   }
 
@@ -81,7 +81,7 @@ class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
     mockLdapForDatamanager(Success(Seq(nonEmailDatamanagerAttrs)))
 
     inside(action.getDatamanagerEmailaddress(datamanagerId)) {
-      case Failure(ActionException(message, _)) => message should include("does not have an email address")
+      case Failure(InvalidDatamanagerException(message)) => message should include("does not have an email address")
     }
   }
 }

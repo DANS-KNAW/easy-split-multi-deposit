@@ -88,7 +88,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
       )
     )
     inside(action.checkSpringFieldDepositHasAVformat(deposit)) {
-      case Failure(ActionException(message, _)) =>
+      case Failure(InvalidInputException(_, message)) =>
         message should include("No audio/video format found for this column: [DC_FORMAT]")
     }
   }
@@ -126,7 +126,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
       springfield = Option.empty
     )
     inside(action.checkSFColumnsIfDepositContainsAVFiles(deposit)) {
-      case Failure(ActionException(message, _)) =>
+      case Failure(InvalidInputException(_, message)) =>
         message should {
           include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
             include("reisverslag/centaur.mpg")
@@ -151,7 +151,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
       springfield = Option(Springfield(user = "user", collection = "collection"))
     )
     inside(action.checkSFColumnsIfDepositContainsAVFiles(deposit)) {
-      case Failure(ActionException(message, _)) =>
+      case Failure(InvalidInputException(_, message)) =>
         message should {
           include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]") and
             include("these columns should be empty because there are no audio/video files found in this deposit")
@@ -178,7 +178,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
       ))
 
     inside(action.checkEitherVideoOrAudio(deposit)) {
-      case Failure(ActionException(message, _)) =>
+      case Failure(InvalidInputException(_, message)) =>
         message shouldBe "Found both audio and video in this dataset. Only one of them is allowed."
     }
   }
@@ -197,7 +197,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     mockLdapForDepositor(Success(Seq(false)))
 
     inside(action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())) {
-      case Failure(ActionException(message, _)) => message should include("depositor 'dp1' is not an active user")
+      case Failure(InvalidInputException(_, message)) => message should include("depositor 'dp1' is not an active user")
     }
   }
 
@@ -205,7 +205,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     mockLdapForDepositor(Success(Seq.empty))
 
     inside(action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())) {
-      case Failure(ActionException(message, _)) => message should include("depositorUserId 'dp1' is unknown")
+      case Failure(InvalidInputException(_, message)) => message should include("depositorUserId 'dp1' is unknown")
     }
   }
 

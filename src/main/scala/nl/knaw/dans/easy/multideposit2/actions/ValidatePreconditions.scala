@@ -65,7 +65,7 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
       case Some(_) => deposit.metadata.formats
         .find(s => s.startsWith("audio/") || s.startsWith("video/"))
         .map(_ => Success(()))
-        .getOrElse(Failure(ActionException(
+        .getOrElse(Failure(InvalidInputException(deposit.row,
           "No audio/video format found for this column: [DC_FORMAT]\n" +
             "cause: this column should contain at least one " +
             "audio/ or video/ value because SF columns are present")))
@@ -79,12 +79,12 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
     (deposit.springfield.isDefined, avFiles.isEmpty) match {
       case (true, false) | (false, true) => Success(())
       case (true, true) =>
-        Failure(ActionException(
+        Failure(InvalidInputException(deposit.row,
           "Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]\n" +
             "cause: these columns should be empty because there are no audio/video files " +
             "found in this deposit"))
       case (false, false) =>
-        Failure(ActionException(
+        Failure(InvalidInputException(deposit.row,
           "No values found for these columns: [SF_USER, SF_COLLECTION]\n" +
             "cause: these columns should contain values because audio/video files are " +
             s"found:\n${ avFiles.map(filepath => s" - $filepath").mkString("\n") }"))
@@ -96,7 +96,7 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
 
     deposit.files.collect { case fmd: AVFileMetadata => fmd.vocabulary }.distinct match {
       case Nil | Seq(_) => Success(())
-      case _ => Failure(ActionException("Found both audio and video in this dataset. Only one of them is allowed."))
+      case _ => Failure(InvalidInputException(deposit.row, "Found both audio and video in this dataset. Only one of them is allowed."))
     }
   }
 
@@ -106,13 +106,13 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
     val depositorUserId = deposit.depositorUserId
     ldap.ldapQuery(depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE"))
       .flatMap {
-        case Seq() => Failure(ActionException(s"depositorUserId '$depositorUserId' is unknown"))
+        case Seq() => Failure(InvalidInputException(deposit.row, s"depositorUserId '$depositorUserId' is unknown"))
         case Seq(head) => Success(head)
         case _ => Failure(ActionException(s"There appear to be multiple users with id '$depositorUserId'"))
       }
       .flatMap {
         case true => Success(())
-        case false => Failure(ActionException(s"The depositor '$depositorUserId' is not an active user"))
+        case false => Failure(InvalidInputException(deposit.row, s"The depositor '$depositorUserId' is not an active user"))
       }
   }
 }
