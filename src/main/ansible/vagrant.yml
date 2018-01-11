@@ -47,6 +47,15 @@
       groups: deposits
       append: yes
 
+  - name: Creates directory
+    file:
+      path: /var/opt/dans.knaw.nl/tmp/easy-ingest-flow-inbox
+      state: directory
+      owner: vagrant
+      group: deposits
+      mode: 0777
+      recurse: yes
+
   - service:
       name: easy-split-multi-deposit
       state: started
