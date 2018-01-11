@@ -51,6 +51,10 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
   addSubcommand(runService)
 
   val ingest = new Subcommand("ingest") {
+    descr("Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive")
+    val validate: ScallopOption[Boolean] = opt[Boolean](name = "validate", noshort = true, default = Some(false),
+      descr = "With this argument included, the input will only be validated, but not converted")
+
     val stagingDir: ScallopOption[Path] = opt[Path](
       name = "staging-dir",
       short = 's',

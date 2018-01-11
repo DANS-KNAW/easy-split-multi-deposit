@@ -50,7 +50,10 @@ object Command extends App with DebugEnhancedLogging {
           val od = ingest.outputDepositDir()
           val dm = ingest.datamanager()
 
-          app.convert(new PathExplorers(md, sd, od), dm)
+          if (ingest.validate())
+            app.validate(new PathExplorers(md, sd, od), dm)
+              .map(_ => "Finished successfully! Everything looks good.")
+          else app.convert(new PathExplorers(md, sd, od), dm)
             .map(_ => s"Finished successfully! The output can be found in $od.")
         case commandLine.runService => runAsService(app)
       }
