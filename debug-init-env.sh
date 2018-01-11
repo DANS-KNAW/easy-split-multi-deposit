@@ -26,10 +26,10 @@ cp -r src/test/resources/invalidCSV/input ${DATADIR}/input/invalidCSV
 
 echo "Create zips for the test input"
 pushd ${DATADIR}/input/allfields
-zip -r ../allfields.zip *
+zip -q -r ../allfields.zip *
 popd
 pushd ${DATADIR}/input/invalidCSV
-zip -r ../invalidCSV.zip *
+zip -q -r ../invalidCSV.zip *
 popd
 
 echo "Creating staging and output directories in $DATADIR..."
