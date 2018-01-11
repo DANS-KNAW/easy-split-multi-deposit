@@ -17,23 +17,9 @@
 
 #include <service.sh>
 
-NUMBER_OF_INSTALLATIONS=$1
 MODULE_NAME=easy-split-multi-deposit
-INSTALL_DIR=/opt/dans.knaw.nl/$MODULE_NAME
-PHASE="POST-INSTALL"
-STAGING_DIR=/var/opt/dans.knaw.nl/tmp/easy-split-multi-deposit-staging
+PHASE="POST-TRANS"
 
-echo "$PHASE: START (Number of current installations: $NUMBER_OF_INSTALLATIONS)"
-
-service_install_initd_service_script "$INSTALL_DIR/install/$MODULE_NAME-initd.sh" $MODULE_NAME
-service_install_systemd_unit "$INSTALL_DIR/install/$MODULE_NAME.service" $MODULE_NAME "$INSTALL_DIR/install/override.conf"
-service_create_log_directory $MODULE_NAME
-
-if [ ! -d ${STAGING_DIR} ]; then
-    echo -n "Creating staging directory..."
-    mkdir -p ${STAGING_DIR}
-    chmod 777 ${STAGING_DIR}
-    echo "OK"
-fi
-
+echo "$PHASE: START"
+service_restart $MODULE_NAME
 echo "$PHASE: DONE"

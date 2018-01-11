@@ -46,3 +46,8 @@
       name: vagrant
       groups: deposits
       append: yes
+
+  - service:
+      name: easy-split-multi-deposit
+      state: started
+      enabled: yes
