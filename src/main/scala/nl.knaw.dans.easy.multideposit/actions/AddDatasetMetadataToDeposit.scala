@@ -13,57 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit.actions
+package nl.knaw.dans.easy.multideposit2.actions
 
-import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit._
-import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit2.PathExplorer.StagingPathExplorer
+import nl.knaw.dans.easy.multideposit2.model._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
-import scala.language.postfixOps
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Try }
 import scala.xml.{ Elem, Null, PrefixedAttribute }
 
-case class AddDatasetMetadataToDeposit(deposit: Deposit)(implicit settings: Settings) extends UnitAction[Unit] {
+class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLogging {
 
-  /**
-   * Verifies whether all preconditions are met for this specific action.
-   *
-   * @return `Success` when all preconditions are met, `Failure` otherwise
-   */
-  override def checkPreconditions: Try[Unit] = {
-    checkSpringFieldDepositHasAVformat(deposit)
+  def addDatasetMetadata(deposit: Deposit)(implicit stage: StagingPathExplorer): Try[Unit] = Try {
+    logger.debug(s"add dataset metadata for ${ deposit.depositId }")
+
+    stage.stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
+  } recoverWith {
+    case NonFatal(e) => Failure(ActionException(s"Could not write deposit metadata for ${ deposit.depositId }", e))
   }
 
-  override def execute(): Try[Unit] = writeDatasetMetadataXml(deposit)
-}
-object AddDatasetMetadataToDeposit {
-
-  def writeDatasetMetadataXml(deposit: Deposit)(implicit settings: Settings): Try[Unit] = {
-    Try {
-      stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
-    } recoverWith {
-      case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write deposit metadata: $e", e))
-    }
-  }
-
-  def checkSpringFieldDepositHasAVformat(deposit: Deposit): Try[Unit] = {
-
-    deposit.audioVideo.springfield match {
-      case None => Success(())
-      case Some(_) => deposit.metadata.formats
-        .find(s => s.startsWith("audio/") || s.startsWith("video/"))
-        .map(_ => Success(()))
-        .getOrElse(Failure(ActionException(deposit.row,
-          "No audio/video Format found for this column: [DC_FORMAT]\n" +
-            "cause: this column should contain at least one " +
-            "audio/ or video/ value because SF columns are present")))
-    }
-  }
-
-  def depositToDDM(deposit: Deposit)(implicit settings: Settings): Elem = {
+  def depositToDDM(deposit: Deposit): Elem = {
     <ddm:DDM
       xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -79,7 +52,7 @@ object AddDatasetMetadataToDeposit {
       xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/"
       xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
       {createProfile(deposit.profile)}
-      {createMetadata(deposit.metadata, deposit.audioVideo.springfield)}
+      {createMetadata(deposit.metadata, deposit.springfield)}
     </ddm:DDM>
   }
 
@@ -102,7 +75,7 @@ object AddDatasetMetadataToDeposit {
   private def createOrganisation(org: String, role: Option[ContributorRole.Value] = Option.empty): Elem = {
     <dcx-dai:organization>{
       <dcx-dai:name xml:lang="en">{org}</dcx-dai:name> ++
-      role.map(createRole)
+        role.map(createRole)
     }</dcx-dai:organization>
   }
 
@@ -234,13 +207,13 @@ object AddDatasetMetadataToDeposit {
       case QualifiedRelation(qualifier, Some(link), Some(title)) =>
         <key href={link}>{title}</key>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, Some(link), None) =>
-        <key href={link}/>.copy(label = s"ddm:${ qualifier.toString }")
+          <key href={link}/>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, None, Some(title)) =>
         <key>{title}</key>.copy(label = s"dcterms:${ qualifier.toString }")
       case UnqualifiedRelation(Some(link), Some(title)) =>
         <ddm:relation href={link}>{title}</ddm:relation>
       case UnqualifiedRelation(Some(link), None) =>
-        <ddm:relation href={link}/>
+          <ddm:relation href={link}/>
       case UnqualifiedRelation(None, Some(title)) =>
         <dc:relation>{title}</dc:relation>
       case other => throw new UnsupportedOperationException(s"Relation $other is not supported. You should not even be able to create this object!")
@@ -270,10 +243,10 @@ object AddDatasetMetadataToDeposit {
     <dcterms:type xsi:type="dcterms:DCMIType">{dcType.toString}</dcterms:type>
   }
 
-  def createFormat(format: String)(implicit settings: Settings): Elem = {
+  def createFormat(format: String): Elem = {
     val xml = elem("dc:format")(format)
 
-    if (settings.formats.contains(format))
+    if (formats.contains(format))
       xml % new PrefixedAttribute("xsi", "type", "dcterms:IMT", Null)
     else
       xml
@@ -283,7 +256,7 @@ object AddDatasetMetadataToDeposit {
     <dc:language xsi:type="dcterms:ISO639-2">{lang}</dc:language>
   }
 
-  def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty)(implicit settings: Settings): Elem = {
+  def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty): Elem = {
     <ddm:dcmiMetadata>
       {metadata.alternatives.map(elem("dcterms:alternative"))}
       {metadata.publishers.map(elem("dcterms:publisher"))}

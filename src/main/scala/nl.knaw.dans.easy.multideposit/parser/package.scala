@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit
+package nl.knaw.dans.easy.multideposit2
 
-import nl.knaw.dans.easy.multideposit.model.MultiDepositKey
+import java.nio.file.Path
+
+import nl.knaw.dans.easy.multideposit2.model.MultiDepositKey
 import nl.knaw.dans.lib.string.StringExtensions
 
 package object parser {
@@ -26,4 +28,8 @@ package object parser {
   implicit class DatasetRowFind(val row: DepositRow) extends AnyVal {
     def find(name: MultiDepositKey): Option[String] = row.get(name).filterNot(_.isBlank)
   }
+
+  case class EmptyInstructionsFileException(path: Path) extends Exception(s"The given instructions file in '$path' is empty")
+  case class ParseException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
+  case class ParserFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
 }

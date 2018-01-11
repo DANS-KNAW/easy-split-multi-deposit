@@ -13,53 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit.actions
+package nl.knaw.dans.easy.multideposit2.actions
 
 import java.nio.file.{ Files, Path }
-import java.util.{ Locale, Arrays => JArrays }
+import java.util.Collections
 
 import gov.loc.repository.bagit.creator.BagCreator
 import gov.loc.repository.bagit.domain.{ Metadata => BagitMetadata }
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import gov.loc.repository.bagit.verify.FileCountAndTotalSizeVistor
-import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.easy.multideposit.model.Deposit
+import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
+import nl.knaw.dans.easy.multideposit2.model.DepositId
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
-import scala.language.postfixOps
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
-case class AddBagToDeposit(deposit: Deposit)(implicit settings: Settings) extends UnitAction[Unit] {
+class AddBagToDeposit extends DebugEnhancedLogging {
 
-  override def checkPreconditions: Try[Unit] = Try {
-    Locale.setDefault(Locale.US)
-  }
+  def addBagToDeposit(depositId: DepositId, created: DateTime)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = {
+    logger.debug(s"construct the bag for $depositId with timestamp ${ created.toString(ISODateTimeFormat.dateTime()) }")
 
-  override def execute(): Try[Unit] = {
-    createBag().recoverWith {
-      case NonFatal(e) => Failure(ActionException(deposit.row, s"Error occured in creating the bag for ${ deposit.depositId }: ${ e.getMessage }", e))
+    createBag(depositId, created) recoverWith {
+      case NonFatal(e) => Failure(ActionException(s"Error occured in creating the bag for $depositId", e))
     }
   }
 
-  private def createBag(): Try[Unit] = Try {
-    val depositId = deposit.depositId
-    val inputDir = multiDepositDir(depositId)
-    val stageDir = stagingBagDir(depositId)
+  private def createBag(depositId: DepositId, created: DateTime)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = Try {
+    val inputDir = input.depositDir(depositId)
+    val stageDir = stage.stagingBagDir(depositId)
 
     val metadata = new BagitMetadata {
-      add("Created", deposit.profile.created.toString(ISODateTimeFormat.dateTime()))
+      add("Created", created.toString(ISODateTimeFormat.dateTime()))
     }
 
     if (Files.exists(inputDir)) {
-      inputDir.copyDir(stageDir)
+      inputDir copyDir stageDir
       metadata.add("Bag-Size", formatSize(calculateSizeOfPath(inputDir)))
     }
     else {
       metadata.add("Bag-Size", formatSize(0L))
     }
 
-    BagCreator.bagInPlace(stageDir, JArrays.asList(StandardSupportedAlgorithms.SHA1), true, metadata)
+    BagCreator.bagInPlace(stageDir, Collections.singletonList(StandardSupportedAlgorithms.SHA1), true, metadata)
   }
 
   private def calculateSizeOfPath(dir: Path): Long = {

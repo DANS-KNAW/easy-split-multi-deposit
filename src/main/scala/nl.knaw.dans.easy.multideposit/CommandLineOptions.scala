@@ -13,56 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit
+package nl.knaw.dans.easy.multideposit2
 
 import java.nio.file.{ Path, Paths }
-import javax.naming.Context
-import javax.naming.ldap.InitialLdapContext
 
-import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-import org.rogach.scallop.{ ScallopConf, ScallopOption }
+import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit2.model.Datamanager
+import org.rogach.scallop.{ ScallopConf, ScallopOption, Subcommand }
 
-object CommandLineOptions extends DebugEnhancedLogging {
-
-  def parse(args: Array[String]): Settings = {
-    debug("Loading application.properties ...")
-    val props = Configuration()
-    debug("Parsing command line ...")
-    val opts = new ScallopCommandLine(props, args)
-
-    val settings = Settings(
-      multidepositDir = opts.multiDepositDir().toAbsolutePath,
-      stagingDir = opts.stagingDir().toAbsolutePath,
-      outputDepositDir = opts.outputDepositDir().toAbsolutePath,
-      datamanager = opts.datamanager(),
-      depositPermissions = DepositPermissions(props.properties.getString("deposit.permissions.access"), props.properties.getString("deposit.permissions.group")),
-      formats = props.formats,
-      ldap = {
-        val env = new java.util.Hashtable[String, String]
-        env.put(Context.PROVIDER_URL, props.properties.getString("auth.ldap.url"))
-        env.put(Context.SECURITY_AUTHENTICATION, "simple")
-        env.put(Context.SECURITY_PRINCIPAL, props.properties.getString("auth.ldap.user"))
-        env.put(Context.SECURITY_CREDENTIALS, props.properties.getString("auth.ldap.password"))
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-
-        LdapImpl(new InitialLdapContext(env, null))
-      })
-
-    debug(s"Using the following settings: $settings")
-
-    settings
-  }
-}
-
-class ScallopCommandLine(configuration: Configuration, args: Array[String]) extends ScallopConf(args) {
+class CommandLineOptions(args: Array[String], version: String) extends ScallopConf(args) {
 
   appendDefaultToDescription = true
   editBuilder(_.setHelpWidth(110))
 
   printedName = "easy-split-multi-deposit"
-  version(s"$printedName ${ configuration.version }")
+  private val SUBCOMMAND_SEPARATOR = "---\n"
   val description = "Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive"
   val synopsis = s"""$printedName.sh [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>"""
+
+  version(s"$printedName v$version")
   banner(
     s"""
        |  $description
@@ -75,45 +44,58 @@ class ScallopCommandLine(configuration: Configuration, args: Array[String]) exte
        |Options:
        |""".stripMargin)
 
-  val multiDepositDir: ScallopOption[Path] = trailArg[Path](
-    name = "multi-deposit-dir",
-    required = true,
-    descr = "Directory containing the Submission Information Package to process. "
-      + "This must be a valid path to a directory containing a file named "
-      + s"'$instructionsFileName' in RFC4180 format.")
+  val runService = new Subcommand("run-service") {
+    descr("Starts the EASY Split Multi Deposit as a daemon that services HTTP requests")
+    footer(SUBCOMMAND_SEPARATOR)
+  }
+  addSubcommand(runService)
 
-  val stagingDir: ScallopOption[Path] = opt[Path](
-    name = "staging-dir",
-    short = 's',
-    descr = "A directory in which the deposit directories are created, after which they will be " +
-      "moved to the 'output-deposit-dir'. If not specified, the value of 'staging-dir' in " +
-      "'application.properties' is used.",
-    default = Some(Paths.get(configuration.properties.getString("staging-dir"))))
+  val ingest = new Subcommand("ingest") {
+    descr("Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive")
+    val validate: ScallopOption[Boolean] = opt[Boolean](name = "validate", noshort = true, default = Some(false),
+      descr = "With this argument included, the input will only be validated, but not converted")
 
-  val outputDepositDir: ScallopOption[Path] = trailArg[Path](
-    name = "output-deposit-dir",
-    required = true,
-    descr = "A directory to which the deposit directories are moved after the staging has been " +
-      "completed successfully. The deposit directory layout is described in the easy-sword2 " +
-      "documentation")
+    val stagingDir: ScallopOption[Path] = opt[Path](
+      name = "staging-dir",
+      short = 's',
+      descr = "A directory in which the deposit directories are created, after which they will be " +
+        "moved to the 'output-deposit-dir'. If not specified, the value of 'staging-dir' in " +
+        "'application.properties' is used.")
 
-  val datamanager: ScallopOption[Datamanager] = trailArg[Datamanager](
-    name = "datamanager",
-    required = true,
-    descr = "The username (id) of the datamanger (archivist) performing this deposit")
+    val multiDepositDir: ScallopOption[Path] = trailArg[Path](
+      name = "multi-deposit-dir",
+      required = true,
+      descr = "Directory containing the Submission Information Package to process. "
+        + "This must be a valid path to a directory containing a file named "
+        + s"'${ PathExplorer.instructionsFileName }' in RFC4180 format.")
 
-  validatePathExists(multiDepositDir)
-  validateFileIsDirectory(multiDepositDir.map(_.toFile))
-  validate(multiDepositDir)(dir => {
-    val instructionFile: Path = multiDepositInstructionsFile(dir)
-    if (!dir.directoryContains(instructionFile))
-      Left(s"No instructions file found in this directory, expected: $instructionFile")
-    else
-      Right(())
-  })
+    val outputDepositDir: ScallopOption[Path] = trailArg[Path](
+      name = "output-deposit-dir",
+      required = true,
+      descr = "A directory to which the deposit directories are moved after the staging has been " +
+        "completed successfully. The deposit directory layout is described in the easy-sword2 " +
+        "documentation")
 
-  validatePathExists(outputDepositDir)
-  validateFileIsDirectory(outputDepositDir.map(_.toFile))
+    val datamanager: ScallopOption[Datamanager] = trailArg[Datamanager](
+      name = "datamanager",
+      required = true,
+      descr = "The username (id) of the datamanger (archivist) performing this deposit")
+
+    validatePathExists(multiDepositDir)
+    validateFileIsDirectory(multiDepositDir.map(_.toFile))
+    validate(multiDepositDir)(dir => {
+      val instructionFile: Path = PathExplorer.multiDepositInstructionsFile(dir)
+      if (!dir.directoryContains(instructionFile))
+        Left(s"No instructions file found in this directory, expected: $instructionFile")
+      else
+        Right(())
+    })
+
+    validatePathExists(outputDepositDir)
+    validateFileIsDirectory(outputDepositDir.map(_.toFile))
+    footer(SUBCOMMAND_SEPARATOR)
+  }
+  addSubcommand(ingest)
 
   verify()
 }

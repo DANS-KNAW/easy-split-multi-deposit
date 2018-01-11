@@ -13,44 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit.actions
+package nl.knaw.dans.easy.multideposit2.actions
 
 import java.nio.file.Files
 
-import nl.knaw.dans.easy.multideposit.model.DepositId
-import nl.knaw.dans.easy.multideposit.{ Settings, _ }
+import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit2.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
+import nl.knaw.dans.easy.multideposit2.model.DepositId
 import nl.knaw.dans.lib.error.CompositeException
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
 
-case class MoveDepositToOutputDir(row: Int, depositId: DepositId)(implicit settings: Settings) extends UnitAction[Unit] {
+class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
-  private val outputDir = outputDepositDir(depositId)
+  def moveDepositsToOutputDir(depositId: DepositId)(implicit stage: StagingPathExplorer, output: OutputPathExplorer): Try[Unit] = {
+    val stagingDirectory = stage.stagingDir(depositId)
+    val outputDir = output.outputDepositDir(depositId)
 
-  override def checkPreconditions: Try[Unit] = {
-    Try { Files.exists(outputDir) }
-      .flatMap {
-        case true => Failure(ActionException(row, s"The deposit for dataset $depositId already exists in $outputDir"))
-        case false => Success(())
-      }
-  }
-
-  def execute(): Try[Unit] = {
-    val stagingDirectory = stagingDir(depositId)
-
-    debug(s"moving $stagingDirectory to $outputDir")
+    logger.debug(s"moving $stagingDirectory to $outputDir")
 
     Try { stagingDirectory.moveDir(outputDir) } recoverWith {
       case e =>
         Try { Files.exists(outputDir) } match {
-          case Success(true) => Failure(ActionException(row, "An error occurred while moving " +
+          case Success(true) => Failure(ActionException("An error occurred while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move is probably only partially " +
             s"done since the output directory does exist. This move is, however, NOT revertable! " +
             s"Please contact your application manager ASAP!", e))
-          case Success(false) => Failure(ActionException(row, "An error occurred while moving " +
+          case Success(false) => Failure(ActionException("An error occurred while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move did not take place, since " +
             s"the output directory does not yet exist.", e))
-          case Failure(e2) => Failure(ActionException(row, "An error occurred both while moving " +
+          case Failure(e2) => Failure(ActionException("An error occurred both while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage } and while checking whether the " +
             s"output directory actually exists now: ${ e2.getMessage }. Please contact your " +
             s"application manager ASAP!", new CompositeException(e, e2)))

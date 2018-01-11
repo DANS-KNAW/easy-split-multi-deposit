@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit.parser
+package nl.knaw.dans.easy.multideposit2.parser
 
-import nl.knaw.dans.easy.multideposit.ParseException
-import nl.knaw.dans.easy.multideposit.model.{ ContributorRole, _ }
+import nl.knaw.dans.easy.multideposit2.model._
 import nl.knaw.dans.lib.error._
 import org.joda.time.DateTime
 

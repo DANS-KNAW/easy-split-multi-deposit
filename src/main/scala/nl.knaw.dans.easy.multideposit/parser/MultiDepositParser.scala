@@ -13,53 +13,61 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit.parser
+package nl.knaw.dans.easy.multideposit2.parser
 
-import java.nio.file.Path
+import java.nio.file.{ Files, NoSuchFileException, Path }
 
-import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.easy.multideposit2.PathExplorer.InputPathExplorer
+import nl.knaw.dans.easy.multideposit2.encoding
+import nl.knaw.dans.easy.multideposit2.model.{ Deposit, DepositId, Instructions, MultiDepositKey, listToNEL }
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string.StringExtensions
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
-import resource._
+import resource.managed
 
 import scala.collection.JavaConverters._
-import scala.language.implicitConversions
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-trait MultiDepositParser extends ParserUtils
+trait MultiDepositParser extends ParserUtils with InputPathExplorer
   with AudioVideoParser
   with FileDescriptorParser
+  with FileMetadataParser
   with MetadataParser
   with ProfileParser
   with DebugEnhancedLogging {
 
-  def parse(path: Path): Try[Seq[Deposit]] = {
-    logger.info(s"Parsing $path")
+  def parse: Try[Seq[Deposit]] = {
+    logger.info(s"Reading data in $multiDepositDir")
 
-    val deposits = for {
-      (headers, content) <- read(path)
-      depositIdIndex = headers.indexOf("DATASET")
-      _ <- detectEmptyDepositCells(content.map(_ (depositIdIndex)))
-      result <- content.groupBy(_ (depositIdIndex))
-        .mapValues(_.map(headers.zip(_).filterNot { case (_, value) => value.isBlank }.toMap))
-        .map((extractDeposit _).tupled)
-        .toSeq
-        .collectResults
-    } yield result
+    val instructions = instructionsFile
+    if (Files.exists(instructions)) {
+      logger.info(s"Parsing $instructions")
 
-    deposits.recoverWith { case NonFatal(e) => recoverParsing(e) }
+      val deposits = for {
+        (headers, content) <- read(instructions)
+        depositIdIndex = headers.indexOf("DATASET")
+        _ <- detectEmptyDepositCells(content.map(_ (depositIdIndex)))
+        result <- content.groupBy(_ (depositIdIndex))
+          .mapValues(_.map(headers.zip(_).filterNot { case (_, value) => value.isBlank }.toMap))
+          .map((extractDeposit(multiDepositDir) _).tupled)
+          .toSeq
+          .collectResults
+      } yield result
+
+      deposits.recoverWith { case NonFatal(e) => recoverParsing(e) }
+    }
+    else
+      Failure(new NoSuchFileException(s"Could not find a file called 'instructions.csv' in $multiDepositDir"))
   }
 
-  def read(path: Path): Try[(List[MultiDepositKey], List[List[String]])] = {
-    managed(CSVParser.parse(path.toFile, encoding, CSVFormat.RFC4180))
+  def read(instructions: Path): Try[(List[MultiDepositKey], List[List[String]])] = {
+    managed(CSVParser.parse(instructions.toFile, encoding, CSVFormat.RFC4180))
       .map(csvParse)
       .tried
       .flatMap {
-        case Nil => Failure(EmptyInstructionsFileException(path))
+        case Nil => Failure(EmptyInstructionsFileException(instructions))
         case headers :: rows =>
           validateDepositHeaders(headers)
             .map(_ => ("ROW" :: headers, rows.zipWithIndex.collect {
@@ -104,11 +112,19 @@ trait MultiDepositParser extends ParserUtils
       .map(_ => ())
   }
 
-  def extractDeposit(depositId: DepositId, rows: DepositRows): Try[Deposit] = {
+  def extractDeposit(multiDepositDirectory: Path)(depositId: DepositId, rows: DepositRows): Try[Deposit] = {
+    for {
+      instructions <- extractInstructions(depositId, rows)
+      depositDir = multiDepositDirectory.resolve(depositId)
+      fileMetadata <- extractFileMetadata(depositDir, instructions)
+    } yield instructions.toDeposit(fileMetadata)
+  }
+
+  def extractInstructions(depositId: DepositId, rows: DepositRows): Try[Instructions] = {
     val rowNum = rows.map(getRowNum).min
 
     checkValidChars(depositId, rowNum, "DATASET")
-      .flatMap(dsId => Try { Deposit.curried }
+      .flatMap(dsId => Try { Instructions.curried }
         .map(_ (dsId))
         .map(_ (rowNum))
         .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
@@ -148,7 +164,7 @@ trait MultiDepositParser extends ParserUtils
 }
 
 object MultiDepositParser {
-  def apply()(implicit ss: Settings): MultiDepositParser = new MultiDepositParser {
-    val settings: Settings = ss
-  }
+  def parse(md: Path): Try[Seq[Deposit]] = new MultiDepositParser {
+    val multiDepositDir: Path = md
+  }.parse
 }

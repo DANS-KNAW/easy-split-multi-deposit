@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit.parser
+package nl.knaw.dans.easy.multideposit2.parser
 
 import java.nio.file.{ Files, Path }
 
-import nl.knaw.dans.easy.multideposit.{ ParseException, Settings }
-import nl.knaw.dans.easy.multideposit.model.{ DepositId, FileAccessRights, FileDescriptor }
-import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
+import nl.knaw.dans.easy.multideposit2.model.{ DepositId, FileAccessRights, FileDescriptor }
+import nl.knaw.dans.lib.error._
 
 import scala.util.{ Failure, Success, Try }
 
 trait FileDescriptorParser {
   this: ParserUtils =>
-
-  implicit val settings: Settings
 
   def extractFileDescriptors(rows: DepositRows, rowNum: Int, depositId: DepositId): Try[Map[Path, FileDescriptor]] = {
     extractList(rows)(fileDescriptor(depositId))
@@ -107,11 +104,5 @@ trait FileDescriptorParser {
       .map(acc => FileAccessRights.valueOf(acc)
         .map(Success(_))
         .getOrElse(Failure(ParseException(rowNum, s"Value '$acc' is not a valid file accessright"))))
-  }
-}
-
-object FileDescriptorParser {
-  def apply()(implicit ss: Settings): FileDescriptorParser = new FileDescriptorParser with ParserUtils {
-    override val settings: Settings = ss
   }
 }

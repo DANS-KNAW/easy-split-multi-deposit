@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit
+package nl.knaw.dans.easy.multideposit2
 
-import java.nio.file.{ Files, Paths }
+import java.nio.file.{ Files, Path, Paths }
 
 import org.apache.commons.configuration.PropertiesConfiguration
 import resource.managed
@@ -26,15 +26,14 @@ case class Configuration(version: String, properties: PropertiesConfiguration, f
 
 object Configuration {
 
-  def apply(): Configuration = {
-    val home = Paths.get(System.getProperty("app.home"))
+  def apply(home: Path): Configuration = {
     val cfgPath = Seq(Paths.get(s"/etc/opt/dans.knaw.nl/easy-split-multi-deposit/"), home.resolve("cfg"))
       .find(Files.exists(_))
       .getOrElse { throw new IllegalStateException("No configuration directory found") }
     val formatsFile = cfgPath.resolve("acceptedMediaTypes.txt")
 
     new Configuration(
-      version = managed(Source.fromFile(home.resolve("bin/version").toFile)).acquireAndGet(_.mkString),
+      version = managed(Source.fromFile(home.resolve("bin/version").toFile)).acquireAndGet(_.mkString).stripLineEnd,
       properties = new PropertiesConfiguration() {
         setDelimiterParsingDisabled(true)
         load(cfgPath.resolve("application.properties").toFile)
@@ -45,3 +44,4 @@ object Configuration {
     )
   }
 }
+

@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit.parser
+package nl.knaw.dans.easy.multideposit2.parser
 
 import java.nio.file.{ Files, Path }
 
-import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
-import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.easy.multideposit.{ ParseException, Settings }
+import nl.knaw.dans.easy.multideposit2.model.PlayMode.PlayMode
+import nl.knaw.dans.easy.multideposit2.model._
 import nl.knaw.dans.lib.error._
 
 import scala.util.{ Failure, Success, Try }
 
 trait AudioVideoParser {
   this: ParserUtils =>
-
-  implicit val settings: Settings
 
   def extractAudioVideo(rows: DepositRows, rowNum: Int, depositId: DepositId): Try[AudioVideo] = {
     Try {
@@ -83,7 +80,7 @@ trait AudioVideoParser {
       case (_, None, Some(_), Some(Failure(e))) => Some(Failure(new CompositeException(userException, e)))
       case (_, None, Some(_), _) => Some(Failure(userException))
       case (_, _, _, Some(Failure(e))) => Some(Failure(e))
-      case (_, None, None, Some(Success(pm))) => Some(Failure(ParseException(rowNum, "Missing values for these columns: [SF_COLLECTION, SF_USER]")))
+      case (_, None, None, Some(Success(_))) => Some(Failure(ParseException(rowNum, "Missing values for these columns: [SF_COLLECTION, SF_USER]")))
       case (_, None, None, _) => None
     }
   }
@@ -138,11 +135,5 @@ trait AudioVideoParser {
       case (None, _, _) =>
         Some(Failure(ParseException(rowNum, "No value is defined for AV_FILE_PATH, while some of [AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined")))
     }
-  }
-}
-
-object AudioVideoParser {
-  def apply()(implicit ss: Settings): AudioVideoParser = new AudioVideoParser with ParserUtils {
-    override val settings: Settings = ss
   }
 }
