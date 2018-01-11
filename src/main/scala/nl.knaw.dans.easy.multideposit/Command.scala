@@ -49,20 +49,26 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: SplitMultiDepositApp): Try[FeedBackMessage] = {
+    lazy val defaultStagingDir = Paths.get(configuration.properties.getString("staging-dir"))
+
     commandLine.subcommand
       .collect {
         case ingest @ commandLine.ingest =>
-          val sd = ingest.stagingDir.toOption
-            .getOrElse(Paths.get(configuration.properties.getString("staging-dir")))
+          val sd = ingest.stagingDir.getOrElse(defaultStagingDir)
           val md = ingest.multiDepositDir()
           val od = ingest.outputDepositDir()
           val dm = ingest.datamanager()
 
-          if (ingest.validate())
-            app.validate(new PathExplorers(md, sd, od), dm)
-              .map(_ => "Finished successfully! Everything looks good.")
-          else app.convert(new PathExplorers(md, sd, od), dm)
+          app.convert(new PathExplorers(md, sd, od), dm)
             .map(_ => s"Finished successfully! The output can be found in $od.")
+        case validate @ commandLine.validator =>
+          val sd = validate.stagingDir.getOrElse(defaultStagingDir)
+          val md = validate.multiDepositDir()
+          val od = validate.outputDepositDir()
+          val dm = validate.datamanager()
+
+          app.validate(new PathExplorers(md, sd, od), dm)
+            .map(_ => "Finished successfully! Everything looks good.")
         case commandLine.runService => runAsService(app)
       }
       .getOrElse(Failure(new IllegalArgumentException(s"Unknown command: ${ commandLine.subcommand }")))

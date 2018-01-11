@@ -28,7 +28,11 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
   printedName = "easy-split-multi-deposit"
   private val SUBCOMMAND_SEPARATOR = "---\n"
   val description = "Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive"
-  val synopsis = s"""$printedName.sh [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>"""
+  val synopsis: String =
+    s"""
+       |  $printedName validate [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
+       |  $printedName ingest [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
+       |  $printedName run-service""".stripMargin
 
   version(s"$printedName v$version")
   banner(
@@ -38,21 +42,13 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
        |
        |Usage:
        |
-       |  $synopsis
+       |$synopsis
        |
        |Options:
        |""".stripMargin)
 
-  val runService = new Subcommand("run-service") {
-    descr("Starts the EASY Split Multi Deposit as a daemon that services HTTP requests")
-    footer(SUBCOMMAND_SEPARATOR)
-  }
-  addSubcommand(runService)
-
-  val ingest = new Subcommand("ingest") {
-    descr("Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive")
-    val validate: ScallopOption[Boolean] = opt[Boolean](name = "validate", noshort = true, default = Some(false),
-      descr = "With this argument included, the input will only be validated, but not converted")
+  trait CommonOptions {
+    this: Subcommand =>
 
     val stagingDir: ScallopOption[Path] = opt[Path](
       name = "staging-dir",
@@ -92,9 +88,25 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
 
     validatePathExists(outputDepositDir)
     validateFileIsDirectory(outputDepositDir.map(_.toFile))
+  }
+
+  val runService = new Subcommand("run-service") {
+    descr("Starts the EASY Split Multi Deposit as a daemon that services HTTP requests")
+    footer(SUBCOMMAND_SEPARATOR)
+  }
+  addSubcommand(runService)
+
+  val ingest = new Subcommand("ingest") with CommonOptions {
+    descr("Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive")
     footer(SUBCOMMAND_SEPARATOR)
   }
   addSubcommand(ingest)
+
+  val validator = new Subcommand("validate") with CommonOptions {
+    descr("Validates the input for a Multi-Deposit ingest")
+    footer(SUBCOMMAND_SEPARATOR)
+  }
+  addSubcommand(validator)
 
   verify()
 }
