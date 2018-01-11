@@ -29,7 +29,7 @@ class ServiceStarter extends Daemon with DebugEnhancedLogging {
     logger.info("Initializing service...")
     val configuration = Configuration(Paths.get(System.getProperty("app.home")))
     app = SplitMultiDepositApp(configuration)
-    service = new SplitMultiDepositService(configuration.properties.getInt("pid-generator.daemon.http.port"),
+    service = new SplitMultiDepositService(configuration.properties.getInt("split-multi-deposit.daemon.http.port"),
       "/" -> new SplitMultiDepositServlet(app, configuration))
     logger.info("Service initialized.")
   }
