@@ -48,20 +48,35 @@ ARGUMENTS
 
   Options:
 
-  -s, --staging-dir  <arg>   A directory in which the deposit directories are created, after which they will
-                             be moved to the 'output-deposit-dir'. If not specified, the value of
-                             'staging-dir' in 'application.properties' is used. (default = data/staging)
-      --help                 Show help message
-      --version              Show version of this program
-
-  trailing arguments:
-    multi-deposit-dir (required)    Directory containing the Submission Information Package to process. This
-                                    must be a valid path to a directory containing a file named
-                                    'instructions.csv' in RFC4180 format.
-    output-deposit-dir (required)   A directory to which the deposit directories are moved after the staging has
-                                    been completed successfully. The deposit directory layout is described in
-                                    the easy-sword2 documentation
-    datamanager (required)          The username (id) of the datamanger (archivist) performing this deposit
+          --help      Show help message
+          --version   Show version of this program
+    
+    Subcommand: run-service - Starts the EASY Split Multi Deposit as a daemon that services HTTP requests
+          --help   Show help message
+    ---
+    
+    Subcommand: ingest - Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive
+      -s, --staging-dir  <arg>   A directory in which the deposit directories are
+                                 created, after which they will be moved to the
+                                 'output-deposit-dir'. If not specified, the value
+                                 of 'staging-dir' in 'application.properties' is
+                                 used.
+          --validate             With this argument included, the input will only be
+                                 validated, but not converted
+          --help                 Show help message
+    
+     trailing arguments:
+      multi-deposit-dir (required)    Directory containing the Submission
+                                      Information Package to process. This must be a
+                                      valid path to a directory containing a file
+                                      named 'instructions.csv' in RFC4180 format.
+      output-deposit-dir (required)   A directory to which the deposit directories
+                                      are moved after the staging has been completed
+                                      successfully. The deposit directory layout is
+                                      described in the easy-sword2 documentation
+      datamanager (required)          The username (id) of the datamanger
+                                      (archivist) performing this deposit
+    ---
 ```
 
 
