@@ -17,7 +17,7 @@
 - hosts: "test"
   become: yes
   vars:
-    local_test_vm_install_httpd: no
+    local_test_vm_base_backend_port: 20180
     easy_ldap_dir_ldapadmin_password: "ldapadmin"
     easy_ldap_dir_easyadmin_password: "easyadmin"
     easy_test_users_email: "{{ deployer_email }}"
