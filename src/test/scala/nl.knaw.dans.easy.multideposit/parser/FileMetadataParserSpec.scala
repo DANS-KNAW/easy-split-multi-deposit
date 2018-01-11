@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.parser
+package nl.knaw.dans.easy.multideposit.parser
 
 import java.nio.file.Paths
 
 import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit2.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit2.TestSupportFixture
-import nl.knaw.dans.easy.multideposit2.model.{ AVFileMetadata, Audio, AudioVideo, DefaultFileMetadata, FileAccessRights, Springfield, Subtitles, Video }
+import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
+import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, AudioVideo, DefaultFileMetadata, FileAccessRights, Springfield, Subtitles, Video }
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }

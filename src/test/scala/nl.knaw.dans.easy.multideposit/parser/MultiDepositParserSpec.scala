@@ -15,10 +15,12 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.Paths
+import java.nio.file.{ Path, Paths }
 
-import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.easy.multideposit.{ ParseException, _ }
+import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
+import nl.knaw.dans.easy.multideposit.model.Instructions
 import nl.knaw.dans.lib.error.CompositeException
 import org.scalatest.BeforeAndAfterEach
 
@@ -26,15 +28,17 @@ import scala.util.{ Failure, Success }
 
 trait DepositTestObjects extends AudioVideoTestObjects
   with FileDescriptorTestObjects
+  with FileMetadataTestObjects
   with MetadataTestObjects
   with ProfileTestObjects {
+  this: TestSupportFixture =>
 
   lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: Nil = List(
     Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
     Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
   )
 
-  lazy val deposit = Deposit(
+  lazy val instructions = Instructions(
     depositId = "ruimtereis01",
     row = 2,
     depositorUserId = "ikke",
@@ -45,25 +49,24 @@ trait DepositTestObjects extends AudioVideoTestObjects
   )
 }
 
-class MultiDepositParserSpec extends UnitSpec with DepositTestObjects with BeforeAndAfterEach {
+class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects with BeforeAndAfterEach { self =>
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(settings.multidepositDir)
+    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(multiDepositDir)
   }
 
-  override implicit val settings: Settings = Settings(
-    multidepositDir = testDir.resolve("md").toAbsolutePath
-  )
-  private val parser = MultiDepositParser()
+  private val parser = new MultiDepositParser with InputPathExplorer {
+    val multiDepositDir: Path = self.multiDepositDir
+  }
 
   import parser._
 
   "parse" should "load the input csv file into the object model" in {
-    val file = settings.multidepositDir.resolve("instructions.csv")
-    file.toFile should exist
+    val instructionsFile = multiDepositDir.resolve("instructions.csv")
+    instructionsFile.toFile should exist
 
-    inside(parse(file)) {
+    inside(MultiDepositParser.parse(testDir.resolve("md"))) {
       case Success(datasets) =>
         datasets should have size 4
         val deposit1 :: deposit2 :: deposit3 :: deposit4 :: Nil = datasets.toList.sortBy(_.depositId)
@@ -271,8 +274,8 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects with Befor
     }
   }
 
-  "extractDeposit" should "convert the csv input to the corresponding output" in {
-    extractDeposit("ruimtereis01", depositCSV) should matchPattern { case Success(`deposit`) => }
+  "extractInstructions" should "convert the csv input to the corresponding output" in {
+    extractInstructions("ruimtereis01", depositCSV) should matchPattern { case Success(`instructions`) => }
   }
 
   it should "throw an exception if a row number is not found on each row" in {
@@ -281,13 +284,13 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects with Befor
     // terribly wrong!
     val rows = depositCSVRow1 :: (depositCSVRow2 - "ROW") :: Nil
 
-    the[NoSuchElementException] thrownBy extractDeposit("ruimtereis01", rows) should have message "key not found: ROW"
+    the[NoSuchElementException] thrownBy extractInstructions("ruimtereis01", rows) should have message "key not found: ROW"
   }
 
   it should "fail if there are multiple distinct depositorUserIDs" in {
     val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) :: Nil
 
-    extractDeposit("ruimtereis01", rows) should matchPattern {
+    extractInstructions("ruimtereis01", rows) should matchPattern {
       case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [ikke, ikke2]", _)) =>
     }
   }
@@ -295,11 +298,11 @@ class MultiDepositParserSpec extends UnitSpec with DepositTestObjects with Befor
   it should "succeed if there are multiple depositorUserIDs that are all equal" in {
     val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) :: Nil
 
-    extractDeposit("ruimtereis01", rows) should matchPattern { case Success(`deposit`) => }
+    extractInstructions("ruimtereis01", rows) should matchPattern { case Success(`instructions`) => }
   }
 
   it should "fail if the depositId contains invalid characters" in {
-    extractDeposit("ruimtereis01#", depositCSV) should matchPattern {
+    extractInstructions("ruimtereis01#", depositCSV) should matchPattern {
       case Failure(ParseException(2, "The column 'DATASET' contains the following invalid characters: {#}", _)) =>
     }
   }

@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.actions
+package nl.knaw.dans.easy.multideposit.actions
 
 import java.{ util => ju }
 import java.util.{ Collections, Properties, UUID }
 
-import nl.knaw.dans.easy.multideposit2.PathExplorer.StagingPathExplorer
-import nl.knaw.dans.easy.multideposit2.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
-import nl.knaw.dans.easy.multideposit2.encoding
+import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
+import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
+import nl.knaw.dans.easy.multideposit.encoding
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.{ DateTime, DateTimeZone }
 import resource.Using

@@ -15,9 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import nl.knaw.dans.easy.multideposit.UnitSpec
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 
-class ParserPackageSpec extends UnitSpec {
+class ParserPackageSpec extends TestSupportFixture {
 
   "find" should "return the value corresponding to the key in the row" in {
     val row = Map("foo" -> "abc", "bar" -> "def")

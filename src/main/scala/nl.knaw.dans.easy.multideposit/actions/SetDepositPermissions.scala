@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.actions
+package nl.knaw.dans.easy.multideposit.actions
 
 import java.io.IOException
 import java.nio.file._
 import java.nio.file.attribute._
 
-import nl.knaw.dans.easy.multideposit2.DepositPermissions
-import nl.knaw.dans.easy.multideposit2.PathExplorer.StagingPathExplorer
-import nl.knaw.dans.easy.multideposit2.model.DepositId
+import nl.knaw.dans.easy.multideposit.DepositPermissions
+import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
+import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.lib.error.TryExtensions
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 

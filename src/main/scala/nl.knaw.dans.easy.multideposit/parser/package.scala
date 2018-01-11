@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2
+package nl.knaw.dans.easy.multideposit
 
 import java.nio.file.Path
 
-import nl.knaw.dans.easy.multideposit2.model.MultiDepositKey
+import nl.knaw.dans.easy.multideposit.model.MultiDepositKey
 import nl.knaw.dans.lib.string.StringExtensions
 
 package object parser {

@@ -15,29 +15,24 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.Paths
+import java.nio.file.{ Files, Paths }
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit._
-import nl.knaw.dans.easy.multideposit.actions.AddDatasetMetadataToDeposit.depositToDDM
+import nl.knaw.dans.easy.multideposit.{ CustomMatchers, FileExtensions }
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.easy.multideposit.parser._
+import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.{ Failure, Success }
+import scala.util.Success
 import scala.xml.{ Elem, Node }
 
-class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with BeforeAndAfterEach {
+class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatchers with BeforeAndAfterEach {
 
-  implicit val settings: Settings = Settings(
-    multidepositDir = testDir.resolve("md"),
-    stagingDir = testDir.resolve("sd"),
-    formats = Set("text/xml")
-  )
-
-  val depositId = "ds1"
-  val deposit: Deposit = Deposit(
+  private val action = new AddDatasetMetadataToDeposit(Set("text/xml"))
+  private val depositId = "ds1"
+  private val deposit: Deposit = Deposit(
     depositId = depositId,
     row = 1,
     depositorUserId = "dep",
@@ -61,116 +56,93 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
     )
   )
 
-  "checkSpringFieldDepositHasAVformat" should "fail if the deposit contains SF_* fields, but no AV DC_FORMAT is given" in {
-    val deposit = testDeposit1.copy(
-      depositId = depositId,
-      metadata = Metadata(
-        formats = List("text/plain")
-      )
-    )
-    inside(AddDatasetMetadataToDeposit.checkSpringFieldDepositHasAVformat(deposit)) {
-      case Failure(ActionException(_, message, _)) =>
-        message should include("No audio/video Format found for this column: [DC_FORMAT]")
-    }
-  }
-
-  it should "succeed if the deposit contains SF_* fields, and the DC_FORMAT contains audio/" in {
-    val deposit = testDeposit1.copy(
-      depositId = depositId,
-      metadata = Metadata(
-        formats = List("audio/mpeg3")
-      )
-    )
-    AddDatasetMetadataToDeposit.checkSpringFieldDepositHasAVformat(deposit) shouldBe a[Success[_]]
-  }
-
-  val expectedXml: Elem = <ddm:DDM
-  xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns:dc="http://purl.org/dc/elements/1.1/"
-  xmlns:dct="http://purl.org/dc/terms/"
-  xmlns:dcterms="http://purl.org/dc/terms/"
-  xmlns:dcmitype="http://purl.org/dc/dcmitype/"
-  xmlns:dcx="http://easy.dans.knaw.nl/schemas/dcx/"
-  xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/"
-  xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/"
-  xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/"
-  xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/"
-  xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/"
-  xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
-    <ddm:profile>
-      <dc:title>dataset title</dc:title>
-      <dcterms:description>omschr1</dcterms:description>
-      <dcx-dai:creatorDetails>
-        <dcx-dai:author>
-          <dcx-dai:initials>A.</dcx-dai:initials>
-          <dcx-dai:surname>Jones</dcx-dai:surname>
+  private val expectedXml: Elem = <ddm:DDM
+    xmlns:ddm="http://easy.dans.knaw.nl/schemas/md/ddm/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:dct="http://purl.org/dc/terms/"
+    xmlns:dcterms="http://purl.org/dc/terms/"
+    xmlns:dcmitype="http://purl.org/dc/dcmitype/"
+    xmlns:dcx="http://easy.dans.knaw.nl/schemas/dcx/"
+    xmlns:dcx-dai="http://easy.dans.knaw.nl/schemas/dcx/dai/"
+    xmlns:dcx-gml="http://easy.dans.knaw.nl/schemas/dcx/gml/"
+    xmlns:narcis="http://easy.dans.knaw.nl/schemas/vocab/narcis-type/"
+    xmlns:abr="http://www.den.nl/standaard/166/Archeologisch-Basisregister/"
+    xmlns:id-type="http://easy.dans.knaw.nl/schemas/vocab/identifier-type/"
+    xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
+      <ddm:profile>
+        <dc:title>dataset title</dc:title>
+        <dcterms:description>omschr1</dcterms:description>
+        <dcx-dai:creatorDetails>
+          <dcx-dai:author>
+            <dcx-dai:initials>A.</dcx-dai:initials>
+            <dcx-dai:surname>Jones</dcx-dai:surname>
+            <dcx-dai:organization>
+              <dcx-dai:name xml:lang="en">Lorem ipsum dolor sit amet</dcx-dai:name>
+            </dcx-dai:organization>
+          </dcx-dai:author>
+        </dcx-dai:creatorDetails>
+        <dcx-dai:creatorDetails>
           <dcx-dai:organization>
-            <dcx-dai:name xml:lang="en">Lorem ipsum dolor sit amet</dcx-dai:name>
+            <dcx-dai:name xml:lang="en">consectetur adipiscing elit</dcx-dai:name>
+            <dcx-dai:role>Supervisor</dcx-dai:role>
           </dcx-dai:organization>
-        </dcx-dai:author>
-      </dcx-dai:creatorDetails>
-      <dcx-dai:creatorDetails>
-        <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">consectetur adipiscing elit</dcx-dai:name>
-          <dcx-dai:role>Supervisor</dcx-dai:role>
-        </dcx-dai:organization>
-      </dcx-dai:creatorDetails>
-      <dcx-dai:creatorDetails>
-        <dcx-dai:organization>
-          <dcx-dai:name xml:lang="en">sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</dcx-dai:name>
-        </dcx-dai:organization>
-      </dcx-dai:creatorDetails>
-      <ddm:created>1992-07-30</ddm:created>
-      <ddm:available>1992-07-31</ddm:available>
-      <ddm:audience>everyone</ddm:audience>
-      <ddm:audience>nobody</ddm:audience>
-      <ddm:audience>some people</ddm:audience>
-      <ddm:audience>people with yellow hear</ddm:audience>
-      <ddm:accessRights>NO_ACCESS</ddm:accessRights>
-    </ddm:profile>
-    <ddm:dcmiMetadata>
-      <dcterms:alternative>foobar</dcterms:alternative>
-      <dcterms:publisher>random publisher</dcterms:publisher>
-      <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
-      <dc:identifier xsi:type="id-type:ISBN">123456</dc:identifier>
-      <dc:identifier>id</dc:identifier>
-      <dcx-dai:contributorDetails>
-        <dcx-dai:author>
-          <dcx-dai:initials>B.</dcx-dai:initials>
-          <dcx-dai:surname>Smith</dcx-dai:surname>
-          <dcx-dai:role>DataCollector</dcx-dai:role>
-          <dcx-dai:organization><dcx-dai:name xml:lang="en">Lorem ipsum dolor sit amet</dcx-dai:name></dcx-dai:organization>
-        </dcx-dai:author>
-      </dcx-dai:contributorDetails>
-    </ddm:dcmiMetadata>
-  </ddm:DDM>
+        </dcx-dai:creatorDetails>
+        <dcx-dai:creatorDetails>
+          <dcx-dai:organization>
+            <dcx-dai:name xml:lang="en">sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</dcx-dai:name>
+          </dcx-dai:organization>
+        </dcx-dai:creatorDetails>
+        <ddm:created>1992-07-30</ddm:created>
+        <ddm:available>1992-07-31</ddm:available>
+        <ddm:audience>everyone</ddm:audience>
+        <ddm:audience>nobody</ddm:audience>
+        <ddm:audience>some people</ddm:audience>
+        <ddm:audience>people with yellow hear</ddm:audience>
+        <ddm:accessRights>NO_ACCESS</ddm:accessRights>
+      </ddm:profile>
+      <ddm:dcmiMetadata>
+        <dcterms:alternative>foobar</dcterms:alternative>
+        <dcterms:publisher>random publisher</dcterms:publisher>
+        <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
+        <dc:identifier xsi:type="id-type:ISBN">123456</dc:identifier>
+        <dc:identifier>id</dc:identifier>
+        <dcx-dai:contributorDetails>
+          <dcx-dai:author>
+            <dcx-dai:initials>B.</dcx-dai:initials>
+            <dcx-dai:surname>Smith</dcx-dai:surname>
+            <dcx-dai:role>DataCollector</dcx-dai:role>
+            <dcx-dai:organization><dcx-dai:name xml:lang="en">Lorem ipsum dolor sit amet</dcx-dai:name></dcx-dai:organization>
+          </dcx-dai:author>
+        </dcx-dai:contributorDetails>
+      </ddm:dcmiMetadata>
+    </ddm:DDM>
 
   override def beforeEach(): Unit = {
     Paths.get(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.mpg").toURI)
-      .copyFile(settings.multidepositDir.resolve(s"$depositId/reisverslag/centaur.mpg"))
+      .copyFile(multiDepositDir.resolve(s"$depositId/reisverslag/centaur.mpg"))
     Paths.get(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.srt").toURI)
-      .copyFile(settings.multidepositDir.resolve(s"$depositId/reisverslag/centaur.srt"))
+      .copyFile(multiDepositDir.resolve(s"$depositId/reisverslag/centaur.srt"))
   }
 
-  "execute" should "write the metadata to a file at the correct place" in {
+  "addDatasetMetadata" should "write the metadata to a file at the correct place" in {
     val file = stagingDatasetMetadataFile(depositId)
+    Files.deleteIfExists(file)
 
-    file.toFile should not(exist)
+    file.toFile shouldNot exist
 
-    AddDatasetMetadataToDeposit(deposit).execute shouldBe a[Success[_]]
+    action.addDatasetMetadata(deposit) shouldBe a[Success[_]]
 
     file.toFile should exist
   }
 
   "depositToDDM" should "return the expected xml" in {
-    depositToDDM(deposit) should equalTrimmed(expectedXml)
+    action.depositToDDM(deposit) should equalTrimmed(expectedXml)
   }
 
   it should "return xml on reading from the allfields input instructions csv" in {
-    implicit val s2: Settings = settings.copy(multidepositDir = Paths.get(getClass.getResource("/allfields/input").toURI))
-    val csv = Paths.get(getClass.getResource("/allfields/input/instructions.csv").toURI)
-    inside(MultiDepositParser()(s2).parse(csv).map(_.map(depositToDDM(_)(s2)))) {
+    val multidepositDir = Paths.get(getClass.getResource("/allfields/input").toURI)
+    inside(MultiDepositParser.parse(multidepositDir).map(_.map(action.depositToDDM))) {
       case Success(xmls) => xmls should have size 4
     }
   }
@@ -224,7 +196,7 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
         Temporal("some arbitrary text"))
     )
 
-    val actual: Node = AddDatasetMetadataToDeposit.createMetadata(metadata)
+    val actual: Node = action.createMetadata(metadata)
     val expectedXml: Node = <ddm:dcmiMetadata>
       <dcterms:alternative>alt1</dcterms:alternative>
       <dcterms:alternative>alt2</dcterms:alternative>
@@ -330,13 +302,13 @@ class AddDatasetMetadataToDepositSpec extends UnitSpec with CustomMatchers with 
     val springfield = Springfield("randomdomainname", "randomusername", "randomcollectionname")
     val expectedXml = <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
 
-    AddDatasetMetadataToDeposit.createSurrogateRelation(springfield) should equalTrimmed(expectedXml)
+    action.createSurrogateRelation(springfield) should equalTrimmed(expectedXml)
   }
 
   it should "return a path with the default domain when no domain is specified" in {
     val springfield = Springfield(user = "randomusername", collection = "randomcollectionname")
     val expectedXml = <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
 
-    AddDatasetMetadataToDeposit.createSurrogateRelation(springfield) should equalTrimmed(expectedXml)
+    action.createSurrogateRelation(springfield) should equalTrimmed(expectedXml)
   }
 }

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.parser
+package nl.knaw.dans.easy.multideposit.parser
 
 import java.nio.file.{ Files, Path }
 
-import nl.knaw.dans.easy.multideposit2.model.{ DepositId, FileAccessRights, FileDescriptor }
+import nl.knaw.dans.easy.multideposit.model.{ DepositId, FileAccessRights, FileDescriptor }
 import nl.knaw.dans.lib.error._
 
 import scala.util.{ Failure, Success, Try }

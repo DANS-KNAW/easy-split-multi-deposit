@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2
+package nl.knaw.dans.easy.multideposit
 
 import java.nio.file.{ Files, Path, Paths }
 import java.util.UUID
 
 import net.lingala.zip4j.core.ZipFile
 import net.lingala.zip4j.exception.ZipException
-import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
-import nl.knaw.dans.easy.multideposit2.actions.{ ActionException, InvalidDatamanagerException }
-import nl.knaw.dans.easy.multideposit2.parser.{ EmptyInstructionsFileException, ParserFailedException }
-import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
+import nl.knaw.dans.easy.multideposit.actions.{ ActionException, InvalidDatamanagerException }
+import nl.knaw.dans.easy.multideposit.parser.{ EmptyInstructionsFileException, ParserFailedException }
 import nl.knaw.dans.lib.error.TryExtensions
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.scalatra._
 
 import scala.util.Try

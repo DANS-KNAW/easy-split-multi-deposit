@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2
+package nl.knaw.dans.easy.multideposit
 
 import java.util.Locale
 import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
 
-import nl.knaw.dans.easy.multideposit2.PathExplorer._
-import nl.knaw.dans.easy.multideposit2.actions.{ RetrieveDatamanager, _ }
-import nl.knaw.dans.easy.multideposit2.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
-import nl.knaw.dans.easy.multideposit2.parser.MultiDepositParser
+import nl.knaw.dans.easy.multideposit.PathExplorer._
+import nl.knaw.dans.easy.multideposit.actions.{ RetrieveDatamanager, _ }
+import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
+import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.model
+package nl.knaw.dans.easy.multideposit.model
 
-import nl.knaw.dans.easy.multideposit2.model.ContributorRole.ContributorRole
+import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
 import org.joda.time.DateTime
 
 case class Metadata(alternatives: List[String] = List.empty,

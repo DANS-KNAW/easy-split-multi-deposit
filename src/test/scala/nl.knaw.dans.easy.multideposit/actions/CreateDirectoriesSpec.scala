@@ -17,80 +17,65 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.Files
 
-import nl.knaw.dans.easy.multideposit.{ Settings, UnitSpec, _ }
+import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.{ Failure, Success }
+import scala.util.Success
 
-class CreateDirectoriesSpec extends UnitSpec with BeforeAndAfterEach {
+class CreateDirectoriesSpec extends TestSupportFixture with BeforeAndAfterEach {
 
-  implicit val settings: Settings = Settings(
-    multidepositDir = testDir.resolve("md"),
-    stagingDir = testDir.resolve("sd")
-  )
-  private val depositId = "ds1"
-  private val action = CreateDirectories(stagingDir(depositId), stagingBagDir(depositId))(1, depositId)
+  private val depositId = "dsId1"
+  private val action = new CreateDirectories
 
   override def beforeEach(): Unit = {
     super.beforeEach()
 
     // create depositDir base directory
-    val baseDir = settings.stagingDir
-    baseDir.deleteDirectory()
-    Files.createDirectory(baseDir)
-    baseDir.toFile should exist
+    stagingDir.deleteDirectory()
+    Files.createDirectory(stagingDir)
+    stagingDir.toFile should exist
   }
 
-  "checkPreconditions" should "succeed if the output directories do not yet exist" in {
-    // directories do not exist before
+  "createDepositDirectories" should "create the staging directories if they do not yet exist" in {
     stagingDir(depositId).toFile shouldNot exist
     stagingBagDir(depositId).toFile shouldNot exist
 
-    // creation of directories
-    action.checkPreconditions shouldBe a[Success[_]]
-  }
+    action.createDepositDirectories(depositId) shouldBe a[Success[_]]
 
-  it should "fail if either one of the output directories does already exist" in {
-    Files.createDirectories(stagingBagDir(depositId))
-
-    // some directories do already exist before
     stagingDir(depositId).toFile should exist
     stagingBagDir(depositId).toFile should exist
-
-    // creation of directories
-    inside(action.checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include(s"The deposit for dataset $depositId already exists")
-    }
   }
 
-  "execute" should "create the directories" in {
-    // test is in seperate function,
-    // since we want to reuse the code
-    executeTest()
+  "createMetadataDirectory" should "create the metadata directory inside the bag directory" in {
+    stagingBagMetadataDir(depositId).toFile shouldNot exist
+
+    action.createMetadataDirectory(depositId) shouldBe a[Success[_]]
+
+    stagingBagMetadataDir(depositId).toFile should exist
   }
 
-  "rollback" should "delete the directories that were created in execute" in {
-    // setup for this test
-    executeTest()
-
-    // roll back the creation of the directories
-    action.rollback() shouldBe a[Success[_]]
-
-    // test that the directories are really not there anymore
-    stagingDir(depositId).toFile shouldNot exist
-    stagingBagDir(depositId).toFile shouldNot exist
-  }
-
-  def executeTest(): Unit = {
-    // directories do not exist before
-    stagingDir(depositId).toFile shouldNot exist
-    stagingBagDir(depositId).toFile shouldNot exist
-
-    // creation of directories
-    action.execute shouldBe a[Success[_]]
-
-    // test existance after creation
+  "discardDeposit" should "delete the bag directory in the staging area in case it exists" in {
+    action.createDepositDirectories(depositId) shouldBe a[Success[_]]
+    action.createMetadataDirectory(depositId) shouldBe a[Success[_]]
     stagingDir(depositId).toFile should exist
     stagingBagDir(depositId).toFile should exist
+    stagingBagMetadataDir(depositId).toFile should exist
+
+    action.discardDeposit(depositId) shouldBe a[Success[_]]
+    stagingBagMetadataDir(depositId).toFile shouldNot exist
+    stagingBagDir(depositId).toFile shouldNot exist
+    stagingDir(depositId).toFile shouldNot exist
+  }
+
+  it should "do nothing if the bag directory doesn't exist in the staging area" in {
+    stagingDir(depositId).toFile shouldNot exist
+    stagingBagDir(depositId).toFile shouldNot exist
+    stagingBagMetadataDir(depositId).toFile shouldNot exist
+
+    action.discardDeposit(depositId) shouldBe a[Success[_]]
+    stagingBagMetadataDir(depositId).toFile shouldNot exist
+    stagingBagDir(depositId).toFile shouldNot exist
+    stagingDir(depositId).toFile shouldNot exist
   }
 }

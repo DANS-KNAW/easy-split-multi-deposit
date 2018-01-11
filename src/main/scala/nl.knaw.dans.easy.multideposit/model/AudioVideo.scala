@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.model
+package nl.knaw.dans.easy.multideposit.model
 
 import java.nio.file.Path
 
-import nl.knaw.dans.easy.multideposit2.model.PlayMode.PlayMode
+import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
 
 case class AudioVideo(springfield: Option[Springfield] = Option.empty,
                       avFiles: Map[Path, Set[Subtitles]] = Map.empty)

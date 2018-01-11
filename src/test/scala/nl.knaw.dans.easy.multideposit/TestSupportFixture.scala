@@ -18,11 +18,12 @@ package nl.knaw.dans.easy.multideposit
 import java.nio.file.{ Files, Path, Paths }
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
+import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
-import org.scalatest._
+import org.scalatest.{ FlatSpec, Inside, Matchers, OptionValues }
 
-abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with Inside {
+trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
 
   lazy val testDir: Path = {
     val path = Paths.get(s"target/test/${ getClass.getSimpleName }").toAbsolutePath
@@ -30,9 +31,16 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
     Files.createDirectories(path)
     path
   }
+  override val multiDepositDir: Path = testDir.resolve("md")
+  override val stagingDir: Path = testDir.resolve("sd")
+  override val outputDepositDir: Path = testDir.resolve("od")
 
-  def testDeposit1: Deposit = {
-    Deposit(
+  implicit val inputPathExplorer: InputPathExplorer = this
+  implicit val stagingPathExplorer: StagingPathExplorer = this
+  implicit val outputPathExplorer: OutputPathExplorer = this
+
+  def testInstructions1: Instructions = {
+    Instructions(
       depositId = "ruimtereis01",
       row = 2,
       depositorUserId = "ruimtereiziger1",
@@ -62,14 +70,17 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files", PlayMode.Menu)),
         avFiles = Map(
-          testDir.resolve("md/ruimtereis01/reisverslag/centaur.mpg") -> Set(Subtitles(testDir.resolve("md/ruimtereis01/reisverslag/centaur.srt"), Option("en")))
+          testDir.resolve("md/ruimtereis01/reisverslag/centaur.mpg") -> Set(
+            Subtitles(testDir.resolve("md/ruimtereis01/reisverslag/centaur.srt"), Option("en")),
+            Subtitles(testDir.resolve("md/ruimtereis01/reisverslag/centaur-nederlands.srt"), Option("nl"))
+          )
         )
       )
     )
   }
 
-  def testDeposit2: Deposit = {
-    Deposit(
+  def testInstructions2: Instructions = {
+    Instructions(
       depositId = "deposit-2",
       row = 5,
       depositorUserId = "ruimtereiziger2",
@@ -95,5 +106,5 @@ abstract class UnitSpec extends FlatSpec with Matchers with OptionValues with In
     )
   }
 
-  def testDeposits: Seq[Deposit] = List(testDeposit1, testDeposit2)
+  def testInstructions: Seq[Instructions] = Seq(testInstructions1, testInstructions2)
 }

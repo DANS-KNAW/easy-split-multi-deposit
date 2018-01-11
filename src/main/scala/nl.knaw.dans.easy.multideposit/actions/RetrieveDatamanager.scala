@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.actions
+package nl.knaw.dans.easy.multideposit.actions
 
 import javax.naming.directory.Attributes
 
-import nl.knaw.dans.easy.multideposit2.Ldap
-import nl.knaw.dans.easy.multideposit2.model.{ Datamanager, DatamanagerEmailaddress }
+import nl.knaw.dans.easy.multideposit.Ldap
+import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }

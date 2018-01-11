@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.actions
+package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit2.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
-import nl.knaw.dans.easy.multideposit2.model._
+import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
+import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.control.NonFatal

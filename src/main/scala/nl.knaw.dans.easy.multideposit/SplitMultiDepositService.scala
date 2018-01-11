@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2
+package nl.knaw.dans.easy.multideposit
 
 import javax.servlet.ServletContext
 
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.ServletContextHandler
-import org.scalatra.{ LifeCycle, ScalatraServlet }
 import org.scalatra.servlet.ScalatraListener
+import org.scalatra.{ LifeCycle, ScalatraServlet }
 
 import scala.util.Try
 

@@ -15,8 +15,11 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import java.nio.file.Path
+
+import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.easy.multideposit.{ ParseException, UnitSpec }
 import org.joda.time.DateTime
 
 import scala.util.{ Failure, Success }
@@ -100,9 +103,11 @@ trait MetadataTestObjects {
   )
 }
 
-class MetadataParserSpec extends UnitSpec with MetadataTestObjects {
+class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects { self =>
 
-  private val parser = new MetadataParser with ParserUtils {}
+  private val parser = new MetadataParser with ParserUtils with InputPathExplorer {
+    val multiDepositDir: Path = self.multiDepositDir
+  }
 
   import parser._
 

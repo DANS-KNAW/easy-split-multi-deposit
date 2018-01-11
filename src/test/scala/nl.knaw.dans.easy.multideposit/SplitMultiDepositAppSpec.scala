@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2
+package nl.knaw.dans.easy.multideposit
 
 import java.nio.file.{ Files, Path, Paths }
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
-import nl.knaw.dans.easy.multideposit.{ CustomMatchers, FileExtensions }
-import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
-import nl.knaw.dans.easy.multideposit2.parser.ParserFailedException
+import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
+import nl.knaw.dans.easy.multideposit.parser.ParserFailedException
 import org.scalamock.scalatest.MockFactory
 import resource.managed
 

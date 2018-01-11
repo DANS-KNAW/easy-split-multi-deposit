@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2
+package nl.knaw.dans.easy.multideposit
 
 package object actions {
 
-  // TODO add row back in
   case class ActionException(msg: String, cause: Throwable = null) extends Exception(msg, cause)
   case class InvalidDatamanagerException(msg: String) extends Exception(msg)
   case class InvalidInputException(row: Int, msg: String) extends Exception(msg)

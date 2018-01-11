@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.parser
+package nl.knaw.dans.easy.multideposit.parser
 
 import java.nio.file.Path
 
-import nl.knaw.dans.easy.multideposit2.model.MimeType
+import nl.knaw.dans.easy.multideposit.model.MimeType
 import org.apache.tika.Tika
 
 import scala.util.Try

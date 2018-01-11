@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2
+package nl.knaw.dans.easy.multideposit
 
 import java.nio.file.Paths
 
-import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
-import nl.knaw.dans.easy.multideposit2.actions.{ InvalidDatamanagerException, InvalidInputException }
-import nl.knaw.dans.easy.multideposit2.parser.{ EmptyInstructionsFileException, ParserFailedException }
+import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
+import nl.knaw.dans.easy.multideposit.actions.{ InvalidDatamanagerException, InvalidInputException }
+import nl.knaw.dans.easy.multideposit.parser.{ EmptyInstructionsFileException, ParserFailedException }
 import nl.knaw.dans.lib.error.TryExtensions
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource.managed

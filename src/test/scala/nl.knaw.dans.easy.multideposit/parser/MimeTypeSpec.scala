@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.parser
+package nl.knaw.dans.easy.multideposit.parser
 
 import java.nio.file.{ NoSuchFileException, Paths }
 
 import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit2.TestSupportFixture
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }

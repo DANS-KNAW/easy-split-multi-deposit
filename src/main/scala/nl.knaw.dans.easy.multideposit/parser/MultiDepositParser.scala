@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.parser
+package nl.knaw.dans.easy.multideposit.parser
 
 import java.nio.file.{ Files, NoSuchFileException, Path }
 
-import nl.knaw.dans.easy.multideposit2.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit2.encoding
-import nl.knaw.dans.easy.multideposit2.model.{ Deposit, DepositId, Instructions, MultiDepositKey, listToNEL }
+import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
+import nl.knaw.dans.easy.multideposit.encoding
+import nl.knaw.dans.easy.multideposit.model.{ Deposit, DepositId, Instructions, MultiDepositKey, listToNEL }
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string.StringExtensions

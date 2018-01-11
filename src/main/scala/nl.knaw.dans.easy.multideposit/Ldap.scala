@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2
+package nl.knaw.dans.easy.multideposit
 
 import javax.naming.directory.{ Attributes, SearchControls }
 import javax.naming.ldap.LdapContext

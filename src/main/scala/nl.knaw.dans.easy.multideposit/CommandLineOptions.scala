@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2
+package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.{ Path, Paths }
+import java.nio.file.Path
 
-import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit2.model.Datamanager
+import nl.knaw.dans.easy.multideposit.model.Datamanager
 import org.rogach.scallop.{ ScallopConf, ScallopOption, Subcommand }
 
 class CommandLineOptions(args: Array[String], version: String) extends ScallopConf(args) {

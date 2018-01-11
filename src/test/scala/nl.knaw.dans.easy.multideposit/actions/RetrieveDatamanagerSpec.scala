@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.actions
+package nl.knaw.dans.easy.multideposit.actions
 
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
-import nl.knaw.dans.easy.multideposit2.{ Ldap, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.{ Ldap, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 
 import scala.util.{ Failure, Success, Try }

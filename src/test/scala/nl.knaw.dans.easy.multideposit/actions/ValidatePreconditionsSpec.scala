@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.knaw.dans.easy.multideposit2.actions
+package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.{ Files, Paths }
 import javax.naming.directory.Attributes
 
 import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit2.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, Springfield, Video }
-import nl.knaw.dans.easy.multideposit2.{ Ldap, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, Springfield, Video }
+import nl.knaw.dans.easy.multideposit.{ Ldap, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 

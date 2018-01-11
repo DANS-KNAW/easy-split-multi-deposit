@@ -15,14 +15,17 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import java.nio.file.Path
+
+import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.easy.multideposit.{ ParseException, UnitSpec }
 import nl.knaw.dans.lib.error.CompositeException
 
 import scala.util.{ Failure, Success }
 
 trait LanguageBehavior {
-  this: UnitSpec =>
+  this: TestSupportFixture =>
   def validLanguage3Tag(parser: ParserUtils, lang: String): Unit = {
     it should "succeed when the language tag is valid" in {
       val row = Map("taal" -> lang)
@@ -39,9 +42,11 @@ trait LanguageBehavior {
   }
 }
 
-class ParserUtilsSpec extends UnitSpec with LanguageBehavior {
+class ParserUtilsSpec extends TestSupportFixture with LanguageBehavior { self =>
 
-  private val parser = new ParserUtils {}
+  private val parser = new ParserUtils with InputPathExplorer {
+    val multiDepositDir: Path = self.multiDepositDir
+  }
 
   import parser._
 
