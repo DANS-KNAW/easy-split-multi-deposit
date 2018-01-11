@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.multideposit
 
 import nl.knaw.dans.easy.multideposit.model.MultiDepositKey
+import nl.knaw.dans.lib.string.StringExtensions
 
 package object parser {
 
