@@ -52,7 +52,12 @@ class SplitMultiDepositServlet(app: SplitMultiDepositApp, configuration: Configu
           _ = mdDir.deleteDirectory()
         } yield Created("Finished successfully! The output is forwarded to easy-ingest-flow")
 
-        result.getOrRecover {
+        result.doIfFailure {
+          case e: ParserFailedException => logger.error(e.getMessage)
+          case e: InvalidDatamanagerException => logger.error(e.getMessage)
+          case e: EmptyInstructionsFileException => logger.error(e.getMessage)
+          case e => logger.error(e.getMessage, e)
+        }.getOrRecover {
           case e: ParserFailedException => NotAcceptable(e.getMessage)
           case e: InvalidDatamanagerException => NotAcceptable(e.getMessage)
           case e: EmptyInstructionsFileException => NotAcceptable(e.getMessage)
