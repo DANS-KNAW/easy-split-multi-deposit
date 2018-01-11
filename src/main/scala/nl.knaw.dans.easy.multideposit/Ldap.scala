@@ -25,7 +25,7 @@ trait Ldap extends AutoCloseable {
 
   protected val ctx: LdapContext
 
-  def ldapQuery[T](userId: String)(f: Attributes => T): Try[Seq[T]] = Try {
+  def query[T](userId: String)(f: Attributes => T): Try[Seq[T]] = Try {
     val searchFilter = s"(&(objectClass=easyUser)(uid=$userId))"
     val searchControls = new SearchControls() {
       setSearchScope(SearchControls.SUBTREE_SCOPE)

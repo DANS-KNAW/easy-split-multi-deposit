@@ -46,7 +46,7 @@ class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
   }
 
   def mockLdapForDatamanager(attrs: Try[Seq[Attributes]]): Unit = {
-    (ldapMock.ldapQuery(_: String)(_: Attributes => Attributes)) expects("dm", *) once() returning attrs
+    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects("dm", *) once() returning attrs
   }
 
   "getDatamanagerEmailaddress" should "succeed if the datamanager email can be retrieved" in {

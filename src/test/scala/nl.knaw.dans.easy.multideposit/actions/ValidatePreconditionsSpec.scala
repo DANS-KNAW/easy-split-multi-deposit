@@ -184,7 +184,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
   }
 
   def mockLdapForDepositor(expectedResult: Try[Seq[Boolean]]): Unit = {
-    (ldapMock.ldapQuery(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning expectedResult
+    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning expectedResult
   }
 
   "checkPreconditions" should "succeed if ldap identifies the depositorUserId as active" in {

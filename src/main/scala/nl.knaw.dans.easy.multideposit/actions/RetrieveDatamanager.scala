@@ -33,7 +33,7 @@ class RetrieveDatamanager(ldap: Ldap) extends DebugEnhancedLogging {
     logger.info("retrieve datamanager email address")
 
     for {
-      attrs <- ldap.ldapQuery(datamanagerId)(a => a)
+      attrs <- ldap.query(datamanagerId)(a => a)
       attr <- getFirstAttrs(datamanagerId)(attrs)
       _ <- datamanagerIsActive(datamanagerId)(attr)
       _ <- datamanagerHasArchivistRole(datamanagerId)(attr)

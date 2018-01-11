@@ -104,7 +104,7 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
     logger.debug("check that the depositor is an active user")
 
     val depositorUserId = deposit.depositorUserId
-    ldap.ldapQuery(depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE"))
+    ldap.query(depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE"))
       .flatMap {
         case Seq() => Failure(InvalidInputException(deposit.row, s"depositorUserId '$depositorUserId' is unknown"))
         case Seq(head) => Success(head)
