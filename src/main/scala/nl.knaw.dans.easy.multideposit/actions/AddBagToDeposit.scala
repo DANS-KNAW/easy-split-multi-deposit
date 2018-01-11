@@ -51,7 +51,7 @@ class AddBagToDeposit extends DebugEnhancedLogging {
     }
 
     if (Files.exists(inputDir)) {
-      inputDir copyDir stageDir
+      inputDir.copyDir(stageDir)
       metadata.add("Bag-Size", formatSize(calculateSizeOfPath(inputDir)))
     }
     else {

@@ -207,13 +207,13 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
       case QualifiedRelation(qualifier, Some(link), Some(title)) =>
         <key href={link}>{title}</key>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, Some(link), None) =>
-          <key href={link}/>.copy(label = s"ddm:${ qualifier.toString }")
+        <key href={link}/>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, None, Some(title)) =>
         <key>{title}</key>.copy(label = s"dcterms:${ qualifier.toString }")
       case UnqualifiedRelation(Some(link), Some(title)) =>
         <ddm:relation href={link}>{title}</ddm:relation>
       case UnqualifiedRelation(Some(link), None) =>
-          <ddm:relation href={link}/>
+        <ddm:relation href={link}/>
       case UnqualifiedRelation(None, Some(title)) =>
         <dc:relation>{title}</dc:relation>
       case other => throw new UnsupportedOperationException(s"Relation $other is not supported. You should not even be able to create this object!")
