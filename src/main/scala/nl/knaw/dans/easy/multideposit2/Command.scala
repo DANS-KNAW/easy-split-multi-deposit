@@ -18,6 +18,8 @@ package nl.knaw.dans.easy.multideposit2
 import java.nio.file.Paths
 
 import nl.knaw.dans.easy.multideposit2.PathExplorer.PathExplorers
+import nl.knaw.dans.easy.multideposit2.actions.{ InvalidDatamanagerException, InvalidInputException }
+import nl.knaw.dans.easy.multideposit2.parser.{ EmptyInstructionsFileException, ParserFailedException }
 import nl.knaw.dans.lib.error.TryExtensions
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource.managed
@@ -37,7 +39,13 @@ object Command extends App with DebugEnhancedLogging {
   managed(app)
     .acquireAndGet(runSubcommand)
     .doIfSuccess(msg => println(s"OK: $msg"))
-    .doIfFailure { case e => logger.error(e.getMessage, e) }
+    .doIfFailure {
+      case ParserFailedException(_, _) |
+           EmptyInstructionsFileException(_) |
+           InvalidDatamanagerException(_) |
+           InvalidInputException(_, _) => // do nothing
+      case e => logger.error(e.getMessage, e)
+    }
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: SplitMultiDepositApp): Try[FeedBackMessage] = {
