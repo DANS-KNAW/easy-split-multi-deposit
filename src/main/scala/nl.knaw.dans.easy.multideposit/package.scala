@@ -21,12 +21,14 @@ import java.nio.file.{ Files, Path }
 
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
+import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
 import resource._
 
 import scala.collection.JavaConverters._
 import scala.xml.{ Elem, PrettyPrinter, Utility, XML }
 
 package object multideposit {
+  val dateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime()
 
   type Datamanager = String
   type DatamanagerEmailaddress = String

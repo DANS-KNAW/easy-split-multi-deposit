@@ -70,7 +70,7 @@ case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings)
     val sf = deposit.audioVideo.springfield
     val props: Map[String, Option[String]] = Map(
       "bag-store.bag-id" -> Some(UUID.randomUUID().toString),
-      "creation.timestamp" -> Some(DateTime.now(DateTimeZone.UTC).toString),
+      "creation.timestamp" -> Some(DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)),
       "state.label" -> Some("SUBMITTED"),
       "state.description" -> Some("Deposit is valid and ready for post-submission processing"),
       "depositor.userId" -> Some(deposit.depositorUserId),
