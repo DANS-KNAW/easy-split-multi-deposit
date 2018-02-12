@@ -11,7 +11,6 @@ SYNOPSIS
 
     easy-split-multi-deposit validate [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
     easy-split-multi-deposit ingest [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
-    easy-split-multi-deposit run-service
 
 
 DESCRIPTION
@@ -48,16 +47,11 @@ ARGUMENTS
 
       easy-split-multi-deposit validate [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
       easy-split-multi-deposit ingest [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
-      easy-split-multi-deposit run-service
 
   Options:
 
           --help      Show help message
           --version   Show version of this program
-    
-    Subcommand: run-service - Starts the EASY Split Multi Deposit as a daemon that services HTTP requests
-          --help   Show help message
-    ---
     
     Subcommand: ingest - Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive
       -s, --staging-dir  <arg>   A directory in which the deposit directories are

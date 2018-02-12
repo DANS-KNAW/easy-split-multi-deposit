@@ -31,8 +31,7 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
   val synopsis: String =
     s"""
        |  $printedName validate [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
-       |  $printedName ingest [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
-       |  $printedName run-service""".stripMargin
+       |  $printedName ingest [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>""".stripMargin
 
   version(s"$printedName v$version")
   banner(
@@ -89,12 +88,6 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
     validatePathExists(outputDepositDir)
     validateFileIsDirectory(outputDepositDir.map(_.toFile))
   }
-
-  val runService = new Subcommand("run-service") {
-    descr("Starts the EASY Split Multi Deposit as a daemon that services HTTP requests")
-    footer(SUBCOMMAND_SEPARATOR)
-  }
-  addSubcommand(runService)
 
   val ingest = new Subcommand("ingest") with CommonOptions {
     descr("Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive")
