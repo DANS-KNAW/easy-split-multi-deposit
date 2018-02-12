@@ -20,6 +20,7 @@ import java.nio.charset.Charset
 import java.nio.file.{ Files, Path }
 
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
+import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
 import resource.managed
 
 import scala.collection.JavaConverters._
@@ -28,6 +29,7 @@ import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, PrettyPrinter, Utility, XML }
 
 package object multideposit {
+  val dateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime()
 
   val encoding: Charset = Charsets.UTF_8
 
