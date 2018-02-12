@@ -24,14 +24,6 @@ mkdir ${DATADIR}/input
 cp -r src/test/resources/allfields/input ${DATADIR}/input/allfields
 cp -r src/test/resources/invalidCSV/input ${DATADIR}/input/invalidCSV
 
-echo "Create zips for the test input"
-pushd ${DATADIR}/input/allfields
-zip -q -r ../allfields.zip *
-popd
-pushd ${DATADIR}/input/invalidCSV
-zip -q -r ../invalidCSV.zip *
-popd
-
 echo "Creating staging and output directories in $DATADIR..."
 mkdir ${DATADIR}/staging
 mkdir ${DATADIR}/output

@@ -17,7 +17,7 @@
 - hosts: "test"
   become: yes
   vars:
-    local_test_vm_base_backend_port: 20180
+    local_test_vm_install_httpd: no
     easy_ldap_dir_ldapadmin_password: "ldapadmin"
     easy_ldap_dir_easyadmin_password: "easyadmin"
     easy_test_users_email: "{{ deployer_email }}"
@@ -46,23 +46,3 @@
       name: vagrant
       groups: deposits
       append: yes
-
-  - name: Append group deposits to vagrant's groups
-    user:
-      name: easy-split-multi-deposit
-      groups: deposits
-      append: yes
-
-  - name: Creates directory
-    file:
-      path: /var/opt/dans.knaw.nl/tmp/easy-ingest-flow-inbox
-      state: directory
-      owner: vagrant
-      group: deposits
-      mode: 0777
-      recurse: yes
-
-  - service:
-      name: easy-split-multi-deposit
-      state: restarted
-      enabled: yes
