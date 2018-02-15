@@ -17,9 +17,8 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.{ Files, Paths }
 
-import nl.knaw.dans.easy.multideposit.{ CustomMatchers, FileExtensions }
-import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, DefaultFileMetadata, FileAccessRights, Subtitles, Video }
+import nl.knaw.dans.easy.multideposit.{ CustomMatchers, FileExtensions, TestSupportFixture }
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success

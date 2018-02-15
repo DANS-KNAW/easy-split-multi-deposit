@@ -18,8 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.attribute.{ PosixFileAttributes, PosixFilePermission, UserPrincipalNotFoundException }
 import java.nio.file.{ FileSystemException, Files }
 
-import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit.{ DepositPermissions, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.{ DepositPermissions, FileExtensions, TestSupportFixture }
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Properties, Success }

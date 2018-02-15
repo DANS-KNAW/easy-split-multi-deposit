@@ -19,8 +19,8 @@ import java.nio.file.Path
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
+import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.error.CompositeException
 import org.joda.time.DateTime
 

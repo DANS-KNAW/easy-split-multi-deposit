@@ -31,7 +31,7 @@ object MimeType {
    * @param path the path to identify
    * @return the mimeType of the path if the identification was successful; `Failure` otherwise
    */
-  def getMimeType(path: Path): Try[MimeType] = Try {
+  def get(path: Path): Try[MimeType] = Try {
     tika.detect(path)
   }
 }

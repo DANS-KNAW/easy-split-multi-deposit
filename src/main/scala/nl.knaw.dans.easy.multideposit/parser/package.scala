@@ -30,6 +30,18 @@ package object parser {
   }
 
   case class EmptyInstructionsFileException(path: Path) extends Exception(s"The given instructions file in '$path' is empty")
-  case class ParseException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
-  case class ParserFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
+  class ParseException(val row: Int, message: String, cause: Option[Throwable] = None) extends Exception(message, cause.orNull)
+  object ParseException {
+    def apply(row: Int, message: String, cause: Throwable): ParseException = new ParseException(row, message, Option(cause))
+    def apply(row: Int, message: String): ParseException = new ParseException(row, message)
+
+    def unapply(arg: ParseException): Option[(Int, String, Throwable)] = Some(arg.row, arg.getMessage, arg.getCause)
+  }
+
+  class ParserFailedException(report: String, cause: Option[Throwable] = None) extends Exception(report, cause.orNull)
+  object ParserFailedException {
+    def apply(report: String, cause: Throwable): ParserFailedException = new ParserFailedException(report, Option(cause))
+    def apply(report: String): ParserFailedException = new ParserFailedException(report)
+    def unapply(arg: ParserFailedException): Option[(String, Throwable)] = Some((arg.getMessage, arg.getCause))
+  }
 }

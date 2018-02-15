@@ -17,7 +17,13 @@ package nl.knaw.dans.easy.multideposit
 
 package object actions {
 
-  case class ActionException(msg: String, cause: Throwable = null) extends Exception(msg, cause)
+  class ActionException(msg: String, cause: Option[Throwable] = None) extends Exception(msg, cause.orNull)
+  object ActionException {
+    def apply(msg: String, cause: Throwable): ActionException = new ActionException(msg, Option(cause))
+    def apply(msg: String): ActionException = new ActionException(msg)
+    def unapply(arg: ActionException): Option[(String, Throwable)] = Some((arg.getMessage, arg.getCause))
+  }
+
   case class InvalidDatamanagerException(msg: String) extends Exception(msg)
   case class InvalidInputException(row: Int, msg: String) extends Exception(msg)
 }

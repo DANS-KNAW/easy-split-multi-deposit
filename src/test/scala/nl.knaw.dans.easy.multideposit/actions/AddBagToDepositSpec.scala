@@ -19,10 +19,9 @@ import java.nio.file.{ Files, Path }
 import java.security.MessageDigest
 
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
-import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
-import nl.knaw.dans.easy.multideposit.{ TestSupportFixture, encoding }
+import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture, encoding }
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 

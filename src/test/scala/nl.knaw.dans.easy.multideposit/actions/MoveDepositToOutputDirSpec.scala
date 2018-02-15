@@ -17,8 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.{ Files, Paths }
 
-import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit.TestSupportFixture
+import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success

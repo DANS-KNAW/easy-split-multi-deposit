@@ -17,8 +17,7 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import java.nio.file.{ NoSuchFileException, Paths }
 
-import nl.knaw.dans.easy.multideposit.FileExtensions
-import nl.knaw.dans.easy.multideposit.TestSupportFixture
+import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
@@ -32,67 +31,67 @@ class MimeTypeSpec extends TestSupportFixture with BeforeAndAfterEach {
   }
 
   "getMimeType" should "produce the correct doc mimetype" in {
-    inside(MimeType.getMimeType(testDir.resolve("mimetypes/file-ms-doc.doc"))) {
+    inside(MimeType.get(testDir.resolve("mimetypes/file-ms-doc.doc"))) {
       case Success(mimetype) => mimetype shouldBe "application/msword"
     }
   }
 
   it should "produce the correct docx mimetype" in {
-    inside(MimeType.getMimeType(testDir.resolve("mimetypes/file-ms-docx.docx"))) {
+    inside(MimeType.get(testDir.resolve("mimetypes/file-ms-docx.docx"))) {
       case Success(mimetype) => mimetype shouldBe "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     }
   }
 
   it should "produce the correct xlsx mimetype" in {
-    inside(MimeType.getMimeType(testDir.resolve("mimetypes/file-ms-excel.xlsx"))) {
+    inside(MimeType.get(testDir.resolve("mimetypes/file-ms-excel.xlsx"))) {
       case Success(mimetype) => mimetype shouldBe "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     }
   }
 
   it should "produce the correct pdf mimetype" in {
-    inside(MimeType.getMimeType(testDir.resolve("mimetypes/file-pdf.pdf"))) {
+    inside(MimeType.get(testDir.resolve("mimetypes/file-pdf.pdf"))) {
       case Success(mimetype) => mimetype shouldBe "application/pdf"
     }
   }
 
   it should "produce the correct plain text mimetype" in {
-    inside(MimeType.getMimeType(testDir.resolve("mimetypes/file-plain-text.txt"))) {
+    inside(MimeType.get(testDir.resolve("mimetypes/file-plain-text.txt"))) {
       case Success(mimetype) => mimetype shouldBe "text/plain"
     }
   }
 
   it should "produce the correct json mimetype" in {
-    inside(MimeType.getMimeType(testDir.resolve("mimetypes/file-json.json"))) {
+    inside(MimeType.get(testDir.resolve("mimetypes/file-json.json"))) {
       case Success(mimetype) => mimetype shouldBe "application/json"
     }
   }
 
   it should "produce the correct xml mimetype" in {
-    inside(MimeType.getMimeType(testDir.resolve("mimetypes/file-xml.xml"))) {
+    inside(MimeType.get(testDir.resolve("mimetypes/file-xml.xml"))) {
       case Success(mimetype) => mimetype shouldBe "application/xml"
     }
   }
 
   it should "give the correct mimetype if the file is plain text and has no extension" in {
-    inside(MimeType.getMimeType(testDir.resolve("mimetypes/file-unknown"))) {
+    inside(MimeType.get(testDir.resolve("mimetypes/file-unknown"))) {
       case Success(mimetype) => mimetype shouldBe "text/plain"
     }
   }
 
   it should "give the correct mimetype if the file has no extension" in {
-    inside(MimeType.getMimeType(testDir.resolve("mimetypes/file-unknown-pdf"))) {
+    inside(MimeType.get(testDir.resolve("mimetypes/file-unknown-pdf"))) {
       case Success(mimetype) => mimetype shouldBe "application/pdf"
     }
   }
 
   it should "give the correct mimetype if the file is hidden" in {
-    inside(MimeType.getMimeType(testDir.resolve("mimetypes/.file-hidden-pdf"))) {
+    inside(MimeType.get(testDir.resolve("mimetypes/.file-hidden-pdf"))) {
       case Success(mimetype) => mimetype shouldBe "application/pdf"
     }
   }
 
   it should "fail if the file does not exist" in {
-    inside(MimeType.getMimeType(testDir.resolve("mimetypes/file-does-not-exist.doc"))) {
+    inside(MimeType.get(testDir.resolve("mimetypes/file-does-not-exist.doc"))) {
       case Failure(e: NoSuchFileException) => e.getMessage should include("mimetypes/file-does-not-exist.doc")
     }
   }

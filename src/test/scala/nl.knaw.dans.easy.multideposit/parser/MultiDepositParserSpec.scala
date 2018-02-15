@@ -17,9 +17,8 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import java.nio.file.{ Path, Paths }
 
-import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit.TestSupportFixture
+import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
 import nl.knaw.dans.easy.multideposit.model.Instructions
 import nl.knaw.dans.lib.error.CompositeException
 import org.scalatest.BeforeAndAfterEach

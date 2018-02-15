@@ -41,7 +41,7 @@ trait FileMetadataParser extends DebugEnhancedLogging {
   }
 
   private def getFileMetadata(instructions: Instructions)(file: Path): Try[FileMetadata] = {
-    MimeType.getMimeType(file).map {
+    MimeType.get(file).map {
       case mimetype if mimetype startsWith "audio" => mkAvFileMetadata(file, mimetype, Audio, instructions)
       case mimetype if mimetype startsWith "video" => mkAvFileMetadata(file, mimetype, Video, instructions)
       case mimetype => mkDefaultFileMetadata(file, mimetype, instructions)

@@ -17,10 +17,9 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import java.nio.file.Paths
 
-import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit.TestSupportFixture
-import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, AudioVideo, DefaultFileMetadata, FileAccessRights, Springfield, Subtitles, Video }
+import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.model._
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }

@@ -18,9 +18,8 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.{ Files, Paths }
 import javax.naming.directory.Attributes
 
-import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, Springfield, Video }
-import nl.knaw.dans.easy.multideposit.{ Ldap, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.{ FileExtensions, Ldap, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 

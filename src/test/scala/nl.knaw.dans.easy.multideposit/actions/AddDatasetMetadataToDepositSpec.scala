@@ -18,10 +18,9 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.{ Files, Paths }
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit.{ CustomMatchers, FileExtensions }
-import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
+import nl.knaw.dans.easy.multideposit.{ CustomMatchers, FileExtensions, TestSupportFixture }
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 
