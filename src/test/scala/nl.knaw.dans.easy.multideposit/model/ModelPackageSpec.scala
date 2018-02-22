@@ -15,9 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit.model
 
-import nl.knaw.dans.easy.multideposit.UnitSpec
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 
-class ModelPackageSpec extends UnitSpec {
+class ModelPackageSpec extends TestSupportFixture {
 
   "NonEmptyList transform" should "succeed when the input list is not empty" in {
     listToNEL(List(1, 2, 3)) shouldBe ::(1, ::(2, ::(3, Nil)))

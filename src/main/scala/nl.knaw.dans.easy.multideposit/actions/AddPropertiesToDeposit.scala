@@ -15,71 +15,52 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.util.{ Collections, Properties, UUID }
 import java.{ util => ju }
+import java.util.{ Collections, Properties, UUID }
 
-import nl.knaw.dans.easy.multideposit.model.Deposit
-import nl.knaw.dans.easy.multideposit.{ Action, Settings, _ }
+import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
+import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
+import nl.knaw.dans.easy.multideposit.{ encoding, dateTimeFormatter }
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.{ DateTime, DateTimeZone }
-import resource._
+import resource.Using
 
-import scala.language.postfixOps
+import scala.util.{ Failure, Try }
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
 
-case class AddPropertiesToDeposit(deposit: Deposit)(implicit settings: Settings) extends Action[DatamanagerEmailaddress, Unit] {
+class AddPropertiesToDeposit extends DebugEnhancedLogging {
 
-  override def checkPreconditions: Try[Unit] = validateDepositorUserId
+  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(implicit stage: StagingPathExplorer): Try[Unit] = {
+    logger.debug(s"add deposit properties for ${ deposit.depositId }")
 
-  override def execute(datamanagerEmailaddress: DatamanagerEmailaddress): Try[Unit] = {
-    writeProperties(datamanagerEmailaddress)
-  }
-
-  /**
-   * Checks whether there is only one unique DEPOSITOR_ID set in the `Deposit` (there can be multiple values but the must all be equal!).
-   */
-  private def validateDepositorUserId: Try[Unit] = {
-    settings.ldap.query(deposit.depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE"))
-      .flatMap {
-        case Seq() => Failure(ActionException(deposit.row, s"depositorUserId '${ deposit.depositorUserId }' is unknown"))
-        case Seq(head) => Success(head)
-        case _ => Failure(ActionException(deposit.row, s"There appear to be multiple users with id '${ deposit.depositorUserId }'"))
-      }
-      .flatMap {
-        case true => Success(())
-        case false => Failure(ActionException(deposit.row, s"The depositor '${ deposit.depositorUserId }' is not an active user"))
-      }
-  }
-
-  private def writeProperties(emailaddress: DatamanagerEmailaddress)(implicit settings: Settings): Try[Unit] = {
     val props = new Properties {
       // Make sure we get sorted output, which is better readable than random
       override def keys(): ju.Enumeration[AnyRef] = Collections.enumeration(new ju.TreeSet[Object](super.keySet()))
     }
 
-    Try { addProperties(props, emailaddress) }
-      .flatMap(_ => Using.fileWriter(encoding)(stagingPropertiesFile(deposit.depositId).toFile)
+    Try { addProperties(deposit, datamanagerId, emailaddress)(props) }
+      .flatMap(_ => Using.fileWriter(encoding)(stage.stagingPropertiesFile(deposit.depositId).toFile)
         .map(out => props.store(out, ""))
         .tried)
       .recoverWith {
-        case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write properties to file: $e", e))
+        case NonFatal(e) => Failure(ActionException(s"Could not write properties to file: $e", e))
       }
   }
 
-  private def addProperties(properties: Properties, emailaddress: DatamanagerEmailaddress): Unit = {
-    val sf = deposit.audioVideo.springfield
+  private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(properties: Properties): Unit = {
+    val sf = deposit.springfield
     val props: Map[String, Option[String]] = Map(
       "bag-store.bag-id" -> Some(UUID.randomUUID().toString),
       "creation.timestamp" -> Some(DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)),
       "state.label" -> Some("SUBMITTED"),
       "state.description" -> Some("Deposit is valid and ready for post-submission processing"),
       "depositor.userId" -> Some(deposit.depositorUserId),
-      "datamanager.userId" -> Some(settings.datamanager),
+      "datamanager.userId" -> Some(datamanagerId),
       "datamanager.email" -> Some(emailaddress),
       "springfield.domain" -> sf.map(_.domain),
       "springfield.user" -> sf.map(_.user),
       "springfield.collection" -> sf.map(_.collection),
-      "springfield.playmode" -> deposit.audioVideo.springfield.map(_.playMode.toString)
+      "springfield.playmode" -> sf.map(_.playMode.toString)
     )
 
     for ((key, value) <- props.collect { case (k, Some(v)) => (k, v) }) {

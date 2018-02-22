@@ -17,40 +17,41 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.{ Files, Path }
 
-import nl.knaw.dans.easy.multideposit._
+import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
-import nl.knaw.dans.lib.error._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Try }
 
-case class CreateDirectories(pathsToCreate: Path*)(row: Int, depositId: DepositId)(implicit settings: Settings) extends UnitAction[Unit] {
+class CreateDirectories extends DebugEnhancedLogging {
 
-  override def checkPreconditions: Try[Unit] = checkDirectoriesDoNotExist
-
-  private def checkDirectoriesDoNotExist: Try[Unit] = {
-    pathsToCreate.find(Files.exists(_))
-      .map(file => Failure(ActionException(row, s"The deposit for dataset $depositId already exists in $file.")))
-      .getOrElse(Success(()))
+  def createDepositDirectories(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+    createDirectories(stage.stagingDir(depositId), stage.stagingBagDir(depositId))
   }
 
-  override def execute(): Try[Unit] = {
-    val paths = pathsToCreate.mkString("{", ", ", "}")
-    debug(s"making directories: $paths")
+  def createMetadataDirectory(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+    createDirectories(stage.stagingBagMetadataDir(depositId))
+  }
+
+  private def createDirectories(paths: Path*): Try[Unit] = {
     Try {
-      pathsToCreate.foreach(Files.createDirectories(_))
+      for (path <- paths) {
+        logger.debug(s"create directory $path")
+        Files.createDirectories(path)
+      }
     } recoverWith {
-      case NonFatal(e) => Failure(ActionException(row, s"Could not create the directories at $paths", e))
+      case NonFatal(e) => Failure(ActionException(s"Could not create the directories at $paths", e))
     }
   }
 
-  override def rollback(): Try[Unit] = {
-    pathsToCreate.reverse
-      .withFilter(Files.exists(_))
-      .map(path => Try { path.deleteDirectory() } recoverWith {
-        case NonFatal(e) => Failure(ActionException(row, s"Could not delete $path, exception: $e", e))
-      })
-      .collectResults
-      .map(_ => ())
+  def discardDeposit(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+    logger.debug(s"delete deposit '$depositId' from staging directory")
+
+    val dir = stage.stagingDir(depositId)
+    Try { if (Files.exists(dir)) dir.deleteDirectory() } recoverWith {
+      case NonFatal(e) => Failure(ActionException(s"Could not delete $dir", e))
+    }
   }
 }

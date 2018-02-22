@@ -19,43 +19,34 @@ import java.io.IOException
 import java.nio.charset.Charset
 import java.nio.file.{ Files, Path }
 
-import nl.knaw.dans.easy.multideposit.model.DepositId
 import org.apache.commons.io.{ Charsets, FileExistsException, FileUtils }
 import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
-import resource._
+import resource.managed
 
 import scala.collection.JavaConverters._
+import scala.collection.generic.CanBuildFrom
+import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, PrettyPrinter, Utility, XML }
 
 package object multideposit {
   val dateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime()
 
-  type Datamanager = String
-  type DatamanagerEmailaddress = String
+  val encoding: Charset = Charsets.UTF_8
 
   case class DepositPermissions(permissions: String, group: String)
-  case class Settings(multidepositDir: Path = null,
-                      stagingDir: Path = null,
-                      outputDepositDir: Path = null,
-                      datamanager: Datamanager = null,
-                      depositPermissions: DepositPermissions = null,
-                      formats: Set[String] = Set.empty[String],
-                      ldap: Ldap = null) {
-    override def toString: String =
-      s"Settings(multideposit-dir=$multidepositDir, " +
-        s"staging-dir=$stagingDir, " +
-        s"output-deposit-dir=$outputDepositDir" +
-        s"datamanager=$datamanager, " +
-        s"deposit-permissions=$depositPermissions, " +
-        s"formats=${ formats.mkString("{", ", ", "}") })"
-  }
 
-  case class EmptyInstructionsFileException(path: Path) extends Exception(s"The given instructions file in '$path' is empty")
-  case class ParserFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
-  case class PreconditionsFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
-  case class ActionRunFailedException(report: String, cause: Throwable = null) extends Exception(report, cause)
-  case class ParseException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
-  case class ActionException(row: Int, message: String, cause: Throwable = null) extends Exception(message, cause)
+  implicit class SeqExtensions[T](val seq: Seq[T]) extends AnyVal {
+    def mapUntilFailure[S](f: T => Try[S])(implicit cbf: CanBuildFrom[Seq[T], S, Seq[S]]): Try[Seq[S]] = {
+      val bf = cbf()
+      for (t <- seq) {
+        f(t) match {
+          case Success(x) => bf += x
+          case Failure(e) => return Failure(e)
+        }
+      }
+      Success(bf.result())
+    }
+  }
 
   implicit class FileExtensions(val path: Path) extends AnyVal {
     /**
@@ -186,72 +177,5 @@ package object multideposit {
       managed(Files.walk(path))
         .acquireAndGet(_.iterator().asScala.filter(predicate).toList)
     }
-  }
-
-  val encoding: Charset = Charsets.UTF_8
-  val bagDirName = "bag"
-  val dataDirName = "data"
-  val metadataDirName = "metadata"
-  val instructionsFileName = "instructions.csv"
-  val datasetMetadataFileName = "dataset.xml"
-  val fileMetadataFileName = "files.xml"
-  val propsFileName = "deposit.properties"
-
-  private def datasetDir(depositId: DepositId)(implicit settings: Settings): String = {
-    s"${ settings.multidepositDir.getFileName }-$depositId"
-  }
-
-  def multiDepositInstructionsFile(baseDir: Path): Path = {
-    baseDir.resolve(instructionsFileName)
-  }
-
-  // mdDir/depositId/
-  def multiDepositDir(depositId: DepositId)(implicit settings: Settings): Path = {
-    settings.multidepositDir.resolve(depositId)
-  }
-
-  // mdDir/instructions.csv
-  def multiDepositInstructionsFile(implicit settings: Settings): Path = {
-    multiDepositInstructionsFile(settings.multidepositDir)
-  }
-
-  // stagingDir/mdDir-depositId/
-  def stagingDir(depositId: DepositId)(implicit settings: Settings): Path = {
-    settings.stagingDir.resolve(datasetDir(depositId))
-  }
-
-  // stagingDir/mdDir-depositId/bag/
-  def stagingBagDir(depositId: DepositId)(implicit settings: Settings): Path = {
-    stagingDir(depositId).resolve(bagDirName)
-  }
-
-  // stagingDir/mdDir-depositId/bag/data/
-  def stagingBagDataDir(depositId: DepositId)(implicit settings: Settings): Path = {
-    stagingBagDir(depositId).resolve(dataDirName)
-  }
-
-  // stagingDir/mdDir-depositId/bag/metadata/
-  def stagingBagMetadataDir(depositId: DepositId)(implicit settings: Settings): Path = {
-    stagingBagDir(depositId).resolve(metadataDirName)
-  }
-
-  // stagingDir/mdDir-depositId/deposit.properties
-  def stagingPropertiesFile(depositId: DepositId)(implicit settings: Settings): Path = {
-    stagingDir(depositId).resolve(propsFileName)
-  }
-
-  // stagingDir/mdDir-depositId/bag/metadata/dataset.xml
-  def stagingDatasetMetadataFile(depositId: DepositId)(implicit settings: Settings): Path = {
-    stagingBagMetadataDir(depositId).resolve(datasetMetadataFileName)
-  }
-
-  // stagingDir/mdDir-depositId/bag/metadata/files.xml
-  def stagingFileMetadataFile(depositId: DepositId)(implicit settings: Settings): Path = {
-    stagingBagMetadataDir(depositId).resolve(fileMetadataFileName)
-  }
-
-  // outputDepositDir/mdDir-depositId/
-  def outputDepositDir(depositId: DepositId)(implicit settings: Settings): Path = {
-    settings.outputDepositDir.resolve(datasetDir(depositId))
   }
 }

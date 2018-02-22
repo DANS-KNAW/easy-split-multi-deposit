@@ -15,9 +15,12 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import java.nio.file.Path
+
 import nl.knaw.dans.common.lang.dataset.AccessCategory
+import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.easy.multideposit.{ ParseException, UnitSpec }
 import nl.knaw.dans.lib.error.CompositeException
 import org.joda.time.DateTime
 
@@ -55,9 +58,11 @@ trait ProfileTestObjects {
   )
 }
 
-class ProfileParserSpec extends UnitSpec with ProfileTestObjects {
+class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { self =>
 
-  private val parser = new ProfileParser with ParserUtils {}
+  private val parser = new ProfileParser with ParserUtils with InputPathExplorer {
+    val multiDepositDir: Path = self.multiDepositDir
+  }
 
   import parser._
 

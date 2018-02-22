@@ -18,24 +18,12 @@ package nl.knaw.dans.easy.multideposit
 import javax.naming.directory.{ Attributes, SearchControls }
 import javax.naming.ldap.LdapContext
 
-import scala.collection.JavaConverters._
 import scala.util.Try
+import scala.collection.JavaConverters._
 
 trait Ldap extends AutoCloseable {
 
-  /**
-   * Queries LDAP for the user data corresponding to the given `userId` and transforms it
-   * into an instance of type `T` using the function `f`.
-   *
-   * @param userId the identifier related to the user
-   * @param f      function that transforms an `Attributes` object to an instance of type `T`
-   * @tparam T the result type of the transformer function
-   * @return `Success` if the query succeeds, `Failure` otherwise
-   */
-  def query[T](userId: String)(f: Attributes => T): Try[Seq[T]]
-}
-
-case class LdapImpl(ctx: LdapContext) extends Ldap {
+  protected val ctx: LdapContext
 
   def query[T](userId: String)(f: Attributes => T): Try[Seq[T]] = Try {
     val searchFilter = s"(&(objectClass=easyUser)(uid=$userId))"
@@ -48,5 +36,10 @@ case class LdapImpl(ctx: LdapContext) extends Ldap {
       .map(f compose (_.getAttributes))
   }
 
-  def close(): Unit = ctx.close()
+  override def close(): Unit = ctx.close()
+}
+object Ldap {
+  def apply(context: LdapContext): Ldap = new Ldap {
+    override protected val ctx: LdapContext = context
+  }
 }

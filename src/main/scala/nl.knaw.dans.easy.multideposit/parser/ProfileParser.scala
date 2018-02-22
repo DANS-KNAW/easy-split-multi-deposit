@@ -16,12 +16,11 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit.ParseException
 import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.lib.error._
 import org.joda.time.DateTime
 
 import scala.util.{ Failure, Success, Try }
+import nl.knaw.dans.lib.error._
 
 trait ProfileParser {
   this: ParserUtils =>

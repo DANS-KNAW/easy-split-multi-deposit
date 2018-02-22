@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit
 
+import java.nio.file.Path
+
 import nl.knaw.dans.easy.multideposit.model.MultiDepositKey
 import nl.knaw.dans.lib.string.StringExtensions
 
@@ -25,5 +27,21 @@ package object parser {
 
   implicit class DatasetRowFind(val row: DepositRow) extends AnyVal {
     def find(name: MultiDepositKey): Option[String] = row.get(name).filterNot(_.isBlank)
+  }
+
+  case class EmptyInstructionsFileException(path: Path) extends Exception(s"The given instructions file in '$path' is empty")
+  class ParseException(val row: Int, message: String, cause: Option[Throwable] = None) extends Exception(message, cause.orNull)
+  object ParseException {
+    def apply(row: Int, message: String, cause: Throwable): ParseException = new ParseException(row, message, Option(cause))
+    def apply(row: Int, message: String): ParseException = new ParseException(row, message)
+
+    def unapply(arg: ParseException): Option[(Int, String, Throwable)] = Some(arg.row, arg.getMessage, arg.getCause)
+  }
+
+  class ParserFailedException(report: String, cause: Option[Throwable] = None) extends Exception(report, cause.orNull)
+  object ParserFailedException {
+    def apply(report: String, cause: Throwable): ParserFailedException = new ParserFailedException(report, Option(cause))
+    def apply(report: String): ParserFailedException = new ParserFailedException(report)
+    def unapply(arg: ParserFailedException): Option[(String, Throwable)] = Some((arg.getMessage, arg.getCause))
   }
 }

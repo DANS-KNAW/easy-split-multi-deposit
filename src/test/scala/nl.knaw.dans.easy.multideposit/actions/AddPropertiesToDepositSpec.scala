@@ -16,75 +16,36 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.Files
-import javax.naming.directory.Attributes
 
+import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
 import nl.knaw.dans.easy.multideposit.model.AudioVideo
-import nl.knaw.dans.easy.multideposit.{ ActionException, Settings, UnitSpec, _ }
-import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.{ Failure, Success }
+import scala.util.Success
 
-class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfterEach with MockFactory {
+class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
 
-  val ldapMock: Ldap = mock[Ldap]
-  implicit val settings: Settings = Settings(
-    multidepositDir = testDir.resolve("md"),
-    stagingDir = testDir.resolve("sd"),
-    datamanager = "dm",
-    ldap = ldapMock
-  )
-  val depositId = "ds1"
-
-  def mockLdapForDepositor(b: Boolean): Unit = {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Success(Seq(b))
-  }
+  private val depositId = "ds1"
+  private val datamanagerId = "dm"
+  private val action = new AddPropertiesToDeposit
 
   override def beforeEach(): Unit = {
-    Files.createDirectories(settings.stagingDir.resolve(s"md-$depositId"))
+    val path = stagingDir.resolve(s"sd-$depositId")
+    path.deleteDirectory()
+    Files.createDirectories(path)
   }
 
-  "checkPreconditions" should "succeed if ldap identifies the depositorUserId as active" in {
-    mockLdapForDepositor(true)
+  "addDepositProperties" should "generate the properties file and write the properties in it" in {
+    action.addDepositProperties(testInstructions1.copy(audioVideo = AudioVideo()).toDeposit(), datamanagerId, "dm@test.org") shouldBe a[Success[_]]
 
-    AddPropertiesToDeposit(testDeposit1.copy(depositorUserId = "dp1")).checkPreconditions shouldBe a[Success[_]]
-  }
-
-  it should "fail if ldap identifies the depositorUserId as not active" in {
-    mockLdapForDepositor(false)
-
-    inside(AddPropertiesToDeposit(testDeposit1.copy(depositorUserId = "dp1")).checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include("depositor 'dp1' is not an active user")
-    }
-  }
-
-  it should "fail if ldap does not return anything for the depositor" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Success(Seq.empty)
-
-    inside(AddPropertiesToDeposit(testDeposit1.copy(depositorUserId = "dp1")).checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include("depositorUserId 'dp1' is unknown")
-    }
-  }
-
-  it should "fail if ldap returns multiple values" in {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Success(Seq(true, true))
-
-    inside(AddPropertiesToDeposit(testDeposit1.copy(depositorUserId = "dp1")).checkPreconditions) {
-      case Failure(ActionException(_, message, _)) => message should include("multiple users with id 'dp1'")
-    }
-  }
-
-  "execute" should "generate the properties file and write the properties in it" in {
-    AddPropertiesToDeposit(testDeposit1.copy(audioVideo = AudioVideo())).execute("dm@test.org") shouldBe a[Success[_]]
-
-    val props = stagingPropertiesFile(testDeposit1.depositId)
+    val props = stagingPropertiesFile(testInstructions1.depositId)
     props.toFile should exist
 
     props.read() should {
       include("creation.timestamp") and
         include("state.label") and
         include("state.description") and
-        include(s"depositor.userId=${ testDeposit1.depositorUserId }") and
+        include(s"depositor.userId=${ testInstructions1.depositorUserId }") and
         include("datamanager.email=dm@test.org") and
         include("datamanager.userId=dm") and
         not include "springfield.domain" and
@@ -95,9 +56,9 @@ class AddPropertiesToDepositSpec extends UnitSpec with BeforeAndAfterEach with M
   }
 
   it should "generate the properties file with springfield fields and write the properties in it" in {
-    AddPropertiesToDeposit(testDeposit1).execute("dm@test.org") shouldBe a[Success[_]]
+    action.addDepositProperties(testInstructions1.toDeposit(), datamanagerId, "dm@test.org") shouldBe a[Success[_]]
 
-    val props = stagingPropertiesFile(testDeposit1.depositId)
+    val props = stagingPropertiesFile(testInstructions1.depositId)
     props.toFile should exist
 
     props.read() should {

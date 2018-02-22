@@ -16,11 +16,10 @@
     limitations under the License.
 
 -->
-<assembly
-    xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
-    <id>${project.version}</id>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+    <id>bin</id>
     <baseDirectory>${artifactId}-${version}</baseDirectory>
     <formats>
         <format>tar.gz</format>
@@ -34,6 +33,7 @@
             </includes>
             <excludes>
                 <exclude>*.sh</exclude>
+                <exclude>version</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -45,17 +45,19 @@
             <fileMode>0755</fileMode>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/src/main/resources</directory>
-            <outputDirectory>cfg</outputDirectory>
+            <directory>${project.basedir}/src/main/assembly/dist/bin</directory>
+            <outputDirectory>bin</outputDirectory>
+            <filtered>true</filtered>
             <includes>
-                <include>default-logback-conf.xml</include>
+                <include>version</include>
             </includes>
+            <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/src/main/assembly/dist</directory>
             <outputDirectory/>
             <excludes>
-                <exclude>/bin</exclude>
+                <exclude>bin</exclude>
             </excludes>
         </fileSet>
     </fileSets>

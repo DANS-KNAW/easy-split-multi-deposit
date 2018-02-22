@@ -15,8 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import nl.knaw.dans.easy.multideposit.ParseException
-import nl.knaw.dans.easy.multideposit.model.{ ContributorRole, _ }
+import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.error._
 import org.joda.time.DateTime
 

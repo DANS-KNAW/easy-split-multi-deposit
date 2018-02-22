@@ -22,6 +22,9 @@ package object model {
   type MultiDepositKey = String
   type DepositId = String
   type DepositorUserId = String
+  type MimeType = String
+  type Datamanager = String
+  type DatamanagerEmailaddress = String
 
   // inspired by http://stackoverflow.com/questions/28223692/what-is-the-optimal-way-not-using-scalaz-to-type-require-a-non-empty-list
   type NonEmptyList[A] = ::[A]

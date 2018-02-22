@@ -18,6 +18,8 @@ package nl.knaw.dans.easy.multideposit
 import java.nio.file.{ Files, Path, Paths }
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 
+import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
+import nl.knaw.dans.easy.multideposit.parser.ParserFailedException
 import org.scalamock.scalatest.MockFactory
 import resource.managed
 
@@ -29,15 +31,15 @@ import scala.xml.{ Elem, Node, NodeSeq, XML }
 
 // Note to developers: this classes uses shared tests as described in
 // http://www.scalatest.org/user_guide/sharing_tests
-class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
+class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with CustomMatchers {
 
   private val formatsFile: Path = Paths.get("src/main/assembly/dist/cfg/acceptedMediaTypes.txt").toAbsolutePath
   private val formats =
     if (Files.exists(formatsFile)) managed(Source.fromFile(formatsFile.toFile)).acquireAndGet(_.getLines.map(_.trim).toSet)
     else fail("Cannot find file: acceptedMediaTypes.txt")
 
-  "acceptedMediaFiles" should "contain certain Formats" in {
-    formats.contains("audio/mpeg3") shouldBe true
+  "acceptedMediaFiles" should "contain certain formats" in {
+    formats should contain("audio/mpeg3")
   }
 
   private val allfields = testDir.resolve("md/allfields").toAbsolutePath
@@ -56,7 +58,6 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
   def beforeAll(): Unit = {
     Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
     Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
-
   }
 
   private def doNotRunOnTravis() = {
@@ -75,15 +76,10 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
 
   def allfieldsSpec(): Unit = {
     val ldap = mock[Ldap]
-    implicit val settings: Settings = Settings(
-      multidepositDir = allfields,
-      stagingDir = testDir.resolve("sd").toAbsolutePath,
-      outputDepositDir = testDir.resolve("od").toAbsolutePath,
-      datamanager = "easyadmin",
-      depositPermissions = DepositPermissions("rwxrwx---", getFileSystemGroup),
-      formats = formats,
-      ldap = ldap
-    )
+    val datamanager = "easyadmin"
+    val paths = new PathExplorers(allfields, testDir.resolve("sd").toAbsolutePath, testDir.resolve("od").toAbsolutePath)
+    val app = new SplitMultiDepositApp(formats, ldap, DepositPermissions("rwxrwx---", getFileSystemGroup))
+
     val expectedOutputDir = Paths.get(getClass.getResource("/allfields/output").toURI)
 
     def createDatamanagerAttributes: BasicAttributes = {
@@ -97,13 +93,20 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       }
     }
 
-    it should "succeed running the application" in {
-      doNotRunOnTravis()
-
-      (ldap.query(_: String)(_: Attributes => Attributes)) expects(settings.datamanager, *) returning Success(Seq(createDatamanagerAttributes))
+    def configureLdapMockBehavior() = {
+      (ldap.query(_: String)(_: Attributes => Attributes)) expects(datamanager, *) returning Success(Seq(createDatamanagerAttributes))
       (ldap.query(_: String)(_: Attributes => Boolean)) expects("user001", *) repeat 4 returning Success(Seq(true))
+    }
 
-      Main.run shouldBe a[Success[_]]
+    it should "succeed validating the multideposit" in {
+      configureLdapMockBehavior()
+      app.validate(paths, datamanager) shouldBe a[Success[_]]
+    }
+
+    it should "succeed converting the multideposit" in {
+      doNotRunOnTravis()
+      configureLdapMockBehavior()
+      app.convert(paths, datamanager) shouldBe a[Success[_]]
     }
 
     val expectedDataContentRuimtereis01 = Set("data/", "ruimtereis01_verklaring.txt", "path/",
@@ -116,7 +119,7 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       "random/", "file/", "file.txt", "sound/", "chicken.mp3")
 
     def bagContents(bagName: String, dataContent: Set[String]): Unit = {
-      val bag = settings.outputDepositDir.resolve(s"allfields-$bagName/bag")
+      val bag = paths.outputDepositDir.resolve(s"allfields-$bagName/bag")
       val expBag = expectedOutputDir.resolve(s"input-$bagName/bag")
 
       it should "check the files present in the bag" in {
@@ -242,7 +245,7 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
       it should "check deposit.properties" in {
         doNotRunOnTravis()
 
-        val props = settings.outputDepositDir.resolve(s"allfields-$bagName/deposit.properties")
+        val props = paths.outputDepositDir.resolve(s"allfields-$bagName/deposit.properties")
         val expProps = expectedOutputDir.resolve(s"input-$bagName/deposit.properties")
 
         // skipping comment lines, as well as the line with randomized bag-id
@@ -264,12 +267,11 @@ class BlackBoxSpec extends UnitSpec with MockFactory with CustomMatchers {
 
   "allfields" should behave like allfieldsSpec()
 
-  "invalidCSV" should "fail in the parser step and return a report of the errors" in {
-    implicit val settings: Settings = Settings(
-      multidepositDir = invalidCSV
-    )
+  "convert invalidCSV" should "fail in the parser step and return a report of the errors" in {
+    val paths = new PathExplorers(invalidCSV, testDir.resolve("sd").toAbsolutePath, testDir.resolve("od").toAbsolutePath)
+    val app = new SplitMultiDepositApp(formats, mock[Ldap], DepositPermissions("rwxrwx---", getFileSystemGroup))
 
-    inside(Main.run) {
+    inside(app.convert(paths, "easyadmin")) {
       case Failure(ParserFailedException(report, _)) =>
         report.lines.toSeq should contain inOrderOnly(
           "CSV failures:",

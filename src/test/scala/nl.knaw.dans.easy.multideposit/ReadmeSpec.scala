@@ -18,23 +18,17 @@ package nl.knaw.dans.easy.multideposit
 import java.io.ByteArrayOutputStream
 import java.nio.file.Paths
 
-import org.apache.commons.configuration.PropertiesConfiguration
 import org.scalatest._
 
 class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
   private val resourceDirString: String = Paths.get(getClass.getResource("/").toURI).toAbsolutePath.toString
-
-  private val mockedProps = new Configuration("version x.y.z", new PropertiesConfiguration() {
-    setDelimiterParsingDisabled(true)
-    load(Paths.get(resourceDirString + "/debug-config", "application.properties").toFile)
-  }, formats = Set.empty[String])
 
   val mockedArgs = Array("-s", resourceDirString,
     resourceDirString + "/allfields/input",
     resourceDirString + "/allfields/output",
     "datamanager")
 
-  private val clo = new ScallopCommandLine(mockedProps, mockedArgs) {
+  private val clo = new CommandLineOptions(mockedArgs, "version x.y.z") {
     // avoids System.exit() in case of invalid arguments or "--help"
     override def verify(): Unit = {}
   }

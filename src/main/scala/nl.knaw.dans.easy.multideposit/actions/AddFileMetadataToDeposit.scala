@@ -15,130 +15,27 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.{ Files, Path }
-
-import nl.knaw.dans.easy.multideposit.actions.AddFileMetadataToDeposit._
-import nl.knaw.dans.easy.multideposit.model.{ Deposit, FileAccessRights, Subtitles }
-import nl.knaw.dans.easy.multideposit.{ Settings, UnitAction, _ }
-import nl.knaw.dans.lib.error._
-import org.apache.tika.Tika
+import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
+import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Try }
 import scala.xml.{ Elem, NodeSeq }
 
-case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Settings) extends UnitAction[Unit] {
+class AddFileMetadataToDeposit extends DebugEnhancedLogging {
 
-  sealed abstract class AudioVideo(val vocabulary: String)
-  case object Audio extends AudioVideo("http://schema.org/AudioObject")
-  case object Video extends AudioVideo("http://schema.org/VideoObject")
+  def addFileMetadata(depositId: DepositId, fileMetadata: Seq[FileMetadata])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = Try {
+    logger.debug(s"add file metadata for $depositId")
 
-  sealed abstract class FileMetadata(val filepath: Path,
-                                     val mimeType: MimeType)
-  case class DefaultFileMetadata(override val filepath: Path,
-                                 override val mimeType: MimeType,
-                                 title: Option[String] = Option.empty,
-                                 accessibleTo: Option[FileAccessRights.Value] = Option.empty
-                                ) extends FileMetadata(filepath, mimeType)
-  case class AVFileMetadata(override val filepath: Path,
-                            override val mimeType: MimeType,
-                            vocabulary: AudioVideo,
-                            title: String,
-                            accessibleTo: FileAccessRights.Value,
-                            subtitles: Set[Subtitles]
-                           ) extends FileMetadata(filepath, mimeType)
-
-  private lazy val defaultAccessibility: FileAccessRights.Value = {
-    FileAccessRights.accessibleTo(deposit.profile.accessright)
+    stage.stagingFileMetadataFile(depositId).writeXml(depositToFileXml(depositId, fileMetadata))
+  } recoverWith {
+    case NonFatal(e) => Failure(ActionException(s"Could not write file metadata", e))
   }
 
-  private def getFileMetadata(path: Path): Try[FileMetadata] = {
-    def mkDefaultFileMetadata(m: MimeType): FileMetadata = {
-      deposit.files.get(path)
-        .map(fd => DefaultFileMetadata(path, m, fd.title, fd.accessibility))
-        .getOrElse(DefaultFileMetadata(path, m))
-    }
-
-    def mkAVFileMetadata(m: MimeType, voca: AudioVideo): AVFileMetadata = {
-      val subtitles = deposit.audioVideo.avFiles.getOrElse(path, Set.empty)
-
-      deposit.files.get(path)
-        .map(fd => {
-          val title = fd.title.getOrElse(path.getFileName.toString)
-          val accessibility = fd.accessibility.getOrElse(defaultAccessibility)
-          AVFileMetadata(path, m, voca, title, accessibility, subtitles)
-        })
-        .getOrElse(AVFileMetadata(path, m, voca, path.getFileName.toString, defaultAccessibility, subtitles))
-    }
-
-    getMimeType(path).map {
-      case mimeType if mimeType startsWith "audio" => mkAVFileMetadata(mimeType, Audio)
-      case mimeType if mimeType startsWith "video" => mkAVFileMetadata(mimeType, Video)
-      case mimeType => mkDefaultFileMetadata(mimeType)
-    }
-  }
-
-  private lazy val fileMetadata: Try[Seq[FileMetadata]] = Try {
-    val depositDir = multiDepositDir(deposit.depositId)
-    if (Files.exists(depositDir)) {
-      depositDir.listRecursively(!Files.isDirectory(_))
-        .map(getFileMetadata)
-        .collectResults
-    }
-    else // if the deposit does not contain any data
-      Success { List.empty }
-  }.flatten
-
-  /**
-   * Verifies whether all preconditions are met for this specific action.
-   * All files referenced in the instructions are checked for existence.
-   *
-   * @return `Success` when all preconditions are met, `Failure` otherwise
-   */
-  override def checkPreconditions: Try[Unit] = {
-    def checkSFColumnsIfDepositContainsAVFiles(mimetypes: Seq[FileMetadata]): Try[Unit] = {
-      val avFiles = mimetypes.collect { case fmd: AVFileMetadata => fmd.filepath }
-
-      (deposit.audioVideo.springfield.isDefined, avFiles.isEmpty) match {
-        case (true, false) | (false, true) => Success(())
-        case (true, true) =>
-          Failure(ActionException(deposit.row,
-            "Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]\n" +
-              "cause: these columns should be empty because there are no audio/video files " +
-              "found in this deposit"))
-        case (false, false) =>
-          Failure(ActionException(deposit.row,
-            "No values found for these columns: [SF_USER, SF_COLLECTION]\n" +
-              "cause: these columns should contain values because audio/video files are " +
-              s"found:\n${ avFiles.map(filepath => s" - $filepath").mkString("\n") }"))
-      }
-    }
-
-    def checkEitherVideoOrAudio(mimetypes: Seq[FileMetadata]): Try[Unit] = {
-      mimetypes.collect { case fmd: AVFileMetadata => fmd.vocabulary }.distinct match {
-        case Nil | Seq(_) => Success(())
-        case _ => Failure(ActionException(deposit.row,
-          "Found both audio and video in this dataset. Only one of them is allowed."))
-      }
-    }
-
-    for {
-      fmds <- fileMetadata
-      _ <- checkSFColumnsIfDepositContainsAVFiles(fmds)
-      _ <- checkEitherVideoOrAudio(fmds)
-    } yield ()
-  }
-
-  override def execute(): Try[Unit] = {
-    depositToFileXml
-      .map(stagingFileMetadataFile(deposit.depositId).writeXml(_))
-      .recoverWith {
-        case NonFatal(e) => Failure(ActionException(deposit.row, s"Could not write file meta data: $e", e))
-      }
-  }
-
-  def depositToFileXml: Try[Elem] = {
-    fileMetadata.map(fileXmls(_) match {
+  private def depositToFileXml(depositId: DepositId, fileMetadata: Seq[FileMetadata])(implicit input: InputPathExplorer): Elem = {
+    fileXmls(depositId, fileMetadata) match {
       case Nil => <files
         xmlns:dcterms="http://purl.org/dc/terms/"
         xmlns="http://easy.dans.knaw.nl/schemas/bag/metadata/files/"
@@ -151,54 +48,39 @@ case class AddFileMetadataToDeposit(deposit: Deposit)(implicit settings: Setting
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation={"http://purl.org/dc/terms/ http://dublincore.org/schemas/xmls/qdc/2008/02/11/dcterms.xsd " +
           "http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd"}>{files}</files>
-    })
-  }
-
-  private def fileXmls(fmds: Seq[FileMetadata]): Seq[Elem] = {
-    fmds.map {
-      case av: AVFileMetadata => avFileXml(av)
-      case fmd: DefaultFileMetadata => defaultFileXml(fmd)
     }
   }
 
-  private def defaultFileXml(fmd: DefaultFileMetadata): Elem = {
-    <file filepath={s"data/${ multiDepositDir(deposit.depositId).relativize(fmd.filepath) }"}>
+  private def fileXmls(depositId: DepositId, fmds: Seq[FileMetadata])(implicit input: InputPathExplorer): Seq[Elem] = {
+    fmds.map {
+      case av: AVFileMetadata => avFileXml(depositId, av)
+      case fmd: DefaultFileMetadata => defaultFileXml(depositId, fmd)
+    }
+  }
+
+  private def defaultFileXml(depositId: DepositId, fmd: DefaultFileMetadata)(implicit input: InputPathExplorer): Elem = {
+    <file filepath={s"data/${ input.depositDir(depositId).relativize(fmd.filepath) }"}>
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       {fmd.title.map(title => <dcterms:title>{title}</dcterms:title>).getOrElse(NodeSeq.Empty)}
       {fmd.accessibleTo.map(act => <accessibleToRights>{act}</accessibleToRights>).getOrElse(NodeSeq.Empty)}
     </file>
   }
 
-  private def avFileXml(fmd: AVFileMetadata): Elem = {
-    <file filepath={s"data/${ multiDepositDir(deposit.depositId).relativize(fmd.filepath) }"}>
+  private def avFileXml(depositId: DepositId, fmd: AVFileMetadata)(implicit input: InputPathExplorer): Elem = {
+    <file filepath={s"data/${ input.depositDir(depositId).relativize(fmd.filepath) }"}>
       <dcterms:type>{fmd.vocabulary.vocabulary}</dcterms:type>
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       <dcterms:title>{fmd.title}</dcterms:title>
       <accessibleToRights>{fmd.accessibleTo}</accessibleToRights>
-      {fmd.subtitles.map(subtitleXml)}
+      {fmd.subtitles.map(subtitleXml(depositId))}
     </file>
   }
 
-  private def subtitleXml(subtitle: Subtitles): Elem = {
-    val filepath = multiDepositDir(deposit.depositId).relativize(subtitle.path)
+  private def subtitleXml(depositId: DepositId)(subtitle: Subtitles)(implicit input: InputPathExplorer): Elem = {
+    val filepath = input.depositDir(depositId).relativize(subtitle.path)
 
     subtitle.language
       .map(lang => <dcterms:relation xml:lang={lang}>{s"data/$filepath"}</dcterms:relation>)
       .getOrElse(<dcterms:relation>{s"data/$filepath"}</dcterms:relation>)
-  }
-}
-
-object AddFileMetadataToDeposit {
-  private val tika = new Tika
-  type MimeType = String
-
-  /**
-   * Identify the mimeType of a path.
-   *
-   * @param path the path to identify
-   * @return the mimeType of the path if the identification was successful; `Failure` otherwise
-   */
-  def getMimeType(path: Path): Try[MimeType] = Try {
-    tika.detect(path)
   }
 }
