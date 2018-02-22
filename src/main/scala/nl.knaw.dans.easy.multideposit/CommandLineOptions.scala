@@ -38,7 +38,7 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
        |
        |Usage:
        |
-       |$synopsis
+       |  $synopsis
        |
        |Options:
        |""".stripMargin)
