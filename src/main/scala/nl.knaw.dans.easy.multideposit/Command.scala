@@ -25,8 +25,8 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource.managed
 
 import scala.language.reflectiveCalls
+import scala.util.Try
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Try }
 
 object Command extends App with DebugEnhancedLogging {
 
@@ -51,25 +51,16 @@ object Command extends App with DebugEnhancedLogging {
   private def runSubcommand(app: SplitMultiDepositApp): Try[FeedBackMessage] = {
     lazy val defaultStagingDir = Paths.get(configuration.properties.getString("staging-dir"))
 
-    commandLine.subcommand
-      .collect {
-        case ingest @ commandLine.ingest =>
-          val sd = ingest.stagingDir.getOrElse(defaultStagingDir)
-          val md = ingest.multiDepositDir()
-          val od = ingest.outputDepositDir()
-          val dm = ingest.datamanager()
+    val md = commandLine.multiDepositDir()
+    val sd = commandLine.stagingDir.getOrElse(defaultStagingDir)
+    val od = commandLine.outputDepositDir()
+    val dm = commandLine.datamanager()
 
-          app.convert(new PathExplorers(md, sd, od), dm)
-            .map(_ => s"Finished successfully! The output can be found in $od.")
-        case validate @ commandLine.validator =>
-          val sd = validate.stagingDir.getOrElse(defaultStagingDir)
-          val md = validate.multiDepositDir()
-          val od = validate.outputDepositDir()
-          val dm = validate.datamanager()
-
-          app.validate(new PathExplorers(md, sd, od), dm)
-            .map(_ => "Finished successfully! Everything looks good.")
-      }
-      .getOrElse(Failure(new IllegalArgumentException(s"Unknown command: ${ commandLine.subcommand }")))
+    if (commandLine.validateOnly())
+      app.validate(new PathExplorers(md, sd, od), dm)
+        .map(_ => "Finished successfully! Everything looks good.")
+    else
+      app.convert(new PathExplorers(md, sd, od), dm)
+        .map(_ => s"Finished successfully! The output can be found in $od.")
   }
 }

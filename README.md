@@ -9,8 +9,7 @@ Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
 SYNOPSIS
 --------
 
-    easy-split-multi-deposit validate [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
-    easy-split-multi-deposit ingest [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
+    easy-split-multi-deposit [{--staging-dir|-s} <dir>] [{--validate|-v}] <multi-deposit-dir> <output-deposits-dir> <datamanager>
 
 
 DESCRIPTION
@@ -45,55 +44,25 @@ ARGUMENTS
 ```
   Usage: 
 
-      easy-split-multi-deposit validate [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
-      easy-split-multi-deposit ingest [{--staging-dir|-s} <dir>] <multi-deposit-dir> <output-deposits-dir> <datamanager>
+      easy-split-multi-deposit [{--staging-dir|-s} <dir>] [{--validate|-v}] <multi-deposit-dir> <output-deposits-dir> <datamanager>
 
   Options:
 
-          --help      Show help message
-          --version   Show version of this program
-    
-    Subcommand: ingest - Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive
-      -s, --staging-dir  <arg>   A directory in which the deposit directories are
-                                 created, after which they will be moved to the
-                                 'output-deposit-dir'. If not specified, the value
-                                 of 'staging-dir' in 'application.properties' is
-                                 used.
-          --help                 Show help message
-    
-     trailing arguments:
-      multi-deposit-dir (required)    Directory containing the Submission
-                                      Information Package to process. This must be a
-                                      valid path to a directory containing a file
-                                      named 'instructions.csv' in RFC4180 format.
-      output-deposit-dir (required)   A directory to which the deposit directories
-                                      are moved after the staging has been completed
-                                      successfully. The deposit directory layout is
-                                      described in the easy-sword2 documentation
-      datamanager (required)          The username (id) of the datamanger
-                                      (archivist) performing this deposit
-    ---
-    
-    Subcommand: validate - Validates the input for a Multi-Deposit ingest
-      -s, --staging-dir  <arg>   A directory in which the deposit directories are
-                                 created, after which they will be moved to the
-                                 'output-deposit-dir'. If not specified, the value
-                                 of 'staging-dir' in 'application.properties' is
-                                 used.
-          --help                 Show help message
-    
-     trailing arguments:
-      multi-deposit-dir (required)    Directory containing the Submission
-                                      Information Package to process. This must be a
-                                      valid path to a directory containing a file
-                                      named 'instructions.csv' in RFC4180 format.
-      output-deposit-dir (required)   A directory to which the deposit directories
-                                      are moved after the staging has been completed
-                                      successfully. The deposit directory layout is
-                                      described in the easy-sword2 documentation
-      datamanager (required)          The username (id) of the datamanger
-                                      (archivist) performing this deposit
-    ---
+    -s, --staging-dir  <arg>   A directory in which the deposit directories are created, after which they will
+                               be moved to the 'output-deposit-dir'. If not specified, the value of
+                               'staging-dir' in 'application.properties' is used.
+    -v, --validate             Only validates the input of a Multi-Deposit ingest
+        --help                 Show help message
+        --version              Show version of this program
+  
+   trailing arguments:
+    multi-deposit-dir (required)    Directory containing the Submission Information Package to process. This
+                                    must be a valid path to a directory containing a file named
+                                    'instructions.csv' in RFC4180 format.
+    output-deposit-dir (required)   A directory to which the deposit directories are moved after the staging has
+                                    been completed successfully. The deposit directory layout is described in
+                                    the easy-sword2 documentation
+    datamanager (required)          The username (id) of the datamanger (archivist) performing this deposit
 ```
 
 
