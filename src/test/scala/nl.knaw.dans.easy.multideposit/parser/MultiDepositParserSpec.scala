@@ -33,8 +33,8 @@ trait DepositTestObjects extends AudioVideoTestObjects
   this: TestSupportFixture =>
 
   lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: Nil = List(
-    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
-    Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
+    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ Map("BASE_REVISION" -> "ab23-bdcg") ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
+    Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ Map("BASE_REVISION" -> "") ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
   )
 
   lazy val instructions = Instructions(
@@ -42,6 +42,7 @@ trait DepositTestObjects extends AudioVideoTestObjects
     row = 2,
     depositorUserId = "ikke",
     profile = profile,
+    baseUUID = "ab23-bdcg",
     metadata = metadata,
     files = fileDescriptors,
     audioVideo = audioVideo

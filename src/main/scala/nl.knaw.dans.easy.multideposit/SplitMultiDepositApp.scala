@@ -77,6 +77,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
 
   private def convertDeposit(paths: PathExplorers, datamanagerId: Datamanager, dataManagerEmailAddress: DatamanagerEmailaddress)(deposit: Deposit): Try[Unit] = {
     val depositId = deposit.depositId
+    val base = deposit.baseUUID
     implicit val input: InputPathExplorer = paths
     implicit val staging: StagingPathExplorer = paths
     implicit val output: OutputPathExplorer = paths
@@ -86,7 +87,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
     for {
       _ <- validator.validateDeposit(deposit)
       _ <- createDirs.createDepositDirectories(depositId)
-      _ <- createBag.addBagToDeposit(depositId, deposit.profile.created)
+      _ <- createBag.addBagToDeposit(depositId, deposit.profile.created, base)
       _ <- createDirs.createMetadataDirectory(depositId)
       _ <- datasetMetadata.addDatasetMetadata(deposit)
       _ <- fileMetadata.addFileMetadata(depositId, deposit.files)

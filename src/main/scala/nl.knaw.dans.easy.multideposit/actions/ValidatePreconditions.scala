@@ -16,10 +16,12 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.{ Files, Path }
+import java.util.UUID
 
 import nl.knaw.dans.easy.multideposit.Ldap
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit, DepositId }
+import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
@@ -114,5 +116,14 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
         case true => Success(())
         case false => Failure(InvalidInputException(deposit.row, s"The depositor '$depositorUserId' is not an active user"))
       }
+  }
+
+  //TODO This function works as intended when mvnci applied however I did not get any failure message on VM with an invalid UUID
+  def checkBaseRevisionConformsToUUID(deposit:Deposit, base:String): Try[Unit] = {
+    val depositorBaseRevision = base
+    Try(UUID.fromString(depositorBaseRevision)).isFailure match {
+      case true =>  Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
+      case false => Success(())
+    }
   }
 }

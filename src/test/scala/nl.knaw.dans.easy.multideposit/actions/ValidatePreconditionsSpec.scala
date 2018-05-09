@@ -28,6 +28,7 @@ import scala.util.{ Failure, Success, Try }
 class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEach with MockFactory {
 
   private val depositId = "dsId1"
+  private val depositorBaseRevision = "xx-dd"
   private val ldapMock: Ldap = mock[Ldap]
   private val action = new ValidatePreconditions(ldapMock)
 
@@ -214,5 +215,17 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     inside(action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())) {
       case Failure(ActionException(message, _)) => message should include("multiple users with id 'dp1'")
     }
+  }
+
+  "checkBaseRevisionConformsToUUID" should "not fail if the base revision conforms to UUID pattern" in {
+    val base = testInstructions1.copy(depositorUserId = "dp1").toDeposit().baseUUID
+    val row = testInstructions1.copy(depositorUserId = "dp1").toDeposit().row
+    action.checkBaseRevisionConformsToUUID(testInstructions1.copy(depositorUserId = "dp1").toDeposit(), base) shouldBe Success(())
+  }
+
+  it should "fail if the base revision does not conform to UUID pattern" in {
+    val base = testInstructions2.copy(depositorUserId = "dp1").toDeposit().baseUUID
+    val row = testInstructions2.copy(depositorUserId = "dp1").toDeposit().row
+    action.checkBaseRevisionConformsToUUID(testInstructions2.copy(depositorUserId = "dp1").toDeposit(), base) shouldBe Failure(InvalidInputException(row, "base revision is not in UUID format"))
   }
 }

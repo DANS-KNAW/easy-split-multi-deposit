@@ -21,11 +21,12 @@ case class Instructions(depositId: DepositId,
                         row: Int,
                         depositorUserId: DepositorUserId,
                         profile: Profile,
+                        baseUUID: String,
                         metadata: Metadata = Metadata(),
                         files: Map[Path, FileDescriptor] = Map.empty,
                         audioVideo: AudioVideo = AudioVideo()) {
   def toDeposit(fms: Seq[FileMetadata] = Seq.empty): Deposit = {
-    Deposit(depositId, row, depositorUserId, profile, metadata, fms, audioVideo.springfield)
+    Deposit(depositId, row, depositorUserId, profile, baseUUID, metadata, fms, audioVideo.springfield)
   }
 }
 
@@ -33,6 +34,7 @@ case class Deposit(depositId: DepositId,
                    row: Int,
                    depositorUserId: DepositorUserId,
                    profile: Profile,
+                   baseUUID: String,
                    metadata: Metadata = Metadata(),
                    files: Seq[FileMetadata] = Seq.empty,
                    springfield: Option[Springfield] = Option.empty)

@@ -47,6 +47,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
       audiences = List("everyone", "nobody", "some people", "people with yellow hear"),
       accessright = AccessCategory.NO_ACCESS
     ),
+    baseUUID = "ab23-bdcg",
     metadata = Metadata(
       contributors = List(ContributorPerson(initials = "B.", surname = "Smith", organization = Option("Lorem ipsum dolor sit amet"), role = Some(ContributorRole.DATA_COLLECTOR))),
       alternatives = List("foobar"),

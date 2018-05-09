@@ -98,9 +98,10 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
               s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
           case _ => Success(())
         }
-      case invalids => Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
-        s"${ invalids.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
-        "consult the documentation for the list of valid headers."))
+      case invalids =>
+        Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
+          s"${ invalids.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
+          "consult the documentation for the list of valid headers."))
     }
   }
 
@@ -112,7 +113,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       .map(_ => ())
   }
 
-  def extractDeposit(multiDepositDirectory: Path)(depositId: DepositId, rows: DepositRows): Try[Deposit] = {
+  def extractDeposit(multiDepositDirectory: Path)(depositId: DepositId, rows: DepositRows ): Try[Deposit] = {
     for {
       instructions <- extractInstructions(depositId, rows)
       depositDir = multiDepositDirectory.resolve(depositId)
@@ -122,13 +123,14 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
 
   def extractInstructions(depositId: DepositId, rows: DepositRows): Try[Instructions] = {
     val rowNum = rows.map(getRowNum).min
-
     checkValidChars(depositId, rowNum, "DATASET")
       .flatMap(dsId => Try { Instructions.curried }
         .map(_ (dsId))
         .map(_ (rowNum))
         .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
+        //.combine (atMostOne(rowNum, List("BASE_REVISION"))(extractList(rows, "BASE_REVISION").map(string => UUID.fromString(string))))
         .combine(extractProfile(rows, rowNum))
+        .combine(Try(atMostOne(rowNum, List("BASE_REVISION"))(extractList(rows, "BASE_REVISION")).get.get))
         .combine(extractMetadata(rows))
         .combine(extractFileDescriptors(rows, rowNum, depositId))
         .combine(extractAudioVideo(rows, rowNum, depositId)))
@@ -162,6 +164,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       cause = t))
   }
 }
+
 
 object MultiDepositParser {
   def parse(md: Path): Try[Seq[Deposit]] = new MultiDepositParser {

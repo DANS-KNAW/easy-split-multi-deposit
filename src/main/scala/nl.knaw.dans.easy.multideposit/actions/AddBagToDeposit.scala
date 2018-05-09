@@ -25,7 +25,10 @@ import gov.loc.repository.bagit.verify.FileCountAndTotalSizeVistor
 import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.DepositId
+import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser.parse
+import nl.knaw.dans.easy.multideposit.parser.{ DepositRow, DepositRows, MultiDepositParser, ParserUtils }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import org.apache.commons.csv.CSVParser
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
@@ -34,15 +37,15 @@ import scala.util.{ Failure, Try }
 
 class AddBagToDeposit extends DebugEnhancedLogging {
 
-  def addBagToDeposit(depositId: DepositId, created: DateTime)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = {
+  def addBagToDeposit(depositId: DepositId, created: DateTime, base:String)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"construct the bag for $depositId with timestamp ${ created.toString(ISODateTimeFormat.dateTime()) }")
 
-    createBag(depositId, created) recoverWith {
+    createBag(depositId, created, base) recoverWith {
       case NonFatal(e) => Failure(ActionException(s"Error occured in creating the bag for $depositId", e))
     }
   }
 
-  private def createBag(depositId: DepositId, created: DateTime)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = Try {
+  private def createBag(depositId: DepositId, created: DateTime, base:String)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = Try {
     val inputDir = input.depositDir(depositId)
     val stageDir = stage.stagingBagDir(depositId)
 
@@ -50,9 +53,12 @@ class AddBagToDeposit extends DebugEnhancedLogging {
       add("Created", created.toString(ISODateTimeFormat.dateTime()))
     }
 
+    metadata.add("Is-Version-Of", base )
+
     if (Files.exists(inputDir)) {
       inputDir.copyDir(stageDir)
       metadata.add("Bag-Size", formatSize(calculateSizeOfPath(inputDir)))
+
     }
     else {
       metadata.add("Bag-Size", formatSize(0L))
@@ -93,3 +99,5 @@ class AddBagToDeposit extends DebugEnhancedLogging {
     s"$string $unit"
   }
 }
+
+

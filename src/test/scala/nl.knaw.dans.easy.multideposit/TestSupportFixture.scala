@@ -59,6 +59,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         audiences = List("D30000"),
         accessright = AccessCategory.OPEN_ACCESS
       ),
+      baseUUID = "d5e8f0fb-c374-86eb-918c-b06dd5ae5e71",
       metadata = Metadata(
         formats = List("video/mpeg", "text/plain"),
         languages = List("NL", "encoding=UTF-8"),
@@ -93,6 +94,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         audiences = List("D37000"),
         accessright = AccessCategory.GROUP_ACCESS
       ),
+      baseUUID = "ab23-bdgg",
       metadata = Metadata(
         contributors = List(ContributorOrganization("Contributor 1"), ContributorOrganization("Contributor 2")),
         subjects = List(Subject("subject 1", Option("abr:ABRcomplex")), Subject("subject 2"), Subject("subject 3")),
