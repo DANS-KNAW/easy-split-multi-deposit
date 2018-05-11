@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.DepositId
+import nl.knaw.dans.easy.multideposit.BetterFileExtensions
 import nl.knaw.dans.lib.error.CompositeException
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -30,7 +31,7 @@ class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
     logger.debug(s"moving $stagingDirectory to $outputDir")
 
-    Try { stagingDirectory.moveTo(outputDir); () } recoverWith {
+    Try { stagingDirectory.moveRecursivelyTo(outputDir) } recoverWith {
       case e =>
         Try { outputDir.exists } match {
           case Success(true) => Failure(ActionException("An error occurred while moving " +
