@@ -178,6 +178,17 @@ package object multideposit {
         .acquireAndGet(_.iterator().asScala.filter(predicate).toList)
     }
 
+    /**
+     * Normalize the path and make it absolute. This takes '.' paths into account.
+     *
+     * @example
+     * {{{
+     *   // current path: /foo/bar
+     *   Paths.get(".").normalized() // res: /foo/bar
+     * }}}
+     *
+     * @return
+     */
     def normalized(): Path = {
       val normalized = path.normalize()
       // if path == "."
