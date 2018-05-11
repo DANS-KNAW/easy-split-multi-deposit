@@ -15,9 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.Files
-
-import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
@@ -31,50 +29,50 @@ class CreateDirectoriesSpec extends TestSupportFixture with BeforeAndAfterEach {
     super.beforeEach()
 
     // create depositDir base directory
-    stagingDir.deleteDirectory()
-    Files.createDirectory(stagingDir)
-    stagingDir.toFile should exist
+    if (stagingDir.exists) stagingDir.delete()
+    stagingDir.createDirectory()
+    stagingDir.toJava should exist
   }
 
   "createDepositDirectories" should "create the staging directories if they do not yet exist" in {
-    stagingDir(depositId).toFile shouldNot exist
-    stagingBagDir(depositId).toFile shouldNot exist
+    stagingDir(depositId).toJava shouldNot exist
+    stagingBagDir(depositId).toJava shouldNot exist
 
     action.createDepositDirectories(depositId) shouldBe a[Success[_]]
 
-    stagingDir(depositId).toFile should exist
-    stagingBagDir(depositId).toFile should exist
+    stagingDir(depositId).toJava should exist
+    stagingBagDir(depositId).toJava should exist
   }
 
   "createMetadataDirectory" should "create the metadata directory inside the bag directory" in {
-    stagingBagMetadataDir(depositId).toFile shouldNot exist
+    stagingBagMetadataDir(depositId).toJava shouldNot exist
 
     action.createMetadataDirectory(depositId) shouldBe a[Success[_]]
 
-    stagingBagMetadataDir(depositId).toFile should exist
+    stagingBagMetadataDir(depositId).toJava should exist
   }
 
   "discardDeposit" should "delete the bag directory in the staging area in case it exists" in {
     action.createDepositDirectories(depositId) shouldBe a[Success[_]]
     action.createMetadataDirectory(depositId) shouldBe a[Success[_]]
-    stagingDir(depositId).toFile should exist
-    stagingBagDir(depositId).toFile should exist
-    stagingBagMetadataDir(depositId).toFile should exist
+    stagingDir(depositId).toJava should exist
+    stagingBagDir(depositId).toJava should exist
+    stagingBagMetadataDir(depositId).toJava should exist
 
     action.discardDeposit(depositId) shouldBe a[Success[_]]
-    stagingBagMetadataDir(depositId).toFile shouldNot exist
-    stagingBagDir(depositId).toFile shouldNot exist
-    stagingDir(depositId).toFile shouldNot exist
+    stagingBagMetadataDir(depositId).toJava shouldNot exist
+    stagingBagDir(depositId).toJava shouldNot exist
+    stagingDir(depositId).toJava shouldNot exist
   }
 
   it should "do nothing if the bag directory doesn't exist in the staging area" in {
-    stagingDir(depositId).toFile shouldNot exist
-    stagingBagDir(depositId).toFile shouldNot exist
-    stagingBagMetadataDir(depositId).toFile shouldNot exist
+    stagingDir(depositId).toJava shouldNot exist
+    stagingBagDir(depositId).toJava shouldNot exist
+    stagingBagMetadataDir(depositId).toJava shouldNot exist
 
     action.discardDeposit(depositId) shouldBe a[Success[_]]
-    stagingBagMetadataDir(depositId).toFile shouldNot exist
-    stagingBagDir(depositId).toFile shouldNot exist
-    stagingDir(depositId).toFile shouldNot exist
+    stagingBagMetadataDir(depositId).toJava shouldNot exist
+    stagingBagDir(depositId).toJava shouldNot exist
+    stagingDir(depositId).toJava shouldNot exist
   }
 }

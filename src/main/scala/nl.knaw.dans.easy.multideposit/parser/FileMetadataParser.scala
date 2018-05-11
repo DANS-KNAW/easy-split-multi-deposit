@@ -15,9 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.{ Files, Path }
-
-import nl.knaw.dans.easy.multideposit.FileExtensions
+import better.files.File
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -26,12 +24,13 @@ import scala.util.{ Failure, Success, Try }
 
 trait FileMetadataParser extends DebugEnhancedLogging {
 
-  def extractFileMetadata(depositDir: Path, instructions: Instructions): Try[Seq[FileMetadata]] = {
+  def extractFileMetadata(depositDir: File, instructions: Instructions): Try[Seq[FileMetadata]] = {
     logger.info(s"extract metadata from files in $depositDir")
-    if (Files.exists(depositDir))
+    if (depositDir.exists)
       for {
-        fms <- depositDir.listRecursively(! Files.isDirectory(_))
+        fms <- depositDir.listRecursively.filterNot(_.isDirectory)
           .map(getFileMetadata(instructions))
+          .toList
           .collectResults
         _ <- checkSFColumnsIfDepositContainsAVFiles(instructions, fms)
         _ <- checkEitherVideoOrAudio(fms, instructions.row)
@@ -40,7 +39,7 @@ trait FileMetadataParser extends DebugEnhancedLogging {
       Success { List.empty }
   }
 
-  private def getFileMetadata(instructions: Instructions)(file: Path): Try[FileMetadata] = {
+  private def getFileMetadata(instructions: Instructions)(file: File): Try[FileMetadata] = {
     MimeType.get(file).map {
       case mimetype if mimetype startsWith "audio" => mkAvFileMetadata(file, mimetype, Audio, instructions)
       case mimetype if mimetype startsWith "video" => mkAvFileMetadata(file, mimetype, Video, instructions)
@@ -48,24 +47,24 @@ trait FileMetadataParser extends DebugEnhancedLogging {
     }
   }
 
-  private def mkDefaultFileMetadata(file: Path, m: MimeType, instructions: Instructions): FileMetadata = {
-    instructions.files.get(file)
-      .map(fd => DefaultFileMetadata(file, m, fd.title, fd.accessibility))
-      .getOrElse(DefaultFileMetadata(file, m))
+  private def mkDefaultFileMetadata(file: File, m: MimeType, instructions: Instructions): FileMetadata = {
+    instructions.files.get(file.path)
+      .map(fd => DefaultFileMetadata(file.path, m, fd.title, fd.accessibility))
+      .getOrElse(DefaultFileMetadata(file.path, m))
   }
 
-  private def mkAvFileMetadata(file: Path, m: MimeType, vocabulary: AvVocabulary, instructions: Instructions): FileMetadata = {
-    val subtitles = instructions.audioVideo.avFiles.getOrElse(file, Set.empty)
+  private def mkAvFileMetadata(file: File, m: MimeType, vocabulary: AvVocabulary, instructions: Instructions): FileMetadata = {
+    val subtitles = instructions.audioVideo.avFiles.getOrElse(file.path, Set.empty)
     lazy val defaultAccess = defaultAccessibility(instructions)
-    lazy val filename = file.getFileName.toString
+    lazy val filename = file.name.toString
 
-    instructions.files.get(file)
+    instructions.files.get(file.path)
       .map(fd => {
         val title = fd.title.getOrElse(filename)
         val accessibility = fd.accessibility.getOrElse(defaultAccess)
-        AVFileMetadata(file, m, vocabulary, title, accessibility, subtitles)
+        AVFileMetadata(file.path, m, vocabulary, title, accessibility, subtitles)
       })
-      .getOrElse(AVFileMetadata(file, m, vocabulary, filename, defaultAccess, subtitles))
+      .getOrElse(AVFileMetadata(file.path, m, vocabulary, filename, defaultAccess, subtitles))
   }
 
   private def defaultAccessibility(instructions: Instructions): FileAccessRights.Value = {

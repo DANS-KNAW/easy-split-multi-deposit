@@ -15,9 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.Files
-
-import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.lib.error.CompositeException
@@ -33,9 +30,9 @@ class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
     logger.debug(s"moving $stagingDirectory to $outputDir")
 
-    Try { stagingDirectory.moveDir(outputDir) } recoverWith {
+    Try { stagingDirectory.moveTo(outputDir); () } recoverWith {
       case e =>
-        Try { Files.exists(outputDir) } match {
+        Try { outputDir.exists } match {
           case Success(true) => Failure(ActionException("An error occurred while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move is probably only partially " +
             s"done since the output directory does exist. This move is, however, NOT revertable! " +

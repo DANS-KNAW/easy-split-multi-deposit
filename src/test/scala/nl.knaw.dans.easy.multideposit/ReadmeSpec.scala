@@ -16,12 +16,13 @@
 package nl.knaw.dans.easy.multideposit
 
 import java.io.ByteArrayOutputStream
-import java.nio.file.Paths
 
+import better.files.File
+import better.files.File.currentWorkingDirectory
 import org.scalatest._
 
 class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
-  private val resourceDirString: String = Paths.get(getClass.getResource("/").toURI).toAbsolutePath.toString
+  private val resourceDirString: String = File(getClass.getResource("/").toURI).toString
 
   val mockedArgs = Array("-s", resourceDirString,
     resourceDirString + "/allfields/input",
@@ -45,15 +46,15 @@ class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
     val lineSeparators = s"(${ System.lineSeparator() })+"
     val options = helpInfo.split(s"${ lineSeparators }Options:$lineSeparators")(1)
     options.trim.length shouldNot be(0)
-    Paths.get("README.md") should containTrimmed(options)
+    currentWorkingDirectory / "README.md" should containTrimmed(options)
   }
 
   "synopsis in help info" should "be part of README.md" in {
-    Paths.get("README.md") should containTrimmed(clo.synopsis)
+    currentWorkingDirectory / "README.md" should containTrimmed(clo.synopsis)
   }
 
   "description line(s) in help info" should "be part of README.md and pom.xml" in {
-    Paths.get("README.md") should containTrimmed(clo.description)
-    Paths.get("pom.xml") should containTrimmed(clo.description)
+    currentWorkingDirectory / "README.md" should containTrimmed(clo.description)
+    currentWorkingDirectory / "pom.xml" should containTrimmed(clo.description)
   }
 }

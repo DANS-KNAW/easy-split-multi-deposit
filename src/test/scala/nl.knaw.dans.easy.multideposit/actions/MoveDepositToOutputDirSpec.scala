@@ -15,9 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.{ Files, Paths }
-
-import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
+import better.files.File
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
@@ -31,37 +30,37 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
     super.beforeEach()
 
     // create stagingDir content
-    stagingDir.deleteDirectory()
-    Files.createDirectory(stagingDir)
-    stagingDir.toFile should exist
+    if (stagingDir.exists) stagingDir.delete()
+    stagingDir.createDirectory()
+    stagingDir.toJava should exist
 
-    Paths.get(getClass.getResource("/allfields/output/input-ruimtereis01").toURI)
-      .copyDir(stagingDir("ruimtereis01"))
-    Paths.get(getClass.getResource("/allfields/output/input-ruimtereis02").toURI)
-      .copyDir(stagingDir("ruimtereis02"))
+    File(getClass.getResource("/allfields/output/input-ruimtereis01").toURI)
+      .copyTo(stagingDir("ruimtereis01"))
+    File(getClass.getResource("/allfields/output/input-ruimtereis02").toURI)
+      .copyTo(stagingDir("ruimtereis02"))
 
-    stagingDir("ruimtereis01").toFile should exist
-    stagingDir("ruimtereis02").toFile should exist
+    stagingDir("ruimtereis01").toJava should exist
+    stagingDir("ruimtereis02").toJava should exist
 
-    outputDepositDir.deleteDirectory()
-    Files.createDirectory(outputDepositDir)
-    outputDepositDir.toFile should exist
+    if (outputDepositDir.exists) outputDepositDir.delete()
+    outputDepositDir.createDirectory()
+    outputDepositDir.toJava should exist
   }
 
   "execute" should "move the deposit to the outputDepositDirectory" in {
     action.moveDepositsToOutputDir(depositId) shouldBe a[Success[_]]
 
-    stagingDir(depositId).toFile shouldNot exist
-    outputDepositDir(depositId).toFile should exist
+    stagingDir(depositId).toJava shouldNot exist
+    outputDepositDir(depositId).toJava should exist
 
-    stagingDir("ruimtereis02").toFile should exist
-    outputDepositDir("ruimtereis02").toFile shouldNot exist
+    stagingDir("ruimtereis02").toJava should exist
+    outputDepositDir("ruimtereis02").toJava shouldNot exist
   }
 
   it should "only move the one deposit to the outputDepositDirectory, not other deposits in the staging directory" in {
     action.moveDepositsToOutputDir(depositId) shouldBe a[Success[_]]
 
-    stagingDir("ruimtereis02").toFile should exist
-    outputDepositDir("ruimtereis02").toFile shouldNot exist
+    stagingDir("ruimtereis02").toJava should exist
+    outputDepositDir("ruimtereis02").toJava shouldNot exist
   }
 }

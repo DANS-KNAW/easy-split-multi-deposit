@@ -15,11 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.Path
-
+import better.files.File
 import org.scalatest.matchers.{ MatchResult, Matcher }
 
-import scala.io.Source
 import scala.language.postfixOps
 import scala.xml._
 
@@ -27,12 +25,12 @@ import scala.xml._
  *
  * See also <a href="http://www.scalatest.org/user_guide/using_matchers#usingCustomMatchers">CustomMatchers</a> */
 trait CustomMatchers {
-  class ContentMatcher(content: String) extends Matcher[Path] {
-    def apply(left: Path): MatchResult = {
+  class ContentMatcher(content: String) extends Matcher[File] {
+    def apply(left: File): MatchResult = {
       def trimLines(s: String): String = s.split("\n").map(_.trim).mkString("\n")
 
       MatchResult(
-        trimLines(Source.fromFile(left.normalize().toFile).mkString).contains(trimLines(content)),
+        trimLines(left.contentAsString).contains(trimLines(content)),
         s"$left did not contain: $content",
         s"$left contains $content"
       )

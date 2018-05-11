@@ -15,10 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.Paths
-
+import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
 import org.scalatest.BeforeAndAfterEach
 
@@ -30,7 +29,7 @@ trait FileMetadataTestObjects {
   lazy val fileMetadata @ fileMetadata1 :: fileMetadata2 :: fileMetadata4 :: Nil = List(
     List(
       AVFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis01/path/to/a/random/video/hubble.mpg"),
+        filepath = multiDepositDir / "ruimtereis01/path/to/a/random/video/hubble.mpg",
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "hubble.mpg",
@@ -38,70 +37,70 @@ trait FileMetadataTestObjects {
         subtitles = Set.empty
       ),
       AVFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg"),
+        filepath = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg",
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "flyby of centaur",
         accessibleTo = FileAccessRights.ANONYMOUS,
         subtitles = Set(
-          Subtitles(multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.srt"), Some("en")),
-          Subtitles(multiDepositDir.resolve("ruimtereis01/reisverslag/centaur-nederlands.srt"), Some("nl"))
+          Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur.srt", Some("en")),
+          Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur-nederlands.srt", Some("nl"))
         )
       ),
       DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.srt"),
+        filepath = multiDepositDir / "ruimtereis01/reisverslag/centaur.srt",
         mimeType = "text/plain"
       ),
       DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis01/reisverslag/centaur-nederlands.srt"),
+        filepath = multiDepositDir / "ruimtereis01/reisverslag/centaur-nederlands.srt",
         mimeType = "text/plain"
       ),
       DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis01/reisverslag/deel01.docx"),
+        filepath = multiDepositDir / "ruimtereis01/reisverslag/deel01.docx",
         mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       ),
       DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis01/reisverslag/deel01.txt"),
+        filepath = multiDepositDir / "ruimtereis01/reisverslag/deel01.txt",
         mimeType = "text/plain"
       ),
       DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis01/reisverslag/deel02.txt"),
+        filepath = multiDepositDir / "ruimtereis01/reisverslag/deel02.txt",
         mimeType = "text/plain"
       ),
       DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis01/reisverslag/deel03.txt"),
+        filepath = multiDepositDir / "ruimtereis01/reisverslag/deel03.txt",
         mimeType = "text/plain"
       ),
       DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis01/ruimtereis01_verklaring.txt"),
-        mimeType = "text/plain"
-      )
-    ),
-    List(
-      DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis02/path/to/images/Hubble_01.jpg"),
-        mimeType = "image/jpeg"
-      ),
-      DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis02/path/to/images/Hubbleshots.jpg"),
-        mimeType = "image/jpeg"
-      ),
-      DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis02/hubble-wiki-en.txt"),
-        mimeType = "text/plain"
-      ),
-      DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis02/hubble-wiki-nl.txt"),
+        filepath = multiDepositDir / "ruimtereis01/ruimtereis01_verklaring.txt",
         mimeType = "text/plain"
       )
     ),
     List(
       DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis04/path/to/a/random/file/file.txt"),
+        filepath = multiDepositDir / "ruimtereis02/path/to/images/Hubble_01.jpg",
+        mimeType = "image/jpeg"
+      ),
+      DefaultFileMetadata(
+        filepath = multiDepositDir / "ruimtereis02/path/to/images/Hubbleshots.jpg",
+        mimeType = "image/jpeg"
+      ),
+      DefaultFileMetadata(
+        filepath = multiDepositDir / "ruimtereis02/hubble-wiki-en.txt",
+        mimeType = "text/plain"
+      ),
+      DefaultFileMetadata(
+        filepath = multiDepositDir / "ruimtereis02/hubble-wiki-nl.txt",
+        mimeType = "text/plain"
+      )
+    ),
+    List(
+      DefaultFileMetadata(
+        filepath = multiDepositDir / "ruimtereis04/path/to/a/random/file/file.txt",
         mimeType = "text/plain"
       ),
       AVFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis04/path/to/a/random/sound/chicken.mp3"),
+        filepath = multiDepositDir / "ruimtereis04/path/to/a/random/sound/chicken.mp3",
         mimeType = "audio/mpeg",
         vocabulary = Audio,
         title = "chicken.mp3",
@@ -109,7 +108,7 @@ trait FileMetadataTestObjects {
         subtitles = Set.empty
       ),
       DefaultFileMetadata(
-        filepath = multiDepositDir.resolve("ruimtereis04/Quicksort.hs"),
+        filepath = multiDepositDir / "ruimtereis04/Quicksort.hs",
         mimeType = "text/x-haskell"
       )
     )
@@ -120,7 +119,9 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(multiDepositDir)
+
+    if (multiDepositDir.exists) multiDepositDir.delete()
+    File(getClass.getResource("/allfields/input").toURI).copyTo(multiDepositDir)
   }
 
   private val parser = new FileMetadataParser {}
@@ -128,20 +129,20 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
   import parser._
 
   "extractFileMetadata" should "collect the metadata for all files in ruimtereis01" in {
-    inside(extractFileMetadata(multiDepositDir.resolve("ruimtereis01"), testInstructions1)) {
+    inside(extractFileMetadata(multiDepositDir / "ruimtereis01", testInstructions1)) {
       case Success(fms) =>
         fms should { have size 9 and contain allElementsOf fileMetadata1 }
     }
   }
 
   it should "return an empty list if the directory does not exist" in {
-    extractFileMetadata(multiDepositDir.resolve("ruimtereis03"), testInstructions1) should matchPattern {
+    extractFileMetadata(multiDepositDir / "ruimtereis03", testInstructions1) should matchPattern {
       case Success(Nil) =>
     }
   }
 
   it should "collect the metadata for all files in ruimtereis04" in {
-    inside(extractFileMetadata(multiDepositDir.resolve("ruimtereis04"), testInstructions1)) {
+    inside(extractFileMetadata(multiDepositDir / "ruimtereis04", testInstructions1)) {
       case Success(fms) =>
         fms should { have size 3 and contain allElementsOf fileMetadata4 }
     }
@@ -152,7 +153,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
       depositId = "ruimtereis01",
       audioVideo = AudioVideo(springfield = Option.empty)
     )
-    inside(extractFileMetadata(multiDepositDir.resolve("ruimtereis01"), instructions)) {
+    inside(extractFileMetadata(multiDepositDir / "ruimtereis01", instructions)) {
       case Failure(ParseException(_, message, _)) =>
         message should {
           include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
@@ -169,7 +170,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
         springfield = Option(Springfield(user = "user", collection = "collection"))
       )
     )
-    inside(extractFileMetadata(multiDepositDir.resolve("ruimtereis02"), instructions)) {
+    inside(extractFileMetadata(multiDepositDir / "ruimtereis02", instructions)) {
       case Failure(ParseException(_, message, _)) =>
         message should {
           include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]") and
@@ -181,14 +182,15 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
   it should "fail if a dataset has both audio and video material in it" in {
     val instructions = testInstructions1.copy(depositId = "ruimtereis01")
 
-    val audioFile = multiDepositDir.resolve("ruimtereis01/path/to/a/random/audio/chicken.mp3")
-    multiDepositDir.resolve("ruimtereis04/path/to/a/random/sound/chicken.mp3").copyFile(audioFile)
+    val audioFile = multiDepositDir / "ruimtereis01/path/to/a/random/audio/chicken.mp3"
+    audioFile.parent.createDirectories()
+    (multiDepositDir / "ruimtereis04/path/to/a/random/sound/chicken.mp3").copyTo(audioFile)
 
     val currentAV = instructions.audioVideo.avFiles
     val newAV = currentAV + (audioFile -> Set.empty[Subtitles])
     val failingInstructions = instructions.copy(audioVideo = instructions.audioVideo.copy(avFiles = newAV))
 
-    inside(extractFileMetadata(multiDepositDir.resolve("ruimtereis01"), failingInstructions)) {
+    inside(extractFileMetadata(multiDepositDir / "ruimtereis01", failingInstructions)) {
       case Failure(ParseException(_, message, _)) =>
         message shouldBe "Found both audio and video in this dataset. Only one of them is allowed."
     }

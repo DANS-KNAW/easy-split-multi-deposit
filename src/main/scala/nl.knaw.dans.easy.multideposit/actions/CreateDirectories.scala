@@ -15,9 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.{ Files, Path }
-
-import nl.knaw.dans.easy.multideposit.FileExtensions
+import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -35,14 +33,14 @@ class CreateDirectories extends DebugEnhancedLogging {
     createDirectories(stage.stagingBagMetadataDir(depositId))
   }
 
-  private def createDirectories(paths: Path*): Try[Unit] = {
+  private def createDirectories(directories: File*): Try[Unit] = {
     Try {
-      for (path <- paths) {
-        logger.debug(s"create directory $path")
-        Files.createDirectories(path)
+      for (directory <- directories) {
+        logger.debug(s"create directory $directory")
+        directory.createDirectories()
       }
     } recoverWith {
-      case NonFatal(e) => Failure(ActionException(s"Could not create the directories at $paths", e))
+      case NonFatal(e) => Failure(ActionException(s"Could not create the directories at $directories", e))
     }
   }
 
@@ -50,7 +48,7 @@ class CreateDirectories extends DebugEnhancedLogging {
     logger.debug(s"delete deposit '$depositId' from staging directory")
 
     val dir = stage.stagingDir(depositId)
-    Try { if (Files.exists(dir)) dir.deleteDirectory() } recoverWith {
+    Try { if (dir.exists) dir.delete(); () } recoverWith {
       case NonFatal(e) => Failure(ActionException(s"Could not delete $dir", e))
     }
   }

@@ -15,13 +15,13 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.{ Files, Path }
 import java.security.MessageDigest
 
+import better.files.File
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
-import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture, encoding }
+import nl.knaw.dans.easy.multideposit.{ TestSupportFixture, encoding }
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 
@@ -41,14 +41,24 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
   override def beforeEach(): Unit = {
     super.beforeEach()
 
-    depositDir(depositId).resolve("file1.txt").write(file1Text)
-    depositDir(depositId).resolve("folder1/file2.txt").write(file2Text)
-    depositDir(depositId).resolve("folder1/file3.txt").write(file3Text)
-    depositDir(depositId).resolve("folder2/file4.txt").write(file4Text)
-    depositDir("ruimtereis02").resolve("folder3/file5.txt").write(file5Text)
+    (depositDir(depositId) / "file1.txt")
+      .createIfNotExists(createParents = true)
+      .write(file1Text)
+    (depositDir(depositId) / "folder1" / "file2.txt")
+      .createIfNotExists(createParents = true)
+      .write(file2Text)
+    (depositDir(depositId) / "folder1" / "file3.txt")
+      .createIfNotExists(createParents = true)
+      .write(file3Text)
+    (depositDir(depositId) / "folder2" / "file4.txt")
+      .createIfNotExists(createParents = true)
+      .write(file4Text)
+    (depositDir("ruimtereis02") / "folder3" / "file5.txt")
+      .createIfNotExists(createParents = true)
+      .write(file5Text)
 
-    stagingDir.deleteDirectory()
-    Files.createDirectories(stagingBagDir(depositId))
+    if (stagingDir.exists) stagingDir.delete()
+    stagingBagDir(depositId).createDirectories()
   }
 
   "addBagToDeposit" should "succeed given the current setup" in {
@@ -59,11 +69,11 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
     action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
 
     val root = stagingBagDir(depositId)
-    root.toFile should exist
-    root.listRecursively().map {
-      case file if Files.isDirectory(file) => file.getFileName.toString + "/"
-      case file => file.getFileName.toString
-    } should contain theSameElementsAs
+    root.toJava should exist
+    root.walk().map {
+      case file if file.isDirectory => file.name + "/"
+      case file => file.name
+    }.toList should contain theSameElementsAs
       List("bag/",
         "bag-info.txt",
         "bagit.txt",
@@ -76,55 +86,54 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
         "file4.txt",
         "manifest-sha1.txt",
         "tagmanifest-sha1.txt")
-    stagingBagDataDir(depositId).toFile should exist
+    stagingBagDataDir(depositId).toJava should exist
   }
 
   it should "preserve the file content after making the bag" in {
     action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
 
     val root = stagingBagDataDir(depositId)
-    root.resolve("file1.txt").read() shouldBe file1Text
-    root.resolve("folder1/file2.txt").read() shouldBe file2Text
-    root.resolve("folder1/file3.txt").read() shouldBe file3Text
-    root.resolve("folder2/file4.txt").read() shouldBe file4Text
+    (root / "file1.txt").contentAsString shouldBe file1Text
+    (root / "folder1/file2.txt").contentAsString shouldBe file2Text
+    (root / "folder1/file3.txt").contentAsString shouldBe file3Text
+    (root / "folder2/file4.txt").contentAsString shouldBe file4Text
   }
 
   it should "create a bag with no files in data when the input directory does not exist" in {
     implicit val inputPathExplorer: InputPathExplorer = new InputPathExplorer {
-      val multiDepositDir: Path = testDir.resolve("md-empty")
+      val multiDepositDir: File = testDir / "md-empty"
     }
 
     val bagDir = stagingBagDir(depositId)
-    Files.createDirectories(bagDir)
-    bagDir.toFile should exist
+    bagDir.createDirectories()
+    bagDir.toJava should exist
 
-    inputPathExplorer.depositDir(depositId).toFile shouldNot exist
+    inputPathExplorer.depositDir(depositId).toJava shouldNot exist
 
     action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
 
-    stagingDir(depositId).toFile should exist
-    stagingBagDataDir(depositId).toFile should exist
-    stagingBagDataDir(depositId).listRecursively(!Files.isDirectory(_)) shouldBe empty
-    bagDir.listRecursively(!Files.isDirectory(_))
-      .map(_.getFileName.toString) should contain theSameElementsAs
+    stagingDir(depositId).toJava should exist
+    stagingBagDataDir(depositId).toJava should exist
+    stagingBagDataDir(depositId).listRecursively.filterNot(_.isDirectory) shouldBe empty
+    bagDir.listRecursively.filterNot(_.isDirectory).map(_.name).toList should contain theSameElementsAs
       List("bag-info.txt",
         "bagit.txt",
         "manifest-sha1.txt",
         "tagmanifest-sha1.txt")
 
-    bagDir.resolve("manifest-sha1.txt").read() shouldBe empty
-    bagDir.resolve("tagmanifest-sha1.txt").read() should include("bag-info.txt")
-    bagDir.resolve("tagmanifest-sha1.txt").read() should include("bagit.txt")
-    bagDir.resolve("tagmanifest-sha1.txt").read() should include("manifest-sha1.txt")
+    (bagDir / "manifest-sha1.txt").contentAsString shouldBe empty
+    (bagDir / "tagmanifest-sha1.txt").contentAsString should include("bag-info.txt")
+    (bagDir / "tagmanifest-sha1.txt").contentAsString should include("bagit.txt")
+    (bagDir / "tagmanifest-sha1.txt").contentAsString should include("manifest-sha1.txt")
   }
 
   it should "contain the date-created in the bag-info.txt" in {
     action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
 
-    val bagInfo = stagingBagDir(depositId).resolve("bag-info.txt")
-    bagInfo.toFile should exist
+    val bagInfo = stagingBagDir(depositId) / "bag-info.txt"
+    bagInfo.toJava should exist
 
-    bagInfo.read() should include("Created")
+    bagInfo.contentAsString should include("Created")
   }
 
   it should "contain the correct checksums in its manifest file" in {
@@ -141,11 +150,11 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
 
   def verifyChecksums(depositId: DepositId, manifestFile: String): Unit = {
     val root = stagingBagDir(depositId)
-    root.resolve(manifestFile).read()
+    (root / manifestFile).contentAsString
       .split('\n')
       .map(_.split("  "))
       .foreach {
-        case Array(sha1, file) => calcSHA1(root.resolve(file).read()) shouldBe sha1
+        case Array(sha1, file) => calcSHA1((root / file).contentAsString) shouldBe sha1
         case line => fail(s"unexpected line detected: ${ line.mkString("  ") }")
       }
   }

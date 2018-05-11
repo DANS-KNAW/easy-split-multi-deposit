@@ -15,9 +15,10 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.{ Files, Path, Paths }
+import java.nio.file.NoSuchFileException
 import java.util.Locale
 
+import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.error._
@@ -133,10 +134,10 @@ trait ParserUtils extends DebugEnhancedLogging {
    * @param path the path to a file, as provided by the user input
    * @return the absolute path to this file, if it exists
    */
-  def findPath(depositId: DepositId)(path: String): Path = {
-    val file = depositDir(depositId).resolve(path)
+  def findPath(depositId: DepositId)(path: String): Try[File] = {
+    val file = depositDir(depositId) / path
 
-    if (Files.exists(file)) file
-    else Paths.get(path)
+    if (file.exists) Success(file)
+    else Failure(new NoSuchFileException(s"unable to find path $path for depositor $depositId"))
   }
 }

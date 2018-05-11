@@ -15,8 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.{ Files, NoSuchFileException, Path }
+import java.nio.file.NoSuchFileException
 
+import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.encoding
 import nl.knaw.dans.easy.multideposit.model.{ Deposit, DepositId, Instructions, MultiDepositKey, listToNEL }
@@ -42,7 +43,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
     logger.info(s"Reading data in $multiDepositDir")
 
     val instructions = instructionsFile
-    if (Files.exists(instructions)) {
+    if (instructions.exists) {
       logger.info(s"Parsing $instructions")
 
       val deposits = for {
@@ -62,8 +63,8 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       Failure(new NoSuchFileException(s"Could not find a file called 'instructions.csv' in $multiDepositDir"))
   }
 
-  def read(instructions: Path): Try[(List[MultiDepositKey], List[List[String]])] = {
-    managed(CSVParser.parse(instructions.toFile, encoding, CSVFormat.RFC4180))
+  def read(instructions: File): Try[(List[MultiDepositKey], List[List[String]])] = {
+    managed(CSVParser.parse(instructions.toJava, encoding, CSVFormat.RFC4180))
       .map(csvParse)
       .tried
       .flatMap {
@@ -112,10 +113,10 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       .map(_ => ())
   }
 
-  def extractDeposit(multiDepositDirectory: Path)(depositId: DepositId, rows: DepositRows): Try[Deposit] = {
+  def extractDeposit(multiDepositDirectory: File)(depositId: DepositId, rows: DepositRows): Try[Deposit] = {
     for {
       instructions <- extractInstructions(depositId, rows)
-      depositDir = multiDepositDirectory.resolve(depositId)
+      depositDir = multiDepositDirectory / depositId
       fileMetadata <- extractFileMetadata(depositDir, instructions)
     } yield instructions.toDeposit(fileMetadata)
   }
@@ -164,7 +165,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
 }
 
 object MultiDepositParser {
-  def parse(md: Path): Try[Seq[Deposit]] = new MultiDepositParser {
-    val multiDepositDir: Path = md
+  def parse(md: File): Try[Seq[Deposit]] = new MultiDepositParser {
+    val multiDepositDir: File = md
   }.parse
 }

@@ -15,16 +15,15 @@
  */
 package nl.knaw.dans.easy.multideposit.model
 
-import java.nio.file.Path
-
+import better.files.File
 import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
 
 case class AudioVideo(springfield: Option[Springfield] = Option.empty,
-                      avFiles: Map[Path, Set[Subtitles]] = Map.empty)
+                      avFiles: Map[File, Set[Subtitles]] = Map.empty)
 
 case class Springfield(domain: String = "dans",
                        user: String,
                        collection: String,
                        playMode: PlayMode = PlayMode.Continuous)
 
-case class Subtitles(path: Path, language: Option[String] = Option.empty)
+case class Subtitles(file: File, language: Option[String] = Option.empty)

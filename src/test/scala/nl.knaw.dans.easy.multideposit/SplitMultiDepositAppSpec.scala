@@ -15,16 +15,13 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.{ Files, Path, Paths }
+import better.files.File
+import better.files.File.currentWorkingDirectory
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
-
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit.parser.ParserFailedException
 import org.scalamock.scalatest.MockFactory
-import resource.managed
 
-import scala.collection.JavaConverters._
-import scala.io.Source
 import scala.util.{ Failure, Properties, Success }
 import scala.xml.transform.{ RewriteRule, RuleTransformer }
 import scala.xml.{ Elem, Node, NodeSeq, XML }
@@ -33,17 +30,17 @@ import scala.xml.{ Elem, Node, NodeSeq, XML }
 // http://www.scalatest.org/user_guide/sharing_tests
 class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with CustomMatchers {
 
-  private val formatsFile: Path = Paths.get("src/main/assembly/dist/cfg/acceptedMediaTypes.txt").toAbsolutePath
+  private val formatsFile: File = currentWorkingDirectory / "src" / "main" / "assembly" / "dist" / "cfg" / "acceptedMediaTypes.txt"
   private val formats =
-    if (Files.exists(formatsFile)) managed(Source.fromFile(formatsFile.toFile)).acquireAndGet(_.getLines.map(_.trim).toSet)
+    if (formatsFile.exists) formatsFile.lines.map(_.trim).toSet
     else fail("Cannot find file: acceptedMediaTypes.txt")
 
   "acceptedMediaFiles" should "contain certain formats" in {
     formats should contain("audio/mpeg3")
   }
 
-  private val allfields = testDir.resolve("md/allfields").toAbsolutePath
-  private val invalidCSV = testDir.resolve("md/invalidCSV").toAbsolutePath
+  private val allfields = testDir / "md" / "allfields"
+  private val invalidCSV = testDir / "md" / "invalidCSV"
 
   /*
     Note to future developers:
@@ -56,8 +53,8 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
     function is called before the shared tests are set up or ran.
    */
   def beforeAll(): Unit = {
-    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(allfields)
-    Paths.get(getClass.getResource("/invalidCSV/input").toURI).copyDir(invalidCSV)
+    File(getClass.getResource("/allfields/input").toURI).copyTo(allfields)
+    File(getClass.getResource("/invalidCSV/input").toURI).copyTo(invalidCSV)
   }
 
   private def doNotRunOnTravis() = {
@@ -77,10 +74,13 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
   def allfieldsSpec(): Unit = {
     val ldap = mock[Ldap]
     val datamanager = "easyadmin"
-    val paths = new PathExplorers(allfields, testDir.resolve("sd").toAbsolutePath, testDir.resolve("od").toAbsolutePath)
+    val paths = new PathExplorers(
+      md = allfields,
+      sd = testDir / "sd",
+      od = (testDir / "od").createIfNotExists(asDirectory = true, createParents = true))
     val app = new SplitMultiDepositApp(formats, ldap, DepositPermissions("rwxrwx---", getFileSystemGroup))
 
-    val expectedOutputDir = Paths.get(getClass.getResource("/allfields/output").toURI)
+    val expectedOutputDir = File(getClass.getResource("/allfields/output").toURI)
 
     def createDatamanagerAttributes: BasicAttributes = {
       new BasicAttributes() {
@@ -119,15 +119,13 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       "random/", "file/", "file.txt", "sound/", "chicken.mp3")
 
     def bagContents(bagName: String, dataContent: Set[String]): Unit = {
-      val bag = paths.outputDepositDir.resolve(s"allfields-$bagName/bag")
-      val expBag = expectedOutputDir.resolve(s"input-$bagName/bag")
+      val bag = paths.outputDepositDir / s"allfields-$bagName/bag"
+      val expBag = expectedOutputDir / s"input-$bagName/bag"
 
       it should "check the files present in the bag" in {
         doNotRunOnTravis()
 
-        managed(Files.list(bag))
-          .acquireAndGet(_.iterator().asScala.toList)
-          .map(_.getFileName.toString) should contain only(
+        bag.list.map(_.name).toList should contain only(
           "bag-info.txt",
           "bagit.txt",
           "manifest-sha1.txt",
@@ -139,42 +137,42 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       it should "check bag-info.txt" in {
         doNotRunOnTravis()
 
-        val bagInfo = bag.resolve("bag-info.txt")
-        val expBagInfo = expBag.resolve("bag-info.txt")
+        val bagInfo = bag / "bag-info.txt"
+        val expBagInfo = expBag / "bag-info.txt"
 
         // skipping the Bagging-Date which is different every time
-        bagInfo.read().lines.toSeq should contain allElementsOf
-          expBagInfo.read().lines.filterNot(_ contains "Bagging-Date").toSeq
+        bagInfo.lines.toSeq should contain allElementsOf
+          expBagInfo.lines.filterNot(_ contains "Bagging-Date").toSeq
       }
 
       it should "check bagit.txt" in {
         doNotRunOnTravis()
 
-        val bagit = bag.resolve("bagit.txt")
-        val expBagit = expBag.resolve("bagit.txt")
+        val bagit = bag / "bagit.txt"
+        val expBagit = expBag / "bagit.txt"
 
-        bagit.read().lines.toSeq should contain allElementsOf expBagit.read().lines.toSeq
+        bagit.lines.toSeq should contain allElementsOf expBagit.lines.toSeq
       }
 
       it should "check manifest-sha1.txt" in {
         doNotRunOnTravis()
 
-        val manifest = bag.resolve("manifest-sha1.txt")
-        val expManifest = expBag.resolve("manifest-sha1.txt")
+        val manifest = bag / "manifest-sha1.txt"
+        val expManifest = expBag / "manifest-sha1.txt"
 
-        manifest.read().lines.toSeq should contain allElementsOf expManifest.read().lines.toSeq
+        manifest.lines.toSeq should contain allElementsOf expManifest.lines.toSeq
       }
 
       it should "check tagmanifest-sha1.txt" in {
         doNotRunOnTravis()
 
-        val tagManifest = bag.resolve("tagmanifest-sha1.txt")
-        val expTagManifest = expBag.resolve("tagmanifest-sha1.txt")
+        val tagManifest = bag / "tagmanifest-sha1.txt"
+        val expTagManifest = expBag / "tagmanifest-sha1.txt"
 
         // skipping bag-info.txt and manifest-sha1.txt which are different every time
         // due to the Bagging-Date and 'available' in metadata/dataset.xml
-        tagManifest.read().lines.toSeq should contain allElementsOf
-          expTagManifest.read().lines
+        tagManifest.lines.toSeq should contain allElementsOf
+          expTagManifest.lines
             .filterNot(_ contains "bag-info.txt")
             .filterNot(_ contains "manifest-sha1.txt").toSeq
       }
@@ -182,20 +180,18 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       it should "check the files in data/" in {
         doNotRunOnTravis()
 
-        val dataDir = bag.resolve("data/")
-        dataDir.toFile should exist
-        dataDir.listRecursively().map {
-          case file if Files.isDirectory(file) => file.getFileName.toString + "/"
-          case file => file.getFileName.toString
-        } should contain theSameElementsAs dataContent
+        val dataDir = bag / "data/"
+        dataDir.toJava should exist
+        dataDir.walk().map {
+          case file if file.isDirectory => file.name + "/"
+          case file => file.name
+        }.toList should contain theSameElementsAs dataContent
       }
 
       it should "check the files in metadata/" in {
         doNotRunOnTravis()
 
-        managed(Files.list(bag.resolve("metadata")))
-          .acquireAndGet(_.iterator().asScala.toList)
-          .map(_.getFileName.toString) should contain only("dataset.xml", "files.xml")
+        (bag / "metadata").list.map(_.name).toList should contain only("dataset.xml", "files.xml")
       }
 
       it should "check metadata/dataset.xml" in {
@@ -210,8 +206,8 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
           }
         })
 
-        val datasetXml = XML.loadFile(bag.resolve("metadata/dataset.xml").toFile)
-        val expDatasetXml = XML.loadFile(expBag.resolve("metadata/dataset.xml").toFile)
+        val datasetXml = XML.loadFile((bag / "metadata" / "dataset.xml").toJava)
+        val expDatasetXml = XML.loadFile((expBag / "metadata" / "dataset.xml").toJava)
         val datasetTransformer = removeElemByName("available")
 
         // skipping the available field here
@@ -224,8 +220,8 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       it should "check metadata/files.xml" in {
         doNotRunOnTravis()
 
-        val filesXml = XML.loadFile(bag.resolve("metadata/files.xml").toFile)
-        val expFilesXml = XML.loadFile(expBag.resolve("metadata/files.xml").toFile)
+        val filesXml = XML.loadFile((bag / "metadata" / "files.xml").toJava)
+        val expFilesXml = XML.loadFile((expBag / "metadata" / "files.xml").toJava)
 
         val files = filesXml \ "file"
         val expFiles = expFilesXml \ "file"
@@ -245,12 +241,12 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       it should "check deposit.properties" in {
         doNotRunOnTravis()
 
-        val props = paths.outputDepositDir.resolve(s"allfields-$bagName/deposit.properties")
-        val expProps = expectedOutputDir.resolve(s"input-$bagName/deposit.properties")
+        val props = paths.outputDepositDir / s"allfields-$bagName" / "deposit.properties"
+        val expProps = expectedOutputDir / s"input-$bagName" / "deposit.properties"
 
         // skipping comment lines, as well as the line with randomized bag-id
-        props.read().lines.toSeq should contain allElementsOf
-          expProps.read().lines
+        props.lines.toSeq should contain allElementsOf
+          expProps.lines
             .filterNot(_ startsWith "#")
             .filterNot(_ contains "bag-store.bag-id")
             .toSeq
@@ -268,7 +264,10 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
   "allfields" should behave like allfieldsSpec()
 
   "convert invalidCSV" should "fail in the parser step and return a report of the errors" in {
-    val paths = new PathExplorers(invalidCSV, testDir.resolve("sd").toAbsolutePath, testDir.resolve("od").toAbsolutePath)
+    val paths = new PathExplorers(
+      md = invalidCSV,
+      sd = testDir / "sd",
+      od = (testDir / "od").createIfNotExists(asDirectory = true, createParents = true))
     val app = new SplitMultiDepositApp(formats, mock[Ldap], DepositPermissions("rwxrwx---", getFileSystemGroup))
 
     inside(app.convert(paths, "easyadmin")) {
@@ -281,7 +280,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
           " - row 2: Value 'random test data' is not a valid type",
           " - row 2: Value 'NL' is not a valid value for DC_LANGUAGE",
           " - row 2: DCT_DATE value 'Text with Qualifier' does not represent a date",
-          " - row 2: FILE_PATH 'path/to/audiofile/that/does/not/exist.mp3' does not exist",
+          " - row 2: FILE_PATH does not represent a valid path",
           " - row 2: Missing value for: SF_USER",
           " - row 3: DDM_AVAILABLE value 'invalid-date' does not represent a date",
           " - row 3: Missing value for: DC_IDENTIFIER",

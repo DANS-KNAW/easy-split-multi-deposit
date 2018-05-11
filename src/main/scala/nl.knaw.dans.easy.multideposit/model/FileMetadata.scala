@@ -15,20 +15,20 @@
  */
 package nl.knaw.dans.easy.multideposit.model
 
-import java.nio.file.Path
+import better.files.File
 
 sealed abstract class AvVocabulary(val vocabulary: String)
 case object Audio extends AvVocabulary("http://schema.org/AudioObject")
 case object Video extends AvVocabulary("http://schema.org/VideoObject")
 
-sealed abstract class FileMetadata(val filepath: Path,
+sealed abstract class FileMetadata(val filepath: File,
                                    val mimeType: MimeType)
-case class DefaultFileMetadata(override val filepath: Path,
+case class DefaultFileMetadata(override val filepath: File,
                                override val mimeType: MimeType,
                                title: Option[String] = Option.empty,
                                accessibleTo: Option[FileAccessRights.Value] = Option.empty
                               ) extends FileMetadata(filepath, mimeType)
-case class AVFileMetadata(override val filepath: Path,
+case class AVFileMetadata(override val filepath: File,
                           override val mimeType: MimeType,
                           vocabulary: AvVocabulary,
                           title: String,

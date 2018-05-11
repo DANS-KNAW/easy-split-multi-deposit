@@ -15,12 +15,11 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.{ Files, Paths }
-
+import better.files.File
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
-import nl.knaw.dans.easy.multideposit.{ CustomMatchers, FileExtensions, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.{ CustomMatchers, TestSupportFixture }
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 
@@ -118,21 +117,26 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
     </ddm:DDM>
 
   override def beforeEach(): Unit = {
-    Paths.get(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.mpg").toURI)
-      .copyFile(multiDepositDir.resolve(s"$depositId/reisverslag/centaur.mpg"))
-    Paths.get(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.srt").toURI)
-      .copyFile(multiDepositDir.resolve(s"$depositId/reisverslag/centaur.srt"))
+    val targetFolder = multiDepositDir / depositId / "reisverslag"
+
+    if (targetFolder.exists) targetFolder.delete()
+    targetFolder.createDirectories()
+
+    File(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.mpg").toURI)
+      .copyTo(targetFolder / "centaur.mpg")
+    File(getClass.getResource("/allfields/input/ruimtereis01/reisverslag/centaur.srt").toURI)
+      .copyTo(targetFolder / "centaur.srt")
   }
 
   "addDatasetMetadata" should "write the metadata to a file at the correct place" in {
     val file = stagingDatasetMetadataFile(depositId)
-    Files.deleteIfExists(file)
+    if (file.exists) file.delete()
 
-    file.toFile shouldNot exist
+    file.toJava shouldNot exist
 
     action.addDatasetMetadata(deposit) shouldBe a[Success[_]]
 
-    file.toFile should exist
+    file.toJava should exist
   }
 
   "depositToDDM" should "return the expected xml" in {
@@ -140,7 +144,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
   }
 
   it should "return xml on reading from the allfields input instructions csv" in {
-    val multidepositDir = Paths.get(getClass.getResource("/allfields/input").toURI)
+    val multidepositDir = File(getClass.getResource("/allfields/input").toURI)
     inside(MultiDepositParser.parse(multidepositDir).map(_.map(action.depositToDDM))) {
       case Success(xmls) => xmls should have size 4
     }

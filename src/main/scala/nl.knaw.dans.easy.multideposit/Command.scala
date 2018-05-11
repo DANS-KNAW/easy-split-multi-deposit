@@ -15,8 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.Paths
-
+import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit.actions.{ InvalidDatamanagerException, InvalidInputException }
 import nl.knaw.dans.easy.multideposit.parser.{ EmptyInstructionsFileException, ParserFailedException }
@@ -32,7 +31,7 @@ object Command extends App with DebugEnhancedLogging {
 
   type FeedBackMessage = String
 
-  val configuration = Configuration(Paths.get(System.getProperty("app.home")))
+  val configuration = Configuration(File(System.getProperty("app.home")))
   val commandLine: CommandLineOptions = new CommandLineOptions(args, configuration.version)
   val app = SplitMultiDepositApp(configuration)
 
@@ -49,11 +48,11 @@ object Command extends App with DebugEnhancedLogging {
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
 
   private def runSubcommand(app: SplitMultiDepositApp): Try[FeedBackMessage] = {
-    lazy val defaultStagingDir = Paths.get(configuration.properties.getString("staging-dir"))
+    lazy val defaultStagingDir = File(configuration.properties.getString("staging-dir"))
 
-    val md = commandLine.multiDepositDir()
-    val sd = commandLine.stagingDir.getOrElse(defaultStagingDir)
-    val od = commandLine.outputDepositDir()
+    val md = File(commandLine.multiDepositDir())
+    val sd = commandLine.stagingDir.map(File(_)).getOrElse(defaultStagingDir)
+    val od = File(commandLine.outputDepositDir())
     val dm = commandLine.datamanager()
 
     if (commandLine.validateOnly())

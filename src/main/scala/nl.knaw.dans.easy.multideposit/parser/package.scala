@@ -15,8 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.Path
-
+import better.files.File
 import nl.knaw.dans.easy.multideposit.model.MultiDepositKey
 import nl.knaw.dans.lib.string.StringExtensions
 
@@ -29,7 +28,7 @@ package object parser {
     def find(name: MultiDepositKey): Option[String] = row.get(name).filterNot(_.isBlank)
   }
 
-  case class EmptyInstructionsFileException(path: Path) extends Exception(s"The given instructions file in '$path' is empty")
+  case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")
   class ParseException(val row: Int, message: String, cause: Option[Throwable] = None) extends Exception(message, cause.orNull)
   object ParseException {
     def apply(row: Int, message: String, cause: Throwable): ParseException = new ParseException(row, message, Option(cause))

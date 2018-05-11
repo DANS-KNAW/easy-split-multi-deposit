@@ -17,6 +17,8 @@ package nl.knaw.dans.easy.multideposit
 
 import java.nio.file.Path
 
+import better.files.File
+import better.files.File._
 import nl.knaw.dans.easy.multideposit.model.Datamanager
 import org.rogach.scallop.{ ScallopConf, ScallopOption }
 
@@ -78,8 +80,8 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
   validatePathExists(multiDepositDir)
   validateFileIsDirectory(multiDepositDir.map(_.toFile))
   validate(multiDepositDir)(dir => {
-    val instructionFile: Path = PathExplorer.multiDepositInstructionsFile(dir)
-    if (!dir.directoryContains(instructionFile))
+    val instructionFile: File = PathExplorer.multiDepositInstructionsFile(dir)
+    if (!dir.isParentOf(instructionFile))
       Left(s"No instructions file found in this directory, expected: $instructionFile")
     else
       Right(())

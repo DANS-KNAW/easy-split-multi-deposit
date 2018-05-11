@@ -15,11 +15,11 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.{ Files, Paths }
+import better.files.File
+import better.files.File.currentWorkingDirectory
 import javax.naming.directory.Attributes
-
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, Springfield, Video }
-import nl.knaw.dans.easy.multideposit.{ FileExtensions, Ldap, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.{ Ldap, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 
@@ -35,30 +35,30 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     super.beforeEach()
 
     // create depositDir base directory
-    stagingDir.deleteDirectory()
-    Files.createDirectory(stagingDir)
-    stagingDir.toFile should exist
+    if (stagingDir.exists) stagingDir.delete()
+    stagingDir.createDirectory()
+    stagingDir.toJava should exist
 
-    Paths.get(getClass.getResource("/allfields/output/input-ruimtereis01").toURI)
-      .copyDir(stagingDir("ruimtereis01"))
-    stagingDir("ruimtereis01").toFile should exist
+    File(getClass.getResource("/allfields/output/input-ruimtereis01").toURI)
+      .copyTo(stagingDir("ruimtereis01"))
+    stagingDir("ruimtereis01").toJava should exist
 
-    outputDepositDir.deleteDirectory()
-    Files.createDirectory(outputDepositDir)
-    outputDepositDir.toFile should exist
+    if (outputDepositDir.exists) outputDepositDir.delete()
+    outputDepositDir.createDirectory()
+    outputDepositDir.toJava should exist
   }
 
   "checkDirectoriesDoNotExist" should "succeed if the directories do not yet exist" in {
     val dir = stagingBagDir(depositId)
-    dir.toFile shouldNot exist
+    dir.toJava shouldNot exist
 
     action.checkDirectoriesDoNotExist(depositId)(dir) shouldBe a[Success[_]]
   }
 
   it should "fail if any of the directories already exist" in {
     val dir = stagingBagDir(depositId)
-    Files.createDirectories(dir)
-    dir.toFile should exist
+    dir.createDirectories()
+    dir.toJava should exist
 
     inside(action.checkDirectoriesDoNotExist(depositId)(dir)) {
       case Failure(ActionException(msg, _)) => msg should include(s"The deposit for dataset $depositId already exists")
@@ -71,8 +71,8 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
 
   it should "fail if the deposit already exists in the outputDepositDir" in {
     val depositId = "ruimtereis01"
-    stagingDir(depositId).copyDir(outputDepositDir(depositId))
-    outputDepositDir(depositId).toFile should exist
+    stagingDir(depositId).copyTo(outputDepositDir(depositId))
+    outputDepositDir(depositId).toJava should exist
 
     inside(action.checkOutputDirectoryExists(depositId)) {
       case Failure(ActionException(msg, _)) => msg should include(s"The deposit for dataset $depositId already exists")
@@ -104,7 +104,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
 
   val avFileReferences = Seq(
     AVFileMetadata(
-      filepath = testDir.resolve("md/ruimtereis01/reisverslag/centaur.mpg"),
+      filepath = testDir / "md" / "ruimtereis01" / "reisverslag" / "centaur.mpg",
       mimeType = "video/mpeg",
       vocabulary = Video,
       title = "flyby of centaur",
@@ -161,7 +161,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
   it should "create an empty list of file metadata if the deposit directory corresponding with the depositId does not exist and therefore succeed" in {
     val depositId = "ruimtereis03"
     val deposit = testInstructions2.copy(depositId = depositId).toDeposit()
-    depositDir(depositId).toFile should not(exist)
+    depositDir(depositId).toJava should not(exist)
     action.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Success[_]]
   }
 
@@ -169,7 +169,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val depositId = "ruimtereis01"
     val deposit = testInstructions1.copy(depositId = depositId)
       .toDeposit(avFileReferences :+ AVFileMetadata(
-        filepath = Paths.get(""),
+        filepath = currentWorkingDirectory,
         mimeType = "audio/mpeg",
         vocabulary = Audio,
         title = "mytitle",

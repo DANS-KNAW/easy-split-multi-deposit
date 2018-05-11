@@ -15,8 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.{ Files, Path, Paths }
-
+import better.files.File
+import better.files.File.currentWorkingDirectory
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model._
@@ -25,15 +25,15 @@ import org.scalatest.{ FlatSpec, Inside, Matchers, OptionValues }
 
 trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
 
-  lazy val testDir: Path = {
-    val path = Paths.get(s"target/test/${ getClass.getSimpleName }").toAbsolutePath
-    path.deleteDirectory()
-    Files.createDirectories(path)
+  lazy val testDir: File = {
+    val path = currentWorkingDirectory / s"target/test/${ getClass.getSimpleName }"
+    if (path.exists) path.delete()
+    path.createDirectories()
     path
   }
-  override val multiDepositDir: Path = testDir.resolve("md")
-  override val stagingDir: Path = testDir.resolve("sd")
-  override val outputDepositDir: Path = testDir.resolve("od")
+  override val multiDepositDir: File = testDir / "md"
+  override val stagingDir: File = testDir / "sd"
+  override val outputDepositDir: File = testDir / "od"
 
   implicit val inputPathExplorer: InputPathExplorer = this
   implicit val stagingPathExplorer: StagingPathExplorer = this
@@ -65,14 +65,14 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         subjects = List(Subject("astronomie"), Subject("ruimtevaart"), Subject("planetoïden"))
       ),
       files = Map(
-        testDir.resolve("md/ruimtereis01/reisverslag/centaur.mpg") -> FileDescriptor(Option("flyby of centaur"))
+        testDir / "md/ruimtereis01/reisverslag/centaur.mpg" -> FileDescriptor(Option("flyby of centaur"))
       ),
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files", PlayMode.Menu)),
         avFiles = Map(
-          testDir.resolve("md/ruimtereis01/reisverslag/centaur.mpg") -> Set(
-            Subtitles(testDir.resolve("md/ruimtereis01/reisverslag/centaur.srt"), Option("en")),
-            Subtitles(testDir.resolve("md/ruimtereis01/reisverslag/centaur-nederlands.srt"), Option("nl"))
+          testDir / "md/ruimtereis01/reisverslag/centaur.mpg" -> Set(
+            Subtitles(testDir / "md/ruimtereis01/reisverslag/centaur.srt", Option("en")),
+            Subtitles(testDir / "md/ruimtereis01/reisverslag/centaur-nederlands.srt", Option("nl"))
           )
         )
       )
@@ -101,7 +101,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         identifiers = List(Identifier("id1234"))
       ),
       files = Map(
-        testDir.resolve("md/ruimtereis02/path/to/images/Hubble_01.jpg") -> FileDescriptor(Some("Hubble"), Some(FileAccessRights.RESTRICTED_REQUEST))
+        testDir / "md/ruimtereis02/path/to/images/Hubble_01.jpg" -> FileDescriptor(Some("Hubble"), Some(FileAccessRights.RESTRICTED_REQUEST))
       )
     )
   }

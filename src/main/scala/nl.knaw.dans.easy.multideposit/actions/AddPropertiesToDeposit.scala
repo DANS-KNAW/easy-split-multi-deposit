@@ -15,18 +15,17 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.{ util => ju }
 import java.util.{ Collections, Properties, UUID }
+import java.{ util => ju }
 
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
+import nl.knaw.dans.easy.multideposit.{ dateTimeFormatter, encoding }
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
-import nl.knaw.dans.easy.multideposit.{ encoding, dateTimeFormatter }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.{ DateTime, DateTimeZone }
-import resource.Using
 
-import scala.util.{ Failure, Try }
 import scala.util.control.NonFatal
+import scala.util.{ Failure, Try }
 
 class AddPropertiesToDeposit extends DebugEnhancedLogging {
 
@@ -39,9 +38,10 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
     }
 
     Try { addProperties(deposit, datamanagerId, emailaddress)(props) }
-      .flatMap(_ => Using.fileWriter(encoding)(stage.stagingPropertiesFile(deposit.depositId).toFile)
-        .map(out => props.store(out, ""))
-        .tried)
+      .map(_ => stage.stagingPropertiesFile(deposit.depositId)
+        .createIfNotExists(createParents = true)
+        .bufferedWriter(encoding)
+        .foreach(props.store(_, "")))
       .recoverWith {
         case NonFatal(e) => Failure(ActionException(s"Could not write properties to file: $e", e))
       }

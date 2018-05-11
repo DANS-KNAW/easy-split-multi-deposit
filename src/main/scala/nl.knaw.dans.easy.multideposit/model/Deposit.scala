@@ -15,14 +15,14 @@
  */
 package nl.knaw.dans.easy.multideposit.model
 
-import java.nio.file.Path
+import better.files.File
 
 case class Instructions(depositId: DepositId,
                         row: Int,
                         depositorUserId: DepositorUserId,
                         profile: Profile,
                         metadata: Metadata = Metadata(),
-                        files: Map[Path, FileDescriptor] = Map.empty,
+                        files: Map[File, FileDescriptor] = Map.empty,
                         audioVideo: AudioVideo = AudioVideo()) {
   def toDeposit(fms: Seq[FileMetadata] = Seq.empty): Deposit = {
     Deposit(depositId, row, depositorUserId, profile, metadata, fms, audioVideo.springfield)

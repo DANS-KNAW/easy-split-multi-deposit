@@ -15,31 +15,30 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.{ Files, Path, Paths }
-
+import better.files.File
+import better.files.File.root
 import org.apache.commons.configuration.PropertiesConfiguration
-import resource.managed
-
-import scala.io.Source
 
 case class Configuration(version: String, properties: PropertiesConfiguration, formats: Set[String])
 
 object Configuration {
 
-  def apply(home: Path): Configuration = {
-    val cfgPath = Seq(Paths.get(s"/etc/opt/dans.knaw.nl/easy-split-multi-deposit/"), home.resolve("cfg"))
-      .find(Files.exists(_))
+  def apply(home: File): Configuration = {
+    val cfgPath = Seq(
+      root / "etc" / "opt" / "dans.knaw.nl" / "easy-split-multi-deposit",
+      home / "cfg")
+      .find(_.exists)
       .getOrElse { throw new IllegalStateException("No configuration directory found") }
-    val formatsFile = cfgPath.resolve("acceptedMediaTypes.txt")
+    val formatsFile = cfgPath / "acceptedMediaTypes.txt"
 
     new Configuration(
-      version = managed(Source.fromFile(home.resolve("bin/version").toFile)).acquireAndGet(_.mkString).stripLineEnd,
+      version = (home / "bin" / "version").contentAsString.stripLineEnd,
       properties = new PropertiesConfiguration() {
         setDelimiterParsingDisabled(true)
-        load(cfgPath.resolve("application.properties").toFile)
+        load((cfgPath / "application.properties").toJava)
       },
       formats =
-        if (Files.exists(formatsFile)) managed(Source.fromFile(formatsFile.toFile)).acquireAndGet(_.getLines.map(_.trim).toSet)
+        if (formatsFile.exists) formatsFile.lines.map(_.trim).toSet
         else Set.empty[String]
     )
   }
