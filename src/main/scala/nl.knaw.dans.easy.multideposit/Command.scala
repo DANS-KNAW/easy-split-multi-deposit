@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.Paths
+import java.nio.file.{ Path, Paths }
 
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit.actions.{ InvalidDatamanagerException, InvalidInputException }
@@ -51,9 +51,9 @@ object Command extends App with DebugEnhancedLogging {
   private def runSubcommand(app: SplitMultiDepositApp): Try[FeedBackMessage] = {
     lazy val defaultStagingDir = Paths.get(configuration.properties.getString("staging-dir"))
 
-    val md = commandLine.multiDepositDir()
-    val sd = commandLine.stagingDir.getOrElse(defaultStagingDir)
-    val od = commandLine.outputDepositDir()
+    val md = commandLine.multiDepositDir().normalized()
+    val sd = commandLine.stagingDir.getOrElse(defaultStagingDir).normalized()
+    val od = commandLine.outputDepositDir().normalized()
     val dm = commandLine.datamanager()
 
     if (commandLine.validateOnly())
