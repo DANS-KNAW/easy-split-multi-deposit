@@ -18,7 +18,7 @@
 LOCAL_ARGS=$@
 OUTPUT=data/output
 STAGING=data/staging
-QUIET="-q"
+export QUIET="-q"
 RUN_SCRIPT=run.sh
 
 ping -t 1 -c 1 test.dans.knaw.nl >/dev/null
