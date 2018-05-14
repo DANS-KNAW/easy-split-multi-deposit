@@ -128,7 +128,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
         .map(_ (dsId))
         .map(_ (rowNum))
         .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
-        //.combine (atMostOne(rowNum, List("BASE_REVISION"))(extractList(rows, "BASE_REVISION").map(string => UUID.fromString(string))))
+         //.combine (atMostOne(rowNum, List("BASE_REVISION"))(extractList(rows, "BASE_REVISION").map(string => UUID.fromString(string))))
         .combine(extractProfile(rows, rowNum))
         .combine(Try(atMostOne(rowNum, List("BASE_REVISION"))(extractList(rows, "BASE_REVISION")).get.get))
         .combine(extractMetadata(rows))

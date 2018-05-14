@@ -38,6 +38,8 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
       _ <- checkSFColumnsIfDepositContainsAVFiles(deposit)
       _ <- checkEitherVideoOrAudio(deposit)
       _ <- checkDepositorUserId(deposit)
+      _ <- checkBaseRevisionConformsToUUID(deposit)
+      //_ <- checkBaseRevisionConformsToUUID(deposit, base)
     } yield ()
   }
 
@@ -118,12 +120,20 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
       }
   }
 
-  //TODO This function works as intended when mvnci applied however I did not get any failure message on VM with an invalid UUID
-  def checkBaseRevisionConformsToUUID(deposit:Deposit, base:String): Try[Unit] = {
-    val depositorBaseRevision = base
+  def checkBaseRevisionConformsToUUID(deposit: Deposit): Try[Unit] = {
+    val depositorBaseRevision : String = deposit.baseUUID
     Try(UUID.fromString(depositorBaseRevision)).isFailure match {
-      case true =>  Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
-      case false => Success(())
+      case true => Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
+      //Sometimes UUID.fromString(depositorBaseRevision) transforms an invalid base revision to a valid UUID via adding 0
+      //for example when the number of digits is 3 instead of 4.
+      //Thus the following check is also required
+      case false => (UUID.fromString(depositorBaseRevision).toString.contentEquals(depositorBaseRevision)) match{
+        case true => Success(())
+        case false => Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
+      }
     }
   }
+    //Try(UUID.fromString(depositorBaseRevision)).recoverWith {
+    //  case e => Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
+    //}
 }

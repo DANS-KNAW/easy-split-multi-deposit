@@ -59,7 +59,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         audiences = List("D30000"),
         accessright = AccessCategory.OPEN_ACCESS
       ),
-      baseUUID = "d5e8f0fb-c374-86eb-918c-b06dd5ae5e71",
+      baseUUID = "1de3f841-0f0d-048b-b3db-4b03ad4834d7",
       metadata = Metadata(
         formats = List("video/mpeg", "text/plain"),
         languages = List("NL", "encoding=UTF-8"),

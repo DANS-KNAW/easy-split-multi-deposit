@@ -37,7 +37,7 @@ import scala.util.{ Failure, Try }
 
 class AddBagToDeposit extends DebugEnhancedLogging {
 
-  def addBagToDeposit(depositId: DepositId, created: DateTime, base:String)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = {
+  def addBagToDeposit(depositId: DepositId, created: DateTime, base: String)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"construct the bag for $depositId with timestamp ${ created.toString(ISODateTimeFormat.dateTime()) }")
 
     createBag(depositId, created, base) recoverWith {
@@ -45,7 +45,7 @@ class AddBagToDeposit extends DebugEnhancedLogging {
     }
   }
 
-  private def createBag(depositId: DepositId, created: DateTime, base:String)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = Try {
+  private def createBag(depositId: DepositId, created: DateTime, base: String)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = Try {
     val inputDir = input.depositDir(depositId)
     val stageDir = stage.stagingBagDir(depositId)
 
@@ -53,7 +53,7 @@ class AddBagToDeposit extends DebugEnhancedLogging {
       add("Created", created.toString(ISODateTimeFormat.dateTime()))
     }
 
-    metadata.add("Is-Version-Of", base )
+    metadata.add("Is-Version-Of", base)
 
     if (Files.exists(inputDir)) {
       inputDir.copyDir(stageDir)
@@ -99,5 +99,3 @@ class AddBagToDeposit extends DebugEnhancedLogging {
     s"$string $unit"
   }
 }
-
-
