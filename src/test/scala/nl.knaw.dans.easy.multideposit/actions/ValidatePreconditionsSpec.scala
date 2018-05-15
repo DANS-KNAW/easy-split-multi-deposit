@@ -222,15 +222,16 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
   }
 
   it should "fail if 'uuid from string' transforms the string version of base revision into uuid without any failure but causes an unintended change on the base revision" in {
-    //var depositorBaseRevision = testInstructions1.copy(depositorUserId = "dp1").toDeposit().baseUUID.substring(0,16) + testInstructions1.copy(depositorUserId = "dp1").toDeposit().baseUUID.substring(17,35)
-    /* updating the baseUUID here didn't work, thus testInstructions3 is added into testsupportfixture */
-    val row = testInstructions3.copy(depositorUserId = "dp1").toDeposit().row
-    action.checkBaseRevisionConformsToUUID(testInstructions3.copy(depositorUserId = "dp1").toDeposit()) shouldBe Failure(InvalidInputException(row, "base revision is not in UUID format"))
+    val depositorBaseRevision = testInstructions1.copy(depositorUserId = "dp1").toDeposit().baseUUID.substring(0,16) + testInstructions1.copy(depositorUserId = "dp1").toDeposit().baseUUID.substring(17,35)
+    val newDeposit = testInstructions1.copy(depositorUserId = "dp1", baseUUID = depositorBaseRevision).toDeposit()
+    val rowNum = newDeposit.row
+    action.checkBaseRevisionConformsToUUID(newDeposit) shouldBe Failure(InvalidInputException(rowNum, "base revision is not in UUID format"))
   }
 
   it should "fail if the base revision does not conform to UUID pattern" in {
-    /* updating the baseUUID here didn't work, thus testInstructions4 is added into testsupportfixture */
-    val row = testInstructions4.copy(depositorUserId = "dp1").toDeposit().row
-    action.checkBaseRevisionConformsToUUID(testInstructions4.copy(depositorUserId = "dp1").toDeposit()) shouldBe Failure(InvalidInputException(row, "base revision is not in UUID format"))
+    val depositorBaseRevision = "ab23-bdgg"
+    val newDeposit = testInstructions1.copy(depositorUserId = "dp1", baseUUID = depositorBaseRevision).toDeposit()
+    val rowNum = newDeposit.row
+    action.checkBaseRevisionConformsToUUID(newDeposit) shouldBe Failure(InvalidInputException(rowNum, "base revision is not in UUID format"))
   }
 }

@@ -122,15 +122,13 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
 
   def checkBaseRevisionConformsToUUID(deposit: Deposit): Try[Unit] = {
     val depositorBaseRevision : String = deposit.baseUUID
-    Try(UUID.fromString(depositorBaseRevision)).isFailure match {
-      case true => Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
+    Try(UUID.fromString(depositorBaseRevision)) match {
+      case Failure(_) => Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
       //Sometimes UUID.fromString(depositorBaseRevision) transforms an invalid base revision to a valid UUID via adding 0
       //for example when the number of digits is 3 instead of 4.
       //Thus the following check is also required
-      case false => UUID.fromString(depositorBaseRevision).toString.contentEquals(depositorBaseRevision) match{
-        case true => Success(())
-        case false => Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
-      }
+      case Success(uuid) => if (uuid.toString.contentEquals(depositorBaseRevision)) Success(())
+                            else Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
     }
   }
     //Try(UUID.fromString(depositorBaseRevision)).recoverWith {
