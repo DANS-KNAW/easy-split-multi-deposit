@@ -52,7 +52,7 @@ ARGUMENTS
                                be moved to the 'output-deposit-dir'. If not specified, the value of
                                'staging-dir' in 'application.properties' is used.
     -v, --validate             Only validates the input of a Multi-Deposit ingest
-        --help                 Show help message
+    -h, --help                 Show help message
         --version              Show version of this program
   
    trailing arguments:
