@@ -28,7 +28,7 @@ import scala.util.{ Failure, Success, Try }
 class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEach with MockFactory {
 
   private val depositId = "dsId1"
-  private val depositorBaseRevision = "xx-dd"
+  //private val depositorBaseRevision = "xx-dd"
   private val ldapMock: Ldap = mock[Ldap]
   private val action = new ValidatePreconditions(ldapMock)
 
@@ -218,21 +218,16 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
   }
 
   "checkBaseRevisionConformsToUUID" should "not fail if the base revision conforms to UUID pattern" in {
-    val depositorBaseRevision = testInstructions1.copy(depositorUserId = "dp1").toDeposit().baseUUID
-    val row = testInstructions1.copy(depositorUserId = "dp1").toDeposit().row
     action.checkBaseRevisionConformsToUUID(testInstructions1.copy(depositorUserId = "dp1").toDeposit()) shouldBe Success(())
   }
 
-  /*
-  it should "fail if the base revision does not conform to UUID pattern" in {
-    val depositorBaseRevision = "1de3f841-0f0d-048-b3db-4b03ad4834d7"
-    val row = testInstructions1.copy(depositorUserId = "dp1").toDeposit().row
-    action.checkBaseRevisionConformsToUUID(testInstructions1.copy(depositorUserId = "dp1").toDeposit()) shouldBe Failure(InvalidInputException(row, "base revision is not in UUID format"))
+  it should "fail if 'uuid from string' transforms the string version of base revision into uuid without any failure but causes an unintended change on the base revision" in {
+    //var depositorBaseRevision = testInstructions1.copy(depositorUserId = "dp1").toDeposit().baseUUID.substring(0,16) + testInstructions1.copy(depositorUserId = "dp1").toDeposit().baseUUID.substring(17,35)
+    val row = testInstructions3.copy(depositorUserId = "dp1").toDeposit().row
+    action.checkBaseRevisionConformsToUUID(testInstructions3.copy(depositorUserId = "dp1").toDeposit()) shouldBe Failure(InvalidInputException(row, "base revision is not in UUID format"))
   }
-  */
 
   it should "fail if the base revision does not conform to UUID pattern" in {
-    val depositorBaseRevision = testInstructions2.copy(depositorUserId = "dp1").toDeposit().baseUUID
     val row = testInstructions2.copy(depositorUserId = "dp1").toDeposit().row
     action.checkBaseRevisionConformsToUUID(testInstructions2.copy(depositorUserId = "dp1").toDeposit()) shouldBe Failure(InvalidInputException(row, "base revision is not in UUID format"))
   }

@@ -127,7 +127,7 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
       //Sometimes UUID.fromString(depositorBaseRevision) transforms an invalid base revision to a valid UUID via adding 0
       //for example when the number of digits is 3 instead of 4.
       //Thus the following check is also required
-      case false => (UUID.fromString(depositorBaseRevision).toString.contentEquals(depositorBaseRevision)) match{
+      case false => UUID.fromString(depositorBaseRevision).toString.contentEquals(depositorBaseRevision) match{
         case true => Success(())
         case false => Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
       }
