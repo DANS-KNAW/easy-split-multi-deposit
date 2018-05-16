@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.{ Files, Path }
 import java.security.MessageDigest
+import java.util.UUID
 
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
@@ -31,7 +32,7 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
 
   private val depositId = "dsId1"
   private val date = new DateTime(1992, 7, 30, 0, 0)
-  private val base = "ab23-bdcg"
+  private val base = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7"))
   private val file1Text = "abcdef"
   private val file2Text = "defghi"
   private val file3Text = "ghijkl"

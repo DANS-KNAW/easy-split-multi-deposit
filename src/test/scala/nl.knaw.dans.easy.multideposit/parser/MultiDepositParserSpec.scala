@@ -16,10 +16,11 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import java.nio.file.{ Path, Paths }
+import java.util.UUID._
 
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
 import nl.knaw.dans.easy.multideposit.model.Instructions
+import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
 import nl.knaw.dans.lib.error.CompositeException
 import org.scalatest.BeforeAndAfterEach
 
@@ -33,7 +34,7 @@ trait DepositTestObjects extends AudioVideoTestObjects
   this: TestSupportFixture =>
 
   lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: Nil = List(
-    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ Map("BASE_REVISION" -> "ab23-bdcg") ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
+    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ Map("BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
     Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ Map("BASE_REVISION" -> "") ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
   )
 
@@ -42,7 +43,7 @@ trait DepositTestObjects extends AudioVideoTestObjects
     row = 2,
     depositorUserId = "ikke",
     profile = profile,
-    baseUUID = "ab23-bdcg",
+    baseUUID = Option(fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")),
     metadata = metadata,
     files = fileDescriptors,
     audioVideo = audioVideo
@@ -304,6 +305,14 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   it should "fail if the depositId contains invalid characters" in {
     extractInstructions("ruimtereis01#", depositCSV) should matchPattern {
       case Failure(ParseException(2, "The column 'DATASET' contains the following invalid characters: {#}", _)) =>
+    }
+  }
+
+  "uuid" should "fail if the base revision does not conform to uuid format" in {
+    val row = Map("BASE_REVISION" -> "abcd-12xy")
+
+    uuid("BASE_REVISION")(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "BASE_REVISION value base revision 'abcd-12xy' does not conform to the UUID format", _)) =>
     }
   }
 }

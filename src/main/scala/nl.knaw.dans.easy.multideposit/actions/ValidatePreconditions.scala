@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.{ Files, Path }
-import java.util.UUID
 
 import nl.knaw.dans.easy.multideposit.Ldap
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
@@ -38,8 +37,7 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
       _ <- checkSFColumnsIfDepositContainsAVFiles(deposit)
       _ <- checkEitherVideoOrAudio(deposit)
       _ <- checkDepositorUserId(deposit)
-      _ <- checkBaseRevisionConformsToUUID(deposit)
-      //_ <- checkBaseRevisionConformsToUUID(deposit, base)
+      //_ <- checkBaseRevisionConformsToUUID(deposit)
     } yield ()
   }
 
@@ -119,9 +117,9 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
         case false => Failure(InvalidInputException(deposit.row, s"The depositor '$depositorUserId' is not an active user"))
       }
   }
-
+  /*
   def checkBaseRevisionConformsToUUID(deposit: Deposit): Try[Unit] = {
-    val depositorBaseRevision : String = deposit.baseUUID
+    val depositorBaseRevision : String = deposit.baseUUID.toString
     Try(UUID.fromString(depositorBaseRevision)) match {
       case Failure(_) => Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
       //Sometimes UUID.fromString(depositorBaseRevision) transforms an invalid base revision to a valid UUID via adding 0
@@ -131,7 +129,6 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
                             else Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
     }
   }
-    //Try(UUID.fromString(depositorBaseRevision)).recoverWith {
-    //  case e => Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
-    //}
+  */
 }
+

@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import java.nio.file.{ Files, NoSuchFileException, Path }
+import java.util.UUID
 
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.encoding
@@ -128,12 +129,19 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
         .map(_ (dsId))
         .map(_ (rowNum))
         .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
-         //.combine (atMostOne(rowNum, List("BASE_REVISION"))(extractList(rows, "BASE_REVISION").map(string => UUID.fromString(string))))
         .combine(extractProfile(rows, rowNum))
-        .combine(Try(atMostOne(rowNum, List("BASE_REVISION"))(extractList(rows, "BASE_REVISION")).get.get))
+        .combine(extractList(rows)(uuid("BASE_REVISION")).flatMap(atMostOne(rowNum, List("BASE_REVISION"))))
         .combine(extractMetadata(rows))
         .combine(extractFileDescriptors(rows, rowNum, depositId))
         .combine(extractAudioVideo(rows, rowNum, depositId)))
+  }
+
+  def uuid(columnName: MultiDepositKey)(rowNum: => Int)(row: DepositRow): Option[Try[UUID]] = {
+    row.find(columnName)
+      .map(uuid => Try { UUID.fromString(uuid) }.recoverWith {
+        case e: IllegalArgumentException => Failure(ParseException(rowNum, s"$columnName value " +
+          s"base revision '$uuid' does not conform to the UUID format", e))
+      })
   }
 
   private def recoverParsing(t: Throwable): Failure[Nothing] = {
