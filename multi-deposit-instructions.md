@@ -260,3 +260,13 @@ combined with the `DATASET` value.
 [refinements of the relation element]: http://dublincore.org/documents/usageguide/qualifiers.shtml#isVersionOf
 [Springfield Web TV]: http://noterik.github.io/
 [DataCite ContributorType list]: http://schema.datacite.org/meta/kernel-4.0/include/datacite-contributorType-v4.xsd
+
+2. BASE_REVISION column
+-----------------------
+
+UUID values of the base bags pointed by the deposits are stored in this column.
+
+In the instructions.csv file, the list of uuid values in the `BASE_REVISON` column must have the same value 
+if they belong to the same dataset, or only one uuid should be provided for one dataset which has to be located 
+at the first row each time a new dataset info is added.
+
