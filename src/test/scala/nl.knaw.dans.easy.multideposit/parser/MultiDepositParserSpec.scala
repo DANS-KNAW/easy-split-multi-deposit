@@ -315,4 +315,20 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       case Failure(ParseException(2, "BASE_REVISION value base revision 'abcd-12xy' does not conform to the UUID format", _)) =>
     }
   }
+
+  it should "not fail if the base revision conforms to uuid format when there are missing digits in the base revision" in {
+    val row = Map("BASE_REVISION" -> "1de3f841-0f0d-048-b3db-4b03ad4834d7")
+
+    uuid("BASE_REVISION")(2)(row).value should matchPattern {
+       case Success(_) =>
+    }
+  }
+
+  it should "not fail if the base revision conforms to uuid format" in {
+    val row = Map("BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7")
+
+    uuid("BASE_REVISION")(2)(row).value should matchPattern {
+      case Success(_) =>
+    }
+  }
 }
