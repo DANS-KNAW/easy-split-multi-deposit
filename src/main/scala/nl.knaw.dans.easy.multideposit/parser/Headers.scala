@@ -37,7 +37,7 @@ object Headers extends DebugEnhancedLogging {
       audioVideoHeaders
   }
 
-  logger.info(s"VALID HEADERS $validHeaders")
+  logger.debug(s"VALID HEADERS $validHeaders")
 
   private lazy val profileFields = Set(
     "DC_TITLE",
