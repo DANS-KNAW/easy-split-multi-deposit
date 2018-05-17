@@ -34,8 +34,8 @@ trait DepositTestObjects extends AudioVideoTestObjects
   this: TestSupportFixture =>
 
   lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: Nil = List(
-    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ Map("BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
-    Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ Map("BASE_REVISION" -> "") ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
+    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke", "BASE_REVISION" ->"1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
+    Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
   )
 
   lazy val instructions = Instructions(
@@ -309,7 +309,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   }
 
   it should "fail if there are multiple distinct base revisions" in {
-    val ROW = Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ Map("BASE_REVISION" -> "9de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
+    val ROW = Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "9de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
     val rows = depositCSVRow1 :: ROW :: Nil
 
     extractInstructions("ruimtereis01", rows) should matchPattern {
@@ -318,7 +318,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   }
 
   it should "not fail if there are multiple nondistinct base revisions" in {
-    val ROW = Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ Map("BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
+    val ROW = Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
     val rows = depositCSVRow1 :: ROW :: Nil
 
     extractInstructions("ruimtereis01", rows) should matchPattern {
