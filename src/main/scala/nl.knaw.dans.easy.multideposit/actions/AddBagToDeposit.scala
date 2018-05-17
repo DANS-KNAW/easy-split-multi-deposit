@@ -55,7 +55,6 @@ class AddBagToDeposit extends DebugEnhancedLogging {
 
     base.foreach(uuid => metadata.add("Is-Version-Of", uuid.toString))
 
-
     if (Files.exists(inputDir)) {
       inputDir.copyDir(stageDir)
       metadata.add("Bag-Size", formatSize(calculateSizeOfPath(inputDir)))

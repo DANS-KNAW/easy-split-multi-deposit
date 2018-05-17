@@ -15,8 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+//import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-import nl.knaw.dans.lib.error._
 
 object Headers extends DebugEnhancedLogging {
 

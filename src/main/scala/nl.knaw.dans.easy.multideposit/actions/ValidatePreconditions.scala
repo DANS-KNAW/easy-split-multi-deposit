@@ -37,7 +37,6 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
       _ <- checkSFColumnsIfDepositContainsAVFiles(deposit)
       _ <- checkEitherVideoOrAudio(deposit)
       _ <- checkDepositorUserId(deposit)
-      //_ <- checkBaseRevisionConformsToUUID(deposit)
     } yield ()
   }
 
@@ -117,18 +116,4 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
         case false => Failure(InvalidInputException(deposit.row, s"The depositor '$depositorUserId' is not an active user"))
       }
   }
-  /*
-  def checkBaseRevisionConformsToUUID(deposit: Deposit): Try[Unit] = {
-    val depositorBaseRevision : String = deposit.baseUUID.toString
-    Try(UUID.fromString(depositorBaseRevision)) match {
-      case Failure(_) => Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
-      //Sometimes UUID.fromString(depositorBaseRevision) transforms an invalid base revision to a valid UUID via adding 0
-      //for example when the number of digits is 3 instead of 4.
-      //Thus the following check is also required
-      case Success(uuid) => if (uuid.toString.contentEquals(depositorBaseRevision)) Success(())
-                            else Failure(InvalidInputException(deposit.row, "base revision is not in UUID format"))
-    }
-  }
-  */
 }
-
