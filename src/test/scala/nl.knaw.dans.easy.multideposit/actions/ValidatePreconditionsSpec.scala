@@ -28,14 +28,12 @@ import scala.util.{ Failure, Success, Try }
 class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEach with MockFactory {
 
   private val depositId = "dsId1"
-  //private val depositorBaseRevision = "xx-dd"
   private val ldapMock: Ldap = mock[Ldap]
   private val action = new ValidatePreconditions(ldapMock)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-
-    // create depositDir base directory
+    
     stagingDir.deleteDirectory()
     Files.createDirectory(stagingDir)
     stagingDir.toFile should exist
@@ -216,24 +214,4 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
       case Failure(ActionException(message, _)) => message should include("multiple users with id 'dp1'")
     }
   }
-
-  /*
-  "checkBaseRevisionConformsToUUID" should "not fail if the base revision conforms to UUID pattern" in {
-    action.checkBaseRevisionConformsToUUID(testInstructions1.copy(depositorUserId = "dp1").toDeposit()) shouldBe Success(())
-  }
-
-  it should "fail if 'uuid from string' transforms the string version of base revision into uuid without any failure but causes an unintended change on the base revision" in {
-    val depositorBaseRevision = testInstructions1.copy(depositorUserId = "dp1").toDeposit().baseUUID.get.toString.substring(0,16) + testInstructions1.copy(depositorUserId = "dp1").toDeposit().baseUUID.get.toString.substring(17,35)
-    val newDeposit = testInstructions1.copy(depositorUserId = "dp1", baseUUID = Option(UUID.fromString(depositorBaseRevision))).toDeposit()
-    val rowNum = newDeposit.row
-    action.checkBaseRevisionConformsToUUID(newDeposit) shouldBe Failure(InvalidInputException(rowNum, "base revision is not in UUID format"))
-  }
-
-  it should "fail if the base revision does not conform to UUID pattern" in {
-    val depositorBaseRevision = "ab23-bdgg"
-    val newDeposit = testInstructions1.copy(depositorUserId = "dp1",  baseUUID = Option(UUID.fromString(depositorBaseRevision))).toDeposit()
-    val rowNum = newDeposit.row
-    action.checkBaseRevisionConformsToUUID(newDeposit) shouldBe Failure(InvalidInputException(rowNum, "base revision is not in UUID format"))
-  }
-  */
 }
