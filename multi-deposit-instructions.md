@@ -264,9 +264,7 @@ combined with the `DATASET` value.
 2. BASE_REVISION column
 -----------------------
 
-UUID values of the base bags pointed by the deposits are stored in this column.
+UUID values of the base bags pointed to by the deposits are stored in this column.
 
 In the instructions.csv file, the list of uuid values in the `BASE_REVISON` column must have the same value 
-if they belong to the same deposit, or only one uuid should be provided for one deposit which has to be located 
-at the first row each time a new deposit info is added.
-
+if they belong to the same deposit, or only one uuid should be provided for a deposit.
