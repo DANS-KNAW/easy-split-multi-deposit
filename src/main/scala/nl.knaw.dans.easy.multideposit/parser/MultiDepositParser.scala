@@ -173,7 +173,6 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
   }
 }
 
-
 object MultiDepositParser {
   def parse(md: Path): Try[Seq[Deposit]] = new MultiDepositParser {
     val multiDepositDir: Path = md
