@@ -114,7 +114,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       .map(_ => ())
   }
 
-  def extractDeposit(multiDepositDirectory: Path)(depositId: DepositId, rows: DepositRows ): Try[Deposit] = {
+  def extractDeposit(multiDepositDirectory: Path)(depositId: DepositId, rows: DepositRows): Try[Deposit] = {
     for {
       instructions <- extractInstructions(depositId, rows)
       depositDir = multiDepositDirectory.resolve(depositId)
