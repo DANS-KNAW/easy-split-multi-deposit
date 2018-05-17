@@ -17,7 +17,6 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.DepositId
-import nl.knaw.dans.easy.multideposit.BetterFileExtensions
 import nl.knaw.dans.lib.error.CompositeException
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -31,20 +30,21 @@ class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
     logger.debug(s"moving $stagingDirectory to $outputDir")
 
-    Try { stagingDirectory.moveRecursivelyTo(outputDir) } recoverWith {
+    Try { stagingDirectory.moveTo(outputDir); () } recoverWith {
       case e =>
         Try { outputDir.exists } match {
           case Success(true) => Failure(ActionException("An error occurred while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move is probably only partially " +
-            s"done since the output directory does exist. This move is, however, NOT revertable! " +
-            s"Please contact your application manager ASAP!", e))
+            "done since the output directory does exist. This move is, however, NOT revertable! " +
+            "Please contact your application manager ASAP!", e))
           case Success(false) => Failure(ActionException("An error occurred while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move did not take place, since " +
-            s"the output directory does not yet exist.", e))
+            "the output directory does not yet exist or is not on the same partition as the " +
+            "staging directory.", e))
           case Failure(e2) => Failure(ActionException("An error occurred both while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage } and while checking whether the " +
             s"output directory actually exists now: ${ e2.getMessage }. Please contact your " +
-            s"application manager ASAP!", new CompositeException(e, e2)))
+            "application manager ASAP!", new CompositeException(e, e2)))
         }
     }
   }

@@ -19,7 +19,7 @@ import java.io.IOException
 import java.nio.charset.Charset
 
 import better.files.File
-import org.apache.commons.io.{ Charsets, FileUtils }
+import org.apache.commons.io.Charsets
 import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
 
 import scala.collection.generic.CanBuildFrom
@@ -57,15 +57,6 @@ package object multideposit {
     def writeXml(elem: Elem, encoding: Charset = encoding): Unit = {
       file.parent.createDirectories()
       XML.save(file.toString, XML.loadString(new PrettyPrinter(160, 2).format(Utility.trim(elem))), encoding.toString, xmlDecl = true)
-    }
-
-    /**
-     * Recursively move a directory to another destination.
-     *
-     * @param destDir the directory to move to
-     */
-    def moveRecursivelyTo(destDir: File): Unit = {
-      FileUtils.moveDirectory(file.toJava, destDir.toJava)
     }
   }
 }
