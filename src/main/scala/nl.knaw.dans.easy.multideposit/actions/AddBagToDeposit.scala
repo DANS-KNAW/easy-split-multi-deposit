@@ -25,10 +25,8 @@ import gov.loc.repository.bagit.verify.FileCountAndTotalSizeVistor
 import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ BaseUUID, DepositId }
-import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser.parse
 import nl.knaw.dans.easy.multideposit.parser.{ DepositRow, DepositRows, MultiDepositParser, ParserUtils }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-import org.apache.commons.csv.CSVParser
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
