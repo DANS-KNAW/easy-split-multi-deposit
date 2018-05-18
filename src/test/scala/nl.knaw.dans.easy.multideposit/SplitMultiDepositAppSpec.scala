@@ -143,9 +143,6 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
         val expBagInfo = expBag.resolve("bag-info.txt")
 
         // skipping the Bagging-Date which is different every time
-        bagInfo.read().lines.toSeq should contain allElementsOf
-          expBagInfo.read().lines.filterNot(_ contains "Bagging-Date").toSeq
-
         bagInfo.read().lines.filterNot(_ contains "Bagging-Date").toSet should contain theSameElementsAs expBagInfo.read().lines.filterNot(_ contains "Bagging-Date").toSet
       }
 
