@@ -100,9 +100,6 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
 
     it should "succeed validating the multideposit" in {
       configureLdapMockBehavior()
-      //val base = Deposit.
-      //val base = testInstructions1.copy(depositorUserId = "dp1").toDeposit().baseUUID
-      //val row = testInstructions1.copy(depositorUserId = "dp1").toDeposit().row
       app.validate(paths, datamanager) shouldBe a[Success[_]]
     }
 
