@@ -20,7 +20,6 @@ import java.nio.file.{ Files, Path }
 import nl.knaw.dans.easy.multideposit.Ldap
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit, DepositId }
-import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
