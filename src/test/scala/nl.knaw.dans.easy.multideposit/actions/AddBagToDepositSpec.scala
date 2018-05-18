@@ -139,9 +139,7 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
   }
 
   it should "not contain the Is-Version-Of in the bag-info.txt if the Option[BaseUUID] is None " in {
-    base = None
-
-    action.addBagToDeposit(depositId, date, base) shouldBe a[Success[_]]
+    action.addBagToDeposit(depositId, date, None) shouldBe a[Success[_]]
 
     val bagInfo = stagingBagDir(depositId).resolve("bag-info.txt")
     bagInfo.toFile should exist
