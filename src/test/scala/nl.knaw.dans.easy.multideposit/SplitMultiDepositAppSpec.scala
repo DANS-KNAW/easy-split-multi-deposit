@@ -283,6 +283,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
           " - row 2: Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [user001, invalid-user]",
           " - row 2: DDM_CREATED value 'invalid-date' does not represent a date",
           " - row 2: Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'. Found: [OPEN_ACCESS, GROUP_ACCESS]",
+          " - row 2: BASE_REVISION value base revision '1de3f841-048b-b3db-4b03ad4834d7' does not conform to the UUID format",
           " - row 2: Value 'random test data' is not a valid type",
           " - row 2: Value 'NL' is not a valid value for DC_LANGUAGE",
           " - row 2: DCT_DATE value 'Text with Qualifier' does not represent a date",
