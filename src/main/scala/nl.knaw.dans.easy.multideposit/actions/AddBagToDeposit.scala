@@ -24,7 +24,7 @@ import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import gov.loc.repository.bagit.verify.FileCountAndTotalSizeVistor
 import nl.knaw.dans.easy.multideposit.FileExtensions
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
-import nl.knaw.dans.easy.multideposit.model.DepositId
+import nl.knaw.dans.easy.multideposit.model.{ BaseUUID, DepositId }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
@@ -34,21 +34,23 @@ import scala.util.{ Failure, Try }
 
 class AddBagToDeposit extends DebugEnhancedLogging {
 
-  def addBagToDeposit(depositId: DepositId, created: DateTime)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = {
+  def addBagToDeposit(depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"construct the bag for $depositId with timestamp ${ created.toString(ISODateTimeFormat.dateTime()) }")
 
-    createBag(depositId, created) recoverWith {
+    createBag(depositId, created, base) recoverWith {
       case NonFatal(e) => Failure(ActionException(s"Error occured in creating the bag for $depositId", e))
     }
   }
 
-  private def createBag(depositId: DepositId, created: DateTime)(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = Try {
+  private def createBag(depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = Try {
     val inputDir = input.depositDir(depositId)
     val stageDir = stage.stagingBagDir(depositId)
 
     val metadata = new BagitMetadata {
       add("Created", created.toString(ISODateTimeFormat.dateTime()))
     }
+
+    base.foreach(uuid => metadata.add("Is-Version-Of", uuid.toString))
 
     if (Files.exists(inputDir)) {
       inputDir.copyDir(stageDir)

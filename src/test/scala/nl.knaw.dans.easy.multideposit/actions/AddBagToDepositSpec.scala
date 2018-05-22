@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.{ Files, Path }
 import java.security.MessageDigest
+import java.util.UUID
 
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
@@ -31,6 +32,7 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
 
   private val depositId = "dsId1"
   private val date = new DateTime(1992, 7, 30, 0, 0)
+  private val base = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7"))
   private val file1Text = "abcdef"
   private val file2Text = "defghi"
   private val file3Text = "ghijkl"
@@ -52,11 +54,11 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
   }
 
   "addBagToDeposit" should "succeed given the current setup" in {
-    action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
+    action.addBagToDeposit(depositId, date, base) shouldBe a[Success[_]]
   }
 
   it should "create a bag with the files from ruimtereis01 in it and some meta-files around" in {
-    action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
+    action.addBagToDeposit(depositId, date, base) shouldBe a[Success[_]]
 
     val root = stagingBagDir(depositId)
     root.toFile should exist
@@ -80,7 +82,7 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
   }
 
   it should "preserve the file content after making the bag" in {
-    action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
+    action.addBagToDeposit(depositId, date, base) shouldBe a[Success[_]]
 
     val root = stagingBagDataDir(depositId)
     root.resolve("file1.txt").read() shouldBe file1Text
@@ -100,7 +102,7 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
 
     inputPathExplorer.depositDir(depositId).toFile shouldNot exist
 
-    action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
+    action.addBagToDeposit(depositId, date, base) shouldBe a[Success[_]]
 
     stagingDir(depositId).toFile should exist
     stagingBagDataDir(depositId).toFile should exist
@@ -119,7 +121,7 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
   }
 
   it should "contain the date-created in the bag-info.txt" in {
-    action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
+    action.addBagToDeposit(depositId, date, base) shouldBe a[Success[_]]
 
     val bagInfo = stagingBagDir(depositId).resolve("bag-info.txt")
     bagInfo.toFile should exist
@@ -127,14 +129,32 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
     bagInfo.read() should include("Created")
   }
 
+  it should "contain the Is-Version-Of in the bag-info.txt if the Option[BaseUUID] is Some " in {
+    action.addBagToDeposit(depositId, date, base) shouldBe a[Success[_]]
+
+    val bagInfo = stagingBagDir(depositId).resolve("bag-info.txt")
+    bagInfo.toFile should exist
+
+    bagInfo.read() should include("Is-Version-Of: " + UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7"))
+  }
+
+  it should "not contain the Is-Version-Of in the bag-info.txt if the Option[BaseUUID] is None " in {
+    action.addBagToDeposit(depositId, date, None) shouldBe a[Success[_]]
+
+    val bagInfo = stagingBagDir(depositId).resolve("bag-info.txt")
+    bagInfo.toFile should exist
+
+    bagInfo.read() should not include("Is-Version-Of: ")
+  }
+
   it should "contain the correct checksums in its manifest file" in {
-    action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
+    action.addBagToDeposit(depositId, date, base) shouldBe a[Success[_]]
 
     verifyChecksums(depositId, "manifest-sha1.txt")
   }
 
   it should "contain the correct checksums in its tagmanifest file" in {
-    action.addBagToDeposit(depositId, date) shouldBe a[Success[_]]
+    action.addBagToDeposit(depositId, date, base) shouldBe a[Success[_]]
 
     verifyChecksums(depositId, "tagmanifest-sha1.txt")
   }

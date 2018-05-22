@@ -171,6 +171,10 @@ a audio or video presentation contained in the dataset:
   its `xml:lang` attribute respectively.
 * If SF_* fields are present, a `DC_FORMAT` for audio/ or video/ Internet Media Types is expected  
 
+#### UUID of Base Revision
+UUID values of the base bags pointed to by the deposits are stored in the `BASE_REVISON` column. 
+In the `instructions.csv` file, the list of uuid values in the `BASE_REVISON` column must have the 
+same value if they belong to the same deposit, or only one uuid should be provided for a deposit.
 
 3. File Processing Instructions
 -------------------------------

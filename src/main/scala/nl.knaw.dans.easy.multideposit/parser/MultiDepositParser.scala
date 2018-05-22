@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import java.nio.file.{ Files, NoSuchFileException, Path }
+import java.util.UUID
 
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.encoding
@@ -98,9 +99,10 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
               s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
           case _ => Success(())
         }
-      case invalids => Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
-        s"${ invalids.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
-        "consult the documentation for the list of valid headers."))
+      case invalids =>
+        Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
+          s"${ invalids.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
+          "consult the documentation for the list of valid headers."))
     }
   }
 
@@ -122,16 +124,24 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
 
   def extractInstructions(depositId: DepositId, rows: DepositRows): Try[Instructions] = {
     val rowNum = rows.map(getRowNum).min
-
     checkValidChars(depositId, rowNum, "DATASET")
       .flatMap(dsId => Try { Instructions.curried }
         .map(_ (dsId))
         .map(_ (rowNum))
         .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
         .combine(extractProfile(rows, rowNum))
+        .combine(extractList(rows)(uuid("BASE_REVISION")).flatMap(atMostOne(rowNum, List("BASE_REVISION"))))
         .combine(extractMetadata(rows))
         .combine(extractFileDescriptors(rows, rowNum, depositId))
         .combine(extractAudioVideo(rows, rowNum, depositId)))
+  }
+
+  def uuid(columnName: MultiDepositKey)(rowNum: => Int)(row: DepositRow): Option[Try[UUID]] = {
+    row.find(columnName)
+      .map(uuid => Try { UUID.fromString(uuid) }.recoverWith {
+        case e: IllegalArgumentException => Failure(ParseException(rowNum, s"$columnName value " +
+          s"base revision '$uuid' does not conform to the UUID format", e))
+      })
   }
 
   private def recoverParsing(t: Throwable): Failure[Nothing] = {

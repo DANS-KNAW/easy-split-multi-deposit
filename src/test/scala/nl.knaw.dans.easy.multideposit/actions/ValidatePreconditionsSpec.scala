@@ -34,7 +34,6 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
   override def beforeEach(): Unit = {
     super.beforeEach()
 
-    // create depositDir base directory
     stagingDir.deleteDirectory()
     Files.createDirectory(stagingDir)
     stagingDir.toFile should exist

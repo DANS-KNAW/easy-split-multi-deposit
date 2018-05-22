@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.{ Files, Paths }
+import java.util.UUID
 
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model._
@@ -47,6 +48,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
       audiences = List("everyone", "nobody", "some people", "people with yellow hear"),
       accessright = AccessCategory.NO_ACCESS
     ),
+    baseUUID = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")),
     metadata = Metadata(
       contributors = List(ContributorPerson(initials = "B.", surname = "Smith", organization = Option("Lorem ipsum dolor sit amet"), role = Some(ContributorRole.DATA_COLLECTOR))),
       alternatives = List("foobar"),
