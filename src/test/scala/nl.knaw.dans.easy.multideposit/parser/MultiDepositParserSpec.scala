@@ -309,8 +309,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   }
 
   it should "fail if there are multiple distinct base revisions" in {
-    val ROW = Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "9de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
-    val rows = depositCSVRow1 :: ROW :: Nil
+    val row = Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "9de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
+    val rows = depositCSVRow1 :: row :: Nil
 
     extractInstructions("ruimtereis01", rows) should matchPattern {
       case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'BASE_REVISION'. Found: [1de3f841-0f0d-048b-b3db-4b03ad4834d7, 9de3f841-0f0d-048b-b3db-4b03ad4834d7]", _)) =>
@@ -318,8 +318,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   }
 
   it should "not fail if there are multiple nondistinct base revisions" in {
-    val ROW = Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
-    val rows = depositCSVRow1 :: ROW :: Nil
+    val row = Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
+    val rows = depositCSVRow1 :: row :: Nil
 
     extractInstructions("ruimtereis01", rows) should matchPattern {
       case Success(_) =>
