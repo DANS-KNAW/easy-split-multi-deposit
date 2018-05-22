@@ -19,6 +19,7 @@ import java.io.IOException
 import java.nio.file._
 import java.nio.file.attribute._
 
+import better.files.File
 import nl.knaw.dans.easy.multideposit.DepositPermissions
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
@@ -44,14 +45,14 @@ class SetDepositPermissions(depositPermissions: DepositPermissions) extends Debu
     isOnPosixFileSystem(stagingDirectory)
       .flatMap {
         case true => Try {
-          Files.walkFileTree(stagingDirectory, PermissionFileVisitor(depositPermissions))
+          Files.walkFileTree(stagingDirectory.path, PermissionFileVisitor(depositPermissions))
         }
         case false => Success(())
       }
   }
 
-  private def isOnPosixFileSystem(file: Path): Try[Boolean] = Try {
-    Files.getPosixFilePermissions(file)
+  private def isOnPosixFileSystem(file: File): Try[Boolean] = Try {
+    file.permissions
     true
   } recover {
     case _: UnsupportedOperationException => false

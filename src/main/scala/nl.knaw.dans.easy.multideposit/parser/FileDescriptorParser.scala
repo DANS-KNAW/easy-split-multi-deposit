@@ -15,8 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.{ Files, Path }
-
+import better.files.File
 import nl.knaw.dans.easy.multideposit.model.{ DepositId, FileAccessRights, FileDescriptor }
 import nl.knaw.dans.lib.error._
 
@@ -25,7 +24,7 @@ import scala.util.{ Failure, Success, Try }
 trait FileDescriptorParser {
   this: ParserUtils =>
 
-  def extractFileDescriptors(rows: DepositRows, rowNum: Int, depositId: DepositId): Try[Map[Path, FileDescriptor]] = {
+  def extractFileDescriptors(rows: DepositRows, rowNum: Int, depositId: DepositId): Try[Map[File, FileDescriptor]] = {
     extractList(rows)(fileDescriptor(depositId))
       .flatMap(_.groupBy { case (file, _, _) => file }
         .map((toFileDescriptor(rowNum) _).tupled)
@@ -33,57 +32,63 @@ trait FileDescriptorParser {
         .map(_.toMap))
   }
 
-  private def toFileDescriptor(rowNum: => Int)(path: Path, dataPerPath: List[(Path, Option[String], Option[FileAccessRights.Value])]): Try[(Path, FileDescriptor)] = {
+  private def toFileDescriptor(rowNum: => Int)(file: File, dataPerPath: List[(File, Option[String], Option[FileAccessRights.Value])]): Try[(File, FileDescriptor)] = {
     val titles = dataPerPath.collect { case (_, Some(title), _) => title }
     val fars = dataPerPath.collect { case (_, _, Some(far)) => far }
 
     (titles, fars) match {
-      case (Nil, Nil) => Success((path, FileDescriptor()))
-      case (t :: Nil, Nil) => Success((path, FileDescriptor(Some(t))))
-      case (Nil, f :: Nil) => Success((path, FileDescriptor(accessibility = Some(f))))
-      case (t :: Nil, f :: Nil) => Success((path, FileDescriptor(Some(t), Some(f))))
-      case (ts, fs) if fs.size <= 1 => Failure(ParseException(rowNum, s"FILE_TITLE defined multiple values for file '$path': ${ ts.mkString("[", ", ", "]") }"))
-      case (ts, fs) if ts.size <= 1 => Failure(ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$path': ${ fs.mkString("[", ", ", "]") }"))
+      case (Nil, Nil) => Success((file, FileDescriptor()))
+      case (t :: Nil, Nil) => Success((file, FileDescriptor(Some(t))))
+      case (Nil, f :: Nil) => Success((file, FileDescriptor(accessibility = Some(f))))
+      case (t :: Nil, f :: Nil) => Success((file, FileDescriptor(Some(t), Some(f))))
+      case (ts, fs) if fs.size <= 1 => Failure(ParseException(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ ts.mkString("[", ", ", "]") }"))
+      case (ts, fs) if ts.size <= 1 => Failure(ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fs.mkString("[", ", ", "]") }"))
       case (ts, fs) => Failure(new CompositeException(
-        ParseException(rowNum, s"FILE_TITLE defined multiple values for file '$path': ${ ts.mkString("[", ", ", "]") }"),
-        ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$path': ${ fs.mkString("[", ", ", "]") }")))
+        ParseException(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ ts.mkString("[", ", ", "]") }"),
+        ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fs.mkString("[", ", ", "]") }")))
     }
   }
 
-  def fileDescriptor(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(Path, Option[String], Option[FileAccessRights.Value])]] = {
+  def fileDescriptor(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[FileAccessRights.Value])]] = {
     val path = row.find("FILE_PATH").map(findPath(depositId))
     val title = row.find("FILE_TITLE")
     val accessRights = fileAccessRight(rowNum)(row)
 
     (path, title, accessRights) match {
-      case (Some(p), t, Some(Success(ar)))
-        if Files.exists(p)
-          && Files.isRegularFile(p) =>
+      case (Some(Failure(e)), _, Some(Failure(e2))) =>
+        Some(Failure(new CompositeException(
+            ParseException(rowNum, "FILE_PATH does not represent a valid path", e),
+            e2
+        )))
+      case (Some(Failure(e)), _, _) => Some(Failure(ParseException(rowNum, "FILE_PATH does not represent a valid path", e)))
+      case (Some(Success(p)), t, Some(Success(ar)))
+        if p.exists
+          && p.isRegularFile =>
         Some(Success((p, t, Some(ar))))
-      case (Some(p), _, Some(Success(_)))
-        if !Files.exists(p) =>
+      case (Some(Success(p)), _, Some(Success(_)))
+        if !p.exists =>
         Some(Failure(ParseException(rowNum, s"FILE_PATH '$p' does not exist")))
-      case (Some(p), _, Some(Success(_))) =>
+      case (Some(Success(p)), _, Some(Success(_))) =>
         Some(Failure(ParseException(rowNum, s"FILE_PATH '$p' is not a file")))
-      case (Some(p), t, None)
-        if Files.exists(p)
-          && Files.isRegularFile(p) =>
+      case (Some(Success(p)), t, None)
+        if p.exists
+          && p.isRegularFile =>
         Some(Success((p, t, None)))
-      case (Some(p), _, None)
-        if !Files.exists(p) =>
+      case (Some(Success(p)), _, None)
+        if !p.exists =>
         Some(Failure(ParseException(rowNum, s"FILE_PATH '$p' does not exist")))
-      case (Some(p), _, None)
-        if !Files.isRegularFile(p) =>
+      case (Some(Success(p)), _, None)
+        if !p.isRegularFile =>
         Some(Failure(ParseException(rowNum, s"FILE_PATH '$p' is not a file")))
-      case (Some(p), _, Some(Failure(e)))
-        if Files.exists(p)
-          && Files.isRegularFile(p) =>
+      case (Some(Success(p)), _, Some(Failure(e)))
+        if p.exists
+          && p.isRegularFile =>
         Some(Failure(e))
-      case (Some(p), _, Some(Failure(e)))
-        if !Files.exists(p) =>
+      case (Some(Success(p)), _, Some(Failure(e)))
+        if !p.exists =>
         Some(Failure(new CompositeException(ParseException(rowNum, s"FILE_PATH '$p' does not exist"), e)))
-      case (Some(p), _, Some(Failure(e)))
-        if !Files.isRegularFile(p) =>
+      case (Some(Success(p)), _, Some(Failure(e)))
+        if !p.isRegularFile =>
         Some(Failure(new CompositeException(ParseException(rowNum, s"FILE_PATH '$p' is not a file"), e)))
       case (None, Some(_), Some(Success(_))) =>
         Some(Failure(ParseException(rowNum, "FILE_TITLE and FILE_ACCESSIBILITY are not allowed, since FILE_PATH isn't given")))

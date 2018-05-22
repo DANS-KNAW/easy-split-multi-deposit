@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.FileExtensions
+import nl.knaw.dans.easy.multideposit.BetterFileExtensions
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -77,7 +77,7 @@ class AddFileMetadataToDeposit extends DebugEnhancedLogging {
   }
 
   private def subtitleXml(depositId: DepositId)(subtitle: Subtitles)(implicit input: InputPathExplorer): Elem = {
-    val filepath = input.depositDir(depositId).relativize(subtitle.path)
+    val filepath = input.depositDir(depositId).relativize(subtitle.file)
 
     subtitle.language
       .map(lang => <dcterms:relation xml:lang={lang}>{s"data/$filepath"}</dcterms:relation>)

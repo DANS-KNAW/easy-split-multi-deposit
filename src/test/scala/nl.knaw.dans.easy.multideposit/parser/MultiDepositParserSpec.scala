@@ -15,12 +15,12 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.{ Path, Paths }
 import java.util.UUID._
 
+import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.Instructions
-import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
 import nl.knaw.dans.lib.error.CompositeException
 import org.scalatest.BeforeAndAfterEach
 
@@ -54,20 +54,22 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(multiDepositDir)
+
+    if (multiDepositDir.exists) multiDepositDir.delete()
+    File(getClass.getResource("/allfields/input").toURI).copyTo(multiDepositDir)
   }
 
   private val parser = new MultiDepositParser with InputPathExplorer {
-    val multiDepositDir: Path = self.multiDepositDir
+    val multiDepositDir: File = self.multiDepositDir
   }
 
   import parser._
 
   "parse" should "load the input csv file into the object model" in {
-    val instructionsFile = multiDepositDir.resolve("instructions.csv")
-    instructionsFile.toFile should exist
+    val instructionsFile = multiDepositDir / "instructions.csv"
+    instructionsFile.toJava should exist
 
-    inside(MultiDepositParser.parse(testDir.resolve("md"))) {
+    inside(MultiDepositParser.parse(testDir / "md")) {
       case Success(datasets) =>
         datasets should have size 4
         val deposit1 :: deposit2 :: deposit3 :: deposit4 :: Nil = datasets.toList.sortBy(_.depositId)
@@ -99,7 +101,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
         |yzy,xwv,uts,rqp
         |onm,lkj,ihg,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = testDir.resolve("input.csv")
+    val file = testDir / "input.csv"
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -123,7 +125,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
         |yzy,xwv,uts,rqp
         |onm,lkj,ihg,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = testDir.resolve("input.csv")
+    val file = testDir / "input.csv"
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -146,7 +148,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
         |yzy,xwv,uts,rqp
         |onm,lkj,,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = testDir.resolve("input.csv")
+    val file = testDir / "input.csv"
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -169,7 +171,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
         |,xwv,uts,rqp
         |onm,lkj, ,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = testDir.resolve("input.csv")
+    val file = testDir / "input.csv"
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -192,7 +194,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
         |
         |onm,lkj,ihg,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = testDir.resolve("input.csv")
+    val file = testDir / "input.csv"
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -208,7 +210,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
 
   it should "parse the input if it only contains a row of headers and no data" in {
     val csv = "DATASET,DEPOSITOR_ID,SF_USER,SF_DOMAIN"
-    val file = testDir.resolve("input.csv")
+    val file = testDir / "input.csv"
     file.write(csv)
 
     val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
@@ -219,7 +221,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
 
   it should "fail when the input csv file is empty" in {
     val csv = ""
-    val file = testDir.resolve("input.csv")
+    val file = testDir / "input.csv"
     file.write(csv)
 
     read(file) should matchPattern { case Failure(EmptyInstructionsFileException(`file`)) => }
@@ -233,7 +235,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
         |yzy,xwv,uts,rqp
         |onm,lkj,ihg,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = testDir.resolve("input.csv")
+    val file = testDir / "input.csv"
     file.write(csv)
 
     inside(read(file)) {
@@ -250,7 +252,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
         |yzy,xwv,uts,rqp
         |onm,lkj,ihg,fed
         |cba,abc,def,ghi""".stripMargin
-    val file = testDir.resolve("input.csv")
+    val file = testDir / "input.csv"
     file.write(csv)
 
     inside(read(file)) {

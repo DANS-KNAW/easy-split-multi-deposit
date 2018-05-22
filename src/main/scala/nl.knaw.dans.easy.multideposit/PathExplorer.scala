@@ -15,34 +15,33 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.Path
-
+import better.files.File
 import nl.knaw.dans.easy.multideposit.model.DepositId
 
 object PathExplorer {
 
-  class PathExplorers(md: Path, sd: Path, od: Path) extends InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
-    val multiDepositDir: Path = md
-    val stagingDir: Path = sd
-    val outputDepositDir: Path = od
+  class PathExplorers(md: File, sd: File, od: File) extends InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
+    val multiDepositDir: File = md
+    val stagingDir: File = sd
+    val outputDepositDir: File = od
   }
 
   trait InputPathExplorer {
-    val multiDepositDir: Path
+    val multiDepositDir: File
 
     // mdDir/depositId/
-    def depositDir(depositId: DepositId): Path = {
-      multiDepositDir.resolve(depositId)
+    def depositDir(depositId: DepositId): File = {
+      multiDepositDir / depositId
     }
 
     // mdDir/instructions.csv
-    def instructionsFile: Path = multiDepositDir.resolve(instructionsFileName)
+    def instructionsFile: File = multiDepositDir / instructionsFileName
   }
 
   trait StagingPathExplorer {
     this: InputPathExplorer =>
 
-    val stagingDir: Path
+    val stagingDir: File
 
     val bagDirName = "bag"
     val dataDirName = "data"
@@ -52,59 +51,59 @@ object PathExplorer {
     val propsFileName = "deposit.properties"
 
     // stagingDir/mdDir-depositId/
-    def stagingDir(depositId: DepositId): Path = {
-      stagingDir.resolve(datasetDir(multiDepositDir, depositId))
+    def stagingDir(depositId: DepositId): File = {
+      stagingDir / datasetDir(multiDepositDir, depositId)
     }
 
     // stagingDir/mdDir-depositId/bag/
-    def stagingBagDir(depositId: DepositId): Path = {
-      stagingDir(depositId).resolve(bagDirName)
+    def stagingBagDir(depositId: DepositId): File = {
+      stagingDir(depositId) / bagDirName
     }
 
     // stagingDir/mdDir-depositId/bag/data/
-    def stagingBagDataDir(depositId: DepositId): Path = {
-      stagingBagDir(depositId).resolve(dataDirName)
+    def stagingBagDataDir(depositId: DepositId): File = {
+      stagingBagDir(depositId) / dataDirName
     }
 
     // stagingDir/mdDir-depositId/bag/metadata/
-    def stagingBagMetadataDir(depositId: DepositId): Path = {
-      stagingBagDir(depositId).resolve(metadataDirName)
+    def stagingBagMetadataDir(depositId: DepositId): File = {
+      stagingBagDir(depositId) / metadataDirName
     }
 
     // stagingDir/mdDir-depositId/deposit.properties
-    def stagingPropertiesFile(depositId: DepositId): Path = {
-      stagingDir(depositId).resolve(propsFileName)
+    def stagingPropertiesFile(depositId: DepositId): File = {
+      stagingDir(depositId) / propsFileName
     }
 
     // stagingDir/mdDir-depositId/bag/metadata/dataset.xml
-    def stagingDatasetMetadataFile(depositId: DepositId): Path = {
-      stagingBagMetadataDir(depositId).resolve(datasetMetadataFileName)
+    def stagingDatasetMetadataFile(depositId: DepositId): File = {
+      stagingBagMetadataDir(depositId) / datasetMetadataFileName
     }
 
     // stagingDir/mdDir-depositId/bag/metadata/files.xml
-    def stagingFileMetadataFile(depositId: DepositId): Path = {
-      stagingBagMetadataDir(depositId).resolve(fileMetadataFileName)
+    def stagingFileMetadataFile(depositId: DepositId): File = {
+      stagingBagMetadataDir(depositId) / fileMetadataFileName
     }
   }
 
   trait OutputPathExplorer {
     this: InputPathExplorer =>
 
-    val outputDepositDir: Path
+    val outputDepositDir: File
 
     // outputDepositDir/mdDir-depositId/
-    def outputDepositDir(depositId: DepositId): Path = {
-      outputDepositDir.resolve(datasetDir(multiDepositDir, depositId))
+    def outputDepositDir(depositId: DepositId): File = {
+      outputDepositDir / datasetDir(multiDepositDir, depositId)
     }
   }
 
   val instructionsFileName = "instructions.csv"
 
-  def multiDepositInstructionsFile(baseDir: Path): Path = {
-    baseDir.resolve(instructionsFileName)
+  def multiDepositInstructionsFile(baseDir: File): File = {
+    baseDir / instructionsFileName
   }
 
-  private def datasetDir(multiDepositDir: Path, depositId: DepositId): String = {
-    s"${ multiDepositDir.getFileName }-$depositId"
+  private def datasetDir(multiDepositDir: File, depositId: DepositId): String = {
+    s"${ multiDepositDir.name }-$depositId"
   }
 }

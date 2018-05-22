@@ -15,8 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.Path
-
+import better.files.File
 import nl.knaw.dans.easy.multideposit.model.MimeType
 import org.apache.tika.Tika
 
@@ -28,10 +27,10 @@ object MimeType {
   /**
    * Identify the mimeType of a path.
    *
-   * @param path the path to identify
+   * @param file the file to identify
    * @return the mimeType of the path if the identification was successful; `Failure` otherwise
    */
-  def get(path: Path): Try[MimeType] = Try {
-    tika.detect(path)
+  def get(file: File): Try[MimeType] = Try {
+    tika.detect(file.path)
   }
 }

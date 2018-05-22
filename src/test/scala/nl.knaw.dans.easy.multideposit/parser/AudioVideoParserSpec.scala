@@ -15,10 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.{ Path, Paths }
-
+import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.error.CompositeException
 import org.scalatest.BeforeAndAfterEach
@@ -52,14 +51,14 @@ trait AudioVideoTestObjects {
   lazy val audioVideo = AudioVideo(
     springfield = Option(Springfield("dans", "janvanmansum", "jans-test-files", PlayMode.Menu)),
     avFiles = Map(
-        multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath ->
+        multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg" ->
           Set(
             Subtitles(
-              path = multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath,
+              file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt",
               language = Option("en")
             ),
             Subtitles(
-              path = multiDepositDir.resolve("ruimtereis01/reisverslag/centaur-nederlands.srt").toAbsolutePath,
+              file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur-nederlands.srt",
               language = Option("nl")
             )
           )
@@ -71,11 +70,13 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    Paths.get(getClass.getResource("/allfields/input").toURI).copyDir(multiDepositDir)
+
+    if (multiDepositDir.exists) multiDepositDir.delete()
+    File(getClass.getResource("/allfields/input").toURI).copyTo(multiDepositDir)
   }
 
   private val parser = new AudioVideoParser with ParserUtils with InputPathExplorer {
-    val multiDepositDir: Path = self.multiDepositDir
+    val multiDepositDir: File = self.multiDepositDir
   }
 
   import parser._
@@ -292,8 +293,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath
-    val subtitles = Subtitles(multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath, Some("en"))
+    val file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg"
+    val subtitles = Subtitles(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt", Some("en"))
     avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `subtitles`)) => }
   }
 
@@ -304,9 +305,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    inside(avFile("ruimtereis01")(2)(row).value) {
-      case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe "AV_FILE_PATH 'path/to/file/that/does/not/exist.mpg' does not exist"
+    avFile("ruimtereis01")(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "AV_FILE_PATH does not represent a valid path", _)) =>
     }
   }
 
@@ -317,9 +317,10 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = multiDepositDir.resolve("ruimtereis01/reisverslag/").toAbsolutePath
-    inside(avFile("ruimtereis01")(2)(row).value) {
-      case Failure(ParseException(2, msg, _)) => msg shouldBe s"AV_FILE_PATH '$file' is not a file"
+    val file = multiDepositDir / "ruimtereis01" / "reisverslag"
+    val errorMsg = s"AV_FILE_PATH '$file' is not a file"
+    avFile("ruimtereis01")(2)(row).value should matchPattern {
+      case Failure(ParseException(2, `errorMsg`, _)) =>
     }
   }
 
@@ -330,9 +331,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    inside(avFile("ruimtereis01")(2)(row).value) {
-      case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe "AV_FILE_PATH 'path/to/file/that/does/not/exist.mpg' does not exist"
+    avFile("ruimtereis01")(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "AV_FILE_PATH does not represent a valid path", _)) =>
     }
   }
 
@@ -343,9 +343,10 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    val file = multiDepositDir.resolve("ruimtereis01/reisverslag/").toAbsolutePath
-    inside(avFile("ruimtereis01")(2)(row).value) {
-      case Failure(ParseException(2, msg, _)) => msg shouldBe s"AV_FILE_PATH '$file' is not a file"
+    val file = multiDepositDir / "ruimtereis01" / "reisverslag"
+    val errorMsg = s"AV_FILE_PATH '$file' is not a file"
+    avFile("ruimtereis01")(2)(row).value should matchPattern {
+      case Failure(ParseException(2, `errorMsg`, _)) =>
     }
   }
 
@@ -356,9 +357,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    inside(avFile("ruimtereis01")(2)(row).value) {
-      case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe "AV_SUBTITLES 'path/to/file/that/does/not/exist.srt' does not exist"
+    avFile("ruimtereis01")(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "AV_SUBTITLES does not represent a valid path", _)) =>
     }
   }
 
@@ -369,9 +369,10 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = multiDepositDir.resolve("ruimtereis01/reisverslag/").toAbsolutePath
-    inside(avFile("ruimtereis01")(2)(row).value) {
-      case Failure(ParseException(2, msg, _)) => msg shouldBe s"AV_SUBTITLES '$file' is not a file"
+    val file = multiDepositDir / "ruimtereis01" / "reisverslag"
+    val errorMsg = s"AV_SUBTITLES '$file' is not a file"
+    avFile("ruimtereis01")(2)(row).value should matchPattern {
+      case Failure(ParseException(2, `errorMsg`, _)) =>
     }
   }
 
@@ -394,9 +395,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    inside(avFile("ruimtereis01")(2)(row).value) {
-      case Failure(ParseException(2, msg, _)) =>
-        msg shouldBe s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: 'en'"
+    avFile("ruimtereis01")(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: 'en'", _)) =>
     }
   }
 
@@ -407,8 +407,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    val file = multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.mpg").toAbsolutePath
-    val subtitles = Subtitles(multiDepositDir.resolve("ruimtereis01/reisverslag/centaur.srt").toAbsolutePath)
+    val file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg"
+    val subtitles = Subtitles(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt")
     avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `subtitles`)) => }
   }
 

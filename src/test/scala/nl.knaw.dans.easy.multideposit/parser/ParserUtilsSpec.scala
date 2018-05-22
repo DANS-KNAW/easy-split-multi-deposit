@@ -15,8 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.Path
-
+import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
@@ -45,7 +44,7 @@ trait LanguageBehavior {
 class ParserUtilsSpec extends TestSupportFixture with LanguageBehavior { self =>
 
   private val parser = new ParserUtils with InputPathExplorer {
-    val multiDepositDir: Path = self.multiDepositDir
+    val multiDepositDir: File = self.multiDepositDir
   }
 
   import parser._

@@ -15,8 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.Path
-
+import better.files.File
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
@@ -61,7 +60,7 @@ trait ProfileTestObjects {
 class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { self =>
 
   private val parser = new ProfileParser with ParserUtils with InputPathExplorer {
-    val multiDepositDir: Path = self.multiDepositDir
+    val multiDepositDir: File = self.multiDepositDir
   }
 
   import parser._

@@ -15,8 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.{ Files, Path }
-
+import better.files.File
 import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.error._
@@ -28,7 +27,7 @@ trait AudioVideoParser {
 
   def extractAudioVideo(rows: DepositRows, rowNum: Int, depositId: DepositId): Try[AudioVideo] = {
     Try {
-      ((springf: Option[Springfield], avFiles: Map[Path, Set[Subtitles]]) => {
+      ((springf: Option[Springfield], avFiles: Map[File, Set[Subtitles]]) => {
         (springf, avFiles) match {
           case (None, avs) if avs.nonEmpty => Failure(ParseException(rowNum, "The column " +
             "'AV_FILE_PATH' contains values, but the columns [SF_COLLECTION, SF_USER] do not"))
@@ -92,44 +91,47 @@ trait AudioVideoParser {
         .getOrElse(Failure(ParseException(rowNum, s"Value '$mode' is not a valid play mode"))))
   }
 
-  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(Path, Subtitles)]] = {
+  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Subtitles)]] = {
     val file = row.find("AV_FILE_PATH").map(findPath(depositId))
     val subtitle = row.find("AV_SUBTITLES").map(findPath(depositId))
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, subtitle, subtitleLang) match {
-      case (Some(p), Some(sub), subLang)
-        if Files.exists(p) &&
-          Files.isRegularFile(p) &&
-          Files.exists(sub) &&
-          Files.isRegularFile(sub) &&
+      case (Some(Failure(e1)), Some(Failure(e2)), _) => Some(Failure(ParseException(rowNum, "Both AV_FILE_PATH and AV_SUBTITLES do not represent a valid path", new CompositeException(e1, e2))))
+      case (Some(Failure(e)), _, _) => Some(Failure(ParseException(rowNum, "AV_FILE_PATH does not represent a valid path", e)))
+      case (_, Some(Failure(e)), _) => Some(Failure(ParseException(rowNum, "AV_SUBTITLES does not represent a valid path", e)))
+      case (Some(Success(p)), Some(Success(sub)), subLang)
+        if p.exists &&
+          p.isRegularFile &&
+          sub.exists &&
+          sub.isRegularFile &&
           subLang.forall(isValidISO639_1Language) =>
         Some(Success { (p, Subtitles(sub, subLang)) })
-      case (Some(p), Some(_), _)
-        if !Files.exists(p) =>
+      case (Some(Success(p)), Some(_), _)
+        if !p.exists =>
         Some(Failure(ParseException(rowNum, s"AV_FILE_PATH '$p' does not exist")))
-      case (Some(p), Some(_), _)
-        if !Files.isRegularFile(p) =>
+      case (Some(Success(p)), Some(_), _)
+        if !p.isRegularFile =>
         Some(Failure(ParseException(rowNum, s"AV_FILE_PATH '$p' is not a file")))
-      case (Some(_), Some(sub), _)
-        if !Files.exists(sub) =>
+      case (Some(_), Some(Success(sub)), _)
+        if !sub.exists =>
         Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' does not exist")))
-      case (Some(_), Some(sub), _)
-        if !Files.isRegularFile(sub) =>
+      case (Some(_), Some(Success(sub)), _)
+        if !sub.isRegularFile =>
         Some(Failure(ParseException(rowNum, s"AV_SUBTITLES '$sub' is not a file")))
       case (Some(_), Some(_), Some(subLang))
         if !isValidISO639_1Language(subLang) =>
         Some(Failure(ParseException(rowNum, s"AV_SUBTITLES_LANGUAGE '$subLang' doesn't have a valid ISO 639-1 language value")))
       case (Some(_), None, Some(subLang)) =>
         Some(Failure(ParseException(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'")))
-      case (Some(p), None, None)
-        if Files.exists(p) &&
-          Files.isRegularFile(p) => None
-      case (Some(p), None, None)
-        if !Files.exists(p) =>
+      case (Some(Success(p)), None, None)
+        if p.exists &&
+          p.isRegularFile => None
+      case (Some(Success(p)), None, None)
+        if !p.exists =>
         Some(Failure(ParseException(rowNum, s"AV_FILE_PATH '$p' does not exist")))
-      case (Some(p), None, None)
-        if !Files.isRegularFile(p) =>
+      case (Some(Success(p)), None, None)
+        if !p.isRegularFile =>
         Some(Failure(ParseException(rowNum, s"AV_FILE_PATH '$p' is not a file")))
       case (None, None, None) => None
       case (None, _, _) =>

@@ -15,9 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.Files
-
-import nl.knaw.dans.easy.multideposit.{ FileExtensions, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.AudioVideo
 import org.scalatest.BeforeAndAfterEach
 
@@ -30,18 +28,18 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
   private val action = new AddPropertiesToDeposit
 
   override def beforeEach(): Unit = {
-    val path = stagingDir.resolve(s"sd-$depositId")
-    path.deleteDirectory()
-    Files.createDirectories(path)
+    val path = stagingDir / s"sd-$depositId"
+    if (path.exists) path.delete()
+    path.createDirectories()
   }
 
   "addDepositProperties" should "generate the properties file and write the properties in it" in {
     action.addDepositProperties(testInstructions1.copy(audioVideo = AudioVideo()).toDeposit(), datamanagerId, "dm@test.org") shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(testInstructions1.depositId)
-    props.toFile should exist
+    props.toJava should exist
 
-    props.read() should {
+    props.contentAsString should {
       include("creation.timestamp") and
         include("state.label") and
         include("state.description") and
@@ -59,9 +57,9 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
     action.addDepositProperties(testInstructions1.toDeposit(), datamanagerId, "dm@test.org") shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(testInstructions1.depositId)
-    props.toFile should exist
+    props.toJava should exist
 
-    props.read() should {
+    props.contentAsString should {
       include("creation.timestamp") and
         include("state.label") and
         include("state.description") and

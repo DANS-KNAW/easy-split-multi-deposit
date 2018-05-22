@@ -15,8 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.{ Files, Path }
-
+import better.files.File
 import nl.knaw.dans.easy.multideposit.Ldap
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit, DepositId }
@@ -39,10 +38,10 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
     } yield ()
   }
 
-  def checkDirectoriesDoNotExist(depositId: DepositId)(paths: Path*): Try[Unit] = {
-    logger.debug(s"check directories don't exist yet: ${ paths.mkString("[", ", ", "]") }")
+  def checkDirectoriesDoNotExist(depositId: DepositId)(directories: File*): Try[Unit] = {
+    logger.debug(s"check directories don't exist yet: ${ directories.mkString("[", ", ", "]") }")
 
-    paths.find(Files.exists(_))
+    directories.find(_.exists)
       .map(file => Failure(ActionException(s"The deposit for dataset $depositId already exists in $file.")))
       .getOrElse(Success(()))
   }
@@ -50,7 +49,7 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
   def checkOutputDirectoryExists(depositId: DepositId)(implicit output: OutputPathExplorer): Try[Unit] = {
     logger.debug("check output directory does exist")
 
-    Try { Files.exists(output.outputDepositDir(depositId)) }
+    Try { output.outputDepositDir(depositId).exists }
       .flatMap {
         case true => Failure(ActionException(s"The deposit for dataset $depositId already exists in ${ output.outputDepositDir }"))
         case false => Success(())
