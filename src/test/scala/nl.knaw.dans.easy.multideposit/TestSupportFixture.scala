@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit
 
+import java.util.UUID
+
 import better.files.File
 import better.files.File.currentWorkingDirectory
 import nl.knaw.dans.common.lang.dataset.AccessCategory
@@ -59,6 +61,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         audiences = List("D30000"),
         accessright = AccessCategory.OPEN_ACCESS
       ),
+      baseUUID = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")),
       metadata = Metadata(
         formats = List("video/mpeg", "text/plain"),
         languages = List("NL", "encoding=UTF-8"),
@@ -93,6 +96,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         audiences = List("D37000"),
         accessright = AccessCategory.GROUP_ACCESS
       ),
+      baseUUID = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")),
       metadata = Metadata(
         contributors = List(ContributorOrganization("Contributor 1"), ContributorOrganization("Contributor 2")),
         subjects = List(Subject("subject 1", Option("abr:ABRcomplex")), Subject("subject 2"), Subject("subject 3")),

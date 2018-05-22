@@ -86,7 +86,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
     for {
       _ <- validator.validateDeposit(deposit)
       _ <- createDirs.createDepositDirectories(depositId)
-      _ <- createBag.addBagToDeposit(depositId, deposit.profile.created)
+      _ <- createBag.addBagToDeposit(depositId, deposit.profile.created, deposit.baseUUID)
       _ <- createDirs.createMetadataDirectory(depositId)
       _ <- datasetMetadata.addDatasetMetadata(deposit)
       _ <- fileMetadata.addFileMetadata(depositId, deposit.files)

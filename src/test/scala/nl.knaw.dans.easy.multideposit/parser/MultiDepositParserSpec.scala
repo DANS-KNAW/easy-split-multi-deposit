@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import java.util.UUID._
+
 import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
@@ -32,8 +34,8 @@ trait DepositTestObjects extends AudioVideoTestObjects
   this: TestSupportFixture =>
 
   lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: Nil = List(
-    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
-    Map("ROW" -> "3", "DATASET" -> "ruimtereis01") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
+    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke", "BASE_REVISION" ->"1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
+    Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
   )
 
   lazy val instructions = Instructions(
@@ -41,6 +43,7 @@ trait DepositTestObjects extends AudioVideoTestObjects
     row = 2,
     depositorUserId = "ikke",
     profile = profile,
+    baseUUID = Option(fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")),
     metadata = metadata,
     files = fileDescriptors,
     audioVideo = audioVideo
@@ -304,6 +307,48 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   it should "fail if the depositId contains invalid characters" in {
     extractInstructions("ruimtereis01#", depositCSV) should matchPattern {
       case Failure(ParseException(2, "The column 'DATASET' contains the following invalid characters: {#}", _)) =>
+    }
+  }
+
+  it should "fail if there are multiple distinct base revisions" in {
+    val row = Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "9de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
+    val rows = depositCSVRow1 :: row :: Nil
+
+    extractInstructions("ruimtereis01", rows) should matchPattern {
+      case Failure(ParseException(2, "Only one row is allowed to contain a value for the column 'BASE_REVISION'. Found: [1de3f841-0f0d-048b-b3db-4b03ad4834d7, 9de3f841-0f0d-048b-b3db-4b03ad4834d7]", _)) =>
+    }
+  }
+
+  it should "not fail if there are multiple nondistinct base revisions" in {
+    val row = Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
+    val rows = depositCSVRow1 :: row :: Nil
+
+    extractInstructions("ruimtereis01", rows) should matchPattern {
+      case Success(_) =>
+    }
+  }
+
+  "uuid" should "fail if the base revision does not conform to uuid format" in {
+    val row = Map("BASE_REVISION" -> "abcd-12xy")
+
+    uuid("BASE_REVISION")(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "BASE_REVISION value base revision 'abcd-12xy' does not conform to the UUID format", _)) =>
+    }
+  }
+
+  it should "not fail if the base revision conforms to uuid format when there are missing digits in the base revision" in {
+    val row = Map("BASE_REVISION" -> "1de3f841-0f0d-048-b3db-4b03ad4834d7")
+
+    uuid("BASE_REVISION")(2)(row).value should matchPattern {
+       case Success(_) =>
+    }
+  }
+
+  it should "not fail if the base revision conforms to uuid format" in {
+    val row = Map("BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7")
+
+    uuid("BASE_REVISION")(2)(row).value should matchPattern {
+      case Success(_) =>
     }
   }
 }

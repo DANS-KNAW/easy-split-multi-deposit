@@ -15,7 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-object Headers {
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+
+object Headers extends DebugEnhancedLogging {
 
   lazy val validHeaders: Set[String] = {
     administrativeHeaders ++
@@ -33,6 +35,8 @@ object Headers {
       springfieldHeaders ++
       audioVideoHeaders
   }
+
+  logger.debug(s"VALID HEADERS $validHeaders")
 
   private lazy val profileFields = Set(
     "DC_TITLE",
@@ -135,6 +139,7 @@ object Headers {
   private lazy val administrativeHeaders = Set(
     "ROW",
     "DATASET",
-    "DEPOSITOR_ID"
+    "DEPOSITOR_ID",
+    "BASE_REVISION"
   )
 }
