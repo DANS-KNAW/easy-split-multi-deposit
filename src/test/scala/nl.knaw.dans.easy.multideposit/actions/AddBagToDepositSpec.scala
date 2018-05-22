@@ -32,7 +32,7 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
 
   private val depositId = "dsId1"
   private val date = new DateTime(1992, 7, 30, 0, 0)
-  private var base = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7"))
+  private val base = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7"))
   private val file1Text = "abcdef"
   private val file2Text = "defghi"
   private val file3Text = "ghijkl"
@@ -135,7 +135,7 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
     val bagInfo = stagingBagDir(depositId).resolve("bag-info.txt")
     bagInfo.toFile should exist
 
-    bagInfo.read() should include("Is-Version-Of: " + base.get)
+    bagInfo.read() should include("Is-Version-Of: " + UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7"))
   }
 
   it should "not contain the Is-Version-Of in the bag-info.txt if the Option[BaseUUID] is None " in {
