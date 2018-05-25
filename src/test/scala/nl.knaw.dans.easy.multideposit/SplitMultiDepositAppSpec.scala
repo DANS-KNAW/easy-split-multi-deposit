@@ -15,13 +15,19 @@
  */
 package nl.knaw.dans.easy.multideposit
 
+import java.util.UUID
+
 import better.files.File
 import better.files.File.currentWorkingDirectory
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit.parser.ParserFailedException
+import org.apache.commons.configuration.PropertiesConfiguration
+import org.joda.time.DateTime
 import org.scalamock.scalatest.MockFactory
 
+import scala.collection.JavaConverters._
+import scala.language.postfixOps
 import scala.util.{ Failure, Properties, Success }
 import scala.xml.transform.{ RewriteRule, RuleTransformer }
 import scala.xml.{ Elem, Node, NodeSeq, XML }
@@ -151,7 +157,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
         val bagit = bag / "bagit.txt"
         val expBagit = expBag / "bagit.txt"
 
-        bagit.lines.toSeq should contain allElementsOf expBagit.lines.toSeq
+        bagit.lines.toSeq should contain theSameElementsAs expBagit.lines.toSeq
       }
 
       it should "check manifest-sha1.txt" in {
@@ -160,7 +166,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
         val manifest = bag / "manifest-sha1.txt"
         val expManifest = expBag / "manifest-sha1.txt"
 
-        manifest.lines.toSeq should contain allElementsOf expManifest.lines.toSeq
+        manifest.lines.toSeq should contain theSameElementsAs expManifest.lines.toSeq
       }
 
       it should "check tagmanifest-sha1.txt" in {
@@ -171,7 +177,9 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
 
         // skipping bag-info.txt and manifest-sha1.txt which are different every time
         // due to the Bagging-Date and 'available' in metadata/dataset.xml
-        tagManifest.lines.toSeq should contain allElementsOf
+        tagManifest.lines
+          .filterNot(_ contains "bag-info.txt")
+          .filterNot(_ contains "manifest-sha1.txt").toSeq should contain theSameElementsAs
           expTagManifest.lines
             .filterNot(_ contains "bag-info.txt")
             .filterNot(_ contains "manifest-sha1.txt").toSeq
@@ -241,15 +249,31 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       it should "check deposit.properties" in {
         doNotRunOnTravis()
 
-        val props = paths.outputDepositDir / s"allfields-$bagName" / "deposit.properties"
-        val expProps = expectedOutputDir / s"input-$bagName" / "deposit.properties"
+        val props = new PropertiesConfiguration() {
+          setDelimiterParsingDisabled(true)
+          load(paths.outputDepositDir / s"allfields-$bagName" / "deposit.properties" toJava)
+        }
+        val expProps = new PropertiesConfiguration() {
+          setDelimiterParsingDisabled(true)
+          load(expectedOutputDir / s"input-$bagName" / "deposit.properties" toJava)
+        }
 
-        // skipping comment lines, as well as the line with randomized bag-id
-        props.lines.toSeq should contain allElementsOf
-          expProps.lines
-            .filterNot(_ startsWith "#")
-            .filterNot(_ contains "bag-store.bag-id")
-            .toSeq
+        props.getKeys.asScala.toSet should contain theSameElementsAs expProps.getKeys.asScala.toSet
+        // skipping the lines with randomized bag-id or current timestamp
+        for (key <- props.getKeys.asScala
+             if !key.contains("bag-store.bag-id")
+             if !key.contains("creation.timestamp")) {
+          (key, props.getString(key)) shouldBe(key, expProps.getString(key))
+        }
+
+        noException should be thrownBy UUID.fromString(props.getString("bag-store.bag-id"))
+        noException should be thrownBy UUID.fromString(expProps.getString("bag-store.bag-id"))
+
+        props.getString("bag-store.bag-id").length shouldBe 36
+        expProps.getString("bag-store.bag-id").length shouldBe 36
+
+        noException should be thrownBy DateTime.parse(props.getString("creation.timestamp"), dateTimeFormatter)
+        noException should be thrownBy DateTime.parse(expProps.getString("creation.timestamp"), dateTimeFormatter)
       }
     }
 
