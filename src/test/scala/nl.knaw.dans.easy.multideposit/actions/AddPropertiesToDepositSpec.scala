@@ -15,8 +15,11 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.util.UUID
+
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.AudioVideo
+import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
@@ -34,7 +37,10 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
   }
 
   "addDepositProperties" should "generate the properties file and write the properties in it" in {
-    action.addDepositProperties(testInstructions1.copy(audioVideo = AudioVideo()).toDeposit(), datamanagerId, "dm@test.org") shouldBe a[Success[_]]
+    //val y = new DateTime()
+    val y = DateTime.parse("2015-05-19")
+    val z = UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")
+    action.addDepositProperties(testInstructions1.copy(audioVideo = AudioVideo()).toDeposit(), datamanagerId, "dm@test.org", depositId, y, Some(z)) shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(testInstructions1.depositId)
     props.toJava should exist
@@ -54,7 +60,10 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
   }
 
   it should "generate the properties file with springfield fields and write the properties in it" in {
-    action.addDepositProperties(testInstructions1.toDeposit(), datamanagerId, "dm@test.org") shouldBe a[Success[_]]
+    //val y = new DateTime()
+    val y = DateTime.parse("2015-05-19")
+    val z = UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")
+    action.addDepositProperties(testInstructions1.toDeposit(), datamanagerId, "dm@test.org", depositId, y, Some(z)) shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(testInstructions1.depositId)
     props.toJava should exist

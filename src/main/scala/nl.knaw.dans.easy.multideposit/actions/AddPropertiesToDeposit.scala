@@ -15,21 +15,28 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.io.FileWriter
 import java.util.{ Collections, Properties, UUID }
 import java.{ util => ju }
 
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
+import nl.knaw.dans.easy.multideposit.model.{ BaseUUID, Datamanager, DatamanagerEmailaddress, Deposit, DepositId }
 import nl.knaw.dans.easy.multideposit.{ dateTimeFormatter, encoding }
-import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 import org.joda.time.{ DateTime, DateTimeZone }
 
+import scala.util.Properties.userHome
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
 
 class AddPropertiesToDeposit extends DebugEnhancedLogging {
 
-  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(implicit stage: StagingPathExplorer): Try[Unit] = {
+  var currentTimestamp = DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)
+  val csvFormat: CSVFormat = CSVFormat.RFC4180.withHeader("DATASET", "UUID", "BASE_UUID").withDelimiter(',')
+  val csvPrinterToFile = new CSVPrinter(new FileWriter(s"$userHome/easy-split-multi-deposit-identifier-info-$currentTimestamp.csv"), csvFormat.withDelimiter(','))
+
+  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress, depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"add deposit properties for ${ deposit.depositId }")
 
     val props = new Properties {
@@ -37,7 +44,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       override def keys(): ju.Enumeration[AnyRef] = Collections.enumeration(new ju.TreeSet[Object](super.keySet()))
     }
 
-    Try { addProperties(deposit, datamanagerId, emailaddress)(props) }
+    Try { addProperties(deposit, datamanagerId, emailaddress, depositId, created, base)(props) }
       .map(_ => stage.stagingPropertiesFile(deposit.depositId)
         .createIfNotExists(createParents = true)
         .bufferedWriter(encoding)
@@ -47,7 +54,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       }
   }
 
-  private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(properties: Properties): Unit = {
+  private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress, depositId: DepositId, created: DateTime, base: Option[BaseUUID])(properties: Properties): Unit = {
     val sf = deposit.springfield
     val props: Map[String, Option[String]] = Map(
       "bag-store.bag-id" -> Some(UUID.randomUUID().toString),
@@ -62,6 +69,13 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       "springfield.collection" -> sf.map(_.collection),
       "springfield.playmode" -> sf.map(_.playMode.toString)
     )
+
+    var uuidOfDeposit = props.get("bag-store.bag-id").get.get
+
+    if(base.isEmpty) csvPrinterToFile.printRecord(depositId, uuidOfDeposit, uuidOfDeposit)
+    else base.foreach(uuid => {csvPrinterToFile.printRecord(depositId, uuidOfDeposit, uuid.toString)})
+
+    csvPrinterToFile.flush()
 
     for ((key, value) <- props.collect { case (k, Some(v)) => (k, v) }) {
       properties.setProperty(key, value)

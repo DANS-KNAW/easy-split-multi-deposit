@@ -28,6 +28,7 @@ import nl.knaw.dans.easy.multideposit.model.{ BaseUUID, DepositId }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
+import scala.util.Properties.userHome
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
@@ -36,6 +37,19 @@ class AddBagToDeposit extends DebugEnhancedLogging {
 
   def addBagToDeposit(depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"construct the bag for $depositId with timestamp ${ created.toString(ISODateTimeFormat.dateTime()) }")
+
+
+    println("depositId" + depositId)
+    //if(base.isEmpty)
+    //   println("BASE" + base)
+
+    //if(base.nonEmpty)
+     // println("BASE" + base)
+
+    base.foreach(uuid =>
+      println(uuid.toString))
+
+    println(userHome)
 
     createBag(depositId, created, base) recoverWith {
       case NonFatal(e) => Failure(ActionException(s"Error occured in creating the bag for $depositId", e))
