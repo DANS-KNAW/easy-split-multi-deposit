@@ -111,7 +111,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
       _ <- createDirs.createMetadataDirectory(depositId)
       _ <- datasetMetadata.addDatasetMetadata(deposit)
       _ <- fileMetadata.addFileMetadata(depositId, deposit.files)
-      _ <- depositProperties.addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress, depositId, deposit.profile.created, deposit.baseUUID)
+      _ <- depositProperties.addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress, depositId, deposit.baseUUID)
       _ <- setPermissions.setDepositPermissions(depositId)
       _ = logger.info(s"deposit was created successfully for $depositId")
     } yield ()

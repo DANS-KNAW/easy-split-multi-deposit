@@ -36,7 +36,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
   val csvFormat: CSVFormat = CSVFormat.RFC4180.withHeader("DATASET", "UUID", "BASE_UUID").withDelimiter(',')
   val csvPrinterToFile = new CSVPrinter(new FileWriter(s"$userHome/easy-split-multi-deposit-identifier-info-$currentTimestamp.csv"), csvFormat.withDelimiter(','))
 
-  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress, depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit stage: StagingPathExplorer): Try[Unit] = {
+  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress, depositId: DepositId, base: Option[BaseUUID])(implicit stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"add deposit properties for ${ deposit.depositId }")
 
     val props = new Properties {
@@ -44,7 +44,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       override def keys(): ju.Enumeration[AnyRef] = Collections.enumeration(new ju.TreeSet[Object](super.keySet()))
     }
 
-    Try { addProperties(deposit, datamanagerId, emailaddress, depositId, created, base)(props) }
+    Try { addProperties(deposit, datamanagerId, emailaddress, depositId, base)(props) }
       .map(_ => stage.stagingPropertiesFile(deposit.depositId)
         .createIfNotExists(createParents = true)
         .bufferedWriter(encoding)
@@ -54,7 +54,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       }
   }
 
-  private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress, depositId: DepositId, created: DateTime, base: Option[BaseUUID])(properties: Properties): Unit = {
+  private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress, depositId: DepositId, base: Option[BaseUUID])(properties: Properties): Unit = {
     val sf = deposit.springfield
     val props: Map[String, Option[String]] = Map(
       "bag-store.bag-id" -> Some(UUID.randomUUID().toString),

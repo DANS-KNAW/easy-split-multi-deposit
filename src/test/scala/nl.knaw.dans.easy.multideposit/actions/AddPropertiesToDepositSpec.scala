@@ -40,7 +40,7 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
     //val y = new DateTime()
     val y = DateTime.parse("2015-05-19")
     val z = UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")
-    action.addDepositProperties(testInstructions1.copy(audioVideo = AudioVideo()).toDeposit(), datamanagerId, "dm@test.org", depositId, y, Some(z)) shouldBe a[Success[_]]
+    action.addDepositProperties(testInstructions1.copy(audioVideo = AudioVideo()).toDeposit(), datamanagerId, "dm@test.org", depositId, /*y,*/ Some(z)) shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(testInstructions1.depositId)
     props.toJava should exist
@@ -63,7 +63,7 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
     //val y = new DateTime()
     val y = DateTime.parse("2015-05-19")
     val z = UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")
-    action.addDepositProperties(testInstructions1.toDeposit(), datamanagerId, "dm@test.org", depositId, y, Some(z)) shouldBe a[Success[_]]
+    action.addDepositProperties(testInstructions1.toDeposit(), datamanagerId, "dm@test.org", depositId, /*y,*/ Some(z)) shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(testInstructions1.depositId)
     props.toJava should exist
