@@ -16,18 +16,24 @@
 package nl.knaw.dans.easy.multideposit
 
 import java.util.Locale
+import java.{ util => ju }
 import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
 
-import nl.knaw.dans.easy.multideposit.PathExplorer._
-import nl.knaw.dans.easy.multideposit.actions.{ RetrieveDatamanager, _ }
+import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer, _ }
+import nl.knaw.dans.easy.multideposit.actions.{ AddPropertiesToDeposit, RetrieveDatamanager, _ }
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import org.apache.commons.configuration.PropertiesConfiguration
+import org.apache.commons.csv.CSVParser
+import org.joda.time.DateTime
 
+import scala.util.Properties.userHome
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
+
 
 class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
   private val validator = new ValidatePreconditions(ldap)
@@ -39,6 +45,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
   private val depositProperties = new AddPropertiesToDeposit()
   private val setPermissions = new SetDepositPermissions(permissions)
   private val moveDeposit = new MoveDepositToOutputDir()
+  private val createBaseReport = new CreateReportOfBaseUUIDs()
 
   override def close(): Unit = ldap.close()
 
@@ -75,6 +82,20 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
     } yield ()
   }
 
+  /*
+  def createMap(depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = {
+    Try {
+      val csvFormat: CSVFormat = CSVFormat.RFC4180.withHeader("DATASET", "UUID", "BASE_UUID").withDelimiter(',')
+      val csvPrinterToFile = new CSVPrinter(new FileWriter("./instructions.csv"), csvFormat.withDelimiter(','))
+      var multiValueMap: Map[String, List[String]] = Map(depositId -> List())
+      base.foreach(uuid => multiValueMap.put(depositId, List(depositId, "", uuid.toString)))
+      print(multiValueMap)
+      base.foreach(uuid => csvPrinterToFile.printRecord(depositId, "", uuid.toString))
+      csvPrinterToFile.flush()
+      multiValueMap
+    }
+  }*/
+
   private def convertDeposit(paths: PathExplorers, datamanagerId: Datamanager, dataManagerEmailAddress: DatamanagerEmailaddress)(deposit: Deposit): Try[Unit] = {
     val depositId = deposit.depositId
     implicit val input: InputPathExplorer = paths
@@ -90,7 +111,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
       _ <- createDirs.createMetadataDirectory(depositId)
       _ <- datasetMetadata.addDatasetMetadata(deposit)
       _ <- fileMetadata.addFileMetadata(depositId, deposit.files)
-      _ <- depositProperties.addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress)
+      _ <- depositProperties.addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress, depositId, deposit.baseUUID)
       _ <- setPermissions.setDepositPermissions(depositId)
       _ = logger.info(s"deposit was created successfully for $depositId")
     } yield ()
