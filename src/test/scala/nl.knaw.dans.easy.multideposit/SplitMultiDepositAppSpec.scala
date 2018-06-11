@@ -45,8 +45,8 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
     formats should contain("audio/mpeg3")
   }
 
-  private val allfields = testDir / "md" / "allfields"
-  private val invalidCSV = testDir / "md" / "invalidCSV"
+  private val allfields = multiDepositDir / "allfields"
+  private val invalidCSV = multiDepositDir / "invalidCSV"
 
   /*
     Note to future developers:
@@ -82,8 +82,10 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
     val datamanager = "easyadmin"
     val paths = new PathExplorers(
       md = allfields,
-      sd = testDir / "sd",
-      od = (testDir / "od").createIfNotExists(asDirectory = true, createParents = true))
+      sd = stagingDir,
+      od = outputDepositDir.createIfNotExists(asDirectory = true, createParents = true),
+      report = reportFile
+    )
     val app = new SplitMultiDepositApp(formats, ldap, DepositPermissions("rwxrwx---", getFileSystemGroup))
 
     val expectedOutputDir = File(getClass.getResource("/allfields/output").toURI)
@@ -290,8 +292,10 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
   "convert invalidCSV" should "fail in the parser step and return a report of the errors" in {
     val paths = new PathExplorers(
       md = invalidCSV,
-      sd = testDir / "sd",
-      od = (testDir / "od").createIfNotExists(asDirectory = true, createParents = true))
+      sd = stagingDir,
+      od = outputDepositDir.createIfNotExists(asDirectory = true, createParents = true),
+      report = reportFile
+    )
     val app = new SplitMultiDepositApp(formats, mock[Ldap], DepositPermissions("rwxrwx---", getFileSystemGroup))
 
     inside(app.convert(paths, "easyadmin")) {

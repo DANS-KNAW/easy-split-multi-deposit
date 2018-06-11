@@ -53,13 +53,14 @@ object Command extends App with DebugEnhancedLogging {
     val md = File(commandLine.multiDepositDir())
     val sd = commandLine.stagingDir.map(File(_)).getOrElse(defaultStagingDir)
     val od = File(commandLine.outputDepositDir())
+    val report = File(commandLine.reportFile())
     val dm = commandLine.datamanager()
 
     if (commandLine.validateOnly())
-      app.validate(new PathExplorers(md, sd, od), dm)
+      app.validate(new PathExplorers(md, sd, od, report), dm)
         .map(_ => "Finished successfully! Everything looks good.")
     else
-      app.convert(new PathExplorers(md, sd, od), dm)
+      app.convert(new PathExplorers(md, sd, od, report), dm)
         .map(_ => s"Finished successfully! The output can be found in $od.")
   }
 }
