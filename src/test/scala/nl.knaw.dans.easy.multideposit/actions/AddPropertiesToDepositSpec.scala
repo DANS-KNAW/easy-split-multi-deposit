@@ -15,16 +15,21 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.util.UUID
+
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.AudioVideo
+import org.apache.commons.configuration.PropertiesConfiguration
 import org.scalatest.BeforeAndAfterEach
 
+import scala.collection.JavaConverters._
 import scala.util.Success
 
 class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
 
   private val depositId = "ds1"
   private val datamanagerId = "dm"
+  private val datamanagerEmail = "dm@test.org"
   private val action = new AddPropertiesToDeposit
 
   override def beforeEach(): Unit = {
@@ -34,43 +39,76 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
   }
 
   "addDepositProperties" should "generate the properties file and write the properties in it" in {
-    action.addDepositProperties(testInstructions1.copy(audioVideo = AudioVideo()).toDeposit(), datamanagerId, "dm@test.org") shouldBe a[Success[_]]
+    val uuid = UUID.randomUUID()
+    action.addDepositProperties(testInstructions1.copy(audioVideo = AudioVideo()).toDeposit().copy(bagId = uuid), datamanagerId, datamanagerEmail) shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(testInstructions1.depositId)
     props.toJava should exist
 
-    props.contentAsString should {
-      include("creation.timestamp") and
-        include("state.label") and
-        include("state.description") and
-        include(s"depositor.userId=${ testInstructions1.depositorUserId }") and
-        include("datamanager.email=dm@test.org") and
-        include("datamanager.userId=dm") and
-        not include "springfield.domain" and
-        not include "springfield.user" and
-        not include "springfield.collection" and
-        not include "springfield.playmode"
+    val resultProps = new PropertiesConfiguration {
+      setDelimiterParsingDisabled(true)
+      load(props.toJava)
     }
+
+    resultProps.getKeys.asScala.toList should {
+      contain only(
+        "bag-store.bag-id",
+        "creation.timestamp",
+        "state.label",
+        "state.description",
+        "depositor.userId",
+        "datamanager.email",
+        "datamanager.userId",
+      ) and contain noneOf(
+        "springfield.domain",
+        "springfield.user",
+        "springfield.collection",
+        "springfield.playmode",
+      )
+    }
+
+    resultProps.getString("bag-store.bag-id") shouldBe uuid.toString
+    resultProps.getString("depositor.userId") shouldBe "ruimtereiziger1"
+    resultProps.getString("datamanager.email") shouldBe datamanagerEmail
+    resultProps.getString("datamanager.userId") shouldBe datamanagerId
   }
 
   it should "generate the properties file with springfield fields and write the properties in it" in {
-    action.addDepositProperties(testInstructions1.toDeposit(), datamanagerId, "dm@test.org") shouldBe a[Success[_]]
+    val uuid = UUID.randomUUID()
+
+    action.addDepositProperties(testInstructions1.toDeposit().copy(bagId = uuid), datamanagerId, datamanagerEmail) shouldBe a[Success[_]]
 
     val props = stagingPropertiesFile(testInstructions1.depositId)
     props.toJava should exist
 
-    props.contentAsString should {
-      include("creation.timestamp") and
-        include("state.label") and
-        include("state.description") and
-        include("depositor.userId=ruimtereiziger1") and
-        include("datamanager.email=dm@test.org") and
-        include("datamanager.userId=dm") and
-        include("springfield.domain=dans") and
-        include("springfield.user=janvanmansum") and
-        include("springfield.collection=Jans-test-files") and
-        include("springfield.playmode=menu") and
-        include regex "bag-store.bag-id=[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"
+    val resultProps = new PropertiesConfiguration {
+      setDelimiterParsingDisabled(true)
+      load(props.toJava)
     }
+
+    resultProps.getKeys.asScala.toList should {
+      contain only(
+        "bag-store.bag-id",
+        "creation.timestamp",
+        "state.label",
+        "state.description",
+        "depositor.userId",
+        "datamanager.email",
+        "datamanager.userId",
+        "springfield.domain",
+        "springfield.user",
+        "springfield.collection",
+        "springfield.playmode",
+      )
+    }
+
+    resultProps.getString("bag-store.bag-id") shouldBe uuid.toString
+    resultProps.getString("depositor.userId") shouldBe "ruimtereiziger1"
+    resultProps.getString("datamanager.email") shouldBe datamanagerEmail
+    resultProps.getString("datamanager.userId") shouldBe datamanagerId
+    resultProps.getString("springfield.domain") shouldBe "dans"
+    resultProps.getString("springfield.user") shouldBe "janvanmansum"
+    resultProps.getString("springfield.collection") shouldBe "Jans-test-files"
+    resultProps.getString("springfield.playmode") shouldBe "menu"
   }
 }
