@@ -20,6 +20,7 @@ import java.nio.charset.Charset
 
 import better.files.File
 import org.apache.commons.io.Charsets
+import org.joda.time.{ DateTime, DateTimeZone }
 import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
 
 import scala.collection.generic.CanBuildFrom
@@ -28,6 +29,7 @@ import scala.xml.{ Elem, PrettyPrinter, Utility, XML }
 
 package object multideposit {
   val dateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime()
+  def now: String = DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)
 
   val encoding: Charset = Charsets.UTF_8
 

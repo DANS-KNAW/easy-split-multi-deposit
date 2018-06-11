@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
-import nl.knaw.dans.easy.multideposit.dateTimeFormatter
+import nl.knaw.dans.easy.multideposit.now
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.configuration.PropertiesConfiguration
@@ -48,7 +48,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
     val sf = deposit.springfield
     val props: Map[String, Option[String]] = Map(
       "bag-store.bag-id" -> Some(deposit.bagId.toString),
-      "creation.timestamp" -> Some(DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)),
+      "creation.timestamp" -> Some(now),
       "state.label" -> Some("SUBMITTED"),
       "state.description" -> Some("Deposit is valid and ready for post-submission processing"),
       "depositor.userId" -> Some(deposit.depositorUserId),
