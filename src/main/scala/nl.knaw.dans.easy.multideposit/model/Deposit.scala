@@ -15,26 +15,37 @@
  */
 package nl.knaw.dans.easy.multideposit.model
 
+import java.util.UUID
+
 import better.files.File
 
 case class Instructions(depositId: DepositId,
                         row: Int,
                         depositorUserId: DepositorUserId,
                         profile: Profile,
-                        baseUUID: Option[BaseUUID]= Option.empty,
+                        baseUUID: Option[BaseUUID] = Option.empty,
                         metadata: Metadata = Metadata(),
                         files: Map[File, FileDescriptor] = Map.empty,
                         audioVideo: AudioVideo = AudioVideo()) {
   def toDeposit(fms: Seq[FileMetadata] = Seq.empty): Deposit = {
-    Deposit(depositId, row, depositorUserId, profile, baseUUID, metadata, fms, audioVideo.springfield)
+    Deposit(depositId = depositId,
+      row = row,
+      depositorUserId = depositorUserId,
+      profile = profile,
+      baseUUID = baseUUID,
+      metadata = metadata,
+      files = fms,
+      springfield = audioVideo.springfield
+    )
   }
 }
 
 case class Deposit(depositId: DepositId,
+                   bagId: BagId = UUID.randomUUID(),
+                   baseUUID: Option[BaseUUID] = Option.empty,
                    row: Int,
                    depositorUserId: DepositorUserId,
                    profile: Profile,
-                   baseUUID: Option[BaseUUID]= Option.empty,
                    metadata: Metadata = Metadata(),
                    files: Seq[FileMetadata] = Seq.empty,
                    springfield: Option[Springfield] = Option.empty)

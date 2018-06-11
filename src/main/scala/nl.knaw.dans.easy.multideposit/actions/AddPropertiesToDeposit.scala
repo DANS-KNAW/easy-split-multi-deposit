@@ -50,7 +50,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
   private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(properties: Properties): Unit = {
     val sf = deposit.springfield
     val props: Map[String, Option[String]] = Map(
-      "bag-store.bag-id" -> Some(UUID.randomUUID().toString),
+      "bag-store.bag-id" -> Some(deposit.bagId.toString),
       "creation.timestamp" -> Some(DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)),
       "state.label" -> Some("SUBMITTED"),
       "state.description" -> Some("Deposit is valid and ready for post-submission processing"),
