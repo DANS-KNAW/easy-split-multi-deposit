@@ -64,7 +64,7 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
   val validateOnly: ScallopOption[Boolean] = opt[Boolean](
     name = "validate",
     short = 'v',
-    descr = "Only validates the input of a Multi-Deposit ingest",
+    descr = "Validates the input of a Multi-Deposit ingest",
     default = Some(false))
 
   val multiDepositDir: ScallopOption[Path] = trailArg[Path](
