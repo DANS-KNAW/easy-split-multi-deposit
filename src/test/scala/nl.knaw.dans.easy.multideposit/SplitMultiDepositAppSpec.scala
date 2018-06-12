@@ -48,6 +48,11 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
   private val allfields = multiDepositDir / "allfields"
   private val invalidCSV = multiDepositDir / "invalidCSV"
 
+  val ruimtereis01 = "ruimtereis01"
+  val ruimtereis02 = "ruimtereis02"
+  val ruimtereis03 = "ruimtereis03"
+  val ruimtereis04 = "ruimtereis04"
+
   /*
     Note to future developers:
     We're sharing tests in this BlackBoxSpec to prevent as much test duplication as possible.
@@ -279,10 +284,30 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       }
     }
 
-    "ruimtereis01" should behave like bagContents("ruimtereis01", expectedDataContentRuimtereis01)
-    "ruimtereis02" should behave like bagContents("ruimtereis02", expectedDataContentRuimtereis02)
-    "ruimtereis03" should behave like bagContents("ruimtereis03", expectedDataContentRuimtereis03)
-    "ruimtereis04" should behave like bagContents("ruimtereis04", expectedDataContentRuimtereis04)
+    it should "check report.csv" in {
+      reportFile.toJava should exist
+
+      val header :: lines = reportFile.lines.toList
+      val reportLines = lines.collect {
+        case s if s startsWith ruimtereis01 => ruimtereis01 -> s
+        case s if s startsWith ruimtereis02 => ruimtereis02 -> s
+        case s if s startsWith ruimtereis03 => ruimtereis03 -> s
+        case s if s startsWith ruimtereis04 => ruimtereis04 -> s
+      }.toMap
+      // taken from https://stackoverflow.com/a/6640851/2389405
+      val uuidRegex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+
+      header shouldBe "DATASET,UUID,BASE-REVISION"
+      reportLines(ruimtereis01) should fullyMatch regex s"^$ruimtereis01,$uuidRegex,d5e8f0fb-c374-86eb-918c-b06dd5ae5e71$$"
+      reportLines(ruimtereis02) should fullyMatch regex s"^$ruimtereis02,($uuidRegex),\\1$$"
+      reportLines(ruimtereis03) should fullyMatch regex s"^$ruimtereis03,($uuidRegex),\\1$$"
+      reportLines(ruimtereis04) should fullyMatch regex s"^$ruimtereis04,$uuidRegex,773dc53a-1cdb-47c4-992a-254a59b98376$$"
+    }
+
+    ruimtereis01 should behave like bagContents(ruimtereis01, expectedDataContentRuimtereis01)
+    ruimtereis02 should behave like bagContents(ruimtereis02, expectedDataContentRuimtereis02)
+    ruimtereis03 should behave like bagContents(ruimtereis03, expectedDataContentRuimtereis03)
+    ruimtereis04 should behave like bagContents(ruimtereis04, expectedDataContentRuimtereis04)
   }
 
   beforeAll()
