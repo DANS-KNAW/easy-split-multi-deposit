@@ -285,6 +285,8 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
     }
 
     it should "check report.csv" in {
+      doNotRunOnTravis()
+      
       reportFile.toJava should exist
 
       val header :: lines = reportFile.lines.toList
