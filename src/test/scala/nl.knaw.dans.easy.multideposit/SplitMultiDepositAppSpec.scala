@@ -286,7 +286,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
 
     it should "check report.csv" in {
       doNotRunOnTravis()
-      
+
       reportFile.toJava should exist
 
       val header :: lines = reportFile.lines.toList
@@ -297,7 +297,8 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
         case s if s startsWith ruimtereis04 => ruimtereis04 -> s
       }.toMap
       // taken from https://stackoverflow.com/a/6640851/2389405
-      val uuidRegex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+      // and https://github.com/DANS-KNAW/easy-split-multi-deposit/pull/111#discussion_r194733478
+      val uuidRegex = "[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}"
 
       header shouldBe "DATASET,UUID,BASE-REVISION"
       reportLines(ruimtereis01) should fullyMatch regex s"^$ruimtereis01,$uuidRegex,d5e8f0fb-c374-86eb-918c-b06dd5ae5e71$$"

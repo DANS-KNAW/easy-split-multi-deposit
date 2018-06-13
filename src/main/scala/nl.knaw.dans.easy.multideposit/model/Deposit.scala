@@ -27,14 +27,15 @@ case class Instructions(depositId: DepositId,
                         metadata: Metadata = Metadata(),
                         files: Map[File, FileDescriptor] = Map.empty,
                         audioVideo: AudioVideo = AudioVideo()) {
-  def toDeposit(fms: Seq[FileMetadata] = Seq.empty): Deposit = {
-    Deposit(depositId = depositId,
+  def toDeposit(fileMetadatas: Seq[FileMetadata] = Seq.empty): Deposit = {
+    Deposit(
+      depositId = depositId,
+      baseUUID = baseUUID,
       row = row,
       depositorUserId = depositorUserId,
       profile = profile,
-      baseUUID = baseUUID,
       metadata = metadata,
-      files = fms,
+      files = fileMetadatas,
       springfield = audioVideo.springfield
     )
   }
