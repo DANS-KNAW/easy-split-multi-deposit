@@ -34,7 +34,7 @@ class ReportDatasets {
 
   private def csvPrinter(file: File): ManagedResource[CSVPrinter] = {
     file.bufferedWriter(charset = encoding)
-      .flatMap[CSVPrinter, ManagedResource](writer => new ManagedResource(new CSVPrinter(writer, csvFormat)))
+      .flatMap[CSVPrinter, ManagedResource](writer => new ManagedResource(csvFormat.print(writer)))
   }
 
   private def printRecord(deposit: Deposit, printer: CSVPrinter): Unit = {
