@@ -73,7 +73,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
       }
       _ = logger.info("deposits were created successfully")
       _ <- reportDatasets.report(deposits)
-      _ <- deposits.mapUntilFailure(d => moveDeposit.moveDepositsToOutputDir(d.depositId))
+      _ <- deposits.mapUntilFailure(deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId))
     } yield ()
   }
 

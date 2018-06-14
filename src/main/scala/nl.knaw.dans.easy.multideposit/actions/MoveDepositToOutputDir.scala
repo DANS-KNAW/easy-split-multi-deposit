@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
-import nl.knaw.dans.easy.multideposit.model.DepositId
+import nl.knaw.dans.easy.multideposit.model.{ BagId, DepositId }
 import nl.knaw.dans.lib.error.CompositeException
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -24,9 +24,9 @@ import scala.util.{ Failure, Success, Try }
 
 class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
-  def moveDepositsToOutputDir(depositId: DepositId)(implicit stage: StagingPathExplorer, output: OutputPathExplorer): Try[Unit] = {
+  def moveDepositsToOutputDir(depositId: DepositId, bagId: BagId)(implicit stage: StagingPathExplorer, output: OutputPathExplorer): Try[Unit] = {
     val stagingDirectory = stage.stagingDir(depositId)
-    val outputDir = output.outputDepositDir(depositId)
+    val outputDir = output.outputDepositDir(bagId)
 
     logger.debug(s"moving $stagingDirectory to $outputDir")
 
