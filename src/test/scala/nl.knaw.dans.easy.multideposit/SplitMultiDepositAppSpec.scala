@@ -146,6 +146,18 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       reportLines(ruimtereis04) should fullyMatch regex s"^$ruimtereis04,$uuidRegex,773dc53a-1cdb-47c4-992a-254a59b98376$$"
     }
 
+    def extractBagId(s: String) = {
+      s"^.*,($uuidRegex),.*$$".r.findFirstMatchIn(s).map(_.group(1))
+        .getOrElse { fail(s"""report output line "$s" does not match the expected pattern""") }
+    }
+
+    lazy val bagIdsPerDeposit = reportFile.lines.drop(1).collect {
+      case s if s startsWith ruimtereis01 => ruimtereis01 -> extractBagId(s)
+      case s if s startsWith ruimtereis02 => ruimtereis02 -> extractBagId(s)
+      case s if s startsWith ruimtereis03 => ruimtereis03 -> extractBagId(s)
+      case s if s startsWith ruimtereis04 => ruimtereis04 -> extractBagId(s)
+    }.toMap
+
     val expectedDataContentRuimtereis01 = Set("data/", "ruimtereis01_verklaring.txt", "path/",
       "to/", "a/", "random/", "video/", "hubble.mpg", "reisverslag/", "centaur.mpg", "centaur.srt",
       "centaur-nederlands.srt", "deel01.docx", "deel01.txt", "deel02.txt", "deel03.txt")
