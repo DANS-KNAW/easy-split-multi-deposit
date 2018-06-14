@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.util.UUID
+
 import better.files.File
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import org.scalatest.BeforeAndAfterEach
@@ -23,7 +25,8 @@ import scala.util.Success
 
 class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterEach {
 
-  private val depositId = "ruimtereis01"
+  private val depositId1 = "ruimtereis01"
+  private val depositId2 = "ruimtereis02"
   private val action = new MoveDepositToOutputDir
 
   override def beforeEach(): Unit = {
@@ -35,12 +38,12 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
     stagingDir.toJava should exist
 
     File(getClass.getResource("/allfields/output/input-ruimtereis01").toURI)
-      .copyTo(stagingDir("ruimtereis01"))
+      .copyTo(stagingDir(depositId1))
     File(getClass.getResource("/allfields/output/input-ruimtereis02").toURI)
-      .copyTo(stagingDir("ruimtereis02"))
+      .copyTo(stagingDir(depositId2))
 
-    stagingDir("ruimtereis01").toJava should exist
-    stagingDir("ruimtereis02").toJava should exist
+    stagingDir(depositId1).toJava should exist
+    stagingDir(depositId2).toJava should exist
 
     if (outputDepositDir.exists) outputDepositDir.delete()
     outputDepositDir.createDirectory()
@@ -48,19 +51,21 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
   }
 
   "execute" should "move the deposit to the outputDepositDirectory" in {
-    action.moveDepositsToOutputDir(depositId) shouldBe a[Success[_]]
+    val bagId = UUID.randomUUID()
 
-    stagingDir(depositId).toJava shouldNot exist
-    outputDepositDir(depositId).toJava should exist
+    action.moveDepositsToOutputDir(depositId1, bagId) shouldBe a[Success[_]]
 
-    stagingDir("ruimtereis02").toJava should exist
-    outputDepositDir("ruimtereis02").toJava shouldNot exist
+    stagingDir(depositId1).toJava shouldNot exist
+    outputDepositDir(bagId).toJava should exist
   }
 
   it should "only move the one deposit to the outputDepositDirectory, not other deposits in the staging directory" in {
-    action.moveDepositsToOutputDir(depositId) shouldBe a[Success[_]]
+    val bagId = UUID.randomUUID()
 
-    stagingDir("ruimtereis02").toJava should exist
-    outputDepositDir("ruimtereis02").toJava shouldNot exist
+    action.moveDepositsToOutputDir(depositId1, bagId) shouldBe a[Success[_]]
+
+    stagingDir(depositId2).toJava should exist
+    // even though ruimtereis02 is staged as well, it is not moved to the outputDepositDir
+    outputDepositDir.list.toList should contain only outputDepositDir(bagId)
   }
 }
