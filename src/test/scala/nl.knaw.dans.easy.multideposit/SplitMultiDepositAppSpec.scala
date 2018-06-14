@@ -167,9 +167,9 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
     val expectedDataContentRuimtereis04 = Set("data/", "Quicksort.hs", "path/", "to/", "a/",
       "random/", "file/", "file.txt", "sound/", "chicken.mp3")
 
-    def bagContents(bagName: String, dataContent: Set[String]): Unit = {
-      val bag = paths.outputDepositDir / s"allfields-$bagName/bag"
-      val expBag = expectedOutputDir / s"input-$bagName/bag"
+    def bagContents(depositName: String, dataContent: Set[String]): Unit = {
+      lazy val bag = paths.outputDepositDir / bagIdsPerDeposit(depositName) / "bag"
+      val expBag = expectedOutputDir / s"input-$depositName" / "bag"
 
       it should "check the files present in the bag" in {
         doNotRunOnTravis()
@@ -294,11 +294,11 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
 
         val props = new PropertiesConfiguration() {
           setDelimiterParsingDisabled(true)
-          load(paths.outputDepositDir / s"allfields-$bagName" / "deposit.properties" toJava)
+          load(paths.outputDepositDir / bagIdsPerDeposit(depositName) / "deposit.properties" toJava)
         }
         val expProps = new PropertiesConfiguration() {
           setDelimiterParsingDisabled(true)
-          load(expectedOutputDir / s"input-$bagName" / "deposit.properties" toJava)
+          load(expectedOutputDir / s"input-$depositName" / "deposit.properties" toJava)
         }
 
         props.getKeys.asScala.toSet should contain theSameElementsAs expProps.getKeys.asScala.toSet
