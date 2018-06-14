@@ -38,6 +38,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
   private val fileMetadata = new AddFileMetadataToDeposit()
   private val depositProperties = new AddPropertiesToDeposit()
   private val setPermissions = new SetDepositPermissions(permissions)
+  private val reportDatasets = new ReportDatasets()
   private val moveDeposit = new MoveDepositToOutputDir()
 
   override def close(): Unit = ldap.close()
@@ -71,6 +72,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
         }
       }
       _ = logger.info("deposits were created successfully")
+      _ <- reportDatasets.report(deposits)
       _ <- deposits.mapUntilFailure(d => moveDeposit.moveDepositsToOutputDir(d.depositId))
     } yield ()
   }

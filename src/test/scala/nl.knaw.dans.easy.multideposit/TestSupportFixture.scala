@@ -36,6 +36,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
   override val multiDepositDir: File = testDir / "md"
   override val stagingDir: File = testDir / "sd"
   override val outputDepositDir: File = testDir / "od"
+  override val reportFile: File = testDir / "report.csv"
 
   implicit val inputPathExplorer: InputPathExplorer = this
   implicit val stagingPathExplorer: StagingPathExplorer = this

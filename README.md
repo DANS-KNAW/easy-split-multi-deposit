@@ -9,7 +9,7 @@ Utility to process a Multi-Deposit prior to ingestion into the DANS EASY Archive
 SYNOPSIS
 --------
 
-    easy-split-multi-deposit [{--staging-dir|-s} <dir>] [{--validate|-v}] <multi-deposit-dir> <output-deposits-dir> <datamanager>
+    easy-split-multi-deposit [{--staging-dir|-s} <dir>] [{--identifier-info | -i} <file>] [{--validate|-v}] <multi-deposit-dir> <output-deposits-dir> <datamanager>
 
 
 DESCRIPTION
@@ -48,12 +48,13 @@ ARGUMENTS
 
   Options:
 
-    -s, --staging-dir  <arg>   A directory in which the deposit directories are created, after which they will
-                               be moved to the 'output-deposit-dir'. If not specified, the value of
-                               'staging-dir' in 'application.properties' is used.
-    -v, --validate             Only validates the input of a Multi-Deposit ingest
-    -h, --help                 Show help message
-        --version              Show version of this program
+    -i, --identifier-info  <arg>   CSV file in which information about the created deposits is reported
+    -s, --staging-dir  <arg>       A directory in which the deposit directories are created, after which they
+                                   will be moved to the 'output-deposit-dir'. If not specified, the value of
+                                   'staging-dir' in 'application.properties' is used.
+    -v, --validate                 Validates the input of a Multi-Deposit ingest
+    -h, --help                     Show help message
+        --version                  Show version of this program
   
    trailing arguments:
     multi-deposit-dir (required)    Directory containing the Submission Information Package to process. This

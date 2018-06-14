@@ -15,22 +15,24 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.Path
+import java.nio.file.{ Path, Paths }
 
 import better.files.File
 import better.files.File._
 import nl.knaw.dans.easy.multideposit.model.Datamanager
 import org.rogach.scallop.{ ScallopConf, ScallopOption }
 
+import scala.xml.Properties
+
 class CommandLineOptions(args: Array[String], version: String) extends ScallopConf(args) {
 
-  appendDefaultToDescription = true
+  appendDefaultToDescription = false
   editBuilder(_.setHelpWidth(110))
 
   printedName = "easy-split-multi-deposit"
   val description = "Splits a Multi-Deposit into several deposit directories for subsequent ingest into the archive"
   val synopsis: String =
-    s"  $printedName [{--staging-dir|-s} <dir>] [{--validate|-v}] <multi-deposit-dir> <output-deposits-dir> <datamanager>"
+    s"  $printedName [{--staging-dir|-s} <dir>] [{--identifier-info | -i} <file>] [{--validate|-v}] <multi-deposit-dir> <output-deposits-dir> <datamanager>"
 
   version(s"$printedName v$version")
   banner(
@@ -52,10 +54,17 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
       "moved to the 'output-deposit-dir'. If not specified, the value of 'staging-dir' in " +
       "'application.properties' is used.")
 
+  val reportFile: ScallopOption[Path] = opt[Path](
+    name = "identifier-info",
+    short = 'i',
+    descr = "CSV file in which information about the created deposits is reported",
+    default = Some(Paths.get(Properties.userHome).resolve(s"easy-split-multi-deposit-identifier-info-$now.csv"))
+  )
+
   val validateOnly: ScallopOption[Boolean] = opt[Boolean](
     name = "validate",
     short = 'v',
-    descr = "Only validates the input of a Multi-Deposit ingest",
+    descr = "Validates the input of a Multi-Deposit ingest",
     default = Some(false))
 
   val multiDepositDir: ScallopOption[Path] = trailArg[Path](
@@ -86,6 +95,9 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
     else
       Right(())
   })
+
+  validatePathExists(reportFile.map(_.getParent))
+  validateFileIsDirectory(reportFile.map(_.getParent.toFile))
 
   validatePathExists(outputDepositDir)
   validateFileIsDirectory(outputDepositDir.map(_.toFile))

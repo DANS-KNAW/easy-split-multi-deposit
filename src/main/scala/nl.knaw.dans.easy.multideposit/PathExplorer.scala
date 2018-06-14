@@ -20,10 +20,11 @@ import nl.knaw.dans.easy.multideposit.model.DepositId
 
 object PathExplorer {
 
-  class PathExplorers(md: File, sd: File, od: File) extends InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
-    val multiDepositDir: File = md
-    val stagingDir: File = sd
-    val outputDepositDir: File = od
+  class PathExplorers(md: File, sd: File, od: File, report: File) extends InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
+    override val multiDepositDir: File = md
+    override val stagingDir: File = sd
+    override val outputDepositDir: File = od
+    override val reportFile: File = report
   }
 
   trait InputPathExplorer {
@@ -90,6 +91,7 @@ object PathExplorer {
     this: InputPathExplorer =>
 
     val outputDepositDir: File
+    val reportFile: File
 
     // outputDepositDir/mdDir-depositId/
     def outputDepositDir(depositId: DepositId): File = {

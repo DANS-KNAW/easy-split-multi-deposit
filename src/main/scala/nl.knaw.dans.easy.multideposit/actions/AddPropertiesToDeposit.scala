@@ -15,13 +15,11 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.util.{ Collections, Properties, UUID }
-import java.{ util => ju }
-
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
-import nl.knaw.dans.easy.multideposit.{ dateTimeFormatter, encoding }
+import nl.knaw.dans.easy.multideposit.now
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import org.apache.commons.configuration.PropertiesConfiguration
 import org.joda.time.{ DateTime, DateTimeZone }
 
 import scala.util.control.NonFatal
@@ -32,26 +30,25 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
   def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(implicit stage: StagingPathExplorer): Try[Unit] = {
     logger.debug(s"add deposit properties for ${ deposit.depositId }")
 
-    val props = new Properties {
-      // Make sure we get sorted output, which is better readable than random
-      override def keys(): ju.Enumeration[AnyRef] = Collections.enumeration(new ju.TreeSet[Object](super.keySet()))
+    val props = new PropertiesConfiguration {
+      setDelimiterParsingDisabled(false)
+      setFile(stage.stagingPropertiesFile(deposit.depositId)
+        .createIfNotExists(createParents = true)
+        .toJava)
     }
 
     Try { addProperties(deposit, datamanagerId, emailaddress)(props) }
-      .map(_ => stage.stagingPropertiesFile(deposit.depositId)
-        .createIfNotExists(createParents = true)
-        .bufferedWriter(encoding)
-        .foreach(props.store(_, "")))
+      .map(_ => props.save())
       .recoverWith {
         case NonFatal(e) => Failure(ActionException(s"Could not write properties to file: $e", e))
       }
   }
 
-  private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(properties: Properties): Unit = {
+  private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(properties: PropertiesConfiguration): Unit = {
     val sf = deposit.springfield
     val props: Map[String, Option[String]] = Map(
-      "bag-store.bag-id" -> Some(UUID.randomUUID().toString),
-      "creation.timestamp" -> Some(DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)),
+      "bag-store.bag-id" -> Some(deposit.bagId.toString),
+      "creation.timestamp" -> Some(now),
       "state.label" -> Some("SUBMITTED"),
       "state.description" -> Some("Deposit is valid and ready for post-submission processing"),
       "depositor.userId" -> Some(deposit.depositorUserId),
