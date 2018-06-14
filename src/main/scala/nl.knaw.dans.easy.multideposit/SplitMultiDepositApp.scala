@@ -16,9 +16,9 @@
 package nl.knaw.dans.easy.multideposit
 
 import java.util.Locale
+
 import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
-
 import nl.knaw.dans.easy.multideposit.PathExplorer._
 import nl.knaw.dans.easy.multideposit.actions.{ RetrieveDatamanager, _ }
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
@@ -73,7 +73,9 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
       }
       _ = logger.info("deposits were created successfully")
       _ <- reportDatasets.report(deposits)
+      _ = logger.info("report generated")
       _ <- deposits.mapUntilFailure(deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId))
+      _ = logger.info(s"deposits were successfully moved to ${ output.outputDepositDir }")
     } yield ()
   }
 
@@ -94,7 +96,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: Deposi
       _ <- fileMetadata.addFileMetadata(depositId, deposit.files)
       _ <- depositProperties.addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress)
       _ <- setPermissions.setDepositPermissions(depositId)
-      _ = logger.info(s"deposit was created successfully for $depositId")
+      _ = logger.info(s"deposit was created successfully for $depositId with bagId ${ deposit.bagId }")
     } yield ()
   }
 }
