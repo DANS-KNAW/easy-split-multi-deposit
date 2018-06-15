@@ -43,7 +43,7 @@ trait CustomMatchers {
 
     private def prepForTest(n: Node) = XML.loadString(pp.format(n))
 
-    private def pretty(ns: Iterable[Node]) = ns.map(n => XML.loadString(pp.format(n))).mkString("\n")
+    private def pretty(ns: Iterable[Node]) = ns.map(prepForTest).mkString("\n")
 
     override def apply(left: Iterable[Node]): MatchResult = {
       MatchResult(
