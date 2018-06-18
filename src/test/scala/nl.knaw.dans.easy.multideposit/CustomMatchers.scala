@@ -41,15 +41,19 @@ trait CustomMatchers {
   class EqualTrimmedMatcher(right: Iterable[Node]) extends Matcher[Iterable[Node]] {
     private val pp = new PrettyPrinter(160, 2)
 
-    private def prepForTest(n: Node) = XML.loadString(pp.format(n))
-
-    private def pretty(ns: Iterable[Node]) = ns.map(prepForTest).mkString("\n")
+    private def prepForTest(n: Node): Node = XML.loadString(pp.format(n))
 
     override def apply(left: Iterable[Node]): MatchResult = {
+      val prettyLeft = left.map(prepForTest)
+      val prettyRight = right.map(prepForTest)
+
+      lazy val prettyLeftString = prettyLeft.mkString("\n")
+      lazy val prettyRightString = prettyRight.mkString("\n")
+
       MatchResult(
-        left.zip(right).forall { case (l, r) => prepForTest(l) == prepForTest(r) },
-        s"${ pretty(left) } was not equal to ${ pretty(right) }",
-        s"${ pretty(left) } was equal to ${ pretty(right) }"
+        prettyLeft == prettyRight,
+        s"$prettyLeftString was not equal to $prettyRightString",
+        s"$prettyLeftString was equal to $prettyRightString"
       )
     }
   }
