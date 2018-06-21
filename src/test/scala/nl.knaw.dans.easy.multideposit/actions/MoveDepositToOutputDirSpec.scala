@@ -15,13 +15,14 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 
 import better.files.File
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.Success
+import scala.util.{ Failure, Success }
 
 class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterEach {
 
@@ -67,5 +68,21 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
     stagingDir(depositId2).toJava should exist
     // even though ruimtereis02 is staged as well, it is not moved to the outputDepositDir
     outputDepositDir.list.toList should contain only outputDepositDir(bagId)
+  }
+
+  it should "fail when the output directory already exists" in {
+    val bagId = UUID.randomUUID()
+
+    outputDepositDir(bagId).toJava shouldNot exist
+    outputDepositDir(bagId).createIfNotExists(asDirectory = true, createParents = true)
+    outputDepositDir(bagId).toJava should exist
+
+    inside(action.moveDepositsToOutputDir(depositId1, bagId)) {
+      case Failure(ActionException(msg, cause: FileAlreadyExistsException)) =>
+        msg should startWith (s"Could not move ${stagingDir(depositId1)} to " +
+          s"${outputDepositDir(bagId)}. The target directory already exists.")
+
+        cause should have message outputDepositDir(bagId).toString()
+    }
   }
 }

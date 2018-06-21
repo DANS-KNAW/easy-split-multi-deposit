@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.nio.file.FileAlreadyExistsException
+
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ BagId, DepositId }
 import nl.knaw.dans.lib.error.CompositeException
@@ -30,7 +32,15 @@ class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
     logger.debug(s"moving $stagingDirectory to $outputDir")
 
-    Try { stagingDirectory.moveTo(outputDir); () } recoverWith {
+    Try { stagingDirectory.moveTo(outputDir, overwrite = false); () } recoverWith {
+      case e: FileAlreadyExistsException =>
+        Failure(ActionException(s"Could not move $stagingDirectory to $outputDir. The target " +
+          "directory already exists. Since this is only possible when a UUID (universally unique " +
+          "identifier) is not unique; you have hit the jackpot. The chance of this happening is " +
+          "smaller than you being hit by a meteorite. So rejoice in the moment, because this " +
+          "will be a once-in-a-lifetime experience. When you're done celebrating, just try to " +
+          "deposit this and all remaining deposits (be careful not to deposit the deposits that " +
+          "came before this lucky one, because they went through successfully).", e))
       case e =>
         Try { outputDir.exists } match {
           case Success(true) => Failure(ActionException("An error occurred while moving " +
