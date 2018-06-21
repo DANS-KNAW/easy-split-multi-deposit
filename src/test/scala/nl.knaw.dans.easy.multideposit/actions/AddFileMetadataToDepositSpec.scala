@@ -85,7 +85,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
     val actual = XML.loadFile(stagingFileMetadataFile(depositId).toJava)
     val expected = XML.loadFile(File(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI).toJava)
 
-    actual \ "files" should containAllNodes(expected \ "files")
+    actual \ "files" should contain theSameElementsAs (expected \ "files")
   }
 
   it should "produce the xml for a deposit with no A/V files" in {
@@ -103,7 +103,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
     val actual = XML.loadFile(stagingFileMetadataFile(depositId).toJava)
     val expected = XML.loadFile(File(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI).toJava)
 
-    actual \ "files" should containAllNodes(expected \ "files")
+    actual \ "files" should contain theSameElementsAs (expected \ "files")
   }
 
   it should "produce the xml for a deposit with no files" in {
