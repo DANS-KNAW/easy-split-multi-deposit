@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.util.UUID
-
 import better.files.File
 import better.files.File.currentWorkingDirectory
 import javax.naming.directory.Attributes
@@ -63,22 +61,6 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     dir.toJava should exist
 
     inside(action.checkDirectoriesDoNotExist(depositId)(dir)) {
-      case Failure(ActionException(msg, _)) => msg should include(s"The deposit for dataset $depositId already exists")
-    }
-  }
-
-  "checkPreconditions" should "verify that the deposit does not yet exist in the outputDepositDir" in {
-    val bagId = UUID.randomUUID()
-    action.checkOutputDirectoryExists(bagId, "ruimtereis01") shouldBe a[Success[_]]
-  }
-
-  it should "fail if the deposit already exists in the outputDepositDir" in {
-    val bagId = UUID.randomUUID()
-    val depositId = "ruimtereis01"
-    stagingDir(depositId).copyTo(outputDepositDir(bagId))
-    outputDepositDir(bagId).toJava should exist
-
-    inside(action.checkOutputDirectoryExists(bagId, depositId)) {
       case Failure(ActionException(msg, _)) => msg should include(s"The deposit for dataset $depositId already exists")
     }
   }
