@@ -65,20 +65,6 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     }
   }
 
-  "checkPreconditions" should "verify that the deposit does not yet exist in the outputDepositDir" in {
-    action.checkOutputDirectoryExists("ruimtereis01") shouldBe a[Success[_]]
-  }
-
-  it should "fail if the deposit already exists in the outputDepositDir" in {
-    val depositId = "ruimtereis01"
-    stagingDir(depositId).copyTo(outputDepositDir(depositId))
-    outputDepositDir(depositId).toJava should exist
-
-    inside(action.checkOutputDirectoryExists(depositId)) {
-      case Failure(ActionException(msg, _)) => msg should include(s"The deposit for dataset $depositId already exists")
-    }
-  }
-
   "checkSpringFieldDepositHasAVformat" should "fail if the deposit contains SF_* fields, but no AV DC_FORMAT is given" in {
     val deposit = testInstructions1.toDeposit().copy(
       depositId = depositId,

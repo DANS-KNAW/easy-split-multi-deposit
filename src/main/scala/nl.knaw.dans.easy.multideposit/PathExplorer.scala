@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit
 
 import better.files.File
-import nl.knaw.dans.easy.multideposit.model.DepositId
+import nl.knaw.dans.easy.multideposit.model.{ BagId, DepositId }
 
 object PathExplorer {
 
@@ -50,6 +50,10 @@ object PathExplorer {
     val datasetMetadataFileName = "dataset.xml"
     val fileMetadataFileName = "files.xml"
     val propsFileName = "deposit.properties"
+
+    private def datasetDir(multiDepositDir: File, depositId: DepositId): String = {
+      s"${ multiDepositDir.name }-$depositId"
+    }
 
     // stagingDir/mdDir-depositId/
     def stagingDir(depositId: DepositId): File = {
@@ -93,9 +97,9 @@ object PathExplorer {
     val outputDepositDir: File
     val reportFile: File
 
-    // outputDepositDir/mdDir-depositId/
-    def outputDepositDir(depositId: DepositId): File = {
-      outputDepositDir / datasetDir(multiDepositDir, depositId)
+    // outputDepositDir/bagId/
+    def outputDepositDir(bagId: BagId): File = {
+      outputDepositDir / bagId.toString
     }
   }
 
@@ -103,9 +107,5 @@ object PathExplorer {
 
   def multiDepositInstructionsFile(baseDir: File): File = {
     baseDir / instructionsFileName
-  }
-
-  private def datasetDir(multiDepositDir: File, depositId: DepositId): String = {
-    s"${ multiDepositDir.name }-$depositId"
   }
 }

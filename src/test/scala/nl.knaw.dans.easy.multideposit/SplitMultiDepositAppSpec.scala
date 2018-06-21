@@ -122,6 +122,42 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       app.convert(paths, datamanager) shouldBe a[Success[_]]
     }
 
+    // taken from https://stackoverflow.com/a/6640851/2389405
+    // and https://github.com/DANS-KNAW/easy-split-multi-deposit/pull/111#discussion_r194733478
+    val uuidRegex = "[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}"
+
+    it should "check report.csv" in {
+      doNotRunOnTravis()
+
+      reportFile.toJava should exist
+
+      val header :: lines = reportFile.lines.toList
+      val reportLines = lines.collect {
+        case s if s startsWith ruimtereis01 => ruimtereis01 -> s
+        case s if s startsWith ruimtereis02 => ruimtereis02 -> s
+        case s if s startsWith ruimtereis03 => ruimtereis03 -> s
+        case s if s startsWith ruimtereis04 => ruimtereis04 -> s
+      }.toMap
+
+      header shouldBe "DATASET,UUID,BASE-REVISION"
+      reportLines(ruimtereis01) should fullyMatch regex s"^$ruimtereis01,$uuidRegex,d5e8f0fb-c374-86eb-918c-b06dd5ae5e71$$"
+      reportLines(ruimtereis02) should fullyMatch regex s"^$ruimtereis02,($uuidRegex),\\1$$"
+      reportLines(ruimtereis03) should fullyMatch regex s"^$ruimtereis03,($uuidRegex),\\1$$"
+      reportLines(ruimtereis04) should fullyMatch regex s"^$ruimtereis04,$uuidRegex,773dc53a-1cdb-47c4-992a-254a59b98376$$"
+    }
+
+    def extractBagId(s: String) = {
+      s"^.*,($uuidRegex),.*$$".r.findFirstMatchIn(s).map(_.group(1))
+        .getOrElse { fail(s"""report output line "$s" does not match the expected pattern""") }
+    }
+
+    lazy val bagIdsPerDeposit = reportFile.lines.drop(1).collect {
+      case s if s startsWith ruimtereis01 => ruimtereis01 -> extractBagId(s)
+      case s if s startsWith ruimtereis02 => ruimtereis02 -> extractBagId(s)
+      case s if s startsWith ruimtereis03 => ruimtereis03 -> extractBagId(s)
+      case s if s startsWith ruimtereis04 => ruimtereis04 -> extractBagId(s)
+    }.toMap
+
     val expectedDataContentRuimtereis01 = Set("data/", "ruimtereis01_verklaring.txt", "path/",
       "to/", "a/", "random/", "video/", "hubble.mpg", "reisverslag/", "centaur.mpg", "centaur.srt",
       "centaur-nederlands.srt", "deel01.docx", "deel01.txt", "deel02.txt", "deel03.txt")
@@ -131,9 +167,9 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
     val expectedDataContentRuimtereis04 = Set("data/", "Quicksort.hs", "path/", "to/", "a/",
       "random/", "file/", "file.txt", "sound/", "chicken.mp3")
 
-    def bagContents(bagName: String, dataContent: Set[String]): Unit = {
-      val bag = paths.outputDepositDir / s"allfields-$bagName/bag"
-      val expBag = expectedOutputDir / s"input-$bagName/bag"
+    def bagContents(depositName: String, dataContent: Set[String]): Unit = {
+      lazy val bag = paths.outputDepositDir / bagIdsPerDeposit(depositName) / "bag"
+      val expBag = expectedOutputDir / s"input-$depositName" / "bag"
 
       it should "check the files present in the bag" in {
         doNotRunOnTravis()
@@ -258,11 +294,11 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
 
         val props = new PropertiesConfiguration() {
           setDelimiterParsingDisabled(true)
-          load(paths.outputDepositDir / s"allfields-$bagName" / "deposit.properties" toJava)
+          load(paths.outputDepositDir / bagIdsPerDeposit(depositName) / "deposit.properties" toJava)
         }
         val expProps = new PropertiesConfiguration() {
           setDelimiterParsingDisabled(true)
-          load(expectedOutputDir / s"input-$bagName" / "deposit.properties" toJava)
+          load(expectedOutputDir / s"input-$depositName" / "deposit.properties" toJava)
         }
 
         props.getKeys.asScala.toSet should contain theSameElementsAs expProps.getKeys.asScala.toSet
@@ -282,29 +318,6 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
         noException should be thrownBy DateTime.parse(props.getString("creation.timestamp"), dateTimeFormatter)
         noException should be thrownBy DateTime.parse(expProps.getString("creation.timestamp"), dateTimeFormatter)
       }
-    }
-
-    it should "check report.csv" in {
-      doNotRunOnTravis()
-
-      reportFile.toJava should exist
-
-      val header :: lines = reportFile.lines.toList
-      val reportLines = lines.collect {
-        case s if s startsWith ruimtereis01 => ruimtereis01 -> s
-        case s if s startsWith ruimtereis02 => ruimtereis02 -> s
-        case s if s startsWith ruimtereis03 => ruimtereis03 -> s
-        case s if s startsWith ruimtereis04 => ruimtereis04 -> s
-      }.toMap
-      // taken from https://stackoverflow.com/a/6640851/2389405
-      // and https://github.com/DANS-KNAW/easy-split-multi-deposit/pull/111#discussion_r194733478
-      val uuidRegex = "[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}"
-
-      header shouldBe "DATASET,UUID,BASE-REVISION"
-      reportLines(ruimtereis01) should fullyMatch regex s"^$ruimtereis01,$uuidRegex,d5e8f0fb-c374-86eb-918c-b06dd5ae5e71$$"
-      reportLines(ruimtereis02) should fullyMatch regex s"^$ruimtereis02,($uuidRegex),\\1$$"
-      reportLines(ruimtereis03) should fullyMatch regex s"^$ruimtereis03,($uuidRegex),\\1$$"
-      reportLines(ruimtereis04) should fullyMatch regex s"^$ruimtereis04,$uuidRegex,773dc53a-1cdb-47c4-992a-254a59b98376$$"
     }
 
     ruimtereis01 should behave like bagContents(ruimtereis01, expectedDataContentRuimtereis01)
