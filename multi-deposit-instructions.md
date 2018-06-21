@@ -132,7 +132,8 @@ to be a date, formatted as `yyyy-mm-dd`. If `DCT_DATE_QUALIFIER` isn't provided 
 file that is registered here, at least `FILE_PATH` and either one of `FILE_TITLE` and `FILE_ACCESSIBILITY`
 need to be provided. A file can only have one value for `FILE_TITLE` or `FILE_ACCESSIBILITY`.
 `FILE_ACCESSIBILITY` provides a way to override the file-accessibility from the default
-`DDM_ACCESSRIGHTS` for the specified file only.
+`DDM_ACCESSRIGHTS` for the specified file only. The FILE_ACCESSIBILITY field can have the values: 'ANONYMOUS',
+ 'RESTRICTED_REQUEST', 'RESTRICTED_GROUP', 'KNOWN' and 'NONE'. Note that all A/V files must have the same FILE_ACCESSIBILITY'
 The information found in the `FILE_*` columns is put into `files.xml` to better describe the file
 at hand. The `FILE_TITLE` relation is put inside a `dcterms:title` element; the `FILE_ACCESSIBILITY`
 relation is put inside the `accessibleToRights` element. Note that if no `FILE_TITLE` is described
