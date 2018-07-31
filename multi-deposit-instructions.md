@@ -26,8 +26,8 @@ General overview
     3. file processing instruction
 
 
-1. The DATASET column
----------------------
+1 The DATASET column
+--------------------
 
 For some Datasets there are multiple rows in the MDI file. This serves two purposes:
 
@@ -38,8 +38,8 @@ All the rows that pertain to one dataset must have the same value in the `DATASE
 column.
 
 
-2. Metadata elements
---------------------
+2 Metadata elements
+-------------------
 
 The supported metadata elements are subdivided into the following groups:
 
@@ -176,8 +176,8 @@ a audio or video presentation contained in the dataset:
  If the deposit is a new version of an existing dataset, the BASE_REVISION column contains the
  UUID of the base revision of this dataset. Only one base revision should be given per deposit.
 
-3. File Processing Instructions
--------------------------------
+3 File Processing Instructions
+------------------------------
 
 Files in the Multi-Deposit Directory are only processed if they are located in
 a sub-directory that has a matching `DATASET`-value in the MDI file.
