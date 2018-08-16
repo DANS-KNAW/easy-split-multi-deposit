@@ -59,7 +59,7 @@ class CommandLineOptions(args: Array[String], version: String) extends ScallopCo
     short = 'i',
     descr = "CSV file in which information about the created deposits is reported",
     default = Some(Paths.get(Properties.userHome).resolve(s"easy-split-multi-deposit-identifier-info-$now.csv"))
-  )
+  ).map(_.toAbsolutePath)
 
   val validateOnly: ScallopOption[Boolean] = opt[Boolean](
     name = "validate",
