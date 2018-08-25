@@ -29,7 +29,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
 
   private val depositId = "dsId1"
   private val ldapMock: Ldap = mock[Ldap]
-  private val action = new ValidatePreconditions(ldapMock)
+  private val action = new ValidatePreconditions(ldapMock, "")
 
   override def beforeEach(): Unit = {
     super.beforeEach()

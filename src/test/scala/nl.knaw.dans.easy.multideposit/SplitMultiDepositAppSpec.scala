@@ -35,6 +35,8 @@ import scala.xml.{ Elem, Node, NodeSeq, XML }
 // Note to developers: this classes uses shared tests as described in
 // http://www.scalatest.org/user_guide/sharing_tests
 class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with CustomMatchers {
+  private class Dummy
+
 
   private val formatsFile: File = currentWorkingDirectory / "src" / "main" / "assembly" / "dist" / "cfg" / "acceptedMediaTypes.txt"
   private val formats =
@@ -91,7 +93,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       od = outputDepositDir.createIfNotExists(asDirectory = true, createParents = true),
       report = reportFile
     )
-    val app = new SplitMultiDepositApp(formats, ldap, DepositPermissions("rwxrwx---", getFileSystemGroup))
+    val app = new SplitMultiDepositApp(formats, ldap, "", DepositPermissions("rwxrwx---", getFileSystemGroup))
 
     val expectedOutputDir = File(getClass.getResource("/allfields/output").toURI)
 
@@ -337,7 +339,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       od = outputDepositDir.createIfNotExists(asDirectory = true, createParents = true),
       report = reportFile
     )
-    val app = new SplitMultiDepositApp(formats, mock[Ldap], DepositPermissions("rwxrwx---", getFileSystemGroup))
+    val app = new SplitMultiDepositApp(formats, mock[Ldap], "", DepositPermissions("rwxrwx---", getFileSystemGroup))
 
     inside(app.convert(paths, "easyadmin")) {
       case Failure(ParserFailedException(report, _)) =>

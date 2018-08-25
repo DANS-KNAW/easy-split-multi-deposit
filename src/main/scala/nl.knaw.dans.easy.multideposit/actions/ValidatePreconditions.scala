@@ -15,15 +15,20 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.io.{ ByteArrayOutputStream, InputStream }
+
 import better.files.File
-import nl.knaw.dans.easy.multideposit.Ldap
+import nl.knaw.dans.easy.multideposit.{ FfprobeRunner, Ldap }
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, BagId, Deposit, DepositId }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
+import org.apache.commons.io.IOUtils
+import nl.knaw.dans.lib.error._
 
+import scala.sys.process.{ ProcessIO, _ }
 import scala.util.{ Failure, Success, Try }
 
-class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
+class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnhancedLogging {
 
   def validateDeposit(deposit: Deposit)(implicit stage: StagingPathExplorer, output: OutputPathExplorer): Try[Unit] = {
     val id = deposit.depositId
@@ -86,6 +91,21 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
       case Nil | Seq(_) => Success(())
       case _ => Failure(InvalidInputException(deposit.row, "Found both audio and video in this dataset. Only one of them is allowed."))
     }
+  }
+
+  def checkAudioVideoNotCorrupt(deposit: Deposit): Try[Unit] = {
+    logger.debug("check that A/V files can be successfully probed by ffprobe")
+
+    val out = new ByteArrayOutputStream()
+    val err = new ByteArrayOutputStream()
+
+    deposit.files.collect { case fmd: AVFileMetadata => fmd.filepath }
+      .map(ffprobe.run)
+      .collectResults
+      .recoverWith {
+        case CompositeException(errors) =>
+          Failure(InvalidInputException(deposit.row, s"Possibly found corrupt A/V files. Details follow.\n${errors.map(_.getMessage).mkString("\n")}"))
+      }.map(_ => ())
   }
 
   def checkDepositorUserId(deposit: Deposit): Try[Unit] = {

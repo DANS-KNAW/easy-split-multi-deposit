@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit
 
 import java.util.Locale
 
+import better.files.File
 import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.multideposit.PathExplorer._
@@ -29,8 +30,8 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success, Try }
 
-class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
-  private val validator = new ValidatePreconditions(ldap)
+class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, ffprobe: FfprobeRunner, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
+  private val validator = new ValidatePreconditions(ldap, ffprobe)
   private val datamanager = new RetrieveDatamanager(ldap)
   private val createDirs = new CreateDirectories()
   private val createBag = new AddBagToDeposit()
@@ -117,7 +118,8 @@ object SplitMultiDepositApp {
       permissions = configuration.properties.getString("deposit.permissions.access"),
       group = configuration.properties.getString("deposit.permissions.group")
     )
+    val ffprobe = new FfprobeRunner(File(configuration.properties.getString("audio-video.ffprobe")))
 
-    new SplitMultiDepositApp(configuration.formats, ldap, permissions)
+    new SplitMultiDepositApp(configuration.formats, ldap, ffprobe, permissions)
   }
 }
