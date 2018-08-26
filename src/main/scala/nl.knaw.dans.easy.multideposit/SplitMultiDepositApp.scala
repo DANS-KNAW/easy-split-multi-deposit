@@ -118,7 +118,7 @@ object SplitMultiDepositApp {
       permissions = configuration.properties.getString("deposit.permissions.access"),
       group = configuration.properties.getString("deposit.permissions.group")
     )
-    val ffprobe = new FfprobeRunner(File(configuration.properties.getString("audio-video.ffprobe")))
+    val ffprobe = FfprobeRunner(File(configuration.properties.getString("audio-video.ffprobe")))
 
     new SplitMultiDepositApp(configuration.formats, ldap, ffprobe, permissions)
   }
