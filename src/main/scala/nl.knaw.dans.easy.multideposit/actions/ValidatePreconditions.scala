@@ -38,6 +38,7 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
       _ <- checkSpringFieldDepositHasAVformat(deposit)
       _ <- checkSFColumnsIfDepositContainsAVFiles(deposit)
       _ <- checkEitherVideoOrAudio(deposit)
+      _ <- checkAudioVideoNotCorrupt(deposit)
       _ <- checkDepositorUserId(deposit)
     } yield ()
   }

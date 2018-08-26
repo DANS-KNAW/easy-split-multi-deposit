@@ -106,19 +106,20 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       }
     }
 
-    def configureLdapMockBehavior() = {
+    def configureMocksBehavior() = {
       (ldap.query(_: String)(_: Attributes => Attributes)) expects(datamanager, *) returning Success(Seq(createDatamanagerAttributes))
       (ldap.query(_: String)(_: Attributes => Boolean)) expects("user001", *) repeat 4 returning Success(Seq(true))
+      (ffprobe.run(_: File)) expects * anyNumberOfTimes() returning Success(())
     }
 
     it should "succeed validating the multideposit" in {
-      configureLdapMockBehavior()
+      configureMocksBehavior()
       app.validate(paths, datamanager) shouldBe a[Success[_]]
     }
 
     it should "succeed converting the multideposit" in {
       doNotRunOnTravis()
-      configureLdapMockBehavior()
+      configureMocksBehavior()
       app.convert(paths, datamanager) shouldBe a[Success[_]]
     }
 
