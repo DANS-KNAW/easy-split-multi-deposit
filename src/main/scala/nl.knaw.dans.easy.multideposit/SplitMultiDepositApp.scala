@@ -52,9 +52,9 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, ffprobe: FfprobeRun
 
     for {
       _ <- Try { Locale.setDefault(Locale.US) }
-      deposits <- MultiDepositParser.parse(input.multiDepositDir) // ParserFailedException | NoSuchFileException
-      _ <- deposits.map(validator.validateDeposit).collectResults // CompositeException
-      _ <- datamanager.getDatamanagerEmailaddress(datamanagerId) // InvalidDatamanagerException | ActionException
+      deposits <- MultiDepositParser.parse(input.multiDepositDir)
+      _ <- deposits.map(validator.validateDeposit).collectResults
+      _ <- datamanager.getDatamanagerEmailaddress(datamanagerId)
     } yield deposits
   }
 
