@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit
 
+import better.files.File
+
 package object actions {
 
   class ActionException(msg: String, cause: Option[Throwable] = None) extends Exception(msg, cause.orNull)
@@ -26,4 +28,5 @@ package object actions {
 
   case class InvalidDatamanagerException(msg: String) extends Exception(msg)
   case class InvalidInputException(row: Int, msg: String) extends Exception(msg)
+  case class FfprobeErrorException(file: File, exitValue: Int, err: String) extends Exception(s"File '$file' could not be probed. Exit value: $exitValue, STDERR: '$err'")
 }

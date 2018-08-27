@@ -19,7 +19,7 @@ import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit.actions.{ InvalidDatamanagerException, InvalidInputException }
 import nl.knaw.dans.easy.multideposit.parser.{ EmptyInstructionsFileException, ParserFailedException }
-import nl.knaw.dans.lib.error.TryExtensions
+import nl.knaw.dans.lib.error.{ CompositeException, TryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource.managed
 
@@ -42,7 +42,8 @@ object Command extends App with DebugEnhancedLogging {
       case ParserFailedException(_, _) |
            EmptyInstructionsFileException(_) |
            InvalidDatamanagerException(_) |
-           InvalidInputException(_, _) => // do nothing
+           InvalidInputException(_, _) |
+           CompositeException(_) => // do nothing
       case e => logger.error(e.getMessage, e)
     }
     .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }

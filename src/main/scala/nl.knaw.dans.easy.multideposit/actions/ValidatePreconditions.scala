@@ -16,14 +16,15 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
-import nl.knaw.dans.easy.multideposit.Ldap
+import nl.knaw.dans.easy.multideposit.{ FfprobeRunner, Ldap }
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
-import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, BagId, Deposit, DepositId }
+import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit, DepositId }
+import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
 
-class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
+class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnhancedLogging {
 
   def validateDeposit(deposit: Deposit)(implicit stage: StagingPathExplorer, output: OutputPathExplorer): Try[Unit] = {
     val id = deposit.depositId
@@ -33,6 +34,7 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
       _ <- checkSpringFieldDepositHasAVformat(deposit)
       _ <- checkSFColumnsIfDepositContainsAVFiles(deposit)
       _ <- checkEitherVideoOrAudio(deposit)
+      _ <- checkAudioVideoNotCorrupt(deposit)
       _ <- checkDepositorUserId(deposit)
     } yield ()
   }
@@ -86,6 +88,20 @@ class ValidatePreconditions(ldap: Ldap) extends DebugEnhancedLogging {
       case Nil | Seq(_) => Success(())
       case _ => Failure(InvalidInputException(deposit.row, "Found both audio and video in this dataset. Only one of them is allowed."))
     }
+  }
+
+  def checkAudioVideoNotCorrupt(deposit: Deposit): Try[Unit] = {
+    logger.debug("check that A/V files can be successfully probed by ffprobe")
+
+    deposit.files.collect { case fmd: AVFileMetadata => fmd.filepath }
+      .map(ffprobe.run)
+      .collectResults
+      .recoverWith {
+        case CompositeException(errors) =>
+          Failure(InvalidInputException(deposit.row, s"Possibly found corrupt A/V files. Ffprobe failed when probing the following files:\n${
+            errors.map { case FfprobeErrorException(t, e, _) => s" - File: $t, exit code: $e" }.mkString("\n")
+          }"))
+      }.map(_ => ())
   }
 
   def checkDepositorUserId(deposit: Deposit): Try[Unit] = {
