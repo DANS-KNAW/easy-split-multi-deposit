@@ -35,14 +35,6 @@ package object multideposit {
 
   case class DepositPermissions(permissions: String, group: String)
 
-  /**
-   * An exception caused by the user in some way, for example by passing in erroneous arguments or an invalid
-   * instructions.csv
-   *
-   * @param msg the error message
-   */
-  class UserException(msg: String) extends Exception(msg)
-
   implicit class SeqExtensions[T](val seq: Seq[T]) extends AnyVal {
     def mapUntilFailure[S](f: T => Try[S])(implicit cbf: CanBuildFrom[Seq[T], S, Seq[S]]): Try[Seq[S]] = {
       val bf = cbf()

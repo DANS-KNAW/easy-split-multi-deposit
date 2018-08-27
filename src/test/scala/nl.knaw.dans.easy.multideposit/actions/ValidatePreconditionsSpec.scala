@@ -20,6 +20,7 @@ import better.files.File.currentWorkingDirectory
 import javax.naming.directory.Attributes
 import nl.knaw.dans.easy.multideposit.model.{ Audio, AVFileMetadata, FileAccessRights, Metadata, Springfield, Video }
 import nl.knaw.dans.easy.multideposit.{ FfprobeRunner, Ldap, TestSupportFixture }
+import nl.knaw.dans.lib.error.CompositeException
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 
@@ -173,7 +174,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning expectedResult
   }
 
-  "checkPreconditions" should "succeed if ldap identifies the depositorUserId as active" in {
+  "checkDepositorUserId" should "succeed if ldap identifies the depositorUserId as active" in {
     mockLdapForDepositor(Success(Seq(true)))
 
     action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit()) shouldBe a[Success[_]]
@@ -200,6 +201,36 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
 
     inside(action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())) {
       case Failure(ActionException(message, _)) => message should include("multiple users with id 'dp1'")
+    }
+  }
+
+  def mockFfprobeRunnerForAllSuccess(): Unit = {
+    (ffprobeMock.run(_: File)) expects * anyNumberOfTimes() returning Success(())
+  }
+
+  def mockFfprobeRunnerForOneFailure(): Unit = {
+    (ffprobeMock.run(_: File)) expects * once() returning Failure(CompositeException(Seq(FfprobeErrorException(File("dummy"), 0, "dummy"))))
+  }
+
+  "checkAudioVideoNotCorrupt" should "succeed if no A/V files are present" in {
+    mockFfprobeRunnerForAllSuccess()
+    action.checkAudioVideoNotCorrupt(testInstructions2.toDeposit()) shouldBe a[Success[_]]
+  }
+
+  it should "succeed if A/V files are present and ffprobe returns 0 for all of them" in {
+    mockFfprobeRunnerForAllSuccess()
+    val deposit = testInstructions1.toDeposit(avFileReferences)
+    action.checkAudioVideoNotCorrupt(deposit) shouldBe a[Success[_]]
+  }
+
+  it should "fail if one A/V file makes ffprobe return nonzero" in {
+    mockFfprobeRunnerForOneFailure()
+    val deposit = testInstructions1.toDeposit(avFileReferences)
+
+    inside(action.checkAudioVideoNotCorrupt(deposit)) {
+      case Failure(InvalidInputException(row, msg)) =>
+        row shouldBe testInstructions1.row
+        msg should include("Possibly found corrupt A/V files.")
     }
   }
 }

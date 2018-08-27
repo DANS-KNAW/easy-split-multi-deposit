@@ -29,8 +29,6 @@ import scala.language.postfixOps
 /**
  * Simple runner for ffprobe. The constructor will fail if the executable does not exist or the current user
  * has no execute permissions.
- *
- * @param ffprobeExe the ffprobe executable to run.
  */
 trait FfprobeRunner {
   val ffprobeExe: File
@@ -61,9 +59,13 @@ trait FfprobeRunner {
 
 object FfprobeRunner extends DebugEnhancedLogging{
 
+  /**
+   * Constructs an FfprobeRunner
+   *
+   * @param exe absolute path of the ffprobe executable
+   * @return
+   */
   def apply(exe: File): FfprobeRunner = new FfprobeRunner {
-    require(exe exists, "Cannot create ExeRunner for executable that does not exist")
-    require(exe isExecutable, "Program is not executable")
     override val ffprobeExe: File = exe
   }
 }

@@ -110,6 +110,4 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
       )
     )
   }
-
-  def testInstructions: Seq[Instructions] = Seq(testInstructions1, testInstructions2)
 }
