@@ -27,8 +27,9 @@ import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.util.control.NonFatal
+import scala.language.postfixOps
 import scala.util.{ Failure, Success, Try }
+import scala.util.control.NonFatal
 
 class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, ffprobe: FfprobeRunner, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
   private val validator = new ValidatePreconditions(ldap, ffprobe)
@@ -74,7 +75,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, ffprobe: FfprobeRun
       }
       _ = logger.info("deposits were created successfully")
       _ <- reportDatasets.report(deposits)
-      _ = logger.info(s"report generated at ${paths.reportFile}")
+      _ = logger.info(s"report generated at ${ paths.reportFile }")
       _ <- deposits.mapUntilFailure(deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId))
       _ = logger.info(s"deposits were successfully moved to ${ output.outputDepositDir }")
     } yield ()
@@ -118,7 +119,14 @@ object SplitMultiDepositApp {
       permissions = configuration.properties.getString("deposit.permissions.access"),
       group = configuration.properties.getString("deposit.permissions.group")
     )
-    val ffprobe = FfprobeRunner(File(configuration.properties.getString("audio-video.ffprobe")))
+    val ffprobe = {
+      val ffProbePath = configuration.properties.getString("audio-video.ffprobe")
+      require(ffProbePath != null, "Missing configuration for ffprobe")
+      val exeFile = File(ffProbePath)
+      require(exeFile isRegularFile, s"Ffprobe at $exeFile does not exist or is not a regular file")
+      require(exeFile isExecutable, s"Ffprobe at $exeFile is not executable")
+      FfprobeRunner(exeFile)
+    }
 
     new SplitMultiDepositApp(configuration.formats, ldap, ffprobe, permissions)
   }

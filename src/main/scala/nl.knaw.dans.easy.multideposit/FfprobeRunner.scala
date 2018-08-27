@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream
 
 import better.files.File
 import nl.knaw.dans.easy.multideposit.actions.FfprobeErrorException
+import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.io.IOUtils
 
 import scala.util.{ Failure, Success, Try }
@@ -58,7 +59,7 @@ trait FfprobeRunner {
   }
 }
 
-object FfprobeRunner {
+object FfprobeRunner extends DebugEnhancedLogging{
 
   def apply(exe: File): FfprobeRunner = new FfprobeRunner {
     require(exe exists, "Cannot create ExeRunner for executable that does not exist")
