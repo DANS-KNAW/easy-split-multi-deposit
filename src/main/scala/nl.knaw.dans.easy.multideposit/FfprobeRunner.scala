@@ -53,7 +53,7 @@ trait FfprobeRunner {
     }.flatMap {
       exit =>
         if (exit == 0) Success(())
-        else Failure(FfprobeErrorException(target, exit, err.toString))
+        else Failure(FfprobeErrorException(target, exit, new String(err.toByteArray)))
     }
   }
 }
