@@ -9,6 +9,7 @@
         <dcterms:format>audio/mpeg</dcterms:format>
         <dcterms:title>our daily wake up call</dcterms:title>
         <accessibleToRights>KNOWN</accessibleToRights>
+        <visibleToRights>ANONYMOUS</visibleToRights>
     </file>
     <file filepath="data/Quicksort.hs">
         <dcterms:format>text/x-haskell</dcterms:format>

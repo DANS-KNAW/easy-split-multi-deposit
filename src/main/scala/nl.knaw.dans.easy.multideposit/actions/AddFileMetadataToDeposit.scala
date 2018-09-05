@@ -63,6 +63,7 @@ class AddFileMetadataToDeposit extends DebugEnhancedLogging {
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       {fmd.title.map(title => <dcterms:title>{title}</dcterms:title>).getOrElse(NodeSeq.Empty)}
       {fmd.accessibleTo.map(act => <accessibleToRights>{act}</accessibleToRights>).getOrElse(NodeSeq.Empty)}
+      {fmd.visibleTo.map(act => <visibleToRights>{act}</visibleToRights>).getOrElse(NodeSeq.Empty)}
     </file>
   }
 
@@ -72,6 +73,7 @@ class AddFileMetadataToDeposit extends DebugEnhancedLogging {
       <dcterms:format>{fmd.mimeType}</dcterms:format>
       <dcterms:title>{fmd.title}</dcterms:title>
       <accessibleToRights>{fmd.accessibleTo}</accessibleToRights>
+      <visibleToRights>{fmd.visibleTo}</visibleToRights>
       {fmd.subtitles.map(subtitleXml(depositId))}
     </file>
   }
