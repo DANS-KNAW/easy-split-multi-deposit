@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.multideposit.model
 
 import better.files.File
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility
 
 sealed abstract class AvVocabulary(val vocabulary: String)
 case object Audio extends AvVocabulary("http://schema.org/AudioObject")
@@ -37,4 +38,5 @@ case class AVFileMetadata(override val filepath: File,
                          ) extends FileMetadata(filepath, mimeType)
 
 case class FileDescriptor(title: Option[String] = Option.empty,
-                          accessibility: Option[FileAccessRights.Value] = Option.empty)
+                          accessibility: Option[FileAccessRights.Value] = Option.empty,
+                          visibility: Option[FileAccessRights.Value] = Option.empty)
