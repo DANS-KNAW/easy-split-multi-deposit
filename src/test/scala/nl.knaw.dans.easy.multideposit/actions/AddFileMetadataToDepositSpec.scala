@@ -49,7 +49,8 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "centaur.mpg",
-        accessibleTo = FileAccess.NONE
+        accessibleTo = FileAccess.NONE,
+        visibleTo = FileAccess.ANONYMOUS
       )
     )
 
@@ -66,6 +67,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         vocabulary = Video,
         title = "video about the centaur meteorite",
         accessibleTo = FileAccess.RESTRICTED_GROUP,
+        visibleTo = FileAccess.ANONYMOUS,
         subtitles = Set(
           Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur.srt", Option("en")),
           Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur-nederlands.srt", Option("nl"))
@@ -76,7 +78,8 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "hubble.mpg",
-        accessibleTo = FileAccess.RESTRICTED_GROUP
+        accessibleTo = FileAccess.RESTRICTED_GROUP,
+        visibleTo = FileAccess.ANONYMOUS
       )
     )
 

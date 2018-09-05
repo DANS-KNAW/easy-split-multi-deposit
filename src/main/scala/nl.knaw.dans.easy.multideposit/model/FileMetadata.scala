@@ -27,13 +27,15 @@ sealed abstract class FileMetadata(val filepath: File,
 case class DefaultFileMetadata(override val filepath: File,
                                override val mimeType: MimeType,
                                title: Option[String] = Option.empty,
-                               accessibleTo: Option[FileAccess.Value] = Option.empty
+                               accessibleTo: Option[FileAccess.Value] = Option.empty,
+                               visibleTo: Option[FileAccess.Value] = Option.empty
                               ) extends FileMetadata(filepath, mimeType)
 case class AVFileMetadata(override val filepath: File,
                           override val mimeType: MimeType,
                           vocabulary: AvVocabulary,
                           title: String,
                           accessibleTo: FileAccess.Value,
+                          visibleTo: FileAccess.Value,
                           subtitles: Set[Subtitles] = Set.empty
                          ) extends FileMetadata(filepath, mimeType)
 

@@ -96,7 +96,8 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
       mimeType = "video/mpeg",
       vocabulary = Video,
       title = "flyby of centaur",
-      accessibleTo = FileAccess.ANONYMOUS
+      accessibleTo = FileAccess.ANONYMOUS,
+      visibleTo = FileAccess.ANONYMOUS
     ))
 
   "checkSFColumnsIfDepositContainsAVFiles" should "succeed if the deposit contains the SF_* fields in case an A/V file is found" in {
@@ -161,7 +162,8 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
         mimeType = "audio/mpeg",
         vocabulary = Audio,
         title = "mytitle",
-        accessibleTo = FileAccess.ANONYMOUS
+        accessibleTo = FileAccess.ANONYMOUS,
+        visibleTo = FileAccess.ANONYMOUS
       ))
 
     inside(action.checkEitherVideoOrAudio(deposit)) {
