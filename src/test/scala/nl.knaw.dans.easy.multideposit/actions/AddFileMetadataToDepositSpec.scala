@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
-import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, DefaultFileMetadata, FileAccessRights, Subtitles, Video }
+import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, DefaultFileMetadata, FileAccess, Subtitles, Video }
 import nl.knaw.dans.easy.multideposit.{ CustomMatchers, TestSupportFixture }
 import org.scalatest.BeforeAndAfterEach
 
@@ -49,7 +49,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "centaur.mpg",
-        accessibleTo = FileAccessRights.NONE
+        accessibleTo = FileAccess.NONE
       )
     )
 
@@ -65,7 +65,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "video about the centaur meteorite",
-        accessibleTo = FileAccessRights.RESTRICTED_GROUP,
+        accessibleTo = FileAccess.RESTRICTED_GROUP,
         subtitles = Set(
           Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur.srt", Option("en")),
           Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur-nederlands.srt", Option("nl"))
@@ -76,7 +76,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "hubble.mpg",
-        accessibleTo = FileAccessRights.RESTRICTED_GROUP
+        accessibleTo = FileAccess.RESTRICTED_GROUP
       )
     )
 
@@ -95,7 +95,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         filepath = testDir / "md/ruimtereis02/path/to/images/Hubble_01.jpg",
         mimeType = "image/jpg",
         title = Some("Hubble"),
-        accessibleTo = Some(FileAccessRights.RESTRICTED_REQUEST)
+        accessibleTo = Some(FileAccess.RESTRICTED_REQUEST)
       )
     )
     action.addFileMetadata(depositId, fileMetadata) shouldBe a[Success[_]]

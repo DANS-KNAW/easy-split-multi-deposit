@@ -67,8 +67,8 @@ trait FileMetadataParser extends DebugEnhancedLogging {
       .getOrElse(AVFileMetadata(file.path, m, vocabulary, filename, defaultAccess, subtitles))
   }
 
-  private def defaultAccessibility(instructions: Instructions): FileAccessRights.Value = {
-    FileAccessRights.accessibleTo(instructions.profile.accessright)
+  private def defaultAccessibility(instructions: Instructions): FileAccess.Value = {
+    FileAccess.accessibleTo(instructions.profile.accessright)
   }
 
   private def checkSFColumnsIfDepositContainsAVFiles(instructions: Instructions, fileMetadata: Seq[FileMetadata]): Try[Unit] = {

@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
-import nl.knaw.dans.easy.multideposit.model.{ DepositId, FileAccessRights, FileDescriptor }
+import nl.knaw.dans.easy.multideposit.model.{ DepositId, FileAccess, FileDescriptor }
 import nl.knaw.dans.lib.error._
 
 import scala.util.{ Failure, Success, Try }
@@ -32,7 +32,7 @@ trait FileDescriptorParser {
         .map(_.toMap))
   }
 
-  private def toFileDescriptor(rowNum: => Int)(file: File, dataPerPath: List[(File, Option[String], Option[FileAccessRights.Value], Option[FileAccessRights.Value])]): Try[(File, FileDescriptor)] = {
+  private def toFileDescriptor(rowNum: => Int)(file: File, dataPerPath: List[(File, Option[String], Option[FileAccess.Value], Option[FileAccess.Value])]): Try[(File, FileDescriptor)] = {
     val titles = dataPerPath.collect { case (_, Some(title), _, _) => title }
     val fars = dataPerPath.collect { case (_, _, Some(far), _) => far }
     val fvs = dataPerPath.collect { case (_, _, _, Some(fv)) => fv }
@@ -43,7 +43,7 @@ trait FileDescriptorParser {
     else Success((file, FileDescriptor(titles.headOption, fars.headOption, fvs.headOption)))
   }
 
-  def fileDescriptor(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[FileAccessRights.Value], Option[FileAccessRights.Value])]] = {
+  def fileDescriptor(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[FileAccess.Value], Option[FileAccess.Value])]] = {
     val path = row.find("FILE_PATH").map(findPath(depositId))
     val title = row.find("FILE_TITLE")
     val accessRights = fileAccessRight(rowNum)(row)
@@ -68,16 +68,16 @@ trait FileDescriptorParser {
     }
   }
 
-  def fileAccessRight(rowNum: => Int)(row: DepositRow): Option[Try[FileAccessRights.Value]] = {
+  def fileAccessRight(rowNum: => Int)(row: DepositRow): Option[Try[FileAccess.Value]] = {
     row.find("FILE_ACCESSIBILITY")
-      .map(acc => FileAccessRights.valueOf(acc)
+      .map(acc => FileAccess.valueOf(acc)
         .map(Success(_))
         .getOrElse(Failure(ParseException(rowNum, s"Value '$acc' is not a valid file accessright"))))
   }
 
-  def fileVisibility(rowNum: => Int)(row: DepositRow): Option[Try[FileAccessRights.Value]] = {
+  def fileVisibility(rowNum: => Int)(row: DepositRow): Option[Try[FileAccess.Value]] = {
     row.find("FILE_VISIBILITY")
-      .map(acc => FileAccessRights.valueOf(acc)
+      .map(acc => FileAccess.valueOf(acc)
         .map(Success(_))
         .getOrElse(Failure(ParseException(rowNum, s"Value '$acc' is not a valid file visibility"))))
   }

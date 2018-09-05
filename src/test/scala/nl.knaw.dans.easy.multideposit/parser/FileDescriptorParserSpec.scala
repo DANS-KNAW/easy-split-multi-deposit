@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.parser
 import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
-import nl.knaw.dans.easy.multideposit.model.{ FileAccessRights, FileDescriptor }
+import nl.knaw.dans.easy.multideposit.model.{ FileAccess, FileDescriptor }
 import nl.knaw.dans.lib.error.CompositeException
 import org.scalatest.BeforeAndAfterEach
 
@@ -44,12 +44,12 @@ trait FileDescriptorTestObjects {
     multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg" ->
       FileDescriptor(
         title = Option("video about the centaur meteorite"),
-        accessibility = Option(FileAccessRights.RESTRICTED_GROUP)
+        accessibility = Option(FileAccess.RESTRICTED_GROUP)
       ),
     multiDepositDir / "ruimtereis01/path/to/a/random/video/hubble.mpg" ->
       FileDescriptor(
         title = Option.empty,
-        accessibility = Option(FileAccessRights.RESTRICTED_GROUP)
+        accessibility = Option(FileAccess.RESTRICTED_GROUP)
       )
   )
 }
@@ -85,7 +85,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     inside(extractFileDescriptors(row1 :: row2 :: Nil, 2, "ruimtereis01")) {
       case Success(result) => result should (have size 1 and contain only
-        file -> FileDescriptor(Some("some title"), Some(FileAccessRights.KNOWN)))
+        file -> FileDescriptor(Some("some title"), Some(FileAccess.KNOWN)))
     }
   }
 
@@ -134,7 +134,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     inside(extractFileDescriptors(row :: Nil, 2, "ruimtereis01")) {
       case Success(result) => result should (have size 1 and contain only
-        file -> FileDescriptor(accessibility = Some(FileAccessRights.KNOWN)))
+        file -> FileDescriptor(accessibility = Some(FileAccess.KNOWN)))
     }
   }
 
@@ -208,7 +208,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
     fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Success((`file`, Some("some title"), Some(FileAccessRights.KNOWN), None)) =>
+      case Success((`file`, Some("some title"), Some(FileAccess.KNOWN), None)) =>
     }
   }
 
@@ -337,7 +337,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   "fileAccessRight" should "convert the value for SF_ACCESSIBILITY into the corresponding enum object" in {
     val row = Map("FILE_ACCESSIBILITY" -> "NONE")
-    fileAccessRight(2)(row).value should matchPattern { case Success(FileAccessRights.NONE) => }
+    fileAccessRight(2)(row).value should matchPattern { case Success(FileAccess.NONE) => }
   }
 
   it should "return None if SF_ACCESSIBILITY is not defined" in {
