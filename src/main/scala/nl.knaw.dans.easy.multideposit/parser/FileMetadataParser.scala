@@ -49,7 +49,7 @@ trait FileMetadataParser extends DebugEnhancedLogging {
 
   private def mkDefaultFileMetadata(file: File, m: MimeType, instructions: Instructions): FileMetadata = {
     instructions.files.get(file.path)
-      .map(fd => DefaultFileMetadata(file.path, m, fd.title, fd.accessibility))
+      .map(fd => DefaultFileMetadata(file.path, m, fd.title, fd.accessibility, fd.visibility))
       .getOrElse(DefaultFileMetadata(file.path, m))
   }
 

@@ -16,17 +16,22 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
-import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, DefaultFileMetadata, FileAccess, Subtitles, Video }
 import nl.knaw.dans.easy.multideposit.{ CustomMatchers, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, DefaultFileMetadata, FileAccess, Subtitles, Video }
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
-import scala.xml.XML
+import scala.xml.{ Elem, Node, PrettyPrinter, XML }
 
 class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatchers with BeforeAndAfterEach {
 
   private val action = new AddFileMetadataToDeposit
   private val depositId = "ruimtereis01"
+  private val pretty = new PrettyPrinter(200, 4)
+
+  private def loadXmlNormalized(file: File): Elem = {
+    XML.loadString(pretty.format(XML.loadFile(file.toJava)))
+  }
 
   override def beforeEach(): Unit = {
     if (multiDepositDir.exists) multiDepositDir.delete()
@@ -59,8 +64,21 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
     stagingFileMetadataFile(depositId).toJava should exist
   }
 
-  it should "produce the xml for all the files" in {
+  it should "produce the xml for all A/V the files" in {
+    val selectVideos: PartialFunction[Node, Boolean] = {
+      case file: Elem =>
+        (file \ "format").exists(_.text.startsWith("video/"))
+    }
+
     val fileMetadata = Seq(
+      AVFileMetadata(
+        filepath = multiDepositDir / "ruimtereis01/path/to/a/random/video/hubble.mpg",
+        mimeType = "video/mpeg",
+        vocabulary = Video,
+        title = "hubble.mpg",
+        accessibleTo = FileAccess.RESTRICTED_GROUP,
+        visibleTo = FileAccess.ANONYMOUS
+      ),
       AVFileMetadata(
         filepath = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg",
         mimeType = "video/mpeg",
@@ -72,41 +90,48 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
           Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur.srt", Option("en")),
           Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur-nederlands.srt", Option("nl"))
         )
-      ),
-      AVFileMetadata(
-        filepath = multiDepositDir / "ruimtereis01/path/to/a/random/video/hubble.mpg",
-        mimeType = "video/mpeg",
-        vocabulary = Video,
-        title = "hubble.mpg",
-        accessibleTo = FileAccess.RESTRICTED_GROUP,
-        visibleTo = FileAccess.ANONYMOUS
       )
     )
 
     action.addFileMetadata(depositId, fileMetadata) shouldBe a[Success[_]]
 
-    val actual = XML.loadFile(stagingFileMetadataFile(depositId).toJava)
-    val expected = XML.loadFile(File(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI).toJava)
+    val actual = (loadXmlNormalized(stagingFileMetadataFile(depositId)) \ "file").filter(selectVideos).toSet
+    val expected = (loadXmlNormalized(File(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI)) \ "file").filter(selectVideos).toSet
 
-    actual \ "files" should contain theSameElementsAs (expected \ "files")
+    fileMetadata.size shouldBe expected.size // Make sure we are not accidentally comparing two empty sets
+    actual shouldBe expected
   }
 
   it should "produce the xml for a deposit with no A/V files" in {
     val depositId = "ruimtereis02"
     val fileMetadata = Seq(
       DefaultFileMetadata(
+        filepath = testDir / "md/ruimtereis02/hubble-wiki-en.txt",
+        mimeType = "text/plain"
+      ),
+      DefaultFileMetadata(
+        filepath = testDir / "md/ruimtereis02/hubble-wiki-nl.txt",
+        mimeType = "text/plain"
+      ),
+      DefaultFileMetadata(
         filepath = testDir / "md/ruimtereis02/path/to/images/Hubble_01.jpg",
-        mimeType = "image/jpg",
+        mimeType = "image/jpeg",
         title = Some("Hubble"),
-        accessibleTo = Some(FileAccess.RESTRICTED_REQUEST)
+        accessibleTo = Some(FileAccess.RESTRICTED_REQUEST),
+        visibleTo = Some(FileAccess.KNOWN)
+      ),
+      DefaultFileMetadata(
+        filepath = testDir / "md/ruimtereis02/path/to/images/Hubbleshots.jpg",
+        mimeType = "image/jpeg"
       )
     )
     action.addFileMetadata(depositId, fileMetadata) shouldBe a[Success[_]]
 
-    val actual = XML.loadFile(stagingFileMetadataFile(depositId).toJava)
-    val expected = XML.loadFile(File(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI).toJava)
+    val actual = (loadXmlNormalized(stagingFileMetadataFile(depositId)) \ "file").filter(_.isInstanceOf[Elem]).toSet
+    val expected = (loadXmlNormalized(File(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI)) \ "file").filter(_.isInstanceOf[Elem]).toSet
 
-    actual \ "files" should contain theSameElementsAs (expected \ "files")
+    fileMetadata.size shouldBe expected.size
+    actual shouldBe expected
   }
 
   it should "produce the xml for a deposit with no files" in {
