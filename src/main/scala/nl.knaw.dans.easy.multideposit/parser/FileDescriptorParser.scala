@@ -19,6 +19,7 @@ import better.files.File
 import nl.knaw.dans.easy.multideposit.model.{ DepositId, FileAccess, FileDescriptor }
 import nl.knaw.dans.lib.error._
 
+import scala.collection.mutable.ListBuffer
 import scala.util.{ Failure, Success, Try }
 
 trait FileDescriptorParser {
@@ -36,11 +37,20 @@ trait FileDescriptorParser {
     val titles = dataPerPath.collect { case (_, Some(title), _, _) => title }
     val fars = dataPerPath.collect { case (_, _, Some(far), _) => far }
     val fvs = dataPerPath.collect { case (_, _, _, Some(fv)) => fv }
+    val errors = ListBuffer[Exception]()
 
-    if (titles.size > 1) Failure(ParseException(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ titles.mkString("[", ", ", "]") }"))
-    else if (fars.size > 1) Failure(ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fars.mkString("[", ", ", "]") }"))
-    else if (fvs.size > 1) Failure(ParseException(rowNum, s"FILE_VISIBILITY defined multiple values for file '$file': ${ fvs.mkString("[", ", ", "]") }"))
-    else Success((file, FileDescriptor(titles.headOption, fars.headOption, fvs.headOption)))
+    if (titles.size > 1) errors.append(ParseException(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ titles.mkString("[", ", ", "]") }"))
+    if (fars.size > 1) errors.append(ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fars.mkString("[", ", ", "]") }"))
+    if (fvs.size > 1) errors.append(ParseException(rowNum, s"FILE_VISIBILITY defined multiple values for file '$file': ${ fvs.mkString("[", ", ", "]") }"))
+
+    if (errors.nonEmpty) Failure(CompositeException(errors))
+    else {
+      (fars, fvs) match {
+        case (List(ar), List(vr)) if vr > ar => Failure(ParseException(rowNum,
+          s"FILE_VISIBILITY ($vr) is more restricted than FILE_ACCESSIBILITY ($ar) for file '$file'. (User will potentially have access to an invisible file.)"))
+        case _ => Success((file, FileDescriptor(titles.headOption, fars.headOption, fvs.headOption)))
+      }
+    }
   }
 
   def fileDescriptor(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[FileAccess.Value], Option[FileAccess.Value])]] = {

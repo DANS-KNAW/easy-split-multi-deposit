@@ -178,26 +178,41 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     }
   }
 
-//  it should "fail if multiple titles and accessibilities are given for a single file" in {
-//    val row1 = Map(
-//      "FILE_PATH" -> "reisverslag/centaur.mpg",
-//      "FILE_TITLE" -> "title1",
-//      "FILE_ACCESSIBILITY" -> "KNOWN"
-//    )
-//    val row2 = Map(
-//      "FILE_PATH" -> "reisverslag/centaur.mpg",
-//      "FILE_TITLE" -> "title2",
-//      "FILE_ACCESSIBILITY" -> "ANONYMOUS"
-//    )
-//
-//    val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
-//    val msg1 = s"FILE_TITLE defined multiple values for file '$file': [title1, title2]"
-//    val msg2 = s"FILE_ACCESSIBILITY defined multiple values for file '$file': [KNOWN, ANONYMOUS]"
-//
-//    extractFileDescriptors(row1 :: row2 :: Nil, 2, "ruimtereis01") should matchPattern {
-//      case Failure(CompositeException(ParseException(2, `msg1`, _) :: ParseException(2, `msg2`, _) :: Nil)) =>
-//    }
-//  }
+  it should "fail if multiple titles and accessibilities are given for a single file" in {
+    val row1 = Map(
+      "FILE_PATH" -> "reisverslag/centaur.mpg",
+      "FILE_TITLE" -> "title1",
+      "FILE_ACCESSIBILITY" -> "KNOWN"
+    )
+    val row2 = Map(
+      "FILE_PATH" -> "reisverslag/centaur.mpg",
+      "FILE_TITLE" -> "title2",
+      "FILE_ACCESSIBILITY" -> "ANONYMOUS"
+    )
+
+    val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
+    val msg1 = s"FILE_TITLE defined multiple values for file '$file': [title1, title2]"
+    val msg2 = s"FILE_ACCESSIBILITY defined multiple values for file '$file': [KNOWN, ANONYMOUS]"
+
+    extractFileDescriptors(row1 :: row2 :: Nil, 2, "ruimtereis01") should matchPattern {
+      case Failure(CompositeException(ParseException(2, `msg1`, _) :: ParseException(2, `msg2`, _) :: Nil)) =>
+    }
+  }
+
+  it should "fail if visibility is more restricted than accessibility" in {
+    val row = Map(
+      "FILE_PATH" -> "reisverslag/centaur.mpg",
+      "FILE_VISIBILITY" -> "NONE",
+      "FILE_ACCESSIBILITY" -> "KNOWN"
+    )
+
+    val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
+    val msg = s"FILE_VISIBILITY (NONE) is more restricted than FILE_ACCESSIBILITY (KNOWN) for file '$file'. (User will potentially have access to an invisible file.)"
+
+    extractFileDescriptors(row :: Nil, 2, "ruimtereis01") should matchPattern {
+      case Failure(CompositeException(ParseException(2, `msg`, _) :: Nil)) =>
+    }
+  }
 
   "fileDescriptor" should "convert the csv input to the corresponding output" in {
     val row = Map(
