@@ -35,46 +35,44 @@ trait FileDescriptorParser {
 
   private def toFileDescriptor(rowNum: => Int)(file: File, dataPerPath: List[(File, Option[String], Option[FileAccess.Value], Option[FileAccess.Value])]): Try[(File, FileDescriptor)] = {
     val titles = dataPerPath.collect { case (_, Some(title), _, _) => title }
-    val fars = dataPerPath.collect { case (_, _, Some(far), _) => far }
-    val fvs = dataPerPath.collect { case (_, _, _, Some(fv)) => fv }
-    val errors = ListBuffer[Exception]()
+    val fileAccessibilities = dataPerPath.collect { case (_, _, Some(far), _) => far }
+    val fileVisibilities = dataPerPath.collect { case (_, _, _, Some(fv)) => fv }
+    val errors = ListBuffer[Throwable]()
 
     if (titles.size > 1) errors.append(ParseException(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ titles.mkString("[", ", ", "]") }"))
-    if (fars.size > 1) errors.append(ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fars.mkString("[", ", ", "]") }"))
-    if (fvs.size > 1) errors.append(ParseException(rowNum, s"FILE_VISIBILITY defined multiple values for file '$file': ${ fvs.mkString("[", ", ", "]") }"))
+    if (fileAccessibilities.size > 1) errors.append(ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fileAccessibilities.mkString("[", ", ", "]") }"))
+    if (fileVisibilities.size > 1) errors.append(ParseException(rowNum, s"FILE_VISIBILITY defined multiple values for file '$file': ${ fileVisibilities.mkString("[", ", ", "]") }"))
 
     if (errors.nonEmpty) Failure(CompositeException(errors))
     else {
-      (fars, fvs) match {
-        case (List(ar), List(vr)) if vr > ar => Failure(ParseException(rowNum,
-          s"FILE_VISIBILITY ($vr) is more restricted than FILE_ACCESSIBILITY ($ar) for file '$file'. (User will potentially have access to an invisible file.)"))
-        case _ => Success((file, FileDescriptor(titles.headOption, fars.headOption, fvs.headOption)))
+      (fileAccessibilities, fileVisibilities) match {
+        case (List(as), List(vs)) if vs > as => Failure(ParseException(rowNum,
+          s"FILE_VISIBILITY ($vs) is more restricted than FILE_ACCESSIBILITY ($as) for file '$file'. (User will potentially have access to an invisible file.)"))
+        case _ => Success((file, FileDescriptor(titles.headOption, fileAccessibilities.headOption, fileVisibilities.headOption)))
       }
     }
   }
 
   def fileDescriptor(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[FileAccess.Value], Option[FileAccess.Value])]] = {
-    val path = row.find("FILE_PATH").map(findPath(depositId))
+    def collectErrors(rs: Option[Try[_]]*): Seq[Throwable] = {
+      rs.collect { case Some(Failure(t)) => ParseException(rowNum, t.getMessage, t) }
+    }
+
+    val path = row.find("FILE_PATH").map(findRegularFile(depositId))
     val title = row.find("FILE_TITLE")
     val accessRights = fileAccessRight(rowNum)(row)
     val visibility = fileVisibility(rowNum)(row)
 
     (path, title, accessRights, visibility) match {
-      // Check for invalid values. To keep the number of cases limited, we'll fail fast.
-      case (Some(Failure(e)), _, _, _) => Some(Failure(ParseException(rowNum, "FILE_PATH does not represent a valid path", e)))
-      case (_, _, Some(Failure(e)), _) => Some(Failure(ParseException(rowNum, e.getMessage, e)))
-      case (_, _, _, Some(Failure(e))) => Some(Failure(ParseException(rowNum, e.getMessage, e)))
-
-      // No FILE_* attributes at all is fine, but a missing FILE_PATH is not allowed.
       case (None, None, None, None) => None
-      case (None, _, _, _) =>
-        Some(Failure(ParseException(rowNum, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given")))
-
-      // Check if path exists and is a regular file.
-      case (Some(Success(p)), t, optAccessibility, optVisibility) =>
-        if (p.notExists) Some(Failure(ParseException(rowNum, s"FILE_PATH refers to a non-existent file: '$p'")))
-        else if (p.isDirectory) Some(Failure(ParseException(rowNum, s"FILE_PATH points to a directory: '$p'")))
-        else Some(Success((p, t, optAccessibility.map(_.get), optVisibility.map(_.get)))) // _.get is safe here, because we have matched on Some(Failure) for both accessibility and visibility above.
+      case (None, _, a, v) =>
+        val errors = collectErrors(a, v)
+        Some(Failure(CompositeException(
+          ParseException(rowNum, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given") +: errors)))
+      case (Some(p), t, a, v) =>
+        val errors = collectErrors(Some(p), a, v)
+        if (errors.isEmpty) Some(Success((p.get, t, a.map(_.get), v.map(_.get)))) // _.get is safe here, because we have matched on Some(Failure) for both accessibility and visibility above.
+        else Some(Failure(CompositeException(errors)))
     }
   }
 

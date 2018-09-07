@@ -353,7 +353,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
           " - row 2: Value 'random test data' is not a valid type",
           " - row 2: Value 'NL' is not a valid value for DC_LANGUAGE",
           " - row 2: DCT_DATE value 'Text with Qualifier' does not represent a date",
-          " - row 2: FILE_PATH does not represent a valid path",
+          " - row 2: unable to find path 'path/to/audiofile/that/does/not/exist.mp3'",
           " - row 2: Missing value for: SF_USER",
           " - row 3: DDM_AVAILABLE value 'invalid-date' does not represent a date",
           " - row 3: Missing value for: DC_IDENTIFIER",

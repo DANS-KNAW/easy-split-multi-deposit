@@ -92,8 +92,8 @@ trait AudioVideoParser {
   }
 
   def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Subtitles)]] = {
-    val file = row.find("AV_FILE_PATH").map(findPath(depositId))
-    val subtitle = row.find("AV_SUBTITLES").map(findPath(depositId))
+    val file = row.find("AV_FILE_PATH").map(findRegularFile(depositId))
+    val subtitle = row.find("AV_SUBTITLES").map(findRegularFile(depositId))
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, subtitle, subtitleLang) match {
