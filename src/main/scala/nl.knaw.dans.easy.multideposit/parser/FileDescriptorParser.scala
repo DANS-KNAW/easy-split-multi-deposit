@@ -71,7 +71,7 @@ trait FileDescriptorParser {
           ParseException(rowNum, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given") +: errors)))
       case (Some(p), t, a, v) =>
         val errors = collectErrors(Some(p), a, v)
-        if (errors.isEmpty) Some(Success((p.get, t, a.map(_.get), v.map(_.get)))) // _.get is safe here, because we have matched on Some(Failure) for both accessibility and visibility above.
+        if (errors.isEmpty) Some(Success((p.get, t, a.map(_.get), v.map(_.get)))) // _.get is safe here, because errors.isEmpty means that neither a nor v is a Failure.
         else Some(Failure(CompositeException(errors)))
     }
   }
