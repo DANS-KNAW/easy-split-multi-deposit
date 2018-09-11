@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.multideposit.model
 
 import better.files.File
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility
 
 sealed abstract class AvVocabulary(val vocabulary: String)
 case object Audio extends AvVocabulary("http://schema.org/AudioObject")
