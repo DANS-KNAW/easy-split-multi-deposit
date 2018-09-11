@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import better.files.File
 import better.files.File.currentWorkingDirectory
 import javax.naming.directory.Attributes
-import nl.knaw.dans.easy.multideposit.model.{ Audio, AVFileMetadata, FileAccess, Metadata, Springfield, Video }
+import nl.knaw.dans.easy.multideposit.model.{ Audio, AVFileMetadata, FileAccessRights, Metadata, Springfield, Video }
 import nl.knaw.dans.easy.multideposit.{ FfprobeRunner, Ldap, TestSupportFixture }
 import nl.knaw.dans.lib.error.CompositeException
 import org.scalamock.scalatest.MockFactory
@@ -96,8 +96,8 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
       mimeType = "video/mpeg",
       vocabulary = Video,
       title = "flyby of centaur",
-      accessibleTo = FileAccess.ANONYMOUS,
-      visibleTo = FileAccess.ANONYMOUS
+      accessibleTo = FileAccessRights.ANONYMOUS,
+      visibleTo = FileAccessRights.ANONYMOUS
     ))
 
   "checkSFColumnsIfDepositContainsAVFiles" should "succeed if the deposit contains the SF_* fields in case an A/V file is found" in {
@@ -162,8 +162,8 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
         mimeType = "audio/mpeg",
         vocabulary = Audio,
         title = "mytitle",
-        accessibleTo = FileAccess.ANONYMOUS,
-        visibleTo = FileAccess.ANONYMOUS
+        accessibleTo = FileAccessRights.ANONYMOUS,
+        visibleTo = FileAccessRights.ANONYMOUS
       ))
 
     inside(action.checkEitherVideoOrAudio(deposit)) {

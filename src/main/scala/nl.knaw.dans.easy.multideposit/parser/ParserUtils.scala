@@ -137,8 +137,10 @@ trait ParserUtils extends DebugEnhancedLogging {
   def findRegularFile(depositId: DepositId)(path: String): Try[File] = {
     val file = depositDir(depositId) / path
 
-    if (file.isRegularFile) Success(file)
-    else if (file.exists) Failure(new NoSuchFileException(s"path '$path' exists, but is not a regular file"))
-    else Failure(new NoSuchFileException(s"unable to find path '$path'"))
+    file match {
+      case f if f.isRegularFile => Success(f)
+      case f if f.exists => Failure(new NoSuchFileException(s"path '$path' exists, but is not a regular file"))
+      case _ => Failure(new NoSuchFileException(s"unable to find path '$path'"))
+    }
   }
 }

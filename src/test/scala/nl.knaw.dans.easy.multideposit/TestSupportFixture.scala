@@ -106,7 +106,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         identifiers = List(Identifier("id1234"))
       ),
       files = Map(
-        testDir / "md/ruimtereis02/path/to/images/Hubble_01.jpg" -> FileDescriptor(Some("Hubble"), Some(FileAccess.RESTRICTED_REQUEST))
+        testDir / "md/ruimtereis02/path/to/images/Hubble_01.jpg" -> FileDescriptor(Some("Hubble"), Some(FileAccessRights.RESTRICTED_REQUEST))
       )
     )
   }

@@ -17,7 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
 import nl.knaw.dans.easy.multideposit.{ CustomMatchers, TestSupportFixture }
-import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, DefaultFileMetadata, FileAccess, Subtitles, Video }
+import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, DefaultFileMetadata, FileAccessRights, Subtitles, Video }
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
@@ -54,8 +54,8 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "centaur.mpg",
-        accessibleTo = FileAccess.NONE,
-        visibleTo = FileAccess.ANONYMOUS
+        accessibleTo = FileAccessRights.NONE,
+        visibleTo = FileAccessRights.ANONYMOUS
       )
     )
 
@@ -76,16 +76,16 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "hubble.mpg",
-        accessibleTo = FileAccess.RESTRICTED_GROUP,
-        visibleTo = FileAccess.ANONYMOUS
+        accessibleTo = FileAccessRights.RESTRICTED_GROUP,
+        visibleTo = FileAccessRights.ANONYMOUS
       ),
       AVFileMetadata(
         filepath = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg",
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "video about the centaur meteorite",
-        accessibleTo = FileAccess.RESTRICTED_GROUP,
-        visibleTo = FileAccess.ANONYMOUS,
+        accessibleTo = FileAccessRights.RESTRICTED_GROUP,
+        visibleTo = FileAccessRights.ANONYMOUS,
         subtitles = Set(
           Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur.srt", Option("en")),
           Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur-nederlands.srt", Option("nl"))
@@ -117,8 +117,8 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         filepath = testDir / "md/ruimtereis02/path/to/images/Hubble_01.jpg",
         mimeType = "image/jpeg",
         title = Some("Hubble"),
-        accessibleTo = Some(FileAccess.RESTRICTED_REQUEST),
-        visibleTo = Some(FileAccess.KNOWN)
+        accessibleTo = Some(FileAccessRights.RESTRICTED_REQUEST),
+        visibleTo = Some(FileAccessRights.KNOWN)
       ),
       DefaultFileMetadata(
         filepath = testDir / "md/ruimtereis02/path/to/images/Hubbleshots.jpg",

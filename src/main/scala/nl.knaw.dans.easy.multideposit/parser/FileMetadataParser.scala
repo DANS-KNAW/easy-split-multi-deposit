@@ -56,7 +56,7 @@ trait FileMetadataParser extends DebugEnhancedLogging {
   private def mkAvFileMetadata(file: File, m: MimeType, vocabulary: AvVocabulary, instructions: Instructions): FileMetadata = {
     val subtitles = instructions.audioVideo.avFiles.getOrElse(file.path, Set.empty)
     lazy val defaultAccess = defaultAccessibility(instructions)
-    val defaultVisibility = FileAccess.ANONYMOUS
+    val defaultVisibility = FileAccessRights.ANONYMOUS
     lazy val filename = file.name.toString
 
     instructions.files.get(file.path)
@@ -69,8 +69,8 @@ trait FileMetadataParser extends DebugEnhancedLogging {
       .getOrElse(AVFileMetadata(file.path, m, vocabulary, filename, defaultAccess, defaultVisibility, subtitles))
   }
 
-  private def defaultAccessibility(instructions: Instructions): FileAccess.Value = {
-    FileAccess.accessibleTo(instructions.profile.accessright)
+  private def defaultAccessibility(instructions: Instructions): FileAccessRights.Value = {
+    FileAccessRights.accessibleTo(instructions.profile.accessright)
   }
 
   private def checkSFColumnsIfDepositContainsAVFiles(instructions: Instructions, fileMetadata: Seq[FileMetadata]): Try[Unit] = {

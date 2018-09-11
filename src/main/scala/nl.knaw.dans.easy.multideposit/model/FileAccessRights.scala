@@ -23,7 +23,7 @@ import nl.knaw.dans.common.lang.dataset.AccessCategory._
  * Copied from easy-stage-file-item
  */
 // TODO move this enum to the DDM library
-object FileAccess extends Enumeration {
+object FileAccessRights extends Enumeration {
 
   val
   ANONYMOUS, // a user that is not logged in
@@ -33,7 +33,7 @@ object FileAccess extends Enumeration {
   NONE // none of the above
   = Value
 
-  private val rightsMap = Map[AccessCategory, FileAccess.Value](
+  private val rightsMap = Map[AccessCategory, FileAccessRights.Value](
     // https://github.com/DANS-KNAW/easy-app/blob/1080eff457/lib/easy-business/src/main/java/nl/knaw/dans/easy/domain/model/AccessibleTo.java#L23-L37
     // the legacy code lacks OPEN_ACCESS, ACCESS_ELSEWHERE, FREELY_AVAILABLE
     ANONYMOUS_ACCESS -> ANONYMOUS,
@@ -55,8 +55,8 @@ object FileAccess extends Enumeration {
    * @param s toString value of the desired category
    * @return
    */
-  def valueOf(s: String): Option[FileAccess.Value] =
-    FileAccess.values.find(_.toString equalsIgnoreCase s)
+  def valueOf(s: String): Option[FileAccessRights.Value] =
+    FileAccessRights.values.find(_.toString equalsIgnoreCase s)
 
   /** gets the default category of users that have download permission for files in a new dataset,
    * an archivist may decide differently
@@ -64,6 +64,6 @@ object FileAccess extends Enumeration {
    * @param datasetAccesCategory from the EMD of the dataset
    * @return
    */
-  def accessibleTo(datasetAccesCategory: AccessCategory): FileAccess.Value =
+  def accessibleTo(datasetAccesCategory: AccessCategory): FileAccessRights.Value =
     rightsMap(datasetAccesCategory)
 }
