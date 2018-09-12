@@ -318,7 +318,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     val file = multiDepositDir / "ruimtereis01" / "reisverslag"
-    val errorMsg = s"AV_FILE_PATH '$file' is not a file"
+    val errorMsg = "AV_FILE_PATH does not represent a valid path"
     avFile("ruimtereis01")(2)(row).value should matchPattern {
       case Failure(ParseException(2, `errorMsg`, _)) =>
     }
@@ -344,7 +344,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     val file = multiDepositDir / "ruimtereis01" / "reisverslag"
-    val errorMsg = s"AV_FILE_PATH '$file' is not a file"
+    val errorMsg = "AV_FILE_PATH does not represent a valid path"
     avFile("ruimtereis01")(2)(row).value should matchPattern {
       case Failure(ParseException(2, `errorMsg`, _)) =>
     }
@@ -370,7 +370,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     val file = multiDepositDir / "ruimtereis01" / "reisverslag"
-    val errorMsg = s"AV_SUBTITLES '$file' is not a file"
+    val errorMsg = "AV_SUBTITLES does not represent a valid path"
     avFile("ruimtereis01")(2)(row).value should matchPattern {
       case Failure(ParseException(2, `errorMsg`, _)) =>
     }

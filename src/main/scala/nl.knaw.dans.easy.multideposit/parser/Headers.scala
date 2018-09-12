@@ -120,7 +120,8 @@ object Headers extends DebugEnhancedLogging {
   private lazy val fileDescriptorHeaders = Set(
     "FILE_PATH",
     "FILE_TITLE",
-    "FILE_ACCESSIBILITY"
+    "FILE_ACCESSIBILITY",
+    "FILE_VISIBILITY"
   )
 
   private lazy val springfieldHeaders = Set(

@@ -11,6 +11,7 @@
         <dcterms:format>image/jpeg</dcterms:format>
         <dcterms:title>Hubble</dcterms:title>
         <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
+        <visibleToRights>KNOWN</visibleToRights>
     </file>
     <file filepath="data/path/to/images/Hubbleshots.jpg">
         <dcterms:format>image/jpeg</dcterms:format>

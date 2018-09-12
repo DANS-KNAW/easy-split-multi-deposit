@@ -49,22 +49,24 @@ trait FileMetadataParser extends DebugEnhancedLogging {
 
   private def mkDefaultFileMetadata(file: File, m: MimeType, instructions: Instructions): FileMetadata = {
     instructions.files.get(file.path)
-      .map(fd => DefaultFileMetadata(file.path, m, fd.title, fd.accessibility))
+      .map(fd => DefaultFileMetadata(file.path, m, fd.title, fd.accessibility, fd.visibility))
       .getOrElse(DefaultFileMetadata(file.path, m))
   }
 
   private def mkAvFileMetadata(file: File, m: MimeType, vocabulary: AvVocabulary, instructions: Instructions): FileMetadata = {
     val subtitles = instructions.audioVideo.avFiles.getOrElse(file.path, Set.empty)
     lazy val defaultAccess = defaultAccessibility(instructions)
+    val defaultVisibility = FileAccessRights.ANONYMOUS
     lazy val filename = file.name.toString
 
     instructions.files.get(file.path)
       .map(fd => {
         val title = fd.title.getOrElse(filename)
         val accessibility = fd.accessibility.getOrElse(defaultAccess)
-        AVFileMetadata(file.path, m, vocabulary, title, accessibility, subtitles)
+        val visibility = fd.visibility.getOrElse(defaultVisibility)
+        AVFileMetadata(file.path, m, vocabulary, title, accessibility, visibility, subtitles)
       })
-      .getOrElse(AVFileMetadata(file.path, m, vocabulary, filename, defaultAccess, subtitles))
+      .getOrElse(AVFileMetadata(file.path, m, vocabulary, filename, defaultAccess, defaultVisibility, subtitles))
   }
 
   private def defaultAccessibility(instructions: Instructions): FileAccessRights.Value = {

@@ -34,6 +34,7 @@ trait FileMetadataTestObjects {
         vocabulary = Video,
         title = "hubble.mpg",
         accessibleTo = FileAccessRights.ANONYMOUS,
+        visibleTo = FileAccessRights.ANONYMOUS,
         subtitles = Set.empty
       ),
       AVFileMetadata(
@@ -42,6 +43,7 @@ trait FileMetadataTestObjects {
         vocabulary = Video,
         title = "flyby of centaur",
         accessibleTo = FileAccessRights.ANONYMOUS,
+        visibleTo = FileAccessRights.ANONYMOUS,
         subtitles = Set(
           Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur.srt", Some("en")),
           Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur-nederlands.srt", Some("nl"))
@@ -105,6 +107,7 @@ trait FileMetadataTestObjects {
         vocabulary = Audio,
         title = "chicken.mp3",
         accessibleTo = FileAccessRights.ANONYMOUS,
+        visibleTo = FileAccessRights.ANONYMOUS,
         subtitles = Set.empty
       ),
       DefaultFileMetadata(

@@ -199,6 +199,21 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     }
   }
 
+  it should "fail if visibility is more restricted than accessibility" in {
+    val row = Map(
+      "FILE_PATH" -> "reisverslag/centaur.mpg",
+      "FILE_VISIBILITY" -> "NONE",
+      "FILE_ACCESSIBILITY" -> "KNOWN"
+    )
+
+    val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
+    val msg = s"FILE_VISIBILITY (NONE) is more restricted than FILE_ACCESSIBILITY (KNOWN) for file '$file'. (User will potentially have access to an invisible file.)"
+
+    extractFileDescriptors(row :: Nil, 2, "ruimtereis01") should matchPattern {
+      case Failure(CompositeException(ParseException(2, `msg`, _) :: Nil)) =>
+    }
+  }
+
   "fileDescriptor" should "convert the csv input to the corresponding output" in {
     val row = Map(
       "FILE_PATH" -> "reisverslag/centaur.mpg",
@@ -208,7 +223,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
     fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Success((`file`, Some("some title"), Some(FileAccessRights.KNOWN))) =>
+      case Success((`file`, Some("some title"), Some(FileAccessRights.KNOWN), None)) =>
     }
   }
 
@@ -219,8 +234,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
       "FILE_ACCESSIBILITY" -> "KNOWN"
     )
 
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "FILE_PATH does not represent a valid path", _)) =>
+    val value = fileDescriptor("ruimtereis01")(2)(row).value
+    value should matchPattern {
+      case Failure(CompositeException(Seq(ParseException(2, "unable to find path 'path/that/does/not/exist.txt'", _)))) =>
     }
   }
 
@@ -232,9 +248,10 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     )
 
     val file = multiDepositDir / "ruimtereis01/reisverslag"
-    val msg = s"FILE_PATH '$file' is not a file"
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, `msg`, _)) =>
+    val msg = s"path '$file' exists, but is not a regular file"
+    val result = fileDescriptor("ruimtereis01")(2)(row).value
+    inside(result) {
+      case Failure(CompositeException(Seq(e))) => e.getMessage shouldBe s"path 'reisverslag/' exists, but is not a regular file"
     }
   }
 
@@ -247,33 +264,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
     fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Success((`file`, Some("some title"), None)) =>
-    }
-  }
-
-  it should "fail if no FILE_ACCESSIBILITY is given and the path does not exist" in {
-    val row = Map(
-      "FILE_PATH" -> "path/that/does/not/exist.txt",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> ""
-    )
-
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "FILE_PATH does not represent a valid path", _)) =>
-    }
-  }
-
-  it should "fail if no FILE_ACCESSIBILITY is given and the path represents a directory" in {
-    val row = Map(
-      "FILE_PATH" -> "reisverslag/",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> ""
-    )
-
-    val file = multiDepositDir / "ruimtereis01/reisverslag"
-    val msg = s"FILE_PATH '$file' is not a file"
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, `msg`, _)) =>
+      case Success((`file`, Some("some title"), None, None)) =>
     }
   }
 
@@ -284,38 +275,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
       "FILE_ACCESSIBILITY" -> "invalid"
     )
 
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Value 'invalid' is not a valid file accessright", _)) =>
-    }
-  }
-
-  it should "fail if an invalid FILE_ACCESSIBILITY is given and the path does not exist" in {
-    val row = Map(
-      "FILE_PATH" -> "path/that/does/not/exist.txt",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> "invalid"
-    )
-
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(CompositeException(
-      ParseException(2, "FILE_PATH does not represent a valid path", _) ::
-        ParseException(2, "Value 'invalid' is not a valid file accessright", _) :: Nil)) =>
-    }
-  }
-
-  it should "fail if an invalid FILE_ACCESSIBILITY is given and the path represents a directory" in {
-    val row = Map(
-      "FILE_PATH" -> "reisverslag/",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> "invalid"
-    )
-
-    val file = multiDepositDir / "ruimtereis01/reisverslag"
-    val msg = s"FILE_PATH '$file' is not a file"
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(CompositeException(
-      ParseException(2, `msg`, _) ::
-        ParseException(2, "Value 'invalid' is not a valid file accessright", _) :: Nil)) =>
+    inside(fileDescriptor("ruimtereis01")(2)(row).value) {
+      case Failure(CompositeException(Seq(ParseException(2, "Value 'invalid' is not a valid file accessright", _)))) =>
     }
   }
 
@@ -326,22 +287,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
       "FILE_ACCESSIBILITY" -> "KNOWN"
     )
 
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "FILE_TITLE and FILE_ACCESSIBILITY are not allowed, since FILE_PATH isn't given", _)) =>
-    }
-  }
-
-  it should "fail if FILE_PATH is not given but FILE_TITLE and FILE_ACCESSIBILITY are given and FILE_ACCESSIBILITY is invalid" in {
-    val row = Map(
-      "FILE_PATH" -> "",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> "invalid"
-    )
-
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(CompositeException(
-        ParseException(2, "FILE_TITLE and FILE_ACCESSIBILITY are not allowed, since FILE_PATH isn't given", _) ::
-          ParseException(2, "Value 'invalid' is not a valid file accessright", _) :: Nil)) =>
+    inside(fileDescriptor("ruimtereis01")(2)(row).value) {
+      case Failure(CompositeException(Seq(ParseException(2, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given", _)))) =>
     }
   }
 
@@ -352,8 +299,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
       "FILE_ACCESSIBILITY" -> ""
     )
 
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "FILE_TITLE is not allowed, since FILE_PATH isn't given", _)) =>
+    inside(fileDescriptor("ruimtereis01")(2)(row).value) {
+      case Failure(CompositeException(Seq(ParseException(2, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given", _)))) =>
     }
   }
 
@@ -364,22 +311,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
       "FILE_ACCESSIBILITY" -> "KNOWN"
     )
 
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "FILE_ACCESSIBILITY is not allowed, since FILE_PATH isn't given", _)) =>
-    }
-  }
-
-  it should "fail if only an invalid FILE_ACCESSIBILITY is given" in {
-    val row = Map(
-      "FILE_PATH" -> "",
-      "FILE_TITLE" -> "",
-      "FILE_ACCESSIBILITY" -> "invalid"
-    )
-
-    fileDescriptor("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(CompositeException(
-        ParseException(2, "FILE_ACCESSIBILITY is not allowed, since FILE_PATH isn't given", _) ::
-          ParseException(2, "Value 'invalid' is not a valid file accessright", _) :: Nil)) =>
+    inside(fileDescriptor("ruimtereis01")(2)(row).value) {
+      case Failure(CompositeException(Seq(ParseException(2, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given", _)))) =>
     }
   }
 
@@ -395,17 +328,17 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   "fileAccessRight" should "convert the value for SF_ACCESSIBILITY into the corresponding enum object" in {
     val row = Map("FILE_ACCESSIBILITY" -> "NONE")
-    fileAccessRight(2)(row).value should matchPattern { case Success(FileAccessRights.NONE) => }
+    fileAccessibility(2)(row).value should matchPattern { case Success(FileAccessRights.NONE) => }
   }
 
   it should "return None if SF_ACCESSIBILITY is not defined" in {
     val row = Map("FILE_ACCESSIBILITY" -> "")
-    fileAccessRight(2)(row) shouldBe empty
+    fileAccessibility(2)(row) shouldBe empty
   }
 
   it should "fail if the SF_ACCESSIBILITY value does not correspond to an object in the enum" in {
     val row = Map("FILE_ACCESSIBILITY" -> "unknown value")
-    fileAccessRight(2)(row).value should matchPattern {
+    fileAccessibility(2)(row).value should matchPattern {
       case Failure(ParseException(2, "Value 'unknown value' is not a valid file accessright", _)) =>
     }
   }

@@ -189,10 +189,12 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
 
         val bagInfo = bag / "bag-info.txt"
         val expBagInfo = expBag / "bag-info.txt"
+        val excludedBagInfoFields = Set("Bagging-Date", "Payload-Oxum", "Bag-Size")
+
 
         // skipping the Bagging-Date which is different every time
-        bagInfo.lines.filterNot(_ contains "Bagging-Date").toSet should
-          contain theSameElementsAs expBagInfo.lines.filterNot(_ contains "Bagging-Date").toSet
+        bagInfo.lines.filterNot(s => excludedBagInfoFields.forall(s contains))
+          contain theSameElementsAs expBagInfo.lines.filterNot(s => excludedBagInfoFields.forall(s contains)).toSet
       }
 
       it should "check bagit.txt" in {
@@ -351,13 +353,13 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
           " - row 2: Value 'random test data' is not a valid type",
           " - row 2: Value 'NL' is not a valid value for DC_LANGUAGE",
           " - row 2: DCT_DATE value 'Text with Qualifier' does not represent a date",
-          " - row 2: FILE_PATH does not represent a valid path",
+          " - row 2: unable to find path 'path/to/audiofile/that/does/not/exist.mp3'",
           " - row 2: Missing value for: SF_USER",
           " - row 3: DDM_AVAILABLE value 'invalid-date' does not represent a date",
           " - row 3: Missing value for: DC_IDENTIFIER",
           " - row 3: Value 'encoding=UTF-8' is not a valid value for DC_LANGUAGE",
           " - row 3: DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it",
-          " - row 3: FILE_TITLE is not allowed, since FILE_PATH isn't given",
+          " - row 3: FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given",
           " - row 4: When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context",
           " - row 4: DCT_DATE value '30-07-1992' does not represent a date",
           "Due to these errors in the 'instructions.csv', nothing was done."

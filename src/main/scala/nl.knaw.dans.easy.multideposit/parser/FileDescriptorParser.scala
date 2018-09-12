@@ -19,6 +19,7 @@ import better.files.File
 import nl.knaw.dans.easy.multideposit.model.{ DepositId, FileAccessRights, FileDescriptor }
 import nl.knaw.dans.lib.error._
 
+import scala.collection.mutable.ListBuffer
 import scala.util.{ Failure, Success, Try }
 
 trait FileDescriptorParser {
@@ -26,88 +27,66 @@ trait FileDescriptorParser {
 
   def extractFileDescriptors(rows: DepositRows, rowNum: Int, depositId: DepositId): Try[Map[File, FileDescriptor]] = {
     extractList(rows)(fileDescriptor(depositId))
-      .flatMap(_.groupBy { case (file, _, _) => file }
+      .flatMap(_.groupBy { case (file, _, _, _) => file }
         .map((toFileDescriptor(rowNum) _).tupled)
         .collectResults
         .map(_.toMap))
   }
 
-  private def toFileDescriptor(rowNum: => Int)(file: File, dataPerPath: List[(File, Option[String], Option[FileAccessRights.Value])]): Try[(File, FileDescriptor)] = {
-    val titles = dataPerPath.collect { case (_, Some(title), _) => title }
-    val fars = dataPerPath.collect { case (_, _, Some(far)) => far }
+  private def toFileDescriptor(rowNum: => Int)(file: File, dataPerPath: List[(File, Option[String], Option[FileAccessRights.Value], Option[FileAccessRights.Value])]): Try[(File, FileDescriptor)] = {
+    val titles = dataPerPath.collect { case (_, Some(title), _, _) => title }
+    val fileAccessibilities = dataPerPath.collect { case (_, _, Some(far), _) => far }
+    val fileVisibilities = dataPerPath.collect { case (_, _, _, Some(fv)) => fv }
+    val errors = ListBuffer[Throwable]()
 
-    (titles, fars) match {
-      case (Nil, Nil) => Success((file, FileDescriptor()))
-      case (t :: Nil, Nil) => Success((file, FileDescriptor(Some(t))))
-      case (Nil, f :: Nil) => Success((file, FileDescriptor(accessibility = Some(f))))
-      case (t :: Nil, f :: Nil) => Success((file, FileDescriptor(Some(t), Some(f))))
-      case (ts, fs) if fs.size <= 1 => Failure(ParseException(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ ts.mkString("[", ", ", "]") }"))
-      case (ts, fs) if ts.size <= 1 => Failure(ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fs.mkString("[", ", ", "]") }"))
-      case (ts, fs) => Failure(new CompositeException(
-        ParseException(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ ts.mkString("[", ", ", "]") }"),
-        ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fs.mkString("[", ", ", "]") }")))
+    if (titles.size > 1) errors.append(ParseException(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ titles.mkString("[", ", ", "]") }"))
+    if (fileAccessibilities.size > 1) errors.append(ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fileAccessibilities.mkString("[", ", ", "]") }"))
+    if (fileVisibilities.size > 1) errors.append(ParseException(rowNum, s"FILE_VISIBILITY defined multiple values for file '$file': ${ fileVisibilities.mkString("[", ", ", "]") }"))
+
+    if (errors.nonEmpty) Failure(CompositeException(errors))
+    else {
+      (fileAccessibilities, fileVisibilities) match {
+        case (List(as), List(vs)) if vs > as => Failure(ParseException(rowNum,
+          s"FILE_VISIBILITY ($vs) is more restricted than FILE_ACCESSIBILITY ($as) for file '$file'. (User will potentially have access to an invisible file.)"))
+        case _ => Success((file, FileDescriptor(titles.headOption, fileAccessibilities.headOption, fileVisibilities.headOption)))
+      }
     }
   }
 
-  def fileDescriptor(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[FileAccessRights.Value])]] = {
-    val path = row.find("FILE_PATH").map(findPath(depositId))
+  def fileDescriptor(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[FileAccessRights.Value], Option[FileAccessRights.Value])]] = {
+    def collectErrors(rs: Option[Try[_]]*): Seq[Throwable] = {
+      rs.collect { case Some(Failure(t)) => ParseException(rowNum, t.getMessage, t) }
+    }
+
+    val path = row.find("FILE_PATH").map(findRegularFile(depositId))
     val title = row.find("FILE_TITLE")
-    val accessRights = fileAccessRight(rowNum)(row)
+    val accessibility = fileAccessibility(rowNum)(row)
+    val visibility = fileVisibility(rowNum)(row)
 
-    (path, title, accessRights) match {
-      case (Some(Failure(e)), _, Some(Failure(e2))) =>
-        Some(Failure(new CompositeException(
-            ParseException(rowNum, "FILE_PATH does not represent a valid path", e),
-            e2
-        )))
-      case (Some(Failure(e)), _, _) => Some(Failure(ParseException(rowNum, "FILE_PATH does not represent a valid path", e)))
-      case (Some(Success(p)), t, Some(Success(ar)))
-        if p.exists
-          && p.isRegularFile =>
-        Some(Success((p, t, Some(ar))))
-      case (Some(Success(p)), _, Some(Success(_)))
-        if !p.exists =>
-        Some(Failure(ParseException(rowNum, s"FILE_PATH '$p' does not exist")))
-      case (Some(Success(p)), _, Some(Success(_))) =>
-        Some(Failure(ParseException(rowNum, s"FILE_PATH '$p' is not a file")))
-      case (Some(Success(p)), t, None)
-        if p.exists
-          && p.isRegularFile =>
-        Some(Success((p, t, None)))
-      case (Some(Success(p)), _, None)
-        if !p.exists =>
-        Some(Failure(ParseException(rowNum, s"FILE_PATH '$p' does not exist")))
-      case (Some(Success(p)), _, None)
-        if !p.isRegularFile =>
-        Some(Failure(ParseException(rowNum, s"FILE_PATH '$p' is not a file")))
-      case (Some(Success(p)), _, Some(Failure(e)))
-        if p.exists
-          && p.isRegularFile =>
-        Some(Failure(e))
-      case (Some(Success(p)), _, Some(Failure(e)))
-        if !p.exists =>
-        Some(Failure(new CompositeException(ParseException(rowNum, s"FILE_PATH '$p' does not exist"), e)))
-      case (Some(Success(p)), _, Some(Failure(e)))
-        if !p.isRegularFile =>
-        Some(Failure(new CompositeException(ParseException(rowNum, s"FILE_PATH '$p' is not a file"), e)))
-      case (None, Some(_), Some(Success(_))) =>
-        Some(Failure(ParseException(rowNum, "FILE_TITLE and FILE_ACCESSIBILITY are not allowed, since FILE_PATH isn't given")))
-      case (None, Some(_), Some(Failure(e))) =>
-        Some(Failure(new CompositeException(ParseException(rowNum, "FILE_TITLE and FILE_ACCESSIBILITY are not allowed, since FILE_PATH isn't given"), e)))
-      case (None, Some(_), None) =>
-        Some(Failure(ParseException(rowNum, "FILE_TITLE is not allowed, since FILE_PATH isn't given")))
-      case (None, None, Some(Success(_))) =>
-        Some(Failure(ParseException(rowNum, "FILE_ACCESSIBILITY is not allowed, since FILE_PATH isn't given")))
-      case (None, None, Some(Failure(e))) =>
-        Some(Failure(new CompositeException(ParseException(rowNum, "FILE_ACCESSIBILITY is not allowed, since FILE_PATH isn't given"), e)))
-      case (None, None, None) => None
+    (path, title, accessibility, visibility) match {
+      case (None, None, None, None) => None
+      case (None, _, a, v) =>
+        val errors = collectErrors(a, v)
+        Some(Failure(CompositeException(
+          ParseException(rowNum, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given") +: errors)))
+      case (Some(p), t, a, v) =>
+        val errors = collectErrors(Some(p), a, v)
+        if (errors.isEmpty) Some(Success((p.get, t, a.map(_.get), v.map(_.get)))) // _.get is safe here, because errors.isEmpty means that neither a nor v is a Failure.
+        else Some(Failure(CompositeException(errors)))
     }
   }
 
-  def fileAccessRight(rowNum: => Int)(row: DepositRow): Option[Try[FileAccessRights.Value]] = {
+  def fileAccessibility(rowNum: => Int)(row: DepositRow): Option[Try[FileAccessRights.Value]] = {
     row.find("FILE_ACCESSIBILITY")
       .map(acc => FileAccessRights.valueOf(acc)
         .map(Success(_))
         .getOrElse(Failure(ParseException(rowNum, s"Value '$acc' is not a valid file accessright"))))
+  }
+
+  def fileVisibility(rowNum: => Int)(row: DepositRow): Option[Try[FileAccessRights.Value]] = {
+    row.find("FILE_VISIBILITY")
+      .map(acc => FileAccessRights.valueOf(acc)
+        .map(Success(_))
+        .getOrElse(Failure(ParseException(rowNum, s"Value '$acc' is not a valid file visibility"))))
   }
 }

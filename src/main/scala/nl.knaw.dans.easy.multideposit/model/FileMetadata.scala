@@ -26,15 +26,18 @@ sealed abstract class FileMetadata(val filepath: File,
 case class DefaultFileMetadata(override val filepath: File,
                                override val mimeType: MimeType,
                                title: Option[String] = Option.empty,
-                               accessibleTo: Option[FileAccessRights.Value] = Option.empty
+                               accessibleTo: Option[FileAccessRights.Value] = Option.empty,
+                               visibleTo: Option[FileAccessRights.Value] = Option.empty
                               ) extends FileMetadata(filepath, mimeType)
 case class AVFileMetadata(override val filepath: File,
                           override val mimeType: MimeType,
                           vocabulary: AvVocabulary,
                           title: String,
                           accessibleTo: FileAccessRights.Value,
+                          visibleTo: FileAccessRights.Value,
                           subtitles: Set[Subtitles] = Set.empty
                          ) extends FileMetadata(filepath, mimeType)
 
 case class FileDescriptor(title: Option[String] = Option.empty,
-                          accessibility: Option[FileAccessRights.Value] = Option.empty)
+                          accessibility: Option[FileAccessRights.Value] = Option.empty,
+                          visibility: Option[FileAccessRights.Value] = Option.empty)
