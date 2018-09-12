@@ -60,10 +60,10 @@ trait FileDescriptorParser {
 
     val path = row.find("FILE_PATH").map(findRegularFile(depositId))
     val title = row.find("FILE_TITLE")
-    val accessRights = fileAccessRight(rowNum)(row)
+    val accessibility = fileAccessibility(rowNum)(row)
     val visibility = fileVisibility(rowNum)(row)
 
-    (path, title, accessRights, visibility) match {
+    (path, title, accessibility, visibility) match {
       case (None, None, None, None) => None
       case (None, _, a, v) =>
         val errors = collectErrors(a, v)
@@ -76,7 +76,7 @@ trait FileDescriptorParser {
     }
   }
 
-  def fileAccessRight(rowNum: => Int)(row: DepositRow): Option[Try[FileAccessRights.Value]] = {
+  def fileAccessibility(rowNum: => Int)(row: DepositRow): Option[Try[FileAccessRights.Value]] = {
     row.find("FILE_ACCESSIBILITY")
       .map(acc => FileAccessRights.valueOf(acc)
         .map(Success(_))

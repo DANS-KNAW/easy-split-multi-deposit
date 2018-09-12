@@ -328,17 +328,17 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   "fileAccessRight" should "convert the value for SF_ACCESSIBILITY into the corresponding enum object" in {
     val row = Map("FILE_ACCESSIBILITY" -> "NONE")
-    fileAccessRight(2)(row).value should matchPattern { case Success(FileAccessRights.NONE) => }
+    fileAccessibility(2)(row).value should matchPattern { case Success(FileAccessRights.NONE) => }
   }
 
   it should "return None if SF_ACCESSIBILITY is not defined" in {
     val row = Map("FILE_ACCESSIBILITY" -> "")
-    fileAccessRight(2)(row) shouldBe empty
+    fileAccessibility(2)(row) shouldBe empty
   }
 
   it should "fail if the SF_ACCESSIBILITY value does not correspond to an object in the enum" in {
     val row = Map("FILE_ACCESSIBILITY" -> "unknown value")
-    fileAccessRight(2)(row).value should matchPattern {
+    fileAccessibility(2)(row).value should matchPattern {
       case Failure(ParseException(2, "Value 'unknown value' is not a valid file accessright", _)) =>
     }
   }
