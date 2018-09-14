@@ -2,10 +2,10 @@ Multi-Deposit Instructions format
 =================================
 
 This document specifies the format of the Multi-Deposit Instructions (MDI) file. The MDI
-file describes a Multi-Deposit, detailing:
+file describes a multi-deposit, detailing:
 
-* What dataset(s) to create from the Multi-Deposit
-* The dataset metadata for each dataset
+* What dataset(s) to create from the multi-deposit.
+* The dataset metadata for each dataset.
 * Which files have audio/visual content, from which of them to derive streamable
   surrogates and where to host those.
   
@@ -17,8 +17,8 @@ General overview
   install [LibreOffice] and use its Calc application, which supports the required
   export without any extra steps. LibreOffice can also open Excel files.
 * The first row of the file contains column headers.
-* Subsequent rows contain values for only one target Dataset. Multiple rows may 
-  together specify the values for one target Dataset. However, rows that specify
+* Subsequent rows contain values for only one target dataset. Multiple rows may
+  together specify the values for one target dataset. However, rows that specify
   one dataset must be grouped together.
 * There are three types of values, which will be explained below:
     1. the `DATASET` column
@@ -29,10 +29,10 @@ General overview
 1 The DATASET column
 --------------------
 
-For some Datasets there are multiple rows in the MDI file. This serves two purposes:
+For some datasets there are multiple rows in the MDI file. This serves two purposes:
 
-* some metadata fields may have more than one value 
-* multiple files in the dataset may require special processing instructions
+* Some metadata fields may have more than one value.
+* Multiple files in the dataset may require special processing instructions.
 
 All the rows that pertain to one dataset must have the same value in the `DATASET`
 column.
@@ -45,9 +45,9 @@ The supported metadata elements are subdivided into the following groups:
 
 * The following [Dublin Core elements]: `DC_TITLE`, `DC	_DESCRIPTION`,
   `DC_CREATOR`*, `DC_CONTRIBUTOR`*, `DC_SUBJECT`, `DC_PUBLISHER`,
-  `DC_TYPE`, `DC_FORMAT`, `DC_IDENTIFIER`, `DC_IDENTIFIER_TYPE`, `DC_SOURCE`, `DC_LANGUAGE`;
+  `DC_TYPE`, `DC_FORMAT`, `DC_IDENTIFIER`, `DC_IDENTIFIER_TYPE`, `DC_SOURCE`, `DC_LANGUAGE`.
 * The following [Dublin Core Term elements]: `DCT_ALTERNATIVE`, `DCT_SPATIAL`,
-  `DCT_TEMPORAL`, `DCT_RIGHTSHOLDER`, `DCT_DATE`, `DCT_DATE_QUALIFIER`;
+  `DCT_TEMPORAL`, `DCT_RIGHTSHOLDER`, `DCT_DATE`, `DCT_DATE_QUALIFIER`.
 * DANS specific specializations of Dublin Core: `DCX_CREATOR_TITLES`, 
   `DCX_CREATOR_INITIALS`, `DCX_CREATOR_INSERTIONS`,
   `DCX_CREATOR_SURNAME`, `DCX_CREATOR_DAI`, `DCX_CREATOR_ORGANIZATION`, `DCX_CREATOR_ROLE`,
@@ -57,13 +57,13 @@ The supported metadata elements are subdivided into the following groups:
   `DCX_SPATIAL_SCHEME`, `DCX_SPATIAL_X`, `DCX_SPATIAL_Y`, `DCX_SPATIAL_NORTH`,
   `DCX_SPATIAL_SOUTH`, `DCX_SPATIAL_EAST`, `DCX_SPATIAL_WEST`,
   `DCT_TEMPORAL_SCHEME`, `DC_SUBJECT_SCHEME`,
-  `DCX_RELATION_QUALIFIER`, `DCX_RELATION_TITLE`, `DCX_RELATION_LINK`
+  `DCX_RELATION_QUALIFIER`, `DCX_RELATION_TITLE`, `DCX_RELATION_LINK`.
 * Other DANS specific metadata elements: `DDM_CREATED`, `DDM_AVAILABLE`,
-  `DDM_AUDIENCE`, `DDM_ACCESSRIGHTS`, `DEPOSITOR_ID`
-* Fields that specify special properties for a file: `FILE_PATH`, `FILE_TITLE` and
-  `FILE_ACCESSIBILITY`
+  `DDM_AUDIENCE`, `DDM_ACCESSRIGHTS`, `DEPOSITOR_ID`.
+* Fields that specify special properties for a file: `FILE_PATH`, `FILE_TITLE`,
+  `FILE_ACCESSIBILITY`, `FILE_VISIBILITY`.
 * Fields that specify the relation to a streaming surrogate on the Springfield
-  platform: `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, and `SF_PLAY_MODE`
+  platform: `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, and `SF_PLAY_MODE`.
 * The use of `DC_CREATOR` and `DC_CONTRIBUTOR` is deprecated in favor of the new
   `DCX_CREATOR_*` and `DCX_CONTRIBUTOR_*` fields.
 
@@ -128,33 +128,43 @@ to be a date, formatted as `yyyy-mm-dd`. If `DCT_DATE_QUALIFIER` isn't provided 
 `DCT_DATE` is, the latter is considered to be free text.
 
 #### File
-`FILE_PATH`, `FILE_TITLE` and `FILE_ACCESSIBILITY` describe special properties of a file. For every
-file that is registered here, at least `FILE_PATH` and either one of `FILE_TITLE` and `FILE_ACCESSIBILITY`
-need to be provided. A file can only have one value for `FILE_TITLE` or `FILE_ACCESSIBILITY`.
-`FILE_ACCESSIBILITY` provides a way to override the file-accessibility from the default
-`DDM_ACCESSRIGHTS` for the specified file only. The FILE_ACCESSIBILITY field can have the values: 'ANONYMOUS',
- 'RESTRICTED_REQUEST', 'RESTRICTED_GROUP', 'KNOWN' and 'NONE'. Note that all A/V files must have the same FILE_ACCESSIBILITY'
-The information found in the `FILE_*` columns is put into `files.xml` to better describe the file
-at hand. The `FILE_TITLE` relation is put inside a `dcterms:title` element; the `FILE_ACCESSIBILITY`
-relation is put inside the `accessibleToRights` element. Note that if no `FILE_TITLE` is described
-for an audio/video file (see section on Springfield below), the file's name itself is used here.
-Similar for `FILE_ACCESSIBILITY`: if it is not given for an audio/video file, the dataset's default
-`DDM_ACCESSRIGHTS` is used instead.
+`FILE_PATH`, `FILE_TITLE`, `FILE_ACCESSIBILITY`, `FILE_VISIBILITY` describe special properties of a file. For every
+file that is described here, at least `FILE_PATH` and at least one of `FILE_TITLE`, `FILE_ACCESSIBILITY` and `FILE_VISIBILITY`
+need to be provided. A file can only have one value for each of these properties.
+
+`FILE_ACCESSIBILITY` and `FILE_VISIBILITY` provide a way to override the default accessibility and visibility respectively.
+Their value must be one of: 'ANONYMOUS', 'RESTRICTED_REQUEST', 'RESTRICTED_GROUP', 'KNOWN' and 'NONE'. The default
+accessibility is derived from the access category specified in the `DDM_ACCESSRIGHTS` field.
+
+DDM_ACCESSRIGHTS                       | Default accessibility
+---------------------------------------|----------------------
+`OPEN_ACCESS`                          | `ANONYMOUS`
+`OPEN_ACCESS_FOR_REGISTERED_USERS`     | `KNOWN`
+`GROUP_ACCESS`                         | `RESTRICTED_GROUP`
+`REQUEST_PERMISSION`                   | `RESTRICTED_REQUEST`
+`NO_ACCESS`                            | `NONE`
+
+Note that all A/V files must have the same `FILE_ACCESSIBILITY`. This is because only one audio or video presentation per dataset
+is supported. It may consist of multiple files. The accessiblity of the presentation (i.e. the permission to play the presentation in
+the EASY Web-UI) is the accessibility of the audio or video files.
+
+The default visibility is `ANONYMOUS`.
 
 #### Springfield
 [Springfield Web TV] is the platform that DANS uses to host the streaming surrogates (versions)
 of audiovisual data.
 
-The metadata elements starting with `SF_` are used to create a Streaming Surrogate of
+The metadata elements starting with `SF_` are used to create a streaming surrogate of
 a audio or video presentation contained in the dataset:
 
-* `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, together specify a 
-  presentation in Springfield that must be linked to by EASY. The link is created
+* `SF_DOMAIN`, `SF_USER`, `SF_COLLECTION`, *together with the Fedora identifier of the resulting
+  dataset in EASY* identify a presentation in Springfield that must be linked to by EASY. The link is created
   by adding a `dc:relation` metadata value to the dataset metadata. This relation
   is marked as having the `STREAMING_SURROGATE_RELATION` scheme and contains the
   URL of the Streaming Surrogate in Springfield. These fields may only be used if
-  all of them are specified. Since the `SF_PRESENTATION` is not yet defined at this point in time,
-  a placeholder called '_$sdo-id_' is put in its place.
+  all of them are specified. Since the Fedora identifier will be minted *after* `easy-split-multi-deposit`
+  runs, a placeholder is inserted into the deposit. During the ingest-flow this placeholder will
+  be resolved to the correct identifier.
 * All files in a dataset that are identified as audio/video (using mimetype detection) are added
   to this presentation by identifying them as such (and providing extra metadata) in `files.xml`.
 * The data provided in `SF_DOMAIN`, `SF_USER` and `SF_COLLECTION` are stored for further processing
