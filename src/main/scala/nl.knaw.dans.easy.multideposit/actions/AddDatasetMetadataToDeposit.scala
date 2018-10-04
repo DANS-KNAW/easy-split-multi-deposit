@@ -121,10 +121,13 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
     }
   }
 
+  private val degreesURL = "http://www.opengis.net/def/crs/EPSG/0/4326"
+  private val rdURL = "http://www.opengis.net/def/crs/EPSG/0/28992"
+
   def createSrsName(scheme: String): String = {
     Map(
-      "degrees" -> "http://www.opengis.net/def/crs/EPSG/0/4326",
-      "RD" -> "http://www.opengis.net/def/crs/EPSG/0/28992"
+      "degrees" -> degreesURL,
+      "RD" -> rdURL
     ).getOrElse(scheme, "")
   }
 
@@ -137,8 +140,8 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
     lazy val yx = s"${ point.y } ${ point.x }"
 
     val pos = srsName match {
-      case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
-      case "http://www.opengis.net/def/crs/EPSG/0/4326" => yx
+      case `rdURL` => xy
+      case `degreesURL` => yx
       case _ => yx
     }
 
@@ -175,8 +178,8 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
     lazy val yx = (s"${ box.south } ${ box.west }", s"${ box.north } ${ box.east }")
 
     val (lower, upper) = srsName match {
-      case "http://www.opengis.net/def/crs/EPSG/0/28992" => xy
-      case "http://www.opengis.net/def/crs/EPSG/0/4326" => yx
+      case `rdURL` => xy
+      case `degreesURL` => yx
       case _ => yx
     }
 
