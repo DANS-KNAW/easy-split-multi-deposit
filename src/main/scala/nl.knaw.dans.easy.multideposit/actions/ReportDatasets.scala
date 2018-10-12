@@ -15,7 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import better.files.{ ManagedResource, _ }
+import better.files.{ Dispose, _ }
 import nl.knaw.dans.easy.multideposit.PathExplorer.OutputPathExplorer
 import nl.knaw.dans.easy.multideposit.actions.ReportDatasets._
 import nl.knaw.dans.easy.multideposit.encoding
@@ -32,9 +32,9 @@ class ReportDatasets {
       printRecord(deposit, printer)
   }
 
-  private def csvPrinter(file: File): ManagedResource[CSVPrinter] = {
+  private def csvPrinter(file: File): Dispose[CSVPrinter] = {
     file.bufferedWriter(charset = encoding)
-      .flatMap[CSVPrinter, ManagedResource](writer => new ManagedResource(csvFormat.print(writer)))
+      .flatMap[CSVPrinter, Dispose](writer => new Dispose(csvFormat.print(writer)))
   }
 
   private def printRecord(deposit: Deposit, printer: CSVPrinter): Unit = {
