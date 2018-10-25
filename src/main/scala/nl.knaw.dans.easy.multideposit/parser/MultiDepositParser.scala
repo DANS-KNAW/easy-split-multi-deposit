@@ -53,7 +53,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
         _ <- detectEmptyDepositCells(content.map(_ (depositIdIndex)))
         result <- content.groupBy(_ (depositIdIndex))
           .mapValues(_.map(headers.zip(_).filterNot { case (_, value) => value.isBlank }.toMap))
-          .map((extractDeposit(multiDepositDir) _).tupled)
+          .map { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows) }
           .toSeq
           .collectResults
       } yield result

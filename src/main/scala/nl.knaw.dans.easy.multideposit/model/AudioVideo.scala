@@ -24,6 +24,22 @@ case class AudioVideo(springfield: Option[Springfield] = Option.empty,
 case class Springfield(domain: String = "dans",
                        user: String,
                        collection: String,
-                       playMode: PlayMode = PlayMode.Continuous)
+                       playMode: PlayMode) {
+  def toTuple: (String, String, String, PlayMode) = (domain, user, collection, playMode)
+}
+object Springfield {
+
+  def withDomain(domain: String,
+                 user: String,
+                 collection: String,
+                 playMode: PlayMode
+                ): Springfield = {
+    Springfield(domain, user, collection, playMode)
+  }
+
+  def withoutDomain(user: String, collection: String, playMode: PlayMode): Springfield = {
+    Springfield(user = user, collection = collection, playMode = playMode)
+  }
+}
 
 case class Subtitles(file: File, language: Option[String] = Option.empty)

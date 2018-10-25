@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import better.files.File
 import better.files.File.currentWorkingDirectory
 import javax.naming.directory.Attributes
-import nl.knaw.dans.easy.multideposit.model.{ Audio, AVFileMetadata, FileAccessRights, Metadata, Springfield, Video }
+import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, PlayMode, Springfield, Video }
 import nl.knaw.dans.easy.multideposit.{ FfprobeRunner, Ldap, TestSupportFixture }
 import nl.knaw.dans.lib.error.CompositeException
 import org.scalamock.scalatest.MockFactory
@@ -103,7 +103,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
   "checkSFColumnsIfDepositContainsAVFiles" should "succeed if the deposit contains the SF_* fields in case an A/V file is found" in {
     val deposit = testInstructions1.toDeposit(avFileReferences).copy(
       depositId = depositId,
-      springfield = Option(Springfield("domain", "user", "collection"))
+      springfield = Option(Springfield("domain", "user", "collection", PlayMode.Continuous))
     )
     action.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Success[_]]
   }
@@ -136,7 +136,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val deposit = testInstructions2.toDeposit().copy(
       row = 1,
       depositId = depositId,
-      springfield = Option(Springfield(user = "user", collection = "collection"))
+      springfield = Option(Springfield(user = "user", collection = "collection", playMode = PlayMode.Continuous))
     )
     inside(action.checkSFColumnsIfDepositContainsAVFiles(deposit)) {
       case Failure(InvalidInputException(_, message)) =>

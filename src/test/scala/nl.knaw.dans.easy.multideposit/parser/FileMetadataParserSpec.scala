@@ -170,7 +170,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     val instructions = testInstructions2.copy(
       depositId = "ruimtereis02",
       audioVideo = testInstructions2.audioVideo.copy(
-        springfield = Option(Springfield(user = "user", collection = "collection"))
+        springfield = Option(Springfield(user = "user", collection = "collection", playMode = PlayMode.Continuous))
       )
     )
     inside(extractFileMetadata(multiDepositDir / "ruimtereis02", instructions)) {
