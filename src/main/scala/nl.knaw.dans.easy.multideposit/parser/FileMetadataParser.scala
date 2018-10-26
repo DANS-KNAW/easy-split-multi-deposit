@@ -122,20 +122,21 @@ trait FileMetadataParser extends DebugEnhancedLogging {
     FileAccessRights.accessibleTo(instructions.profile.accessright)
   }
 
-  private def checkSFColumnsIfDepositContainsAVFiles(instructions: Instructions, fileMetadata: Seq[FileMetadata]): Try[Unit] = {
+  private def checkSFColumnsIfDepositContainsAVFiles(instructions: Instructions,
+                                                     fileMetadata: Seq[FileMetadata]): Try[Unit] = {
     val avFiles = fileMetadata.collect { case fmd: AVFileMetadata => fmd.filepath }
 
     (instructions.audioVideo.springfield.isDefined, avFiles.isEmpty) match {
       case (true, false) | (false, true) => Success(())
       case (true, true) =>
         Failure(ParseException(instructions.row,
-          "Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]\n" +
-            "cause: these columns should be empty because there are no audio/video files " +
+          "Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]; " +
+            "these columns should be empty because there are no audio/video files " +
             "found in this deposit"))
       case (false, false) =>
         Failure(ParseException(instructions.row,
-          "No values found for these columns: [SF_USER, SF_COLLECTION]\n" +
-            "cause: these columns should contain values because audio/video files are " +
+          "No values found for these columns: [SF_USER, SF_COLLECTION, SF_PLAY_MODE]; " +
+            "these columns should contain values because audio/video files are " +
             s"found:\n${ avFiles.map(filepath => s" - $filepath").mkString("\n") }"))
     }
   }

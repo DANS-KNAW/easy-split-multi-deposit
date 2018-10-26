@@ -16,9 +16,9 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
-import nl.knaw.dans.easy.multideposit.{ FfprobeRunner, Ldap }
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit, DepositId }
+import nl.knaw.dans.easy.multideposit.{ FfprobeRunner, Ldap }
 import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -70,13 +70,13 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
       case (true, false) | (false, true) => Success(())
       case (true, true) =>
         Failure(InvalidInputException(deposit.row,
-          "Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]\n" +
-            "cause: these columns should be empty because there are no audio/video files " +
+          "Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]; " +
+            "these columns should be empty because there are no audio/video files " +
             "found in this deposit"))
       case (false, false) =>
         Failure(InvalidInputException(deposit.row,
-          "No values found for these columns: [SF_USER, SF_COLLECTION]\n" +
-            "cause: these columns should contain values because audio/video files are " +
+          "No values found for these columns: [SF_USER, SF_COLLECTION, SF_PLAY_MODE]; " +
+            "these columns should contain values because audio/video files are " +
             s"found:\n${ avFiles.map(filepath => s" - $filepath").mkString("\n") }"))
     }
   }

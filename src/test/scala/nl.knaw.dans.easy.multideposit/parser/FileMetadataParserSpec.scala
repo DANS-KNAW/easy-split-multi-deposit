@@ -193,7 +193,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     inside(extractFileMetadata(multiDepositDir / "ruimtereis01", instructions)) {
       case Failure(ParseException(_, message, _)) =>
         message should {
-          include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
+          include("No values found for these columns: [SF_USER, SF_COLLECTION, SF_PLAY_MODE]") and
             include("reisverslag/centaur.mpg") and
             include("path/to/a/random/video/hubble.mpg")
         }
@@ -210,7 +210,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     inside(extractFileMetadata(multiDepositDir / "ruimtereis02", instructions)) {
       case Failure(ParseException(_, message, _)) =>
         message should {
-          include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]") and
+          include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]") and
             include("these columns should be empty because there are no audio/video files found in this deposit")
         }
     }
