@@ -57,8 +57,10 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
         "state.label",
         "state.description",
         "depositor.userId",
-        "datamanager.email",
-        "datamanager.userId",
+        "curation.datamanager.email",
+        "curation.datamanager.userId",
+        "curation.required",
+        "curation.performed",
       ) and contain noneOf(
         "springfield.domain",
         "springfield.user",
@@ -69,8 +71,10 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
 
     resultProps.getString("bag-store.bag-id") shouldBe uuid.toString
     resultProps.getString("depositor.userId") shouldBe "ruimtereiziger1"
-    resultProps.getString("datamanager.email") shouldBe datamanagerEmail
-    resultProps.getString("datamanager.userId") shouldBe datamanagerId
+    resultProps.getString("curation.datamanager.email") shouldBe datamanagerEmail
+    resultProps.getString("curation.datamanager.userId") shouldBe datamanagerId
+    resultProps.getString("curation.required") shouldBe "yes"
+    resultProps.getString("curation.performed") shouldBe "yes"
   }
 
   it should "generate the properties file with springfield fields and write the properties in it" in {
@@ -93,8 +97,10 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
         "state.label",
         "state.description",
         "depositor.userId",
-        "datamanager.email",
-        "datamanager.userId",
+        "curation.datamanager.email",
+        "curation.datamanager.userId",
+        "curation.required",
+        "curation.performed",
         "springfield.domain",
         "springfield.user",
         "springfield.collection",
@@ -104,8 +110,10 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
 
     resultProps.getString("bag-store.bag-id") shouldBe uuid.toString
     resultProps.getString("depositor.userId") shouldBe "ruimtereiziger1"
-    resultProps.getString("datamanager.email") shouldBe datamanagerEmail
-    resultProps.getString("datamanager.userId") shouldBe datamanagerId
+    resultProps.getString("curation.datamanager.email") shouldBe datamanagerEmail
+    resultProps.getString("curation.datamanager.userId") shouldBe datamanagerId
+    resultProps.getString("curation.required") shouldBe "yes"
+    resultProps.getString("curation.performed") shouldBe "yes"
     resultProps.getString("springfield.domain") shouldBe "dans"
     resultProps.getString("springfield.user") shouldBe "janvanmansum"
     resultProps.getString("springfield.collection") shouldBe "Jans-test-files"

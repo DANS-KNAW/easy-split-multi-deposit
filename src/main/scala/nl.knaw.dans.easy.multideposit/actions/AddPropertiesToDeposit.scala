@@ -20,7 +20,6 @@ import nl.knaw.dans.easy.multideposit.now
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.configuration.PropertiesConfiguration
-import org.joda.time.{ DateTime, DateTimeZone }
 
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Try }
@@ -52,8 +51,10 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       "state.label" -> Some("SUBMITTED"),
       "state.description" -> Some("Deposit is valid and ready for post-submission processing"),
       "depositor.userId" -> Some(deposit.depositorUserId),
-      "datamanager.userId" -> Some(datamanagerId),
-      "datamanager.email" -> Some(emailaddress),
+      "curation.datamanager.userId" -> Some(datamanagerId),
+      "curation.datamanager.email" -> Some(emailaddress),
+      "curation.required" -> Some("yes"),
+      "curation.performed" -> Some("yes"),
       "springfield.domain" -> sf.map(_.domain),
       "springfield.user" -> sf.map(_.user),
       "springfield.collection" -> sf.map(_.collection),
