@@ -19,6 +19,7 @@ import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.lib.error.CompositeException
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
@@ -32,7 +33,7 @@ trait FileMetadataTestObjects {
         filepath = multiDepositDir / "ruimtereis01/path/to/a/random/video/hubble.mpg",
         mimeType = "video/mpeg",
         vocabulary = Video,
-        title = "hubble.mpg",
+        title = "video about the hubble space telescoop",
         accessibleTo = FileAccessRights.ANONYMOUS,
         visibleTo = FileAccessRights.ANONYMOUS,
         subtitles = Set.empty
@@ -139,15 +140,48 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
   }
 
   it should "return an empty list if the directory does not exist" in {
-    extractFileMetadata(multiDepositDir / "ruimtereis03", testInstructions1) should matchPattern {
+    val ruimtereis03Path = multiDepositDir / "ruimtereis03"
+
+    // presupposition
+    ruimtereis03Path shouldNot exist
+
+    // test
+    extractFileMetadata(ruimtereis03Path, testInstructions1) should matchPattern {
       case Success(Nil) =>
     }
   }
 
   it should "collect the metadata for all files in ruimtereis04" in {
-    inside(extractFileMetadata(multiDepositDir / "ruimtereis04", testInstructions1)) {
+    val instructions = testInstructions1.copy(
+      audioVideo = testInstructions1.audioVideo.copy(
+        springfield = Some(Springfield("dans", "janvanmansum", "Jans-test-files", PlayMode.Continuous))
+      )
+    )
+    inside(extractFileMetadata(multiDepositDir / "ruimtereis04", instructions)) {
       case Success(fms) =>
         fms should { have size 3 and contain allElementsOf fileMetadata4 }
+    }
+  }
+
+  it should "fail when the deposit contains A/V files, Springfield PlayMode is Menu, and a FileTitle is not present" in {
+    val fileWithNoDescription = testDir / "md/ruimtereis01/path/to/a/random/video/hubble.mpg"
+    val instructions = testInstructions1.copy(
+      files = testInstructions1.files.updated(fileWithNoDescription, FileDescriptor(title = Option.empty)),
+    )
+    inside(extractFileMetadata(multiDepositDir / "ruimtereis01", instructions)) {
+      case Failure(CompositeException(List(e1: ParseException))) =>
+        e1 should have message s"No FILE_TITLE given for A/V file $fileWithNoDescription."
+    }
+  }
+
+  it should "fail when the deposit contains A/V files, Springfield PlayMode is Menu, and an A/V file is not listed" in {
+    val fileWithNoDescription = testDir / "md/ruimtereis01/path/to/a/random/video/hubble.mpg"
+    val instructions = testInstructions1.copy(
+      files = testInstructions1.files - fileWithNoDescription,
+    )
+    inside(extractFileMetadata(multiDepositDir / "ruimtereis01", instructions)) {
+      case Failure(CompositeException(List(e1: ParseException))) =>
+        e1 should have message s"Not listed A/V file detected: $fileWithNoDescription. Because Springfield PlayMode 'MENU' was choosen, all A/V files must be listed with a human readable title in the FILE_TITLE field."
     }
   }
 
@@ -191,7 +225,10 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
 
     val currentAV = instructions.audioVideo.avFiles
     val newAV = currentAV + (audioFile -> Set.empty[Subtitles])
-    val failingInstructions = instructions.copy(audioVideo = instructions.audioVideo.copy(avFiles = newAV))
+    val failingInstructions = instructions.copy(
+      audioVideo = instructions.audioVideo.copy(avFiles = newAV),
+      files = instructions.files + (audioFile -> FileDescriptor(title = Option("crowing rooster")))
+    )
 
     inside(extractFileMetadata(multiDepositDir / "ruimtereis01", failingInstructions)) {
       case Failure(ParseException(_, message, _)) =>

@@ -23,9 +23,12 @@ import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
+import org.scalatest.enablers.Existence
 import org.scalatest.{ FlatSpec, Inside, Matchers, OptionValues }
 
 trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
+
+  implicit def existenceOfFile[FILE <: better.files.File]: Existence[FILE] = _.exists
 
   lazy val testDir: File = {
     val path = currentWorkingDirectory / s"target/test/${ getClass.getSimpleName }"
@@ -69,7 +72,8 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         subjects = List(Subject("astronomie"), Subject("ruimtevaart"), Subject("planetoïden"))
       ),
       files = Map(
-        testDir / "md/ruimtereis01/reisverslag/centaur.mpg" -> FileDescriptor(Option("flyby of centaur"))
+        testDir / "md/ruimtereis01/reisverslag/centaur.mpg" -> FileDescriptor(Option("flyby of centaur")),
+        testDir / "md/ruimtereis01/path/to/a/random/video/hubble.mpg" -> FileDescriptor(Option("video about the hubble space telescoop")),
       ),
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files", PlayMode.Menu)),

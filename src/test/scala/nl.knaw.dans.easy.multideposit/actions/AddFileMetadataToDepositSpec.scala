@@ -75,7 +75,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         filepath = multiDepositDir / "ruimtereis01/path/to/a/random/video/hubble.mpg",
         mimeType = "video/mpeg",
         vocabulary = Video,
-        title = "hubble.mpg",
+        title = "video about the hubble space telescoop",
         accessibleTo = FileAccessRights.RESTRICTED_GROUP,
         visibleTo = FileAccessRights.ANONYMOUS
       ),

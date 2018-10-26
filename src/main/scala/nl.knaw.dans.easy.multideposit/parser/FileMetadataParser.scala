@@ -40,23 +40,70 @@ trait FileMetadataParser extends DebugEnhancedLogging {
   }
 
   private def getFileMetadata(instructions: Instructions)(file: File): Try[FileMetadata] = {
-    MimeType.get(file).map {
+    MimeType.get(file).flatMap {
       case mimetype if mimetype startsWith "audio" => mkAvFileMetadata(file, mimetype, Audio, instructions)
       case mimetype if mimetype startsWith "video" => mkAvFileMetadata(file, mimetype, Video, instructions)
-      case mimetype => mkDefaultFileMetadata(file, mimetype, instructions)
+      case mimetype => Success(mkDefaultFileMetadata(file, mimetype, instructions))
     }
   }
 
-  private def mkDefaultFileMetadata(file: File, m: MimeType, instructions: Instructions): FileMetadata = {
+  private def mkDefaultFileMetadata(file: File, m: MimeType,
+                                    instructions: Instructions): FileMetadata = {
     instructions.files.get(file.path)
       .map(fd => DefaultFileMetadata(file.path, m, fd.title, fd.accessibility, fd.visibility))
       .getOrElse(DefaultFileMetadata(file.path, m))
   }
 
-  private def mkAvFileMetadata(file: File, m: MimeType, vocabulary: AvVocabulary, instructions: Instructions): FileMetadata = {
+  private def mkAvFileMetadata(file: File, m: MimeType, vocabulary: AvVocabulary,
+                               instructions: Instructions): Try[FileMetadata] = {
+    instructions.audioVideo.springfield
+      .map(mkAvFileWithSpringfield(file, m, vocabulary, _, instructions))
+      .getOrElse(Success(mkAvFileWithoutSpringfield(file, m, vocabulary, instructions)))
+  }
+
+  private def mkAvFileWithSpringfield(file: File, m: MimeType, vocabulary: AvVocabulary,
+                                      springfield: Springfield,
+                                      instructions: Instructions): Try[FileMetadata] = {
     val subtitles = instructions.audioVideo.avFiles.getOrElse(file.path, Set.empty)
     lazy val defaultAccess = defaultAccessibility(instructions)
-    val defaultVisibility = FileAccessRights.ANONYMOUS
+    lazy val defaultVisibility = FileAccessRights.ANONYMOUS
+    lazy val filename = file.name.toString
+
+    instructions.files.get(file.path)
+      .map(fd => {
+        val accessibility = fd.accessibility.getOrElse(defaultAccess)
+        val visibility = fd.visibility.getOrElse(defaultVisibility)
+
+        springfield.playMode match {
+          case PlayMode.Menu =>
+            fd.title
+              .map(title => Success(AVFileMetadata(file.path, m, vocabulary, title, accessibility,
+                visibility, subtitles)))
+              .getOrElse(Failure(ParseException(instructions.row, s"No FILE_TITLE given for A/V file $file.")))
+          case PlayMode.Continuous =>
+            Success(AVFileMetadata(file.path, m, vocabulary, fd.title.getOrElse(filename),
+              accessibility, visibility, subtitles))
+        }
+      })
+      .getOrElse {
+        springfield.playMode match {
+          case PlayMode.Menu =>
+            Failure(ParseException(instructions.row, s"Not listed A/V file detected: $file. " +
+              "Because Springfield PlayMode 'MENU' was choosen, all A/V files must be listed " +
+              "with a human readable title in the FILE_TITLE field."))
+          case PlayMode.Continuous =>
+            Success(AVFileMetadata(file.path, m, vocabulary, filename, defaultAccess,
+              defaultVisibility, subtitles))
+        }
+      }
+  }
+
+  // no springfield configuratie, but av files; this will result in a failure later on
+  private def mkAvFileWithoutSpringfield(file: File, m: MimeType, vocabulary: AvVocabulary,
+                                         instructions: Instructions): FileMetadata = {
+    val subtitles = instructions.audioVideo.avFiles.getOrElse(file.path, Set.empty)
+    lazy val defaultAccess = defaultAccessibility(instructions)
+    lazy val defaultVisibility = FileAccessRights.ANONYMOUS
     lazy val filename = file.name.toString
 
     instructions.files.get(file.path)
@@ -66,7 +113,9 @@ trait FileMetadataParser extends DebugEnhancedLogging {
         val visibility = fd.visibility.getOrElse(defaultVisibility)
         AVFileMetadata(file.path, m, vocabulary, title, accessibility, visibility, subtitles)
       })
-      .getOrElse(AVFileMetadata(file.path, m, vocabulary, filename, defaultAccess, defaultVisibility, subtitles))
+      .getOrElse {
+        AVFileMetadata(file.path, m, vocabulary, filename, defaultAccess, defaultVisibility, subtitles)
+      }
   }
 
   private def defaultAccessibility(instructions: Instructions): FileAccessRights.Value = {

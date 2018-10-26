@@ -116,7 +116,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     inside(action.checkSFColumnsIfDepositContainsAVFiles(deposit)) {
       case Failure(InvalidInputException(_, message)) =>
         message should {
-          include("No values found for these columns: [SF_USER, SF_COLLECTION]") and
+          include("No values found for these columns: [SF_USER, SF_COLLECTION, SF_PLAY_MODE]") and
             include("reisverslag/centaur.mpg")
         }
     }
@@ -140,10 +140,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     )
     inside(action.checkSFColumnsIfDepositContainsAVFiles(deposit)) {
       case Failure(InvalidInputException(_, message)) =>
-        message should {
-          include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION]") and
-            include("these columns should be empty because there are no audio/video files found in this deposit")
-        }
+        message should include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]; these columns should be empty because there are no audio/video files found in this deposit")
     }
   }
 
@@ -154,7 +151,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     action.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Success[_]]
   }
 
-  it should "fail if a dataset has both audio and video material in it" in {
+  "checkEitherVideoOrAudio" should "fail if a dataset has both audio and video material in it" in {
     val depositId = "ruimtereis01"
     val deposit = testInstructions1.copy(depositId = depositId)
       .toDeposit(avFileReferences :+ AVFileMetadata(
