@@ -4,7 +4,7 @@
     <file filepath="data/path/to/a/random/video/hubble.mpg">
         <dcterms:type>http://schema.org/VideoObject</dcterms:type>
         <dcterms:format>video/mpeg</dcterms:format>
-        <dcterms:title>video about the hubble space telescoop</dcterms:title>
+        <dcterms:title>video about the hubble space telescope</dcterms:title>
         <accessibleToRights>RESTRICTED_GROUP</accessibleToRights>
         <visibleToRights>ANONYMOUS</visibleToRights>
     </file>

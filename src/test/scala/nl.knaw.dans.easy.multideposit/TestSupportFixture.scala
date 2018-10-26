@@ -73,7 +73,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
       ),
       files = Map(
         testDir / "md/ruimtereis01/reisverslag/centaur.mpg" -> FileDescriptor(Option("flyby of centaur")),
-        testDir / "md/ruimtereis01/path/to/a/random/video/hubble.mpg" -> FileDescriptor(Option("video about the hubble space telescoop")),
+        testDir / "md/ruimtereis01/path/to/a/random/video/hubble.mpg" -> FileDescriptor(Option("video about the hubble space telescope")),
       ),
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files", PlayMode.Menu)),

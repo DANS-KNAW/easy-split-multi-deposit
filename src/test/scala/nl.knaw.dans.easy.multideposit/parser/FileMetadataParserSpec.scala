@@ -33,7 +33,7 @@ trait FileMetadataTestObjects {
         filepath = multiDepositDir / "ruimtereis01/path/to/a/random/video/hubble.mpg",
         mimeType = "video/mpeg",
         vocabulary = Video,
-        title = "video about the hubble space telescoop",
+        title = "video about the hubble space telescope",
         accessibleTo = FileAccessRights.ANONYMOUS,
         visibleTo = FileAccessRights.ANONYMOUS,
         subtitles = Set.empty
