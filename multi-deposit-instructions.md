@@ -171,7 +171,7 @@ a audio or video presentation contained in the dataset:
   in the `deposit.properties` file.
 * `SF_PLAY_MODE` specifies how the video's are played in Springfield. The value must either be
   `continuous` or `menu`. This value is only allowed if `SF_DOMAIN`, `SF_USER` and `SF_COLLECTION`
-  are provided as well. When `menu` is chosen, **every A/V file** must have `FILE_TITLE` defined as well.
+  are provided as well. If `menu` is chosen, **every A/V file** must have `FILE_TITLE` defined as well.
 * The columns `AV_FILE_PATH`, `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` are used to provide extra
   metadata specific to audio/video files. For a path to a A/V file in `AV_FILE_PATH`, the user can
   specify one or more combinations of subtitles and the corresponding language tag in `AV_SUBTITLES`
