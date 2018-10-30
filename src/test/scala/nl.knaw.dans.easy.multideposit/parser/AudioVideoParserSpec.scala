@@ -128,6 +128,22 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     }
   }
 
+  it should "fail if the values have invalid characters" in {
+    val row = Map(
+      "SF_DOMAIN" -> "inv@lïdçhæracter",
+      "SF_USER" -> "#%!&@$",
+      "SF_COLLECTION" -> "inv***d",
+      "SF_PLAY_MODE" -> "menu"
+    )
+
+    inside(springfield(2)(row).value) {
+      case Failure(CompositeException(List(e1, e2, e3))) =>
+        e1 should have message "The column 'SF_DOMAIN' contains the following invalid characters: {@, ï, ç, æ}"
+        e2 should have message "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"
+        e3 should have message "The column 'SF_COLLECTION' contains the following invalid characters: {*}"
+    }
+  }
+
   it should "convert with a default value for SF_DOMAIN when it is not defined" in {
     val row = Map(
       "SF_DOMAIN" -> "",
@@ -141,29 +157,44 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     }
   }
 
-  it should "fail if there is no value for SF_USER" in {
+  it should "fail if the values have invalid characters when no SF_DOMAIN is given" in {
     val row = Map(
-      "SF_DOMAIN" -> "randomdomain",
-      "SF_USER" -> "",
-      "SF_COLLECTION" -> "randomcollection",
+      "SF_DOMAIN" -> "",
+      "SF_USER" -> "#%!&@$",
+      "SF_COLLECTION" -> "inv***d",
       "SF_PLAY_MODE" -> "menu"
     )
 
-    springfield(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: SF_USER", _)) =>
+    inside(springfield(2)(row).value) {
+      case Failure(CompositeException(List(e1, e2))) =>
+        e1 should have message "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"
+        e2 should have message "The column 'SF_COLLECTION' contains the following invalid characters: {*}"
     }
   }
 
-  it should "fail if there is no value for SF_USER and the value for SF_PLAY_MODE is unknown" in {
+  it should "fail if SF_PLAY_MODE is given but this is an unknown value" in {
     val row = Map(
       "SF_DOMAIN" -> "randomdomain",
-      "SF_USER" -> "",
+      "SF_USER" -> "randomuser",
       "SF_COLLECTION" -> "randomcollection",
       "SF_PLAY_MODE" -> "unknown"
     )
 
     springfield(2)(row).value should matchPattern {
-      case Failure(CompositeException(ParseException(2, "Missing value for: SF_USER", _) :: ParseException(2, "Value 'unknown' is not a valid play mode", _) :: Nil)) =>
+      case Failure(ParseException(2, "Value 'unknown' is not a valid play mode", _)) =>
+    }
+  }
+
+  it should "fail if no SF_PLAY_MODE is given" in {
+    val row = Map(
+      "SF_DOMAIN" -> "randomdomain",
+      "SF_USER" -> "randomuser",
+      "SF_COLLECTION" -> "randomcollection",
+      "SF_PLAY_MODE" -> ""
+    )
+
+    springfield(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Missing value for: SF_PLAY_MODE", _)) =>
     }
   }
 
@@ -188,24 +219,99 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "SF_PLAY_MODE" -> "unknown"
     )
 
-    springfield(2)(row).value should matchPattern {
-      case Failure(CompositeException(ParseException(2, "Missing value for: SF_COLLECTION", _) :: ParseException(2, "Value 'unknown' is not a valid play mode", _) :: Nil)) =>
+    inside(springfield(2)(row).value) {
+      case Failure(CompositeException(List(e1, e2))) =>
+        e1 should have message "Missing value for: SF_COLLECTION"
+        e2 should have message "Value 'unknown' is not a valid play mode"
     }
   }
 
-  it should "fail if the values have invalid characters" in {
+  it should "fail if both SF_COLLECTION and SF_PLAY_MODE are not given" in {
     val row = Map(
-      "SF_DOMAIN" -> "inv@lïdçhæracter",
-      "SF_USER" -> "#%!&@$",
-      "SF_COLLECTION" -> "inv***d",
+      "SF_DOMAIN" -> "randomdomain",
+      "SF_USER" -> "randomuser",
+      "SF_COLLECTION" -> "",
+      "SF_PLAY_MODE" -> ""
+    )
+
+    inside(springfield(2)(row).value) {
+      case Failure(CompositeException(List(e1, e2))) =>
+        e1 should have message "Missing value for: SF_COLLECTION"
+        e2 should have message "Missing value for: SF_PLAY_MODE"
+    }
+  }
+
+  it should "fail if there is no value for SF_USER" in {
+    val row = Map(
+      "SF_DOMAIN" -> "randomdomain",
+      "SF_USER" -> "",
+      "SF_COLLECTION" -> "randomcollection",
+      "SF_PLAY_MODE" -> "menu"
+    )
+
+    springfield(2)(row).value should matchPattern {
+      case Failure(ParseException(2, "Missing value for: SF_USER", _)) =>
+    }
+  }
+
+  it should "fail if there is no value for SF_USER and the value for SF_PLAY_MODE is unknown" in {
+    val row = Map(
+      "SF_DOMAIN" -> "randomdomain",
+      "SF_USER" -> "",
+      "SF_COLLECTION" -> "randomcollection",
+      "SF_PLAY_MODE" -> "unknown"
+    )
+
+    inside(springfield(2)(row).value) {
+      case Failure(CompositeException(List(e1, e2))) =>
+        e1 should have message "Missing value for: SF_USER"
+        e2 should have message "Value 'unknown' is not a valid play mode"
+    }
+  }
+
+  it should "fail if both SF_USER and SF_PLAY_MODE are not given" in {
+    val row = Map(
+      "SF_DOMAIN" -> "randomdomain",
+      "SF_USER" -> "",
+      "SF_COLLECTION" -> "randomcollection",
+      "SF_PLAY_MODE" -> ""
+    )
+
+    inside(springfield(2)(row).value) {
+      case Failure(CompositeException(List(e1, e2))) =>
+        e1 should have message "Missing value for: SF_USER"
+        e2 should have message "Missing value for: SF_PLAY_MODE"
+    }
+  }
+
+  it should "fail if both SF_USER and SF_COLLECTION are not given" in {
+    val row = Map(
+      "SF_DOMAIN" -> "randomdomain",
+      "SF_USER" -> "",
+      "SF_COLLECTION" -> "",
       "SF_PLAY_MODE" -> "menu"
     )
 
     inside(springfield(2)(row).value) {
-      case Failure(CompositeException(e1 :: e2 :: e3 :: Nil)) =>
-        e1 should have message "The column 'SF_DOMAIN' contains the following invalid characters: {@, ï, ç, æ}"
-        e2 should have message "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"
-        e3 should have message "The column 'SF_COLLECTION' contains the following invalid characters: {*}"
+      case Failure(CompositeException(List(e1, e2))) =>
+        e1 should have message "Missing value for: SF_COLLECTION"
+        e2 should have message "Missing value for: SF_USER"
+    }
+  }
+
+  it should "fail if both SF_USER and SF_COLLECTION are not given and the value for SF_PLAY_MODE is unknown" in {
+    val row = Map(
+      "SF_DOMAIN" -> "randomdomain",
+      "SF_USER" -> "",
+      "SF_COLLECTION" -> "",
+      "SF_PLAY_MODE" -> "unknown"
+    )
+
+    inside(springfield(2)(row).value) {
+      case Failure(CompositeException(List(e1, e2, e3))) =>
+        e1 should have message "Missing value for: SF_COLLECTION"
+        e2 should have message "Missing value for: SF_USER"
+        e3 should have message "Value 'unknown' is not a valid play mode"
     }
   }
 
@@ -218,45 +324,6 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     springfield(2)(row) shouldBe empty
-  }
-
-  it should "fail if only the SF_PLAY_MODE is given" in {
-    val row = Map(
-      "SF_DOMAIN" -> "",
-      "SF_USER" -> "",
-      "SF_COLLECTION" -> "",
-      "SF_PLAY_MODE" -> "menu"
-    )
-
-    springfield(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing values for these columns: [SF_COLLECTION, SF_USER]", _)) =>
-    }
-  }
-
-  it should "default the SF_PLAY_MODE to 'continuous' when no value is given, but the Springfield fields are present" in {
-    val row = Map(
-      "SF_DOMAIN" -> "randomdomain",
-      "SF_USER" -> "randomuser",
-      "SF_COLLECTION" -> "randomcollection",
-      "SF_PLAY_MODE" -> ""
-    )
-
-    springfield(2)(row).value should matchPattern {
-      case Success(Springfield(_, _, _, PlayMode.Continuous)) =>
-    }
-  }
-
-  it should "fail if only the SF_PLAY_MODE is given but this is an unknown value" in {
-    val row = Map(
-      "SF_DOMAIN" -> "",
-      "SF_USER" -> "",
-      "SF_COLLECTION" -> "",
-      "SF_PLAY_MODE" -> "unknown"
-    )
-
-    springfield(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Value 'unknown' is not a valid play mode", _)) =>
-    }
   }
 
   "playMode" should "convert the value for SF_PLAY_MODE into the corresponding enum object" in {

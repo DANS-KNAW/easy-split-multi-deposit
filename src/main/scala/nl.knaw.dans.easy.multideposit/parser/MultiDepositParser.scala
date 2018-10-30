@@ -38,6 +38,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
   with FileMetadataParser
   with MetadataParser
   with ProfileParser
+  with Validation
   with DebugEnhancedLogging {
 
   def parse: Try[Seq[Deposit]] = {
@@ -53,7 +54,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
         _ <- detectEmptyDepositCells(content.map(_ (depositIdIndex)))
         result <- content.groupBy(_ (depositIdIndex))
           .mapValues(_.map(headers.zip(_).filterNot { case (_, value) => value.isBlank }.toMap))
-          .map((extractDeposit(multiDepositDir) _).tupled)
+          .map { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows) }
           .toSeq
           .collectResults
       } yield result
@@ -115,12 +116,15 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       .map(_ => ())
   }
 
-  def extractDeposit(multiDepositDirectory: File)(depositId: DepositId, rows: DepositRows): Try[Deposit] = {
+  private def extractDeposit(multiDepositDirectory: File)
+                            (depositId: DepositId, rows: DepositRows): Try[Deposit] = {
     for {
       instructions <- extractInstructions(depositId, rows)
       depositDir = multiDepositDirectory / depositId
       fileMetadata <- extractFileMetadata(depositDir, instructions)
-    } yield instructions.toDeposit(fileMetadata)
+      deposit = instructions.toDeposit(fileMetadata)
+      _ <- validateDeposit(deposit)
+    } yield deposit
   }
 
   def extractInstructions(depositId: DepositId, rows: DepositRows): Try[Instructions] = {

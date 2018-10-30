@@ -305,14 +305,14 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
   }
 
   "createSurrogateRelation" should "return the expected streaming surrogate relation" in {
-    val springfield = Springfield("randomdomainname", "randomusername", "randomcollectionname")
+    val springfield = Springfield("randomdomainname", "randomusername", "randomcollectionname", PlayMode.Continuous)
     val expectedXml = <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/randomdomainname/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
 
     action.createSurrogateRelation(springfield) should equalTrimmed(expectedXml)
   }
 
   it should "return a path with the default domain when no domain is specified" in {
-    val springfield = Springfield(user = "randomusername", collection = "randomcollectionname")
+    val springfield = Springfield(user = "randomusername", collection = "randomcollectionname", playMode = PlayMode.Continuous)
     val expectedXml = <ddm:relation scheme="STREAMING_SURROGATE_RELATION">/domain/dans/user/randomusername/collection/randomcollectionname/presentation/$sdo-id</ddm:relation>
 
     action.createSurrogateRelation(springfield) should equalTrimmed(expectedXml)
