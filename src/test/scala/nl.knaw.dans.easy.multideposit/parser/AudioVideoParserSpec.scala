@@ -53,11 +53,11 @@ trait AudioVideoTestObjects {
     avFiles = Map(
         multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg" ->
           Set(
-            Subtitles(
+            SubtitlesFile(
               file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt",
               language = Option("en")
             ),
-            Subtitles(
+            SubtitlesFile(
               file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur-nederlands.srt",
               language = Option("nl")
             )
@@ -361,7 +361,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     val file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg"
-    val subtitles = Subtitles(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt", Some("en"))
+    val subtitles = SubtitlesFile(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt", Some("en"))
     avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `subtitles`)) => }
   }
 
@@ -475,7 +475,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     val file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg"
-    val subtitles = Subtitles(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt")
+    val subtitles = SubtitlesFile(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt")
     avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `subtitles`)) => }
   }
 

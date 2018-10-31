@@ -17,7 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
 import nl.knaw.dans.easy.multideposit.{ CustomMatchers, TestSupportFixture }
-import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, DefaultFileMetadata, FileAccessRights, Subtitles, Video }
+import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, DefaultFileMetadata, FileAccessRights, SubtitlesFile, Video }
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Success
@@ -87,8 +87,8 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         accessibleTo = FileAccessRights.RESTRICTED_GROUP,
         visibleTo = FileAccessRights.ANONYMOUS,
         subtitles = Set(
-          Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur.srt", Option("en")),
-          Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur-nederlands.srt", Option("nl"))
+          SubtitlesFile(multiDepositDir / "ruimtereis01/reisverslag/centaur.srt", Option("en")),
+          SubtitlesFile(multiDepositDir / "ruimtereis01/reisverslag/centaur-nederlands.srt", Option("nl"))
         )
       )
     )

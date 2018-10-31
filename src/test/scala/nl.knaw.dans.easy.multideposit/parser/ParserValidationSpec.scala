@@ -24,10 +24,10 @@ import org.scalatest.BeforeAndAfterEach
 
 import scala.util.{ Failure, Success }
 
-class ValidationSpec extends TestSupportFixture with BeforeAndAfterEach with MockFactory {
+class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach with MockFactory {
 
   private val depositId = "dsId1"
-  private val validation = new Validation {}
+  private val validation = new ParserValidation {}
 
   override def beforeEach(): Unit = {
     super.beforeEach()

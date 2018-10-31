@@ -46,8 +46,8 @@ trait FileMetadataTestObjects {
         accessibleTo = FileAccessRights.ANONYMOUS,
         visibleTo = FileAccessRights.ANONYMOUS,
         subtitles = Set(
-          Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur.srt", Some("en")),
-          Subtitles(multiDepositDir / "ruimtereis01/reisverslag/centaur-nederlands.srt", Some("nl"))
+          SubtitlesFile(multiDepositDir / "ruimtereis01/reisverslag/centaur.srt", Some("en")),
+          SubtitlesFile(multiDepositDir / "ruimtereis01/reisverslag/centaur-nederlands.srt", Some("nl"))
         )
       ),
       DefaultFileMetadata(

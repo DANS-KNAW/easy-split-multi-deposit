@@ -20,7 +20,7 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.{ Failure, Success, Try }
 
-trait Validation extends DebugEnhancedLogging {
+trait ParserValidation extends DebugEnhancedLogging {
 
   def validateDeposit(deposit: Deposit): Try[Unit] = {
     logger.debug(s"validating deposit ${ deposit.depositId }")

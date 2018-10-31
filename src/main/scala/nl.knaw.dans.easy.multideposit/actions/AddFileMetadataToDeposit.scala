@@ -78,7 +78,7 @@ class AddFileMetadataToDeposit extends DebugEnhancedLogging {
     </file>
   }
 
-  private def subtitleXml(depositId: DepositId)(subtitle: Subtitles)(implicit input: InputPathExplorer): Elem = {
+  private def subtitleXml(depositId: DepositId)(subtitle: SubtitlesFile)(implicit input: InputPathExplorer): Elem = {
     val filepath = input.depositDir(depositId).relativize(subtitle.file)
 
     subtitle.language

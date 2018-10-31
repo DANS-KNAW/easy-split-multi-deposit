@@ -38,7 +38,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
   with FileMetadataParser
   with MetadataParser
   with ProfileParser
-  with Validation
+  with ParserValidation
   with DebugEnhancedLogging {
 
   def parse: Try[Seq[Deposit]] = {
