@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
 import better.files.File.currentWorkingDirectory
+import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
 import org.scalamock.scalatest.MockFactory
@@ -44,6 +45,68 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     if (outputDepositDir.exists) outputDepositDir.delete()
     outputDepositDir.createDirectory()
     outputDepositDir.toJava should exist
+  }
+
+  "checkUserLicenseOnlyWithOpenAccess" should "succeed when accessright=OPEN_ACCESS and user license is given" in {
+    val baseDeposit = testInstructions1.toDeposit()
+    val deposit = baseDeposit.copy(
+      depositId = depositId,
+      profile = baseDeposit.profile.copy(
+        accessright = AccessCategory.OPEN_ACCESS,
+      ),
+      metadata = baseDeposit.metadata.copy(
+        userLicense = Option(UserLicense("http://creativecommons.org/licenses/by-nc-sa/4.0/")),
+      ),
+    )
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe a[Success[_]]
+  }
+
+  it should "fail when accessright=OPEN_ACCESS and no user license is given" in {
+    val baseDeposit = testInstructions1.toDeposit()
+    val deposit = baseDeposit.copy(
+      depositId = depositId,
+      profile = baseDeposit.profile.copy(
+        accessright = AccessCategory.OPEN_ACCESS,
+      ),
+      metadata = baseDeposit.metadata.copy(
+        userLicense = Option.empty,
+      ),
+    )
+    val message = s"When access right '${AccessCategory.OPEN_ACCESS}' is used, a user license must be specified as well."
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit) should matchPattern {
+      case Failure(ParseException(_, `message`, _)) =>
+    }
+  }
+
+  it should "fail when accessright=/=OPEN_ACCESS and user license is given" in {
+    val baseDeposit = testInstructions1.toDeposit()
+    val deposit = baseDeposit.copy(
+      depositId = depositId,
+      profile = baseDeposit.profile.copy(
+        accessright = AccessCategory.OPEN_ACCESS_FOR_REGISTERED_USERS,
+      ),
+      metadata = baseDeposit.metadata.copy(
+        userLicense = Option(UserLicense("http://creativecommons.org/licenses/by-nc-sa/4.0/")),
+      ),
+    )
+    val message = s"When access right '${AccessCategory.OPEN_ACCESS}' is used, a user license must be specified as well."
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit) should matchPattern {
+      case Failure(ParseException(_, `message`, _)) =>
+    }
+  }
+
+  it should "succeed when accessright=/=OPEN_ACCESS and no user license is given" in {
+    val baseDeposit = testInstructions1.toDeposit()
+    val deposit = baseDeposit.copy(
+      depositId = depositId,
+      profile = baseDeposit.profile.copy(
+        accessright = AccessCategory.OPEN_ACCESS_FOR_REGISTERED_USERS,
+      ),
+      metadata = baseDeposit.metadata.copy(
+        userLicense = Option.empty,
+      ),
+    )
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe a[Success[_]]
   }
 
   "checkSpringFieldDepositHasAVformat" should "fail if the deposit contains SF_* fields, but no AV DC_FORMAT is given" in {
