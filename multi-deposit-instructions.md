@@ -47,7 +47,7 @@ The supported metadata elements are subdivided into the following groups:
   `DC_CREATOR`*, `DC_CONTRIBUTOR`*, `DC_SUBJECT`, `DC_PUBLISHER`,
   `DC_TYPE`, `DC_FORMAT`, `DC_IDENTIFIER`, `DC_IDENTIFIER_TYPE`, `DC_SOURCE`, `DC_LANGUAGE`.
 * The following [Dublin Core Term elements]: `DCT_ALTERNATIVE`, `DCT_SPATIAL`,
-  `DCT_TEMPORAL`, `DCT_RIGHTSHOLDER`, `DCT_DATE`, `DCT_DATE_QUALIFIER`.
+  `DCT_TEMPORAL`, `DCT_RIGHTSHOLDER`, `DCT_DATE`, `DCT_DATE_QUALIFIER`, `DCT_LICENSE`.
 * DANS specific specializations of Dublin Core: `DCX_CREATOR_TITLES`, 
   `DCX_CREATOR_INITIALS`, `DCX_CREATOR_INSERTIONS`,
   `DCX_CREATOR_SURNAME`, `DCX_CREATOR_DAI`, `DCX_CREATOR_ORGANIZATION`, `DCX_CREATOR_ROLE`,
@@ -115,6 +115,10 @@ following four values: {`ISBN`, `ISSN`, `NWO-PROJECTNR`, `ARCHIS-ZAAK-IDENTIFICA
 #### Format
 `DC_FORMAT` can either have free text or be one of the elements listed in the [formats list](src/main/assembly/dist/cfg/acceptedMediaTypes.txt).
 In the latter case an extra `xsi:type` is added to the resulting DDM xml.
+
+#### User license
+`DCT_LICENSE` can be one of the elements listed in the [licenses list](src/main/assembly/dist/cfg/licenses.txt).
+This field can only be used when `DDM_ACCESSRIGHTS` is set to `OPEN_ACCESS`.
 
 #### Type
 `DC_TYPE` can only have a value from the set {`Collection`, `Dataset`, `Event`, `Image`, 
