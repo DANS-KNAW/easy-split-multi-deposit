@@ -35,7 +35,7 @@ case class AVFileMetadata(override val filepath: File,
                           title: String,
                           accessibleTo: FileAccessRights.Value,
                           visibleTo: FileAccessRights.Value,
-                          subtitles: Set[Subtitles] = Set.empty
+                          subtitles: Set[SubtitlesFile] = Set.empty
                          ) extends FileMetadata(filepath, mimeType)
 
 case class FileDescriptor(title: Option[String] = Option.empty,

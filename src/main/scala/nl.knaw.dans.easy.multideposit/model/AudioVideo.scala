@@ -19,7 +19,7 @@ import better.files.File
 import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
 
 case class AudioVideo(springfield: Option[Springfield] = Option.empty,
-                      avFiles: Map[File, Set[Subtitles]] = Map.empty)
+                      avFiles: Map[File, Set[SubtitlesFile]] = Map.empty)
 
 case class Springfield(domain: String = "dans",
                        user: String,
@@ -42,4 +42,4 @@ object Springfield {
   }
 }
 
-case class Subtitles(file: File, language: Option[String] = Option.empty)
+case class SubtitlesFile(file: File, language: Option[String] = Option.empty)

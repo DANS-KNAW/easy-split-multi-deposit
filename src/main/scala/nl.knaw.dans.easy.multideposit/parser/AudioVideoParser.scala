@@ -27,7 +27,7 @@ trait AudioVideoParser {
 
   def extractAudioVideo(rows: DepositRows, rowNum: Int, depositId: DepositId): Try[AudioVideo] = {
     Try {
-      springf: Option[Springfield] => avFiles: Map[File, Set[Subtitles]] => {
+      springf: Option[Springfield] => avFiles: Map[File, Set[SubtitlesFile]] => {
         (springf, avFiles) match {
           case (None, avs) if avs.nonEmpty => Failure(ParseException(rowNum, "The column " +
             "'AV_FILE_PATH' contains values, but the columns [SF_COLLECTION, SF_USER] do not"))
@@ -36,7 +36,7 @@ trait AudioVideoParser {
       }
     }
       .combine(extractSpringfieldList(rows, rowNum))
-      .combine(extractAvFilesList(rows, depositId))
+      .combine(extractSubtitlesPerFile(rows, depositId))
       .flatten
   }
 
@@ -99,14 +99,14 @@ trait AudioVideoParser {
         .getOrElse(Failure(ParseException(rowNum, s"Value '$mode' is not a valid play mode"))))
   }
 
-  def extractAvFilesList(rows: DepositRows, depositId: DepositId): Try[Map[File, Set[Subtitles]]] = {
+  def extractSubtitlesPerFile(rows: DepositRows, depositId: DepositId): Try[Map[File, Set[SubtitlesFile]]] = {
     for {
       filesAndSubtitles <- extractList(rows)(avFile(depositId))
       subtitlesPerFile = filesAndSubtitles.groupBy { case (file, _) => file }
     } yield subtitlesPerFile.mapValues(_.collect { case (_, subtitles) => subtitles }.toSet)
   }
 
-  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Subtitles)]] = {
+  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, SubtitlesFile)]] = {
     val file = row.find("AV_FILE_PATH").map(findRegularFile(depositId))
     val subtitle = row.find("AV_SUBTITLES").map(findRegularFile(depositId))
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
@@ -121,7 +121,7 @@ trait AudioVideoParser {
           sub.exists &&
           sub.isRegularFile &&
           subLang.forall(isValidISO639_1Language) =>
-        Some(Success { (p, Subtitles(sub, subLang)) })
+        Some(Success { (p, SubtitlesFile(sub, subLang)) })
       case (Some(Success(p)), Some(_), _)
         if !p.exists =>
         Some(Failure(ParseException(rowNum, s"AV_FILE_PATH '$p' does not exist")))

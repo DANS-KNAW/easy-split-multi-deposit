@@ -79,8 +79,8 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files", PlayMode.Menu)),
         avFiles = Map(
           testDir / "md/ruimtereis01/reisverslag/centaur.mpg" -> Set(
-            Subtitles(testDir / "md/ruimtereis01/reisverslag/centaur.srt", Option("en")),
-            Subtitles(testDir / "md/ruimtereis01/reisverslag/centaur-nederlands.srt", Option("nl"))
+            SubtitlesFile(testDir / "md/ruimtereis01/reisverslag/centaur.srt", Option("en")),
+            SubtitlesFile(testDir / "md/ruimtereis01/reisverslag/centaur-nederlands.srt", Option("nl"))
           )
         )
       )
