@@ -33,7 +33,9 @@ case class Metadata(alternatives: List[String] = List.empty,
                     subjects: List[Subject] = List.empty,
                     spatialPoints: List[SpatialPoint] = List.empty,
                     spatialBoxes: List[SpatialBox] = List.empty,
-                    temporal: List[Temporal] = List.empty)
+                    temporal: List[Temporal] = List.empty,
+                    userLicense: Option[UserLicense] = Option.empty,
+                   )
 
 case class Identifier(id: String, idType: Option[IdentifierType.Value] = Option.empty)
 
@@ -74,3 +76,5 @@ case class SpatialBox(north: String,
                       scheme: Option[String] = Option.empty)
 
 case class Temporal(temporal: String = "", scheme: Option[String] = Option.empty)
+
+case class UserLicense(license: String)

@@ -24,7 +24,9 @@ import scala.util.{ Failure, Success, Try }
 trait MetadataParser {
   this: ParserUtils =>
 
-  def extractMetadata(rows: DepositRows): Try[Metadata] = {
+  val userLicenses: Set[String]
+
+  def extractMetadata(rows: DepositRows, rowNum: Int): Try[Metadata] = {
     Try { Metadata.curried }
       .map(_ (extractList(rows, "DCT_ALTERNATIVE")))
       .map(_ (extractList(rows, "DC_PUBLISHER")))
@@ -42,6 +44,7 @@ trait MetadataParser {
       .combine(extractList(rows)(spatialPoint))
       .combine(extractList(rows)(spatialBox))
       .combine(extractList(rows)(temporal))
+      .combine(extractList(rows)(userLicense).flatMap(atMostOne(rowNum, List("DCT_LICENSE"))))
   }
 
   def contributor(rowNum: => Int)(row: DepositRow): Option[Try[Contributor]] = {
@@ -199,6 +202,16 @@ trait MetadataParser {
       case (Some(w), Some(e), Some(s), Some(n), scheme) => Some(Try { SpatialBox(n, s, e, w, scheme) })
       case (None, None, None, None, _) => None
       case _ => Some(missingRequired(rowNum, row, Set("DCX_SPATIAL_WEST", "DCX_SPATIAL_EAST", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_NORTH")))
+    }
+  }
+
+  def userLicense(rowNum: => Int)(row: DepositRow): Option[Try[UserLicense]] = {
+    val license = row.find("DCT_LICENSE")
+
+    license match {
+      case Some(l) if userLicenses.contains(l) => Some(Success(UserLicense(l)))
+      case Some(l) => Some(Failure(ParseException(rowNum, s"User license '$l' is not allowed.")))
+      case None => None
     }
   }
 }

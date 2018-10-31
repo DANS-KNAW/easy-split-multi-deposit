@@ -45,7 +45,7 @@ object Headers extends DebugEnhancedLogging {
     "DDM_CREATED",
     "DDM_AVAILABLE",
     "DDM_AUDIENCE",
-    "DDM_ACCESSRIGHTS"
+    "DDM_ACCESSRIGHTS",
   )
 
   private lazy val metadataFields = Set(
@@ -59,7 +59,8 @@ object Headers extends DebugEnhancedLogging {
     "DC_SOURCE",
     "DC_LANGUAGE",
     "DCT_SPATIAL",
-    "DCT_RIGHTSHOLDER"
+    "DCT_RIGHTSHOLDER",
+    "DCT_LICENSE",
   )
 
   private lazy val composedCreatorFields = Set(
@@ -69,7 +70,7 @@ object Headers extends DebugEnhancedLogging {
     "DCX_CREATOR_SURNAME",
     "DCX_CREATOR_DAI",
     "DCX_CREATOR_ORGANIZATION",
-    "DCX_CREATOR_ROLE"
+    "DCX_CREATOR_ROLE",
   )
 
   private lazy val composedContributorFields = Set(
@@ -79,13 +80,13 @@ object Headers extends DebugEnhancedLogging {
     "DCX_CONTRIBUTOR_SURNAME",
     "DCX_CONTRIBUTOR_DAI",
     "DCX_CONTRIBUTOR_ORGANIZATION",
-    "DCX_CONTRIBUTOR_ROLE"
+    "DCX_CONTRIBUTOR_ROLE",
   )
 
   private lazy val composedSpatialPointFields = Set(
     "DCX_SPATIAL_SCHEME",
     "DCX_SPATIAL_X",
-    "DCX_SPATIAL_Y"
+    "DCX_SPATIAL_Y",
   )
 
   private lazy val composedSpatialBoxFields = Set(
@@ -93,54 +94,54 @@ object Headers extends DebugEnhancedLogging {
     "DCX_SPATIAL_NORTH",
     "DCX_SPATIAL_SOUTH",
     "DCX_SPATIAL_EAST",
-    "DCX_SPATIAL_WEST"
+    "DCX_SPATIAL_WEST",
   )
 
   private lazy val composedRelationFields = Set(
     "DCX_RELATION_QUALIFIER",
     "DCX_RELATION_TITLE",
-    "DCX_RELATION_LINK"
+    "DCX_RELATION_LINK",
   )
 
   private lazy val composedDateFields = Set(
     "DCT_DATE",
-    "DCT_DATE_QUALIFIER"
+    "DCT_DATE_QUALIFIER",
   )
 
   private lazy val composedTemporalFields = Set(
     "DCT_TEMPORAL",
-    "DCT_TEMPORAL_SCHEME"
+    "DCT_TEMPORAL_SCHEME",
   )
 
   private lazy val composedSubjectFields = Set(
     "DC_SUBJECT",
-    "DC_SUBJECT_SCHEME"
+    "DC_SUBJECT_SCHEME",
   )
 
   private lazy val fileDescriptorHeaders = Set(
     "FILE_PATH",
     "FILE_TITLE",
     "FILE_ACCESSIBILITY",
-    "FILE_VISIBILITY"
+    "FILE_VISIBILITY",
   )
 
   private lazy val springfieldHeaders = Set(
     "SF_DOMAIN",
     "SF_USER",
     "SF_COLLECTION",
-    "SF_PLAY_MODE"
+    "SF_PLAY_MODE",
   )
 
   private lazy val audioVideoHeaders = Set(
     "AV_FILE_PATH",
     "AV_SUBTITLES",
-    "AV_SUBTITLES_LANGUAGE"
+    "AV_SUBTITLES_LANGUAGE",
   )
 
   private lazy val administrativeHeaders = Set(
     "ROW",
     "DATASET",
     "DEPOSITOR_ID",
-    "BASE_REVISION"
+    "BASE_REVISION",
   )
 }

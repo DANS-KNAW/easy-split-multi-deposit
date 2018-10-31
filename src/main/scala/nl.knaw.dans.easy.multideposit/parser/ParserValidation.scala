@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -26,10 +27,22 @@ trait ParserValidation extends DebugEnhancedLogging {
     logger.debug(s"validating deposit ${ deposit.depositId }")
 
     for {
+      _ <- checkUserLicenseOnlyWithOpenAccess(deposit)
       _ <- checkSpringFieldDepositHasAVformat(deposit)
       _ <- checkSFColumnsIfDepositContainsAVFiles(deposit)
       _ <- checkEitherVideoOrAudio(deposit)
     } yield ()
+  }
+
+  def checkUserLicenseOnlyWithOpenAccess(deposit: Deposit): Try[Unit] = {
+    val openaccess = AccessCategory.OPEN_ACCESS
+
+    (deposit.profile.accessright, deposit.metadata.userLicense) match {
+      case (`openaccess`, Some(_)) => Success(())
+      case (`openaccess`, None) => Failure(ParseException(deposit.row, s"When access right '$openaccess' is used, a user license must be specified as well."))
+      case (_, Some(_)) => Failure(ParseException(deposit.row, s"When access right '$openaccess' is used, a user license must be specified as well."))
+      case (_, None) => Success(())
+    }
   }
 
   def checkSpringFieldDepositHasAVformat(deposit: Deposit): Try[Unit] = {

@@ -53,7 +53,8 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
       contributors = List(ContributorPerson(initials = "B.", surname = "Smith", organization = Option("Lorem ipsum dolor sit amet"), role = Some(ContributorRole.DATA_COLLECTOR))),
       alternatives = List("foobar"),
       publishers = List("random publisher"),
-      identifiers = List(Identifier("123456", Some(IdentifierType.ISBN)), Identifier("id"))
+      identifiers = List(Identifier("123456", Some(IdentifierType.ISBN)), Identifier("id")),
+      userLicense = Option(UserLicense("http://www.tapr.org/TAPR_Open_Hardware_License_v1.0.txt")),
     )
   )
 
@@ -116,6 +117,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
             <dcx-dai:organization><dcx-dai:name xml:lang="en">Lorem ipsum dolor sit amet</dcx-dai:name></dcx-dai:organization>
           </dcx-dai:author>
         </dcx-dai:contributorDetails>
+        <dcterms:license xsi:type="dcterms:URI">http://www.tapr.org/TAPR_Open_Hardware_License_v1.0.txt</dcterms:license>
       </ddm:dcmiMetadata>
     </ddm:DDM>
 
@@ -148,7 +150,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
 
   it should "return xml on reading from the allfields input instructions csv" in {
     val multidepositDir = File(getClass.getResource("/allfields/input").toURI)
-    inside(MultiDepositParser.parse(multidepositDir).map(_.map(action.depositToDDM))) {
+    inside(MultiDepositParser.parse(multidepositDir, userLicenses).map(_.map(action.depositToDDM))) {
       case Success(xmls) => xmls should have size 4
     }
   }

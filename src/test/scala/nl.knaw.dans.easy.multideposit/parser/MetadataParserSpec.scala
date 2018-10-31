@@ -58,7 +58,9 @@ trait MetadataTestObjects {
       "DCX_SPATIAL_SCHEME" -> "degrees",
       // temporal
       "DCT_TEMPORAL" -> "PALEOLB",
-      "DCT_TEMPORAL_SCHEME" -> "abr:ABRperiode"
+      "DCT_TEMPORAL_SCHEME" -> "abr:ABRperiode",
+      // user license
+      "DCT_LICENSE" -> "http://creativecommons.org/licenses/by/4.0",
     ),
     Map(
       "DCT_ALTERNATIVE" -> "alt2",
@@ -78,7 +80,9 @@ trait MetadataTestObjects {
       "DCX_SPATIAL_EAST" -> "23",
       "DCX_SPATIAL_SOUTH" -> "34",
       "DCX_SPATIAL_NORTH" -> "45",
-      "DCX_SPATIAL_SCHEME" -> "RD"
+      "DCX_SPATIAL_SCHEME" -> "RD",
+      // user license (repetition from the one above, but the same value, to test that only one is picked)
+      "DCT_LICENSE" -> "http://creativecommons.org/licenses/by/4.0",
     )
   )
 
@@ -98,24 +102,27 @@ trait MetadataTestObjects {
     subjects = List(Subject("IX", Option("abr:ABRcomplex"))),
     spatialPoints = List(SpatialPoint("12", "34", Option("degrees"))),
     spatialBoxes = List(SpatialBox("45", "34", "23", "12", Option("RD"))),
-    temporal = List(Temporal("PALEOLB", Option("abr:ABRperiode")))
+    temporal = List(Temporal("PALEOLB", Option("abr:ABRperiode"))),
+    userLicense = Option(UserLicense("http://creativecommons.org/licenses/by/4.0"))
   )
 }
 
-class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects { self =>
+class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
+  self =>
 
   private val parser = new MetadataParser with ParserUtils with InputPathExplorer {
-    val multiDepositDir: File = self.multiDepositDir
+    override val multiDepositDir: File = self.multiDepositDir
+    override val userLicenses: Set[String] = self.userLicenses
   }
 
   import parser._
 
   "extractMetadata" should "convert the csv input to the corresponding output" in {
-    extractMetadata(metadataCSV) should matchPattern { case Success(`metadata`) => }
+    extractMetadata(metadataCSV, 2) should matchPattern { case Success(`metadata`) => }
   }
 
   it should "use the default type value if no value for DC_TYPE is specified" in {
-    inside(extractMetadata(metadataCSV.map(row => row - "DC_TYPE"))) {
+    inside(extractMetadata(metadataCSV.map(row => row - "DC_TYPE"), 2)) {
       case Success(md) => md.types should contain only DcType.DATASET
     }
   }
@@ -746,5 +753,36 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects { s
     spatialBox(2)(row).value should matchPattern {
       case Failure(ParseException(2, "Missing value(s) for: [DCX_SPATIAL_NORTH, DCX_SPATIAL_EAST]", _)) =>
     }
+  }
+
+  "userLicense" should "return a user license object when the given license is allowed" in {
+    val license = "http://www.mozilla.org/en-US/MPL/2.0/FAQ/"
+    val row = Map(
+      "DCT_LICENSE" -> license,
+    )
+
+    userLicense(2)(row).value should matchPattern {
+      case Success(UserLicense(`license`)) =>
+    }
+  }
+
+  it should "fail when the given license is unknown" in {
+    val license = "unknown"
+    val expectedErrorMsg = s"User license '$license' is not allowed."
+    val row = Map(
+      "DCT_LICENSE" -> license,
+    )
+
+    userLicense(2)(row).value should matchPattern {
+      case Failure(ParseException(2, `expectedErrorMsg`, _)) =>
+    }
+  }
+
+  it should "return None when the license field is not given" in {
+    val row = Map(
+      "DCT_LICENSE" -> "",
+    )
+
+    userLicense(2)(row) shouldBe empty
   }
 }

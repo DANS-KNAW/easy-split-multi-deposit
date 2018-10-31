@@ -60,7 +60,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   }
 
   private val parser = new MultiDepositParser with InputPathExplorer {
-    val multiDepositDir: File = self.multiDepositDir
+    override val multiDepositDir: File = self.multiDepositDir
+    override val userLicenses: Set[String] = self.userLicenses
   }
 
   import parser._
@@ -69,7 +70,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val instructionsFile = multiDepositDir / "instructions.csv"
     instructionsFile.toJava should exist
 
-    inside(MultiDepositParser.parse(testDir / "md")) {
+    inside(MultiDepositParser.parse(testDir / "md", self.userLicenses)) {
       case Success(datasets) =>
         datasets should have size 4
         val deposit1 :: deposit2 :: deposit3 :: deposit4 :: Nil = datasets.toList.sortBy(_.depositId)
