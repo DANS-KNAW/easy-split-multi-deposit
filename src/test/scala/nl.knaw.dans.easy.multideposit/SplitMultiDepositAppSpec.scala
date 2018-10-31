@@ -91,7 +91,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       od = outputDepositDir.createIfNotExists(asDirectory = true, createParents = true),
       report = reportFile
     )
-    val app = new SplitMultiDepositApp(formats, ldap, ffprobe, DepositPermissions("rwxrwx---", getFileSystemGroup))
+    val app = new SplitMultiDepositApp(formats, userLicenses, ldap, ffprobe, DepositPermissions("rwxrwx---", getFileSystemGroup))
 
     val expectedOutputDir = File(getClass.getResource("/allfields/output").toURI)
 
@@ -340,7 +340,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       od = outputDepositDir.createIfNotExists(asDirectory = true, createParents = true),
       report = reportFile
     )
-    val app = new SplitMultiDepositApp(formats, mock[Ldap], mock[FfprobeRunner], DepositPermissions("rwxrwx---", getFileSystemGroup))
+    val app = new SplitMultiDepositApp(formats, userLicenses, mock[Ldap], mock[FfprobeRunner], DepositPermissions("rwxrwx---", getFileSystemGroup))
 
     inside(app.convert(paths, "easyadmin")) {
       case Failure(ParserFailedException(report, _)) =>

@@ -45,6 +45,11 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
   implicit val stagingPathExplorer: StagingPathExplorer = this
   implicit val outputPathExplorer: OutputPathExplorer = this
 
+  private val userLicensesFile: File = currentWorkingDirectory / "src" / "main" / "assembly" / "dist" / "cfg" / "licenses.txt"
+  val userLicenses =
+    if (userLicensesFile.exists) userLicensesFile.lines.map(_.trim).toSet
+    else fail("Cannot find file: licenses.txt")
+
   def testInstructions1: Instructions = {
     Instructions(
       depositId = "ruimtereis01",

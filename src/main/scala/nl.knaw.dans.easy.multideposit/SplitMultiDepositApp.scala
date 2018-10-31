@@ -31,7 +31,7 @@ import scala.language.postfixOps
 import scala.util.{ Failure, Success, Try }
 import scala.util.control.NonFatal
 
-class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, ffprobe: FfprobeRunner, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
+class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap: Ldap, ffprobe: FfprobeRunner, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
   private val validator = new ValidatePreconditions(ldap, ffprobe)
   private val datamanager = new RetrieveDatamanager(ldap)
   private val createDirs = new CreateDirectories()
@@ -52,7 +52,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, ffprobe: FfprobeRun
 
     for {
       _ <- Try { Locale.setDefault(Locale.US) }
-      deposits <- MultiDepositParser.parse(input.multiDepositDir)
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses)
       _ <- deposits.map(validator.validateDeposit).collectResults
       _ <- datamanager.getDatamanagerEmailaddress(datamanagerId)
     } yield deposits
@@ -65,7 +65,7 @@ class SplitMultiDepositApp(formats: Set[String], ldap: Ldap, ffprobe: FfprobeRun
 
     for {
       _ <- Try { Locale.setDefault(Locale.US) }
-      deposits <- MultiDepositParser.parse(input.multiDepositDir)
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses)
       dataManagerEmailAddress <- datamanager.getDatamanagerEmailaddress(datamanagerId)
       _ <- deposits.mapUntilFailure(convertDeposit(paths, datamanagerId, dataManagerEmailAddress)).recoverWith {
         case NonFatal(e) => deposits.mapUntilFailure(d => createDirs.discardDeposit(d.depositId)) match {
@@ -128,6 +128,6 @@ object SplitMultiDepositApp {
       FfprobeRunner(exeFile)
     }
 
-    new SplitMultiDepositApp(configuration.formats, ldap, ffprobe, permissions)
+    new SplitMultiDepositApp(configuration.formats, configuration.licenses, ldap, ffprobe, permissions)
   }
 }

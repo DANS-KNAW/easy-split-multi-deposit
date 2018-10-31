@@ -259,6 +259,10 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
     <dc:language xsi:type="dcterms:ISO639-2">{lang}</dc:language>
   }
 
+  def createUserLicense(license: UserLicense): Elem = {
+    <dcterms:license xsi:type="dcterms:URI">{license.license}</dcterms:license>
+  }
+
   def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty): Elem = {
     <ddm:dcmiMetadata>
       {metadata.alternatives.map(elem("dcterms:alternative"))}
@@ -277,6 +281,7 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
       {metadata.spatialPoints.map(createSpatialPoint)}
       {metadata.spatialBoxes.map(createSpatialBox)}
       {metadata.temporal.map(createTemporal)}
+      {metadata.userLicense.map(createUserLicense).toSeq}
     </ddm:dcmiMetadata>
   }
 

@@ -136,7 +136,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
         .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
         .combine(extractProfile(rows, rowNum))
         .combine(extractList(rows)(uuid("BASE_REVISION")).flatMap(atMostOne(rowNum, List("BASE_REVISION"))))
-        .combine(extractMetadata(rows))
+        .combine(extractMetadata(rows, rowNum))
         .combine(extractFileDescriptors(rows, rowNum, depositId))
         .combine(extractAudioVideo(rows, rowNum, depositId)))
   }
@@ -179,7 +179,8 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
 }
 
 object MultiDepositParser {
-  def parse(md: File): Try[Seq[Deposit]] = new MultiDepositParser {
+  def parse(md: File, licenses: Set[String]): Try[Seq[Deposit]] = new MultiDepositParser {
     val multiDepositDir: File = md
+    val userLicenses: Set[String] = licenses
   }.parse
 }

@@ -60,6 +60,7 @@ object Headers extends DebugEnhancedLogging {
     "DC_LANGUAGE",
     "DCT_SPATIAL",
     "DCT_RIGHTSHOLDER",
+    "DCT_LICENSE",
   )
 
   private lazy val composedCreatorFields = Set(

@@ -83,5 +83,6 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     </dcx-gml:spatial>
     <dcterms:temporal xsi:type="abr:ABRperiode">PALEOLB</dcterms:temporal>
     <dcterms:temporal>random text</dcterms:temporal>
+    <dcterms:license xsi:type="dcterms:URI">http://creativecommons.org/licenses/by-nc-sa/4.0/</dcterms:license>
   </ddm:dcmiMetadata>
 </ddm:DDM>

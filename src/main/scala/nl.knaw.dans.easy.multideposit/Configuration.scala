@@ -19,7 +19,7 @@ import better.files.File
 import better.files.File.root
 import org.apache.commons.configuration.PropertiesConfiguration
 
-case class Configuration(version: String, properties: PropertiesConfiguration, formats: Set[String])
+case class Configuration(version: String, properties: PropertiesConfiguration, formats: Set[String], licenses: Set[String])
 
 object Configuration {
 
@@ -30,6 +30,7 @@ object Configuration {
       .find(_.exists)
       .getOrElse { throw new IllegalStateException("No configuration directory found") }
     val formatsFile = cfgPath / "acceptedMediaTypes.txt"
+    val licensesFile = cfgPath / "licenses.txt"
 
     new Configuration(
       version = (home / "bin" / "version").contentAsString.stripLineEnd,
@@ -39,7 +40,10 @@ object Configuration {
       },
       formats =
         if (formatsFile.exists) formatsFile.lines.map(_.trim).toSet
-        else Set.empty[String]
+        else Set.empty,
+      licenses =
+        if (licensesFile.exists) licensesFile.lines.map(_.trim).toSet
+        else Set.empty,
     )
   }
 }
