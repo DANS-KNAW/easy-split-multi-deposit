@@ -58,7 +58,8 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       "springfield.domain" -> sf.map(_.domain),
       "springfield.user" -> sf.map(_.user),
       "springfield.collection" -> sf.map(_.collection),
-      "springfield.playmode" -> sf.map(_.playMode.toString)
+      "springfield.playmode" -> sf.map(_.playMode.toString),
+      "identifier.doi.registered" -> Some("no")
     )
 
     for ((key, value) <- props.collect { case (k, Some(v)) => (k, v) }) {
