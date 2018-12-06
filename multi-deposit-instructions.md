@@ -176,13 +176,18 @@ a audio or video presentation contained in the dataset:
 * `SF_PLAY_MODE` specifies how the video's are played in Springfield. The value must either be
   `continuous` or `menu`. This value is only allowed if `SF_DOMAIN`, `SF_USER` and `SF_COLLECTION`
   are provided as well. If `menu` is chosen, **every A/V file** must have `FILE_TITLE` defined as well.
-* The columns `AV_FILE_PATH`, `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` are used to provide extra
-  metadata specific to audio/video files. For a path to a A/V file in `AV_FILE_PATH`, the user can
-  specify one or more combinations of subtitles and the corresponding language tag in `AV_SUBTITLES`
-  and `AV_SUBTITLES_LANGUAGE` respectively. Note that the latter has to be formatted as an [ISO 639-1](https://www.loc.gov/standards/iso639-2/php/code_list.php).
-* The information found in the `AV_*` columns is put into `files.xml` to better describe the file
-  at hand. The `AV_SUBTITLE` and `AV_SUBTITLE_LANGUAGE` are declared in a `dcterms:relation` and
-  its `xml:lang` attribute respectively.
+
+The metadata elements starting with `AV_` are used to provide extra metadata specific to audio/video files:
+
+* The columns `AV_FILE_PATH`, `AV_SUBTITLES` and `AV_SUBTITLES_LANGUAGE` are used together to
+  specify that an A/V file has its subtitles in another file, and what the language of those subtitles is.
+  For example: `AV_FILE_PATH=myvideo.mp4, AV_SUBTITLES=nl.srt, AV_SUBTITLES_LANGUAGE=nl` means that
+  `nl.srt` contains Dutch subtitles for the file `myvideo.mp4`. Note that the language has to be specified as
+  [an ISO 639-1 language code](https://www.loc.gov/standards/iso639-2/php/code_list.php). To add multiple
+  subtitles for one video, just add a new row with the same the value in `AV_FILE_PATH`.
+* The information found in the `AV_*` columns is put into `files.xml`. A `dcterms:relation` element is added
+  to the description of the A/V file. The text of the relation is the path the subtitles file. An `xml:lang` attribute
+  is added to the relation element to specify the language of the subtitles.
 * If SF_* fields are present, a `DC_FORMAT` for audio/ or video/ Internet Media Types is expected  
 
 #### Base Revision
