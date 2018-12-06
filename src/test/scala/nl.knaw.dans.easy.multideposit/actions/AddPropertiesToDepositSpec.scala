@@ -61,7 +61,8 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
         "curation.datamanager.userId",
         "curation.required",
         "curation.performed",
-        "identifier.doi.registered"
+        "identifier.dans-doi.registered",
+        "identifier.dans-doi.action",
       ) and contain noneOf(
         "springfield.domain",
         "springfield.user",
@@ -76,7 +77,8 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
     resultProps.getString("curation.datamanager.userId") shouldBe datamanagerId
     resultProps.getString("curation.required") shouldBe "yes"
     resultProps.getString("curation.performed") shouldBe "yes"
-    resultProps.getString("identifier.doi.registered") shouldBe "no"
+    resultProps.getString("identifier.dans-doi.registered") shouldBe "no"
+    resultProps.getString("identifier.dans-doi.action") shouldBe "create"
   }
 
   it should "generate the properties file with springfield fields and write the properties in it" in {
@@ -107,7 +109,8 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
         "springfield.user",
         "springfield.collection",
         "springfield.playmode",
-        "identifier.doi.registered",
+        "identifier.dans-doi.registered",
+        "identifier.dans-doi.action",
       )
     }
 
@@ -121,6 +124,7 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
     resultProps.getString("springfield.user") shouldBe "janvanmansum"
     resultProps.getString("springfield.collection") shouldBe "Jans-test-files"
     resultProps.getString("springfield.playmode") shouldBe "menu"
-    resultProps.getString("identifier.doi.registered") shouldBe "no"
+    resultProps.getString("identifier.dans-doi.registered") shouldBe "no"
+    resultProps.getString("identifier.dans-doi.action") shouldBe "create"
   }
 }
