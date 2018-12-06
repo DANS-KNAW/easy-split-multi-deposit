@@ -176,6 +176,7 @@ a audio or video presentation contained in the dataset:
 * `SF_PLAY_MODE` specifies how the video's are played in Springfield. The value must either be
   `continuous` or `menu`. This value is only allowed if `SF_DOMAIN`, `SF_USER` and `SF_COLLECTION`
   are provided as well. If `menu` is chosen, **every A/V file** must have `FILE_TITLE` defined as well.
+* If SF_* fields are present, a `DC_FORMAT` for audio/ or video/ Internet Media Types is expected.
 
 The metadata elements starting with `AV_` are used to provide extra metadata specific to audio/video files:
 
@@ -186,9 +187,8 @@ The metadata elements starting with `AV_` are used to provide extra metadata spe
   [an ISO 639-1 language code](https://www.loc.gov/standards/iso639-2/php/code_list.php). To add multiple
   subtitles for one video, just add a new row with the same the value in `AV_FILE_PATH`.
 * The information found in the `AV_*` columns is put into `files.xml`. A `dcterms:relation` element is added
-  to the description of the A/V file. The text of the relation is the path the subtitles file. An `xml:lang` attribute
+  to the description of the A/V file. The text of the relation is the path of the subtitles file. An `xml:lang` attribute
   is added to the relation element to specify the language of the subtitles.
-* If SF_* fields are present, a `DC_FORMAT` for audio/ or video/ Internet Media Types is expected  
 
 #### Base Revision
  If the deposit is a new version of an existing dataset, the BASE_REVISION column contains the
