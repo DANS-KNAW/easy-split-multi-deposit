@@ -118,7 +118,7 @@ In the latter case an extra `xsi:type` is added to the resulting DDM xml.
 
 #### User license
 `DCT_LICENSE` can be one of the elements listed in the [licenses list](src/main/assembly/dist/cfg/licenses.txt).
-This field can only be used when `DDM_ACCESSRIGHTS` is set to `OPEN_ACCESS`.
+This field must be used when `DDM_ACCESSRIGHTS` is set to `OPEN_ACCESS` and is not accepted when `DDM_ACCESSRIGHTS` is set to any other value.
 
 #### Type
 `DC_TYPE` can only have a value from the set {`Collection`, `Dataset`, `Event`, `Image`, 
