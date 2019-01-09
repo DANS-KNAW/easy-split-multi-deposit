@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit
 import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit.actions.{ InvalidDatamanagerException, InvalidInputException }
-import nl.knaw.dans.easy.multideposit.parser.{ EmptyInstructionsFileException, ParserFailedException }
+import nl.knaw.dans.easy.multideposit.parser.ParseFailed
 import nl.knaw.dans.lib.error.{ CompositeException, TryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource.managed
@@ -39,8 +39,7 @@ object Command extends App with DebugEnhancedLogging {
     .acquireAndGet(runSubcommand)
     .doIfSuccess(msg => println(s"OK: $msg"))
     .doIfFailure {
-      case ParserFailedException(_, _) |
-           EmptyInstructionsFileException(_) |
+      case ParseFailed(_) |
            InvalidDatamanagerException(_) |
            InvalidInputException(_, _) |
            CompositeException(_) => // do nothing

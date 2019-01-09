@@ -16,13 +16,12 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
+import cats.data.Validated.{ Invalid, Valid }
+import cats.data.{ Chain, NonEmptyList }
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
-import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.lib.error.CompositeException
+import nl.knaw.dans.easy.multideposit.model.{ AudioVideo, PlayMode, Springfield, SubtitlesFile }
 import org.scalatest.BeforeAndAfterEach
-
-import scala.util.{ Failure, Success }
 
 trait AudioVideoTestObjects {
   this: TestSupportFixture =>
@@ -51,22 +50,23 @@ trait AudioVideoTestObjects {
   lazy val audioVideo = AudioVideo(
     springfield = Option(Springfield("dans", "janvanmansum", "jans-test-files", PlayMode.Menu)),
     avFiles = Map(
-        multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg" ->
-          Set(
-            SubtitlesFile(
-              file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt",
-              language = Option("en")
-            ),
-            SubtitlesFile(
-              file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur-nederlands.srt",
-              language = Option("nl")
-            )
+      multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg" ->
+        Set(
+          SubtitlesFile(
+            file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt",
+            language = Option("en")
+          ),
+          SubtitlesFile(
+            file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur-nederlands.srt",
+            language = Option("nl")
           )
+        )
     )
   )
 }
 
-class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects with BeforeAndAfterEach { self =>
+class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects with BeforeAndAfterEach {
+  self =>
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -82,7 +82,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   import parser._
 
   "extractAudioVideo" should "convert the csv input to the corresponding output" in {
-    extractAudioVideo(audioVideoCSV, 2, "ruimtereis01") should matchPattern { case Success(`audioVideo`) => }
+    extractAudioVideo("ruimtereis01", 2, audioVideoCSV) shouldBe Valid(audioVideo)
   }
 
   it should "fail if there are AV_FILE_PATH values but there is no Springfield data" in {
@@ -97,9 +97,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> ""
     ) :: audioVideoCSVRow2 :: Nil
 
-    extractAudioVideo(rows, 2, "ruimtereis01") should matchPattern {
-      case Failure(ParseException(2, "The column 'AV_FILE_PATH' contains values, but the columns [SF_COLLECTION, SF_USER] do not", _)) =>
-    }
+    extractAudioVideo("ruimtereis01", 2, rows) shouldBe
+      Invalid(Chain(ParseError(2, "The column 'AV_FILE_PATH' contains values, but the columns [SF_COLLECTION, SF_USER] do not")))
   }
 
   it should "fail if there is more than one Springfield" in {
@@ -110,9 +109,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
         .updated("SF_COLLECTION", "extra3")
         .updated("SF_PLAY_MODE", "continuous") + ("ROW" -> "2")) :: Nil
 
-    extractAudioVideo(rows, 2, "ruimtereis01") should matchPattern {
-      case Failure(ParseException(2, "Only one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]. Found: [(dans,janvanmansum,jans-test-files,menu), (extra1,extra2,extra3,continuous)]", _)) =>
-    }
+    extractAudioVideo("ruimtereis01", 2, rows) shouldBe
+      Invalid(Chain(ParseError(2, "At most one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]. Found: [(dans,janvanmansum,jans-test-files,menu), (extra1,extra2,extra3,continuous)]")))
   }
 
   "springfield" should "convert the csv input into the corresponding object" in {
@@ -123,9 +121,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "SF_PLAY_MODE" -> "menu"
     )
 
-    springfield(2)(row).value should matchPattern {
-      case Success(Springfield("randomdomain", "randomuser", "randomcollection", PlayMode.Menu)) =>
-    }
+    springfield(2)(row).value shouldBe Valid(Springfield("randomdomain", "randomuser", "randomcollection", PlayMode.Menu))
   }
 
   it should "fail if the values have invalid characters" in {
@@ -137,10 +133,12 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     inside(springfield(2)(row).value) {
-      case Failure(CompositeException(List(e1, e2, e3))) =>
-        e1 should have message "The column 'SF_DOMAIN' contains the following invalid characters: {@, ï, ç, æ}"
-        e2 should have message "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"
-        e3 should have message "The column 'SF_COLLECTION' contains the following invalid characters: {*}"
+      case Invalid(chain) =>
+        chain.toNonEmptyList shouldBe NonEmptyList.of(
+          ParseError(2, "The column 'SF_DOMAIN' contains the following invalid characters: {@, ï, ç, æ}"),
+          ParseError(2, "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"),
+          ParseError(2, "The column 'SF_COLLECTION' contains the following invalid characters: {*}"),
+        )
     }
   }
 
@@ -152,9 +150,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "SF_PLAY_MODE" -> "menu"
     )
 
-    springfield(2)(row).value should matchPattern {
-      case Success(Springfield("dans", "randomuser", "randomcollection", PlayMode.Menu)) =>
-    }
+    springfield(2)(row).value shouldBe Valid(Springfield("dans", "randomuser", "randomcollection", PlayMode.Menu))
   }
 
   it should "fail if the values have invalid characters when no SF_DOMAIN is given" in {
@@ -166,9 +162,11 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     inside(springfield(2)(row).value) {
-      case Failure(CompositeException(List(e1, e2))) =>
-        e1 should have message "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"
-        e2 should have message "The column 'SF_COLLECTION' contains the following invalid characters: {*}"
+      case Invalid(chain) =>
+        chain.toNonEmptyList shouldBe NonEmptyList.of(
+          ParseError(2, "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"),
+          ParseError(2, "The column 'SF_COLLECTION' contains the following invalid characters: {*}"),
+        )
     }
   }
 
@@ -180,9 +178,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "SF_PLAY_MODE" -> "unknown"
     )
 
-    springfield(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Value 'unknown' is not a valid play mode", _)) =>
-    }
+    springfield(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Value 'unknown' is not a valid play mode")))
   }
 
   it should "fail if no SF_PLAY_MODE is given" in {
@@ -193,9 +190,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "SF_PLAY_MODE" -> ""
     )
 
-    springfield(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: SF_PLAY_MODE", _)) =>
-    }
+    springfield(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value for: SF_PLAY_MODE")))
   }
 
   it should "fail if there is no value for SF_COLLECTION" in {
@@ -206,9 +202,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "SF_PLAY_MODE" -> "menu"
     )
 
-    springfield(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: SF_COLLECTION", _)) =>
-    }
+    springfield(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value for: SF_COLLECTION")))
   }
 
   it should "fail if there is no value for SF_COLLECTION and the value for SF_PLAY_MODE is unknown" in {
@@ -220,9 +215,11 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     inside(springfield(2)(row).value) {
-      case Failure(CompositeException(List(e1, e2))) =>
-        e1 should have message "Missing value for: SF_COLLECTION"
-        e2 should have message "Value 'unknown' is not a valid play mode"
+      case Invalid(chain) =>
+        chain.toNonEmptyList shouldBe NonEmptyList.of(
+          ParseError(2, "Missing value for: SF_COLLECTION"),
+          ParseError(2, "Value 'unknown' is not a valid play mode"),
+        )
     }
   }
 
@@ -235,9 +232,11 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     inside(springfield(2)(row).value) {
-      case Failure(CompositeException(List(e1, e2))) =>
-        e1 should have message "Missing value for: SF_COLLECTION"
-        e2 should have message "Missing value for: SF_PLAY_MODE"
+      case Invalid(chain) =>
+        chain.toNonEmptyList shouldBe NonEmptyList.of(
+          ParseError(2, "Missing value for: SF_COLLECTION"),
+          ParseError(2, "Missing value for: SF_PLAY_MODE"),
+        )
     }
   }
 
@@ -249,9 +248,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "SF_PLAY_MODE" -> "menu"
     )
 
-    springfield(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: SF_USER", _)) =>
-    }
+    springfield(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value for: SF_USER")))
   }
 
   it should "fail if there is no value for SF_USER and the value for SF_PLAY_MODE is unknown" in {
@@ -263,9 +261,11 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     inside(springfield(2)(row).value) {
-      case Failure(CompositeException(List(e1, e2))) =>
-        e1 should have message "Missing value for: SF_USER"
-        e2 should have message "Value 'unknown' is not a valid play mode"
+      case Invalid(chain) =>
+        chain.toNonEmptyList shouldBe NonEmptyList.of(
+          ParseError(2, "Missing value for: SF_USER"),
+          ParseError(2, "Value 'unknown' is not a valid play mode"),
+        )
     }
   }
 
@@ -278,9 +278,11 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     inside(springfield(2)(row).value) {
-      case Failure(CompositeException(List(e1, e2))) =>
-        e1 should have message "Missing value for: SF_USER"
-        e2 should have message "Missing value for: SF_PLAY_MODE"
+      case Invalid(chain) =>
+        chain.toNonEmptyList shouldBe NonEmptyList.of(
+          ParseError(2, "Missing value for: SF_USER"),
+          ParseError(2, "Missing value for: SF_PLAY_MODE"),
+        )
     }
   }
 
@@ -293,9 +295,11 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     inside(springfield(2)(row).value) {
-      case Failure(CompositeException(List(e1, e2))) =>
-        e1 should have message "Missing value for: SF_COLLECTION"
-        e2 should have message "Missing value for: SF_USER"
+      case Invalid(chain) =>
+        chain.toNonEmptyList shouldBe NonEmptyList.of(
+          ParseError(2, "Missing value for: SF_COLLECTION"),
+          ParseError(2, "Missing value for: SF_USER"),
+        )
     }
   }
 
@@ -308,10 +312,12 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     inside(springfield(2)(row).value) {
-      case Failure(CompositeException(List(e1, e2, e3))) =>
-        e1 should have message "Missing value for: SF_COLLECTION"
-        e2 should have message "Missing value for: SF_USER"
-        e3 should have message "Value 'unknown' is not a valid play mode"
+      case Invalid(chain) =>
+        chain.toNonEmptyList shouldBe NonEmptyList.of(
+          ParseError(2, "Missing value for: SF_COLLECTION"),
+          ParseError(2, "Missing value for: SF_USER"),
+          ParseError(2, "Value 'unknown' is not a valid play mode"),
+        )
     }
   }
 
@@ -327,30 +333,19 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   "playMode" should "convert the value for SF_PLAY_MODE into the corresponding enum object" in {
-    val row = Map("SF_PLAY_MODE" -> "menu")
-    playMode(2)(row).value should matchPattern { case Success(PlayMode.Menu) => }
+    playMode(2)("menu").right.value shouldBe PlayMode.Menu
   }
 
   it should "return the correct PlayMode if I use all-uppercase in the SF_PLAY_MODE value" in {
-    val row = Map("SF_PLAY_MODE" -> "CONTINUOUS")
-    playMode(2)(row).value should matchPattern { case Success(PlayMode.Continuous) => }
+    playMode(2)("CONTINUOUS").right.value shouldBe PlayMode.Continuous
   }
 
   it should "return the correct PlayMode if I use some weird casing in the SF_PLAY_MODE value" in {
-    val row = Map("SF_PLAY_MODE" -> "mEnU")
-    playMode(2)(row).value should matchPattern { case Success(PlayMode.Menu) => }
-  }
-
-  it should "return None if SF_PLAY_MODE is not defined" in {
-    val row = Map("SF_PLAY_MODE" -> "")
-    playMode(2)(row) shouldBe empty
+    playMode(2)("mEnU").right.value shouldBe PlayMode.Menu
   }
 
   it should "fail if the SF_PLAY_MODE value does not correspond to an object in the enum" in {
-    val row = Map("SF_PLAY_MODE" -> "unknown value")
-    playMode(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Value 'unknown value' is not a valid play mode", _)) =>
-    }
+    playMode(2)("unknown value").left.value shouldBe ParseError(2, "Value 'unknown value' is not a valid play mode")
   }
 
   "avFile" should "convert the csv input into the corresponding object" in {
@@ -362,7 +357,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
 
     val file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg"
     val subtitles = SubtitlesFile(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt", Some("en"))
-    avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `subtitles`)) => }
+    avFile("ruimtereis01")(2)(row).value shouldBe Valid((file, subtitles))
   }
 
   it should "fail if the value for AV_FILE_PATH represents a path that does not exist" in {
@@ -372,9 +367,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    avFile("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "AV_FILE_PATH does not represent a valid path", _)) =>
-    }
+    avFile("ruimtereis01")(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
   }
 
   it should "fail if the value for AV_FILE_PATH represents a folder" in {
@@ -384,11 +378,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = multiDepositDir / "ruimtereis01" / "reisverslag"
-    val errorMsg = "AV_FILE_PATH does not represent a valid path"
-    avFile("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, `errorMsg`, _)) =>
-    }
+    avFile("ruimtereis01")(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
   }
 
   it should "fail if the value for AV_FILE_PATH represents a path that does not exist when AV_SUBTITLES is not defined" in {
@@ -398,9 +389,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    avFile("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "AV_FILE_PATH does not represent a valid path", _)) =>
-    }
+    avFile("ruimtereis01")(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
   }
 
   it should "fail if the value for AV_FILE_PATH represents a folder when AV_SUBTITLES is not defined" in {
@@ -410,11 +400,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> ""
     )
 
-    val file = multiDepositDir / "ruimtereis01" / "reisverslag"
-    val errorMsg = "AV_FILE_PATH does not represent a valid path"
-    avFile("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, `errorMsg`, _)) =>
-    }
+    avFile("ruimtereis01")(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
   }
 
   it should "fail if the value for AV_SUBTITLES represents a path that does not exist" in {
@@ -424,9 +411,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    avFile("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "AV_SUBTITLES does not represent a valid path", _)) =>
-    }
+    avFile("ruimtereis01")(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "AV_SUBTITLES does not represent a valid path")))
   }
 
   it should "fail if the value for AV_SUBTITLES represents a folder" in {
@@ -436,11 +422,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    val file = multiDepositDir / "ruimtereis01" / "reisverslag"
-    val errorMsg = "AV_SUBTITLES does not represent a valid path"
-    avFile("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, `errorMsg`, _)) =>
-    }
+    avFile("ruimtereis01")(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "AV_SUBTITLES does not represent a valid path")))
   }
 
   it should "fail if the value for AV_SUBTITLES_LANGUAGE does not represent an ISO 639-1 language value" in {
@@ -450,9 +433,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "ac"
     )
 
-    avFile("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "AV_SUBTITLES_LANGUAGE 'ac' doesn't have a valid ISO 639-1 language value", _)) =>
-    }
+    avFile("ruimtereis01")(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "AV_SUBTITLES_LANGUAGE 'ac' doesn't have a valid ISO 639-1 language value")))
   }
 
   it should "fail if there is no AV_SUBTITLES value, but there is a AV_SUBTITLES_LANGUAGE" in {
@@ -462,9 +444,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    avFile("ruimtereis01")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: 'en'", _)) =>
-    }
+    avFile("ruimtereis01")(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: 'en'")))
   }
 
   it should "succeed if there is a value for AV_SUBTITLES, but no value for AV_SUBTITLES_LANGUAGE" in {
@@ -476,7 +457,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
 
     val file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg"
     val subtitles = SubtitlesFile(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt")
-    avFile("ruimtereis01")(2)(row).value should matchPattern { case Success((`file`, `subtitles`)) => }
+    avFile("ruimtereis01")(2)(row).value shouldBe Valid((`file`, `subtitles`))
   }
 
   it should "succeed if there is no value for both AV_SUBTITLES and AV_SUBTITLES_LANGUAGE" in {
@@ -496,10 +477,8 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_SUBTITLES_LANGUAGE" -> "en"
     )
 
-    inside(avFile("ruimtereis01")(2)(row).value) {
-      case Failure(ParseException(2, msg, _)) =>
-        msg should include("No value is defined for AV_FILE_PATH")
-    }
+    avFile("ruimtereis01")(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "No value is defined for AV_FILE_PATH, while some of [AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined")))
   }
 
   it should "return None if all four values do not have any value" in {
@@ -510,5 +489,21 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )
 
     avFile("ruimtereis01")(2)(row) shouldBe empty
+  }
+
+  "iso639_1Language" should "return true if the tag matches an ISO 639-1 language" in {
+    isValidISO639_1Language("en") shouldBe true
+  }
+
+  it should "return false if the tag is too long" in {
+    isValidISO639_1Language("eng") shouldBe false
+  }
+
+  it should "return false if the tag is too short" in {
+    isValidISO639_1Language("e") shouldBe false
+  }
+
+  it should "return false if the tag does not match a Locale" in {
+    isValidISO639_1Language("ac") shouldBe false
   }
 }

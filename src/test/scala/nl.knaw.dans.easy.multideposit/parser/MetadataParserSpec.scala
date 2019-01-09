@@ -16,12 +16,30 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
+import cats.data.Chain
+import cats.data.Validated.{ Invalid, Valid }
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
 
-import scala.util.{ Failure, Success }
+trait LanguageBehavior {
+  this: TestSupportFixture =>
+  def validLanguage3Tag(parser: MetadataParser, lang: String): Unit = {
+    it should "succeed when the language tag is valid" in {
+      val row = Map("taal" -> lang)
+      parser.iso639_2Language("taal")(2)(row).value shouldBe Valid(lang)
+    }
+  }
+
+  def invalidLanguage3Tag(parser: MetadataParser, lang: String): Unit = {
+    it should "fail when the language tag is invalid" in {
+      val row = Map("taal" -> lang)
+      parser.iso639_2Language("taal")(2)(row).value shouldBe
+        Invalid(Chain(ParseError(2, s"Value '$lang' is not a valid value for taal")))
+    }
+  }
+}
 
 trait MetadataTestObjects {
 
@@ -107,7 +125,7 @@ trait MetadataTestObjects {
   )
 }
 
-class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
+class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects with LanguageBehavior {
   self =>
 
   private val parser = new MetadataParser with ParserUtils with InputPathExplorer {
@@ -118,13 +136,307 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
   import parser._
 
   "extractMetadata" should "convert the csv input to the corresponding output" in {
-    extractMetadata(metadataCSV, 2) should matchPattern { case Success(`metadata`) => }
+    extractMetadata(2, metadataCSV) shouldBe Valid(metadata)
   }
 
   it should "use the default type value if no value for DC_TYPE is specified" in {
-    inside(extractMetadata(metadataCSV.map(row => row - "DC_TYPE"), 2)) {
-      case Success(md) => md.types should contain only DcType.DATASET
+    inside(extractMetadata(2, metadataCSV.map(row => row - "DC_TYPE"))) {
+      case Valid(md) => md.types should contain only DcType.DATASET
     }
+  }
+
+  "dcType" should "convert the value for DC_TYPE into the corresponding enum object" in {
+    val row = Map("DC_TYPE" -> "Collection")
+    dcType(2)(row).value shouldBe Valid(DcType.COLLECTION)
+  }
+
+  it should "return None if DC_TYPE is not defined" in {
+    val row = Map("DC_TYPE" -> "")
+    dcType(2)(row) shouldBe empty
+  }
+
+  it should "fail if the DC_TYPE value does not correspond to an object in the enum" in {
+    val row = Map("DC_TYPE" -> "unknown value")
+    dcType(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Value 'unknown value' is not a valid type")))
+  }
+
+  "identifier" should "return None if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are not defined" in {
+    val row = Map(
+      "DC_IDENTIFIER" -> "",
+      "DC_IDENTIFIER_TYPE" -> ""
+    )
+    identifier(2)(row) shouldBe empty
+  }
+
+  it should "fail if DC_IDENTIFIER_TYPE is defined, but DC_IDENTIFIER is not" in {
+    val row = Map(
+      "DC_IDENTIFIER" -> "",
+      "DC_IDENTIFIER_TYPE" -> "ISSN"
+    )
+    identifier(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value for: DC_IDENTIFIER")))
+  }
+
+  it should "succeed if DC_IDENTIFIER is defined and DC_IDENTIFIER_TYPE is not" in {
+    val row = Map(
+      "DC_IDENTIFIER" -> "id",
+      "DC_IDENTIFIER_TYPE" -> ""
+    )
+    identifier(2)(row).value shouldBe Valid(Identifier("id", None))
+  }
+
+  it should "succeed if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are defined and DC_IDENTIFIER_TYPE is valid" in {
+    val row = Map(
+      "DC_IDENTIFIER" -> "123456",
+      "DC_IDENTIFIER_TYPE" -> "ISSN"
+    )
+    identifier(2)(row).value shouldBe Valid(Identifier("123456", Some(IdentifierType.ISSN)))
+  }
+
+  it should "fail if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are defined, but DC_IDENTIFIER_TYPE is invalid" in {
+    val row = Map(
+      "DC_IDENTIFIER" -> "123456",
+      "DC_IDENTIFIER_TYPE" -> "INVALID_IDENTIFIER_TYPE"
+    )
+    identifier(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Value 'INVALID_IDENTIFIER_TYPE' is not a valid identifier type")))
+  }
+
+  "iso639_2Language (with normal 3-letter tag)" should behave like validLanguage3Tag(parser, "eng")
+
+  "iso639_2Language (with terminology tag)" should behave like validLanguage3Tag(parser, "nld")
+
+  "iso639_2Language (with bibliographic tag)" should behave like validLanguage3Tag(parser, "dut")
+
+  "iso639_2Language (with a random tag)" should behave like invalidLanguage3Tag(parser, "abc")
+
+  "iso639_2Language (with some obscure language tag no one has ever heard about)" should behave like validLanguage3Tag(parser, "day")
+
+  "iso639_2Language (with a 2-letter tag)" should behave like invalidLanguage3Tag(parser, "nl")
+
+  "iso639_2Language (with a too short tag)" should behave like invalidLanguage3Tag(parser, "a")
+
+  "iso639_2Language (with a too long tag)" should behave like invalidLanguage3Tag(parser, "abcdef")
+
+  "iso639_2Language (with encoding tag)" should behave like invalidLanguage3Tag(parser, "encoding=UTF-8")
+
+  "relation" should "succeed if both the link and title are defined" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "",
+      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> "bar"
+    )
+
+    relation(2)(row).value shouldBe Valid(UnqualifiedRelation(Some("foo"), Some("bar")))
+  }
+
+  it should "succeed if the qualifier and both the link and title are defined" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "replaces",
+      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> "bar"
+    )
+
+    relation(2)(row).value shouldBe Valid(QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar")))
+  }
+
+  it should "fail when only the qualifier and link are defined" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "replaces",
+      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> ""
+    )
+
+    relation(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context")))
+  }
+
+  it should "succeed when only the qualifier and title are defined" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "replaces",
+      "DCX_RELATION_LINK" -> "",
+      "DCX_RELATION_TITLE" -> "bar"
+    )
+
+    relation(2)(row).value shouldBe Valid(QualifiedRelation(RelationQualifier.Replaces, None, Some("bar")))
+  }
+
+  it should "fail if only the qualifier is defined" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "replaces",
+      "DCX_RELATION_LINK" -> "",
+      "DCX_RELATION_TITLE" -> ""
+    )
+
+    relation(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well")))
+  }
+
+  it should "fail if an invalid qualifier is given" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "invalid",
+      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> "bar"
+    )
+
+    relation(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Value 'invalid' is not a valid relation qualifier")))
+  }
+
+  it should "succeed if the qualifier is formatted differently" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "rEplAcEs",
+      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> "bar"
+    )
+
+    relation(2)(row).value shouldBe Valid(QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar")))
+  }
+
+  it should "fail if only the link is defined" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "",
+      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_TITLE" -> ""
+    )
+
+    relation(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context")))
+  }
+
+  it should "succeed if only the title is defined" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "",
+      "DCX_RELATION_LINK" -> "",
+      "DCX_RELATION_TITLE" -> "bar"
+    )
+
+    relation(2)(row).value shouldBe Valid(UnqualifiedRelation(None, Some("bar")))
+  }
+
+  it should "return None if none of these fields are defined" in {
+    val row = Map(
+      "DCX_RELATION_QUALIFIER" -> "",
+      "DCX_RELATION_LINK" -> "",
+      "DCX_RELATION_TITLE" -> ""
+    )
+
+    relation(2)(row) shouldBe empty
+  }
+
+  "date" should "convert a textual date into the corresponding object" in {
+    val row = Map(
+      "DCT_DATE" -> "random text",
+      "DCT_DATE_QUALIFIER" -> ""
+    )
+
+    dateColumn(2)(row).value shouldBe Valid(TextualDate("random text"))
+  }
+
+  it should "fail if it has a correct qualifier but no well formatted date" in {
+    val row = Map(
+      "DCT_DATE" -> "random text",
+      "DCT_DATE_QUALIFIER" -> "Valid"
+    )
+
+    dateColumn(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "DCT_DATE value 'random text' does not represent a date")))
+  }
+
+  it should "convert a date with qualifier into the corresponding object" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "Issued"
+    )
+
+    dateColumn(2)(row).value shouldBe Valid(QualifiedDate(new DateTime(2016, 7, 30, 0, 0), DateQualifier.ISSUED))
+  }
+
+  it should "succeed when the qualifier is formatted differently (capitals)" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "dateAccepted"
+    )
+
+    dateColumn(2)(row).value shouldBe Valid(QualifiedDate(new DateTime(2016, 7, 30, 0, 0), DateQualifier.DATE_ACCEPTED))
+  }
+
+  it should "succeed when the qualifier contains spaces instead of CamelCase" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "date accepted"
+    )
+
+    dateColumn(2)(row).value shouldBe Valid(QualifiedDate(new DateTime(2016, 7, 30, 0, 0), DateQualifier.DATE_ACCEPTED))
+  }
+
+  it should "succeed if the qualifier isn't given, but the date is (properly formatted)" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> ""
+    )
+
+    dateColumn(2)(row).value shouldBe Valid(TextualDate("2016-07-30"))
+  }
+
+  it should "fail if the qualifier is unknown" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "unknown"
+    )
+
+    dateColumn(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Value 'unknown' is not a valid date qualifier")))
+  }
+
+  it should "fail if the date isn't properly formatted" in {
+    val row = Map(
+      "DCT_DATE" -> "30-07-2016",
+      "DCT_DATE_QUALIFIER" -> "Issued"
+    )
+
+    dateColumn(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "DCT_DATE value '30-07-2016' does not represent a date")))
+  }
+
+  it should "fail if no date is given, but a valid qualifier is given" in {
+    val row = Map(
+      "DCT_DATE" -> "",
+      "DCT_DATE_QUALIFIER" -> "Issued"
+    )
+
+    dateColumn(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it")))
+  }
+
+  it should "fail if the qualifier is equal to 'available' since we use a different keyword for that" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "Available"
+    )
+
+    dateColumn(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "DCT_DATE_QUALIFIER value 'Available' is not allowed here. Use column DDM_AVAILABLE instead.")))
+  }
+
+  it should "fail if the qualifier is equal to 'created' since we use a different keyword for that" in {
+    val row = Map(
+      "DCT_DATE" -> "2016-07-30",
+      "DCT_DATE_QUALIFIER" -> "Created"
+    )
+
+    dateColumn(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "DCT_DATE_QUALIFIER value 'Created' is not allowed here. Use column DDM_CREATED instead.")))
+  }
+
+  it should "return an empty value if both values are empty" in {
+    val row = Map(
+      "DCT_DATE" -> "",
+      "DCT_DATE_QUALIFIER" -> ""
+    )
+
+    dateColumn(2)(row) shouldBe empty
   }
 
   "contributor" should "return None if the none of the fields are defined" in {
@@ -152,7 +464,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_CONTRIBUTOR_ROLE" -> ""
     )
 
-    contributor(2)(row).value should matchPattern { case Success(ContributorOrganization("org", None)) => }
+    contributor(2)(row).value shouldBe Valid(ContributorOrganization("org", None))
   }
 
   it should "succeed with an organisation when only the DCX_CONTRIBUTOR_ORGANIZATION and DCX_CONTRIBUTOR_ROLE are defined" in {
@@ -166,7 +478,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_CONTRIBUTOR_ROLE" -> "RelatedPERSON"
     )
 
-    contributor(2)(row).value should matchPattern { case Success(ContributorOrganization("org", Some(ContributorRole.RELATED_PERSON))) => }
+    contributor(2)(row).value shouldBe Valid(ContributorOrganization("org", Some(ContributorRole.RELATED_PERSON)))
   }
 
   it should "succeed with a person when only DCX_CONTRIBUTOR_INITIALS and DCX_CONTRIBUTOR_SURNAME are defined" in {
@@ -180,9 +492,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_CONTRIBUTOR_ROLE" -> ""
     )
 
-    contributor(2)(row).value should matchPattern {
-      case Success(ContributorPerson(None, "A.", None, "Jones", None, None, None)) =>
-    }
+    contributor(2)(row).value shouldBe Valid(ContributorPerson(None, "A.", None, "Jones", None, None, None))
   }
 
   it should "succeed with a more extensive person when more fields are filled in" in {
@@ -196,9 +506,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_CONTRIBUTOR_ROLE" -> "related person"
     )
 
-    contributor(2)(row).value should matchPattern {
-      case Success(ContributorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some(ContributorRole.RELATED_PERSON), Some("dai123"))) =>
-    }
+    contributor(2)(row).value shouldBe Valid(ContributorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some(ContributorRole.RELATED_PERSON), Some("dai123")))
   }
 
   it should "fail if DCX_CONTRIBUTOR_INITIALS is not defined" in {
@@ -212,9 +520,8 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_CONTRIBUTOR_ROLE" -> ""
     )
 
-    contributor(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: DCX_CONTRIBUTOR_INITIALS", _)) =>
-    }
+    contributor(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value for: DCX_CONTRIBUTOR_INITIALS")))
   }
 
   it should "fail if DCX_CONTRIBUTOR_SURNAME is not defined" in {
@@ -228,9 +535,8 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_CONTRIBUTOR_ROLE" -> ""
     )
 
-    contributor(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: DCX_CONTRIBUTOR_SURNAME", _)) =>
-    }
+    contributor(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value for: DCX_CONTRIBUTOR_SURNAME")))
   }
 
   it should "fail if DCX_CONTRIBUTOR_INITIALS and DCX_CONTRIBUTOR_SURNAME are both not defined" in {
@@ -244,9 +550,8 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_CONTRIBUTOR_ROLE" -> ""
     )
 
-    contributor(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME, DCX_CONTRIBUTOR_INITIALS]", _)) =>
-    }
+    contributor(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME, DCX_CONTRIBUTOR_INITIALS]")))
   }
 
   it should "fail if DCX_CREATOR_ROLE has an invalid value" in {
@@ -260,305 +565,8 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_CONTRIBUTOR_ROLE" -> "invalid!"
     )
 
-    contributor(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Value 'invalid!' is not a valid contributor role", _)) =>
-    }
-  }
-
-  "identifier" should "return None if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are not defined" in {
-    val row = Map(
-      "DC_IDENTIFIER" -> "",
-      "DC_IDENTIFIER_TYPE" -> ""
-    )
-    identifier(2)(row) shouldBe empty
-  }
-
-  it should "fail if DC_IDENTIFIER_TYPE is defined, but DC_IDENTIFIER is not" in {
-    val row = Map(
-      "DC_IDENTIFIER" -> "",
-      "DC_IDENTIFIER_TYPE" -> "ISSN"
-    )
-    identifier(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: DC_IDENTIFIER", _)) =>
-    }
-  }
-
-  it should "succeed if DC_IDENTIFIER is defined and DC_IDENTIFIER_TYPE is not" in {
-    val row = Map(
-      "DC_IDENTIFIER" -> "id",
-      "DC_IDENTIFIER_TYPE" -> ""
-    )
-    identifier(2)(row).value should matchPattern { case Success(Identifier("id", None)) => }
-  }
-
-  it should "succeed if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are defined and DC_IDENTIFIER_TYPE is valid" in {
-    val row = Map(
-      "DC_IDENTIFIER" -> "123456",
-      "DC_IDENTIFIER_TYPE" -> "ISSN"
-    )
-    identifier(2)(row).value should matchPattern { case Success(Identifier("123456", Some(IdentifierType.ISSN))) => }
-  }
-
-  it should "fail if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are defined, but DC_IDENTIFIER_TYPE is invalid" in {
-    val row = Map(
-      "DC_IDENTIFIER" -> "123456",
-      "DC_IDENTIFIER_TYPE" -> "INVALID_IDENTIFIER_TYPE"
-    )
-    identifier(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Value 'INVALID_IDENTIFIER_TYPE' is not a valid identifier type", _)) =>
-    }
-  }
-
-  "dcType" should "convert the value for DC_TYPE into the corresponding enum object" in {
-    val row = Map("DC_TYPE" -> "Collection")
-    dcType(2)(row).value should matchPattern { case Success(DcType.COLLECTION) => }
-  }
-
-  it should "return None if DC_TYPE is not defined" in {
-    val row = Map("DC_TYPE" -> "")
-    dcType(2)(row) shouldBe empty
-  }
-
-  it should "fail if the DC_TYPE value does not correspond to an object in the enum" in {
-    val row = Map("DC_TYPE" -> "unknown value")
-    dcType(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Value 'unknown value' is not a valid type", _)) =>
-    }
-  }
-
-  "relation" should "succeed if both the link and title are defined" in {
-    val row = Map(
-      "DCX_RELATION_QUALIFIER" -> "",
-      "DCX_RELATION_LINK" -> "foo",
-      "DCX_RELATION_TITLE" -> "bar"
-    )
-
-    relation(2)(row).value should matchPattern {
-      case Success(UnqualifiedRelation(Some("foo"), Some("bar"))) =>
-    }
-  }
-
-  it should "succeed if the qualifier and both the link and title are defined" in {
-    val row = Map(
-      "DCX_RELATION_QUALIFIER" -> "replaces",
-      "DCX_RELATION_LINK" -> "foo",
-      "DCX_RELATION_TITLE" -> "bar"
-    )
-
-    relation(2)(row).value should matchPattern {
-      case Success(QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))) =>
-    }
-  }
-
-  it should "fail when only the qualifier and link are defined" in {
-    val row = Map(
-      "DCX_RELATION_QUALIFIER" -> "replaces",
-      "DCX_RELATION_LINK" -> "foo",
-      "DCX_RELATION_TITLE" -> ""
-    )
-
-    relation(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context", _)) =>
-    }
-  }
-
-  it should "succeed when only the qualifier and title are defined" in {
-    val row = Map(
-      "DCX_RELATION_QUALIFIER" -> "replaces",
-      "DCX_RELATION_LINK" -> "",
-      "DCX_RELATION_TITLE" -> "bar"
-    )
-
-    relation(2)(row).value should matchPattern {
-      case Success(QualifiedRelation(RelationQualifier.Replaces, None, Some("bar"))) =>
-    }
-  }
-
-  it should "fail if only the qualifier is defined" in {
-    val row = Map(
-      "DCX_RELATION_QUALIFIER" -> "replaces",
-      "DCX_RELATION_LINK" -> "",
-      "DCX_RELATION_TITLE" -> ""
-    )
-
-    relation(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well", _)) =>
-    }
-  }
-
-  it should "fail if an invalid qualifier is given" in {
-    val row = Map(
-      "DCX_RELATION_QUALIFIER" -> "invalid",
-      "DCX_RELATION_LINK" -> "foo",
-      "DCX_RELATION_TITLE" -> "bar"
-    )
-
-    relation(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Value 'invalid' is not a valid relation qualifier", _)) =>
-    }
-  }
-
-  it should "succeed if the qualifier is formatted differently" in {
-    val row = Map(
-      "DCX_RELATION_QUALIFIER" -> "rEplAcEs",
-      "DCX_RELATION_LINK" -> "foo",
-      "DCX_RELATION_TITLE" -> "bar"
-    )
-
-    relation(2)(row).value should matchPattern {
-      case Success(QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))) =>
-    }
-  }
-
-  it should "fail if only the link is defined" in {
-    val row = Map(
-      "DCX_RELATION_QUALIFIER" -> "",
-      "DCX_RELATION_LINK" -> "foo",
-      "DCX_RELATION_TITLE" -> ""
-    )
-
-    relation(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context", _)) =>
-    }
-  }
-
-  it should "succeed if only the title is defined" in {
-    val row = Map(
-      "DCX_RELATION_QUALIFIER" -> "",
-      "DCX_RELATION_LINK" -> "",
-      "DCX_RELATION_TITLE" -> "bar"
-    )
-
-    relation(2)(row).value should matchPattern {
-      case Success(UnqualifiedRelation(None, Some("bar"))) =>
-    }
-  }
-
-  it should "return None if none of these fields are defined" in {
-    val row = Map(
-      "DCX_RELATION_QUALIFIER" -> "",
-      "DCX_RELATION_LINK" -> "",
-      "DCX_RELATION_TITLE" -> ""
-    )
-
-    relation(2)(row) shouldBe empty
-  }
-
-  "date" should "convert a textual date into the corresponding object" in {
-    val row = Map(
-      "DCT_DATE" -> "random text",
-      "DCT_DATE_QUALIFIER" -> ""
-    )
-
-    dateColumn(2)(row).value should matchPattern { case Success(TextualDate("random text")) => }
-  }
-
-  it should "fail if it has a correct qualifier but no well formatted date" in {
-    val row = Map(
-      "DCT_DATE" -> "random text",
-      "DCT_DATE_QUALIFIER" -> "Valid"
-    )
-
-    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "DCT_DATE value 'random text' does not represent a date", _)) => }
-  }
-
-  it should "convert a date with qualifier into the corresponding object" in {
-    val row = Map(
-      "DCT_DATE" -> "2016-07-30",
-      "DCT_DATE_QUALIFIER" -> "Issued"
-    )
-
-    inside(dateColumn(2)(row).value) {
-      case Success(QualifiedDate(date, DateQualifier.ISSUED)) =>
-        date shouldBe new DateTime(2016, 7, 30, 0, 0)
-    }
-  }
-
-  it should "succeed when the qualifier is formatted differently (capitals)" in {
-    val row = Map(
-      "DCT_DATE" -> "2016-07-30",
-      "DCT_DATE_QUALIFIER" -> "dateAccepted"
-    )
-
-    inside(dateColumn(2)(row).value) {
-      case Success(QualifiedDate(date, DateQualifier.DATE_ACCEPTED)) =>
-        date shouldBe new DateTime(2016, 7, 30, 0, 0)
-    }
-  }
-
-  it should "succeed when the qualifier contains spaces instead of CamelCase" in {
-    val row = Map(
-      "DCT_DATE" -> "2016-07-30",
-      "DCT_DATE_QUALIFIER" -> "date accepted"
-    )
-
-    inside(dateColumn(2)(row).value) {
-      case Success(QualifiedDate(date, DateQualifier.DATE_ACCEPTED)) =>
-        date shouldBe new DateTime(2016, 7, 30, 0, 0)
-    }
-  }
-
-  it should "succeed if the qualifier isn't given, but the date is (properly formatted)" in {
-    val row = Map(
-      "DCT_DATE" -> "2016-07-30",
-      "DCT_DATE_QUALIFIER" -> ""
-    )
-
-    dateColumn(2)(row).value should matchPattern { case Success(TextualDate("2016-07-30")) => }
-  }
-
-  it should "fail if the qualifier is unknown" in {
-    val row = Map(
-      "DCT_DATE" -> "2016-07-30",
-      "DCT_DATE_QUALIFIER" -> "unknown"
-    )
-
-    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "Value 'unknown' is not a valid date qualifier", _)) => }
-  }
-
-  it should "fail if the date isn't properly formatted" in {
-    val row = Map(
-      "DCT_DATE" -> "30-07-2016",
-      "DCT_DATE_QUALIFIER" -> "Issued"
-    )
-
-    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "DCT_DATE value '30-07-2016' does not represent a date", _)) => }
-  }
-
-  it should "fail if no date is given, but a valid qualifier is given" in {
-    val row = Map(
-      "DCT_DATE" -> "",
-      "DCT_DATE_QUALIFIER" -> "Issued"
-    )
-
-    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it", _)) => }
-  }
-
-  it should "fail if the qualifier is equal to 'available' since we use a different keyword for that" in {
-    val row = Map(
-      "DCT_DATE" -> "2016-07-30",
-      "DCT_DATE_QUALIFIER" -> "Available"
-    )
-
-    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "DCT_DATE_QUALIFIER value 'Available' is not allowed here. Use column DDM_AVAILABLE instead.", _)) => }
-  }
-
-  it should "fail if the qualifier is equal to 'created' since we use a different keyword for that" in {
-    val row = Map(
-      "DCT_DATE" -> "2016-07-30",
-      "DCT_DATE_QUALIFIER" -> "Created"
-    )
-
-    dateColumn(2)(row).value should matchPattern { case Failure(ParseException(2, "DCT_DATE_QUALIFIER value 'Created' is not allowed here. Use column DDM_CREATED instead.", _)) => }
-  }
-
-  it should "return an empty value if both values are empty" in {
-    val row = Map(
-      "DCT_DATE" -> "",
-      "DCT_DATE_QUALIFIER" -> ""
-    )
-
-    dateColumn(2)(row) shouldBe empty
+    contributor(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Value 'invalid!' is not a valid contributor role")))
   }
 
   "subject" should "convert the csv input into the corresponding object" in {
@@ -567,7 +575,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DC_SUBJECT_SCHEME" -> "abr:ABRcomplex"
     )
 
-    subject(2)(row).value should matchPattern { case Success(Subject("IX", Some("abr:ABRcomplex"))) => }
+    subject(2)(row).value shouldBe Valid(Subject("IX", Some("abr:ABRcomplex")))
   }
 
   it should "succeed when the scheme is not defined" in {
@@ -576,7 +584,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DC_SUBJECT_SCHEME" -> ""
     )
 
-    subject(2)(row).value should matchPattern { case Success(Subject("test", None)) => }
+    subject(2)(row).value shouldBe Valid(Subject("test", None))
   }
 
   it should "succeed when only the scheme is defined (empty String for the temporal)" in {
@@ -585,7 +593,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DC_SUBJECT_SCHEME" -> "abr:ABRcomplex"
     )
 
-    subject(2)(row).value should matchPattern { case Success(Subject("", Some("abr:ABRcomplex"))) => }
+    subject(2)(row).value shouldBe Valid(Subject("", Some("abr:ABRcomplex")))
   }
 
   it should "fail if the scheme is not recognized" in {
@@ -594,9 +602,8 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DC_SUBJECT_SCHEME" -> "random-incorrect-scheme"
     )
 
-    subject(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'", _)) =>
-    }
+    subject(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'")))
   }
 
   it should "return None when both fields are empty or blank" in {
@@ -608,55 +615,6 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
     subject(2)(row) shouldBe empty
   }
 
-  "temporal" should "convert the csv input into the corresponding object" in {
-    val row = Map(
-      "DCT_TEMPORAL" -> "PALEOLB",
-      "DCT_TEMPORAL_SCHEME" -> "abr:ABRperiode"
-    )
-
-    temporal(2)(row).value should matchPattern {
-      case Success(Temporal("PALEOLB", Some("abr:ABRperiode"))) =>
-    }
-  }
-
-  it should "succeed when the scheme is not defined" in {
-    val row = Map(
-      "DCT_TEMPORAL" -> "test",
-      "DCT_TEMPORAL_SCHEME" -> ""
-    )
-
-    temporal(2)(row).value should matchPattern { case Success(Temporal("test", None)) => }
-  }
-
-  it should "succeed when only the scheme is defined (empty String for the temporal)" in {
-    val row = Map(
-      "DCT_TEMPORAL" -> "",
-      "DCT_TEMPORAL_SCHEME" -> "abr:ABRperiode"
-    )
-
-    temporal(2)(row).value should matchPattern { case Success(Temporal("", Some("abr:ABRperiode"))) => }
-  }
-
-  it should "fail if the scheme is not recognized" in {
-    val row = Map(
-      "DCT_TEMPORAL" -> "PALEOLB",
-      "DCT_TEMPORAL_SCHEME" -> "random-incorrect-scheme"
-    )
-
-    temporal(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'", _)) =>
-    }
-  }
-
-  it should "return None when both fields are empty or blank" in {
-    val row = Map(
-      "DCT_TEMPORAL" -> "",
-      "DCT_TEMPORAL_SCHEME" -> ""
-    )
-
-    temporal(2)(row) shouldBe empty
-  }
-
   "spatialPoint" should "convert the csv input into the corresponding object" in {
     val row = Map(
       "DCX_SPATIAL_X" -> "12",
@@ -664,9 +622,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_SPATIAL_SCHEME" -> "degrees"
     )
 
-    spatialPoint(2)(row).value should matchPattern {
-      case Success(SpatialPoint("12", "34", Some("degrees"))) =>
-    }
+    spatialPoint(2)(row).value shouldBe Valid(SpatialPoint("12", "34", Some("degrees")))
   }
 
   it should "succeed when no scheme is defined" in {
@@ -676,7 +632,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_SPATIAL_SCHEME" -> ""
     )
 
-    spatialPoint(2)(row).value should matchPattern { case Success(SpatialPoint("12", "34", None)) => }
+    spatialPoint(2)(row).value shouldBe Valid(SpatialPoint("12", "34", None))
   }
 
   it should "return None if there is no value for any of these keys" in {
@@ -696,9 +652,8 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_SPATIAL_SCHEME" -> "degrees"
     )
 
-    spatialPoint(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: DCX_SPATIAL_Y", _)) =>
-    }
+    spatialPoint(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value for: DCX_SPATIAL_Y")))
   }
 
   "spatialBox" should "convert the csv input into the corresponding object" in {
@@ -710,9 +665,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_SPATIAL_SCHEME" -> "RD"
     )
 
-    spatialBox(2)(row).value should matchPattern {
-      case Success(SpatialBox("45", "34", "23", "12", Some("RD"))) =>
-    }
+    spatialBox(2)(row).value shouldBe Valid(SpatialBox("45", "34", "23", "12", Some("RD")))
   }
 
   it should "succeed when no scheme is defined" in {
@@ -724,9 +677,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_SPATIAL_SCHEME" -> ""
     )
 
-    spatialBox(2)(row).value should matchPattern {
-      case Success(SpatialBox("45", "34", "23", "12", None)) =>
-    }
+    spatialBox(2)(row).value shouldBe Valid(SpatialBox("45", "34", "23", "12", None))
   }
 
   it should "return None if there is no value for any of these keys" in {
@@ -750,39 +701,66 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects {
       "DCX_SPATIAL_SCHEME" -> "RD"
     )
 
-    spatialBox(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value(s) for: [DCX_SPATIAL_NORTH, DCX_SPATIAL_EAST]", _)) =>
-    }
+    spatialBox(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value(s) for: [DCX_SPATIAL_NORTH, DCX_SPATIAL_EAST]")))
+  }
+
+  "temporal" should "convert the csv input into the corresponding object" in {
+    val row = Map(
+      "DCT_TEMPORAL" -> "PALEOLB",
+      "DCT_TEMPORAL_SCHEME" -> "abr:ABRperiode"
+    )
+
+    temporal(2)(row).value shouldBe Valid(Temporal("PALEOLB", Some("abr:ABRperiode")))
+  }
+
+  it should "succeed when the scheme is not defined" in {
+    val row = Map(
+      "DCT_TEMPORAL" -> "test",
+      "DCT_TEMPORAL_SCHEME" -> ""
+    )
+
+    temporal(2)(row).value shouldBe Valid(Temporal("test", None))
+  }
+
+  it should "succeed when only the scheme is defined (empty String for the temporal)" in {
+    val row = Map(
+      "DCT_TEMPORAL" -> "",
+      "DCT_TEMPORAL_SCHEME" -> "abr:ABRperiode"
+    )
+
+    temporal(2)(row).value shouldBe Valid(Temporal("", Some("abr:ABRperiode")))
+  }
+
+  it should "fail if the scheme is not recognized" in {
+    val row = Map(
+      "DCT_TEMPORAL" -> "PALEOLB",
+      "DCT_TEMPORAL_SCHEME" -> "random-incorrect-scheme"
+    )
+
+    temporal(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'")))
+  }
+
+  it should "return None when both fields are empty or blank" in {
+    val row = Map(
+      "DCT_TEMPORAL" -> "",
+      "DCT_TEMPORAL_SCHEME" -> ""
+    )
+
+    temporal(2)(row) shouldBe empty
   }
 
   "userLicense" should "return a user license object when the given license is allowed" in {
     val license = "http://www.mozilla.org/en-US/MPL/2.0/FAQ/"
-    val row = Map(
-      "DCT_LICENSE" -> license,
-    )
 
-    userLicense(2)(row).value should matchPattern {
-      case Success(UserLicense(`license`)) =>
-    }
+    userLicense(2, "DCT_LICENSE")(license).right.value shouldBe UserLicense(`license`)
   }
 
   it should "fail when the given license is unknown" in {
     val license = "unknown"
     val expectedErrorMsg = s"User license '$license' is not allowed."
-    val row = Map(
-      "DCT_LICENSE" -> license,
-    )
 
-    userLicense(2)(row).value should matchPattern {
-      case Failure(ParseException(2, `expectedErrorMsg`, _)) =>
-    }
-  }
-
-  it should "return None when the license field is not given" in {
-    val row = Map(
-      "DCT_LICENSE" -> "",
-    )
-
-    userLicense(2)(row) shouldBe empty
+    userLicense(2, "DCT_LICENSE")(license).left.value shouldBe ParseError(2, expectedErrorMsg)
   }
 }

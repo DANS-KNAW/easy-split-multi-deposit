@@ -19,11 +19,9 @@ import better.files.File
 import better.files.File.currentWorkingDirectory
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
-import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, PlayMode, Springfield, UserLicense, Video }
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
-
-import scala.util.{ Failure, Success }
 
 class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach with MockFactory {
 
@@ -47,6 +45,17 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     outputDepositDir.toJava should exist
   }
 
+  private val avFileReferences = Seq(
+    AVFileMetadata(
+      filepath = testDir / "md" / "ruimtereis01" / "reisverslag" / "centaur.mpg",
+      mimeType = "video/mpeg",
+      vocabulary = Video,
+      title = "flyby of centaur",
+      accessibleTo = FileAccessRights.ANONYMOUS,
+      visibleTo = FileAccessRights.ANONYMOUS
+    )
+  )
+
   "checkUserLicenseOnlyWithOpenAccess" should "succeed when accessright=OPEN_ACCESS and user license is given" in {
     val baseDeposit = testInstructions1.toDeposit()
     val deposit = baseDeposit.copy(
@@ -58,7 +67,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
         userLicense = Option(UserLicense("http://creativecommons.org/licenses/by-nc-sa/4.0/")),
       ),
     )
-    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe a[Success[_]]
+
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe a[Right[_, _]]
   }
 
   it should "fail when accessright=OPEN_ACCESS and no user license is given" in {
@@ -72,10 +82,9 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
         userLicense = Option.empty,
       ),
     )
-    val message = s"When access right '${AccessCategory.OPEN_ACCESS}' is used, a user license must be specified as well."
-    validation.checkUserLicenseOnlyWithOpenAccess(deposit) should matchPattern {
-      case Failure(ParseException(_, `message`, _)) =>
-    }
+    val message = s"When access right '${ AccessCategory.OPEN_ACCESS }' is used, a user license must be specified as well."
+
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit).left.value shouldBe ParseError(2, message)
   }
 
   it should "fail when accessright=/=OPEN_ACCESS and user license is given" in {
@@ -89,10 +98,9 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
         userLicense = Option(UserLicense("http://creativecommons.org/licenses/by-nc-sa/4.0/")),
       ),
     )
-    val message = s"When access right '${AccessCategory.OPEN_ACCESS}' is used, a user license must be specified as well."
-    validation.checkUserLicenseOnlyWithOpenAccess(deposit) should matchPattern {
-      case Failure(ParseException(_, `message`, _)) =>
-    }
+    val message = s"When access right '${ AccessCategory.OPEN_ACCESS }' is used, a user license must be specified as well."
+
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit).left.value shouldBe ParseError(2, message)
   }
 
   it should "succeed when accessright=/=OPEN_ACCESS and no user license is given" in {
@@ -106,7 +114,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
         userLicense = Option.empty,
       ),
     )
-    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe a[Success[_]]
+
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe a[Right[_, _]]
   }
 
   "checkSpringFieldDepositHasAVformat" should "fail if the deposit contains SF_* fields, but no AV DC_FORMAT is given" in {
@@ -117,7 +126,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       )
     )
     inside(validation.checkSpringFieldDepositHasAVformat(deposit)) {
-      case Failure(ParseException(_, message, _)) =>
+      case Left(ParseError(_, message)) =>
         message should include("No audio/video format found for this column: [DC_FORMAT]")
     }
   }
@@ -129,25 +138,15 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
         formats = List("audio/mpeg3")
       )
     )
-    validation.checkSpringFieldDepositHasAVformat(deposit) shouldBe a[Success[_]]
+    validation.checkSpringFieldDepositHasAVformat(deposit) shouldBe a[Right[_, _]]
   }
-
-  val avFileReferences = Seq(
-    AVFileMetadata(
-      filepath = testDir / "md" / "ruimtereis01" / "reisverslag" / "centaur.mpg",
-      mimeType = "video/mpeg",
-      vocabulary = Video,
-      title = "flyby of centaur",
-      accessibleTo = FileAccessRights.ANONYMOUS,
-      visibleTo = FileAccessRights.ANONYMOUS
-    ))
 
   "checkSFColumnsIfDepositContainsAVFiles" should "succeed if the deposit contains the SF_* fields in case an A/V file is found" in {
     val deposit = testInstructions1.toDeposit(avFileReferences).copy(
       depositId = depositId,
       springfield = Option(Springfield("domain", "user", "collection", PlayMode.Continuous))
     )
-    validation.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Success[_]]
+    validation.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Right[_, _]]
   }
 
   it should "fail if the deposit contains A/V files but the SF_* fields are not present" in {
@@ -155,8 +154,9 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       depositId = depositId,
       springfield = Option.empty
     )
+
     inside(validation.checkSFColumnsIfDepositContainsAVFiles(deposit)) {
-      case Failure(ParseException(_, message, _)) =>
+      case Left(ParseError(_, message)) =>
         message should {
           include("No values found for these columns: [SF_USER, SF_COLLECTION, SF_PLAY_MODE]") and
             include("reisverslag/centaur.mpg")
@@ -170,7 +170,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       depositId = depositId,
       springfield = Option.empty
     )
-    validation.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Success[_]]
+
+    validation.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Right[_, _]]
   }
 
   it should "fail if the deposit contains no A/V files and any of the SF_* fields are present" in {
@@ -180,8 +181,9 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       depositId = depositId,
       springfield = Option(Springfield(user = "user", collection = "collection", playMode = PlayMode.Continuous))
     )
+
     inside(validation.checkSFColumnsIfDepositContainsAVFiles(deposit)) {
-      case Failure(ParseException(_, message, _)) =>
+      case Left(ParseError(_, message)) =>
         message should include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]; these columns should be empty because there are no audio/video files found in this deposit")
     }
   }
@@ -190,7 +192,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     val depositId = "ruimtereis03"
     val deposit = testInstructions2.copy(depositId = depositId).toDeposit()
     depositDir(depositId).toJava should not(exist)
-    validation.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Success[_]]
+
+    validation.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Right[_, _]]
   }
 
   "checkEitherVideoOrAudio" should "fail if a dataset has both audio and video material in it" in {
@@ -205,9 +208,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
         visibleTo = FileAccessRights.ANONYMOUS
       ))
 
-    inside(validation.checkEitherVideoOrAudio(deposit)) {
-      case Failure(ParseException(_, message, _)) =>
-        message shouldBe "Found both audio and video in this dataset. Only one of them is allowed."
-    }
+    validation.checkEitherVideoOrAudio(deposit).left.value shouldBe
+      ParseError(2, "Found both audio and video in this dataset. Only one of them is allowed.")
   }
 }

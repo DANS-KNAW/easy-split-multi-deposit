@@ -18,12 +18,13 @@ package nl.knaw.dans.easy.multideposit
 import java.util.Locale
 
 import better.files.File
+import cats.syntax.either._
 import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.multideposit.PathExplorer._
 import nl.knaw.dans.easy.multideposit.actions.{ RetrieveDatamanager, _ }
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
-import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
+import nl.knaw.dans.easy.multideposit.parser.{ MultiDepositParser, ParseFailed }
 import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -52,7 +53,7 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
 
     for {
       _ <- Try { Locale.setDefault(Locale.US) }
-      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses)
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(e => ParseFailed(e.report)).toTry
       _ <- deposits.map(validator.validateDeposit).collectResults
       _ <- datamanager.getDatamanagerEmailaddress(datamanagerId)
     } yield deposits
@@ -65,7 +66,7 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
 
     for {
       _ <- Try { Locale.setDefault(Locale.US) }
-      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses)
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(e => ParseFailed(e.report)).toTry
       dataManagerEmailAddress <- datamanager.getDatamanagerEmailaddress(datamanagerId)
       _ <- deposits.mapUntilFailure(convertDeposit(paths, datamanagerId, dataManagerEmailAddress)).recoverWith {
         case NonFatal(e) => deposits.mapUntilFailure(d => createDirs.discardDeposit(d.depositId)) match {

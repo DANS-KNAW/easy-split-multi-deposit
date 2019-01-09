@@ -79,6 +79,11 @@
             <groupId>com.github.pathikrit</groupId>
             <artifactId>better-files_2.12</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.typelevel</groupId>
+            <artifactId>cats-core_2.12</artifactId>
+            <version>1.5.0</version>
+        </dependency>
 
         <dependency>
             <groupId>nl.knaw.dans.easy</groupId>

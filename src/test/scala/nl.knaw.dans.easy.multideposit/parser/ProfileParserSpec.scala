@@ -16,14 +16,13 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
+import cats.data.Validated.{ Invalid, Valid }
+import cats.data.{ Chain, NonEmptyList }
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
-import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.lib.error.CompositeException
+import nl.knaw.dans.easy.multideposit.model.{ ContributorRole, CreatorOrganization, CreatorPerson, MultiDepositKey, Profile, listToNEL }
 import org.joda.time.DateTime
-
-import scala.util.{ Failure, Success }
 
 trait ProfileTestObjects {
 
@@ -57,7 +56,8 @@ trait ProfileTestObjects {
   )
 }
 
-class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { self =>
+class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
+  self =>
 
   private val parser = new ProfileParser with ParserUtils with InputPathExplorer {
     val multiDepositDir: File = self.multiDepositDir
@@ -66,19 +66,22 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { sel
   import parser._
 
   "extractProfile" should "convert the csv input to the corresponding output" in {
-    extractProfile(profileCSV, 2) should matchPattern { case Success(`profile`) => }
+    extractProfile(2, profileCSV) shouldBe Valid(profile)
   }
 
   it should "fail if there are no values for DC_TITLE, DC_DESCRIPTION, creator, DDM_CREATED, DDM_AUDIENCE and DDM_ACCESSRIGHTS" in {
     val rows = Map.empty[MultiDepositKey, String] :: Map.empty[MultiDepositKey, String] :: Nil
-    inside(extractProfile(rows, 2)) {
-      case Failure(CompositeException(e1 :: e2 :: e3 :: e4 :: e5 :: e6 :: Nil)) =>
-        e1 should have message "There should be at least one non-empty value for DC_TITLE"
-        e2 should have message "There should be at least one non-empty value for DC_DESCRIPTION"
-        e3 should have message "There should be at least one non-empty value for the creator fields"
-        e4 should have message "One row has to contain a value for the column: 'DDM_CREATED'"
-        e5 should have message "There should be at least one non-empty value for DDM_AUDIENCE"
-        e6 should have message "One row has to contain a value for the column: 'DDM_ACCESSRIGHTS'"
+
+    inside(extractProfile(2, rows)) {
+      case Invalid(chain) =>
+        chain.toNonEmptyList shouldBe NonEmptyList.of(
+          ParseError(2, "There should be at least one non-empty value for DC_TITLE"),
+          ParseError(2, "There should be at least one non-empty value for DC_DESCRIPTION"),
+          ParseError(2, "There should be at least one non-empty value for the creator fields"),
+          ParseError(2, "There should be one non-empty value for DDM_CREATED"),
+          ParseError(2, "There should be at least one non-empty value for DDM_AUDIENCE"),
+          ParseError(2, "There should be one non-empty value for DDM_ACCESSRIGHTS"),
+        )
     }
   }
 
@@ -88,65 +91,31 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { sel
         .updated("DDM_AVAILABLE", "2015-07-31")
         .updated("DDM_ACCESSRIGHTS", "NO_ACCESS") :: Nil
 
-    inside(extractProfile(rows, 2)) {
-      case Failure(CompositeException(e1 :: e2 :: e3 :: Nil)) =>
-        e1.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_CREATED'")
-        e2.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_AVAILABLE'")
-        e3.getMessage should include("Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'")
+    inside(extractProfile(2, rows)) {
+      case Invalid(chain) =>
+        chain.toNonEmptyList shouldBe NonEmptyList.of(
+          ParseError(2, "Only one row is allowed to contain a value for the column 'DDM_CREATED'. Found: [2016-07-30, 2015-07-30]"),
+          ParseError(2, "At most one row is allowed to contain a value for the column 'DDM_AVAILABLE'. Found: [2016-07-31, 2015-07-31]"),
+          ParseError(2, "Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'. Found: [GROUP_ACCESS, NO_ACCESS]"),
+        )
     }
   }
 
   it should "fail if DDM_ACCESSRIGHTS is GROUPACCESS and DDM_AUDIENCE does not contain D37000" in {
     val rows = profileCSVRow1 :: Nil
 
-    inside(extractProfile(rows, 2)) {
-      case Failure(ParseException(2, msg, _)) =>
-        msg should {
-          include("DDM_AUDIENCE should be D37000 (Archaeology)") and
-            include("contains: [D30000]")
-        }
-    }
-  }
-
-  "date" should "convert the value of the date into the corresponding object" in {
-    val row = Map("datum" -> "2016-07-30")
-
-    inside(date("datum")(2)(row).value) {
-      case Success(date) => date shouldBe DateTime.parse("2016-07-30")
-    }
-  }
-
-  it should "return None if the date is not defined" in {
-    val row = Map("datum" -> "")
-
-    date("datum")(2)(row) shouldBe empty
-  }
-
-  it should "fail if the value does not represent a date" in {
-    val row = Map("datum" -> "you can't parse me!")
-
-    date("datum")(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "datum value 'you can't parse me!' does not represent a date", _)) =>
-    }
+    extractProfile(2, rows) shouldBe Invalid(Chain(
+      ParseError(2, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeology)")
+    ))
   }
 
   "accessCategory" should "convert the value for DDM_ACCESSRIGHTS into the corresponding enum object" in {
-    val row = Map("DDM_ACCESSRIGHTS" -> "ANONYMOUS_ACCESS")
-    accessCategory(2)(row).value should matchPattern {
-      case Success(AccessCategory.ANONYMOUS_ACCESS) =>
-    }
-  }
-
-  it should "return None if DDM_ACCESSRIGHTS is not defined" in {
-    val row = Map("DDM_ACCESSRIGHTS" -> "")
-    accessCategory(2)(row) shouldBe empty
+    accessCategory(2, "DDM_ACCESSRIGHTS")("ANONYMOUS_ACCESS").right.value shouldBe AccessCategory.ANONYMOUS_ACCESS
   }
 
   it should "fail if the DDM_ACCESSRIGHTS value does not correspond to an object in the enum" in {
-    val row = Map("DDM_ACCESSRIGHTS" -> "unknown value")
-    accessCategory(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Value 'unknown value' is not a valid accessright", _)) =>
-    }
+    accessCategory(2, "DDM_ACCESSRIGHTS")("unknown value").left.value shouldBe
+      ParseError(2, "Value 'unknown value' is not a valid accessright in column DDM_ACCESSRIGHTS")
   }
 
   "creator" should "return None if none of the fields are defined" in {
@@ -174,7 +143,7 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { sel
       "DCX_CREATOR_ROLE" -> ""
     )
 
-    creator(2)(row).value should matchPattern { case Success(CreatorOrganization("org", None)) => }
+    creator(2)(row).value shouldBe Valid(CreatorOrganization("org", None))
   }
 
   it should "succeed with an organisation when only the DCX_CREATOR_ORGANIZATION and DCX_CREATOR_ROLE are defined" in {
@@ -188,7 +157,8 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { sel
       "DCX_CREATOR_ROLE" -> "ProjectManager"
     )
 
-    creator(2)(row).value should matchPattern { case Success(CreatorOrganization("org", Some(ContributorRole.PROJECT_MANAGER))) => }
+    creator(2)(row).value shouldBe
+      Valid(CreatorOrganization("org", Some(ContributorRole.PROJECT_MANAGER)))
   }
 
   it should "succeed with a person when only DCX_CREATOR_INITIALS and DCX_CREATOR_SURNAME are defined" in {
@@ -202,9 +172,8 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { sel
       "DCX_CREATOR_ROLE" -> ""
     )
 
-    creator(2)(row).value should matchPattern {
-      case Success(CreatorPerson(None, "A.", None, "Jones", None, None, None)) =>
-    }
+    creator(2)(row).value shouldBe
+      Valid(CreatorPerson(None, "A.", None, "Jones", None, None, None))
   }
 
   it should "succeed with a more extensive person when more fields are filled in" in {
@@ -218,9 +187,8 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { sel
       "DCX_CREATOR_ROLE" -> "rElAtEdpErsOn"
     )
 
-    creator(2)(row).value should matchPattern {
-      case Success(CreatorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some(ContributorRole.RELATED_PERSON), Some("dai123"))) =>
-    }
+    creator(2)(row).value shouldBe
+      Valid(CreatorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some(ContributorRole.RELATED_PERSON), Some("dai123")))
   }
 
   it should "fail if DCX_CREATOR_INITIALS is not defined" in {
@@ -234,9 +202,8 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { sel
       "DCX_CREATOR_ROLE" -> ""
     )
 
-    creator(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: DCX_CREATOR_INITIALS", _)) =>
-    }
+    creator(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value for: DCX_CREATOR_INITIALS")))
   }
 
   it should "fail if DCX_CREATOR_SURNAME is not defined" in {
@@ -250,9 +217,8 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { sel
       "DCX_CREATOR_ROLE" -> ""
     )
 
-    creator(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value for: DCX_CREATOR_SURNAME", _)) =>
-    }
+    creator(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value for: DCX_CREATOR_SURNAME")))
   }
 
   it should "fail if DCX_CREATOR_INITIALS and DCX_CREATOR_SURNAME are both not defined" in {
@@ -266,9 +232,8 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { sel
       "DCX_CREATOR_ROLE" -> ""
     )
 
-    creator(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Missing value(s) for: [DCX_CREATOR_SURNAME, DCX_CREATOR_INITIALS]", _)) =>
-    }
+    creator(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Missing value(s) for: [DCX_CREATOR_SURNAME, DCX_CREATOR_INITIALS]")))
   }
 
   it should "fail if DCX_CREATOR_ROLE has an invalid value" in {
@@ -282,8 +247,7 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects { sel
       "DCX_CREATOR_ROLE" -> "invalid!"
     )
 
-    creator(2)(row).value should matchPattern {
-      case Failure(ParseException(2, "Value 'invalid!' is not a valid creator role", _)) =>
-    }
+    creator(2)(row).value shouldBe
+      Invalid(Chain(ParseError(2, "Value 'invalid!' is not a valid creator role")))
   }
 }

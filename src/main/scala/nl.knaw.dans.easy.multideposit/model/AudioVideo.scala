@@ -29,16 +29,9 @@ case class Springfield(domain: String = "dans",
 }
 object Springfield {
 
-  def withDomain(domain: String,
-                 user: String,
-                 collection: String,
-                 playMode: PlayMode
-                ): Springfield = {
-    Springfield(domain, user, collection, playMode)
-  }
-
-  def withoutDomain(user: String, collection: String, playMode: PlayMode): Springfield = {
-    Springfield(user = user, collection = collection, playMode = playMode)
+  def maybeWithDomain(domain: Option[String], user: String, collection: String, playMode: PlayMode): Springfield = {
+    domain.map(Springfield(_, user, collection, playMode))
+      .getOrElse(Springfield(user = user, collection = collection, playMode = playMode))
   }
 }
 

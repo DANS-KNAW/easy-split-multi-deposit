@@ -15,59 +15,54 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import cats.instances.either._
+import cats.instances.option._
+import cats.syntax.apply._
+import cats.syntax.either._
+import cats.syntax.option._
+import cats.syntax.traverse._
 import nl.knaw.dans.common.lang.dataset.AccessCategory
-import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
+import nl.knaw.dans.easy.multideposit.model.{ ContributorRole, Creator, CreatorOrganization, CreatorPerson, NonEmptyList, Profile, listToNEL }
 import org.joda.time.DateTime
-import nl.knaw.dans.lib.error._
-
-import scala.util.{ Failure, Success, Try }
 
 trait ProfileParser {
   this: ParserUtils =>
 
-  def extractProfile(rows: DepositRows, rowNum: Int): Try[Profile] = {
-    Try { Profile.curried }
-      .combine(extractNEL(rows, rowNum, "DC_TITLE"))
-      .combine(extractNEL(rows, rowNum, "DC_DESCRIPTION"))
-      .combine(extractList(rows)(creator)
-        .flatMap {
-          case Seq() => Failure(ParseException(rowNum, "There should be at least one non-empty value for the creator fields"))
-          case xs => Success(listToNEL(xs))
-        })
-      .combine(extractList(rows)(date("DDM_CREATED"))
-        .flatMap(exactlyOne(rowNum, List("DDM_CREATED"))))
-      .combine(extractList(rows)(date("DDM_AVAILABLE"))
-        .flatMap(atMostOne(rowNum, List("DDM_AVAILABLE")))
-        .map(_.getOrElse(DateTime.now())))
-      .combine(extractNEL(rows, rowNum, "DDM_AUDIENCE"))
-      .combine(extractList(rows)(accessCategory)
-        .flatMap(exactlyOne(rowNum, List("DDM_ACCESSRIGHTS"))))
-      .flatMap {
-        case Profile(_, _, _, _, _, audiences, AccessCategory.GROUP_ACCESS) if !audiences.contains("D37000") =>
-          Failure(ParseException(rowNum, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE " +
-            s"should be D37000 (Archaeology), but it contains: ${ audiences.mkString("[", ", ", "]") }"))
-        case profile => Success(profile)
+  def extractProfile(rowNum: Int, rows: DepositRows): Validated[Profile] = {
+    (
+      extractAtLeastOne(rowNum, "DC_TITLE", rows).toValidated,
+      extractAtLeastOne(rowNum, "DC_DESCRIPTION", rows).toValidated,
+      extractCreators(rowNum, rows),
+      extractExactlyOne(rowNum, "DDM_CREATED", rows)
+        .flatMap(date(rowNum, "DDM_CREATED"))
+        .toValidated,
+      extractAtMostOne(rowNum, "DDM_AVAILABLE", rows)
+        .flatMap(_.map(date(rowNum, "DDM_AVAILABLE")).getOrElse(DateTime.now().asRight))
+        .toValidated,
+      extractAtLeastOne(rowNum, "DDM_AUDIENCE", rows).toValidated,
+      extractExactlyOne(rowNum, "DDM_ACCESSRIGHTS", rows)
+        .flatMap(accessCategory(rowNum, "DDM_ACCESSRIGHTS"))
+        .toValidated,
+    ).mapN(Profile)
+      .ensure(ParseError(rowNum, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeology)").chained) {
+        case Profile(_, _, _, _, _, audiences, AccessCategory.GROUP_ACCESS) => audiences.contains("D37000")
+        case _ => true
       }
   }
 
-  def date(columnName: MultiDepositKey)(rowNum: => Int)(row: DepositRow): Option[Try[DateTime]] = {
-    row.find(columnName)
-      .map(date => Try { DateTime.parse(date) }.recoverWith {
-        case e: IllegalArgumentException => Failure(ParseException(rowNum, s"$columnName value " +
-          s"'$date' does not represent a date", e))
-      })
+  private def extractCreators(rowNum: Int, rows: DepositRows): Validated[NonEmptyList[Creator]] = {
+    extractList(rows)(creator)
+      .ensure(ParseError(rowNum, "There should be at least one non-empty value for the creator fields").chained)(_.nonEmpty)
+      .map(listToNEL)
   }
 
-  def accessCategory(rowNum: => Int)(row: DepositRow): Option[Try[AccessCategory]] = {
-    row.find("DDM_ACCESSRIGHTS")
-      .map(acc => Try { AccessCategory.valueOf(acc) }
-        .recoverWith {
-          case e: IllegalArgumentException => Failure(ParseException(rowNum, s"Value '$acc' is " +
-            s"not a valid accessright", e))
-        })
+  def accessCategory(rowNum: => Int, columnName: => String)(s: String): FailFast[AccessCategory] = {
+    Either.catchOnly[IllegalArgumentException] { AccessCategory.valueOf(s) }
+      .leftMap(_ => ParseError(rowNum, s"Value '$s' is not a valid accessright in column $columnName"))
   }
 
-  def creator(rowNum: => Int)(row: DepositRow): Option[Try[Creator]] = {
+  def creator(rowNum: => Int)(row: DepositRow): Option[Validated[Creator]] = {
     val titles = row.find("DCX_CREATOR_TITLES")
     val initials = row.find("DCX_CREATOR_INITIALS")
     val insertions = row.find("DCX_CREATOR_INSERTIONS")
@@ -77,31 +72,32 @@ trait ProfileParser {
     val cRole = row.find("DCX_CREATOR_ROLE")
 
     (titles, initials, insertions, surname, organization, dai, cRole) match {
-      case (None, None, None, None, None, None, None) => None
+      case (None, None, None, None, None, None, None) => none
       case (None, None, None, None, Some(org), None, _) => Some {
-        cRole.map(creatorRole(rowNum))
-          .map(Try { CreatorOrganization.curried }.map(_ (org)).combine(_))
-          .getOrElse(Try { CreatorOrganization(org) })
+        (
+          org.toValidated,
+          cRole.map(creatorRole(rowNum)).sequence[FailFast, ContributorRole].toValidated,
+        ).mapN(CreatorOrganization)
       }
       case (_, Some(init), _, Some(sur), _, _, _) => Some {
-        cRole.map(creatorRole(rowNum))
-          .map(Try { CreatorPerson.curried }
-            .map(_ (titles))
-            .map(_ (init))
-            .map(_ (insertions))
-            .map(_ (sur))
-            .map(_ (organization))
-            .combine(_)
-            .map(_ (dai)))
-          .getOrElse(Try { CreatorPerson(titles, init, insertions, sur, organization, dai = dai) })
+        (
+          titles.toValidated,
+          init.toValidated,
+          insertions.toValidated,
+          sur.toValidated,
+          organization.toValidated,
+          cRole.map(creatorRole(rowNum)).sequence[FailFast, ContributorRole].toValidated,
+          dai.toValidated,
+        ).mapN(CreatorPerson)
       }
-      case (_, _, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME")))
+      case (_, _, _, _, _, _, _) => Some {
+        missingRequired(rowNum, row, Set("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME")).toInvalid
+      }
     }
   }
 
-  def creatorRole(rowNum: => Int)(role: String): Try[Option[ContributorRole.Value]] = {
+  private def creatorRole(rowNum: => Int)(role: String): FailFast[ContributorRole] = {
     ContributorRole.valueOf(role)
-      .map(v => Success(Option(v)))
-      .getOrElse(Failure(ParseException(rowNum, s"Value '$role' is not a valid creator role")))
+      .toRight(ParseError(rowNum, s"Value '$role' is not a valid creator role"))
   }
 }

@@ -25,6 +25,8 @@ import nl.knaw.dans.common.lang.dataset.AccessCategory._
 // TODO move this enum to the DDM library
 object FileAccessRights extends Enumeration {
 
+  type FileAccessRights = Value
+
   val
   ANONYMOUS, // a user that is not logged in
   KNOWN, // a logged in user

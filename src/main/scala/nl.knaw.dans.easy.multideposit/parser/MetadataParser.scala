@@ -15,39 +15,158 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.lib.error._
-import org.joda.time.DateTime
+import java.util.Locale
 
-import scala.util.{ Failure, Success, Try }
+import cats.instances.either._
+import cats.instances.option._
+import cats.syntax.apply._
+import cats.syntax.either._
+import cats.syntax.option._
+import cats.syntax.traverse._
+import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
+import nl.knaw.dans.easy.multideposit.model.DcType.DcType
+import nl.knaw.dans.easy.multideposit.model.IdentifierType.IdentifierType
+import nl.knaw.dans.easy.multideposit.model._
 
 trait MetadataParser {
   this: ParserUtils =>
 
   val userLicenses: Set[String]
 
-  def extractMetadata(rows: DepositRows, rowNum: Int): Try[Metadata] = {
-    Try { Metadata.curried }
-      .map(_ (extractList(rows, "DCT_ALTERNATIVE")))
-      .map(_ (extractList(rows, "DC_PUBLISHER")))
-      .combine(extractList(rows)(dcType).map(_ defaultIfEmpty DcType.DATASET))
-      .map(_ (extractList(rows, "DC_FORMAT")))
-      .combine(extractList(rows)(identifier))
-      .map(_ (extractList(rows, "DC_SOURCE")))
-      .combine(extractList(rows)(iso639_2Language("DC_LANGUAGE")))
-      .map(_ (extractList(rows, "DCT_SPATIAL")))
-      .map(_ (extractList(rows, "DCT_RIGHTSHOLDER")))
-      .combine(extractList(rows)(relation))
-      .combine(extractList(rows)(dateColumn))
-      .combine(extractList(rows)(contributor))
-      .combine(extractList(rows)(subject))
-      .combine(extractList(rows)(spatialPoint))
-      .combine(extractList(rows)(spatialBox))
-      .combine(extractList(rows)(temporal))
-      .combine(extractList(rows)(userLicense).flatMap(atMostOne(rowNum, List("DCT_LICENSE"))))
+  def extractMetadata(rowNum: Int, rows: DepositRows): Validated[Metadata] = {
+    (
+      extractList(rows, "DCT_ALTERNATIVE").toValidated,
+      extractList(rows, "DC_PUBLISHER").toValidated,
+      extractDcType(rows),
+      extractList(rows, "DC_FORMAT").toValidated,
+      extractList(rows)(identifier),
+      extractList(rows, "DC_SOURCE").toValidated,
+      extractList(rows)(iso639_2Language("DC_LANGUAGE")),
+      extractList(rows, "DCT_SPATIAL").toValidated,
+      extractList(rows, "DCT_RIGHTSHOLDER").toValidated,
+      extractList(rows)(relation),
+      extractList(rows)(dateColumn),
+      extractList(rows)(contributor),
+      extractList(rows)(subject),
+      extractList(rows)(spatialPoint),
+      extractList(rows)(spatialBox),
+      extractList(rows)(temporal),
+      extractAtMostOne(rowNum, "DCT_LICENSE", rows)
+        .flatMap {
+          case Some(license) => userLicense(rowNum, "DCT_LICENSE")(license).map(_.some)
+          case None => none.asRight
+        }
+        .toValidated,
+    ).mapN(Metadata)
   }
 
-  def contributor(rowNum: => Int)(row: DepositRow): Option[Try[Contributor]] = {
+  def extractDcType(rows: DepositRows): Validated[NonEmptyList[DcType]] = {
+    extractList(rows)(dcType).map(_ defaultIfEmpty DcType.DATASET)
+  }
+
+  def dcType(rowNum: => Int)(row: DepositRow): Option[Validated[DcType]] = {
+    row.find("DC_TYPE")
+      .map(t => DcType.valueOf(t)
+        .map(_.toValidated)
+        .getOrElse(ParseError(rowNum, s"Value '$t' is not a valid type").toInvalid))
+  }
+
+  def identifier(rowNum: => Int)(row: DepositRow): Option[Validated[Identifier]] = {
+    val identifier = row.find("DC_IDENTIFIER")
+    val idType = row.find("DC_IDENTIFIER_TYPE")
+
+    (identifier, idType) match {
+      case (Some(id), idt) => Some {
+        (
+          id.toValidated,
+          idt.map(identifierType(rowNum)).sequence[FailFast, IdentifierType].toValidated
+        ).mapN(Identifier)
+      }
+      case (None, Some(_)) => Some {
+        missingRequired(rowNum, row, Set("DC_IDENTIFIER")).toInvalid
+      }
+      case (None, None) => none
+    }
+  }
+
+  private def identifierType(rowNum: => Int)(role: String): FailFast[IdentifierType] = {
+    IdentifierType.valueOf(role)
+      .toRight(ParseError(rowNum, s"Value '$role' is not a valid identifier type"))
+  }
+
+  private lazy val iso639v2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
+
+  def iso639_2Language(columnName: MultiDepositKey)(rowNum: => Int)(row: DepositRow): Option[Validated[String]] = {
+    row.find(columnName)
+      .map(lang => {
+        // Most ISO 639-2/T languages are contained in the iso639v2Languages Set.
+        // However, some of them are not and need to be checked using the second predicate.
+        // The latter also allows to check ISO 639-2/B language codes.
+        lazy val b0 = lang.length == 3
+        lazy val b1 = iso639v2Languages.contains(lang)
+        lazy val b2 = new Locale(lang).getDisplayLanguage.toLowerCase != lang.toLowerCase
+
+        if (b0 && (b1 || b2)) lang.toValidated
+        else ParseError(rowNum, s"Value '$lang' is not a valid value for $columnName").toInvalid
+      })
+  }
+
+  def relation(rowNum: => Int)(row: DepositRow): Option[Validated[Relation]] = {
+    val qualifier = row.find("DCX_RELATION_QUALIFIER")
+    val link = row.find("DCX_RELATION_LINK")
+    val title = row.find("DCX_RELATION_TITLE")
+
+    (qualifier, link, title) match {
+      case (Some(_), None, None) => Some {
+        ParseError(rowNum, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well").toInvalid
+      }
+      case (_, Some(_), None) => Some {
+        ParseError(rowNum, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context").toInvalid
+      }
+      case (Some(q), l, t) => Some {
+        (
+          RelationQualifier.valueOf(q).map(_.toValidated).getOrElse(ParseError(rowNum, s"Value '$q' is not a valid relation qualifier").toInvalid),
+          l.toValidated,
+          t.toValidated,
+        ).mapN(QualifiedRelation)
+      }
+      case (None, None, None) => None
+      case (None, l, t) => Some {
+        UnqualifiedRelation(l, t).toValidated
+      }
+    }
+  }
+
+  def dateColumn(rowNum: => Int)(row: DepositRow): Option[Validated[Date]] = {
+    val dateString = row.find("DCT_DATE")
+    val qualifierString = row.find("DCT_DATE_QUALIFIER")
+
+    (dateString, qualifierString) match {
+      case (Some(d), Some(q)) => Some {
+        (
+          date(rowNum, "DCT_DATE")(d).toValidated,
+          DateQualifier.valueOf(q)
+            .map(_.toValidated)
+            .getOrElse {
+              q.toLowerCase match {
+                case "created" => ParseError(rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_CREATED instead.").toInvalid
+                case "available" => ParseError(rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_AVAILABLE instead.").toInvalid
+                case _ => ParseError(rowNum, s"Value '$q' is not a valid date qualifier").toInvalid
+              }
+            },
+        ).mapN(QualifiedDate)
+      }
+      case (Some(d), None) => Some {
+        TextualDate(d).toValidated
+      }
+      case (None, Some(_)) => Some {
+        ParseError(rowNum, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it").toInvalid
+      }
+      case (None, None) => None
+    }
+  }
+
+  def contributor(rowNum: => Int)(row: DepositRow): Option[Validated[Contributor]] = {
     val titles = row.find("DCX_CONTRIBUTOR_TITLES")
     val initials = row.find("DCX_CONTRIBUTOR_INITIALS")
     val insertions = row.find("DCX_CONTRIBUTOR_INSERTIONS")
@@ -59,139 +178,68 @@ trait MetadataParser {
     (titles, initials, insertions, surname, organization, dai, cRole) match {
       case (None, None, None, None, None, None, None) => None
       case (None, None, None, None, Some(org), None, _) => Some {
-        cRole.map(contributorRole(rowNum))
-          .map(Try { ContributorOrganization.curried }.map(_ (org)).combine(_))
-          .getOrElse(Try { ContributorOrganization(org) })
+        (
+          org.toValidated,
+          cRole.map(contributorRole(rowNum)).sequence[FailFast, ContributorRole].toValidated,
+        ).mapN(ContributorOrganization)
       }
       case (_, Some(init), _, Some(sur), _, _, _) => Some {
-        cRole.map(contributorRole(rowNum))
-          .map(Try { ContributorPerson.curried }
-            .map(_ (titles))
-            .map(_ (init))
-            .map(_ (insertions))
-            .map(_ (sur))
-            .map(_ (organization))
-            .combine(_)
-            .map(_ (dai)))
-          .getOrElse(Try { ContributorPerson(titles, init, insertions, sur, organization, dai = dai) })
+        (
+          titles.toValidated,
+          init.toValidated,
+          insertions.toValidated,
+          sur.toValidated,
+          organization.toValidated,
+          cRole.map(contributorRole(rowNum)).sequence[FailFast, ContributorRole].toValidated,
+          dai.toValidated,
+        ).mapN(ContributorPerson)
       }
-      case (_, _, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")))
+      case (_, _, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")).toInvalid)
     }
   }
 
-  def contributorRole(rowNum: => Int)(role: String): Try[Option[ContributorRole.Value]] = {
+  private def contributorRole(rowNum: => Int)(role: String): FailFast[ContributorRole] = {
     ContributorRole.valueOf(role)
-      .map(v => Success(Option(v)))
-      .getOrElse(Failure(ParseException(rowNum, s"Value '$role' is not a valid contributor role")))
+      .toRight(ParseError(rowNum, s"Value '$role' is not a valid contributor role"))
   }
 
-  def identifier(rowNum: => Int)(row: DepositRow): Option[Try[Identifier]] = {
-    val identifier = row.find("DC_IDENTIFIER")
-    val identifierType = row.find("DC_IDENTIFIER_TYPE")
-
-    (identifier, identifierType) match {
-      case (Some(id), idt) => Some {
-        idt.map(s => {
-          val triedIdentifierType = IdentifierType.valueOf(s)
-            .map(v => Success(Option(v)))
-            .getOrElse(Failure(ParseException(rowNum, s"Value '$s' is not a valid identifier type")))
-
-          Try { Identifier.curried }.map(_ (id)).combine(triedIdentifierType)
-        }).getOrElse(Try { Identifier(id) })
-      }
-      case (None, Some(_)) => Some(missingRequired(rowNum, row, Set("DC_IDENTIFIER")))
-      case (None, None) => None
-    }
-  }
-
-  def dcType(rowNum: => Int)(row: DepositRow): Option[Try[DcType.Value]] = {
-    row.find("DC_TYPE")
-      .map(t => DcType.valueOf(t)
-        .map(Success(_))
-        .getOrElse(Failure(ParseException(rowNum, s"Value '$t' is not a valid type"))))
-  }
-
-  def relation(rowNum: => Int)(row: DepositRow): Option[Try[Relation]] = {
-    val qualifier = row.find("DCX_RELATION_QUALIFIER")
-    val link = row.find("DCX_RELATION_LINK")
-    val title = row.find("DCX_RELATION_TITLE")
-
-    (qualifier, link, title) match {
-      case (Some(_), None, None) => Some(Failure(ParseException(rowNum, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well")))
-      case (_, Some(_), None) => Some(Failure(ParseException(rowNum, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context")))
-      case (Some(q), l, t) =>
-        RelationQualifier.valueOf(q)
-          .map(qf => Success(QualifiedRelation(qf, l, t)))
-          .orElse(Some(Failure(ParseException(rowNum, s"Value '$q' is not a valid relation qualifier"))))
-      case (None, None, None) => None
-      case (None, l, t) => Some(Try { UnqualifiedRelation(l, t) })
-    }
-  }
-
-  def dateColumn(rowNum: => Int)(row: DepositRow): Option[Try[Date]] = {
-    val dateString = row.find("DCT_DATE")
-    val qualifierString = row.find("DCT_DATE_QUALIFIER")
-
-    (dateString, qualifierString) match {
-      case (Some(d), Some(q)) =>
-        DateQualifier.valueOf(q)
-          .map(qualifier => {
-            Try { DateTime.parse(d) }
-              .map(date => Some(Success(QualifiedDate(date, qualifier))))
-              .getOrRecover(e => Some(Failure(ParseException(rowNum, s"DCT_DATE value '$d' does not represent a date", e))))
-          })
-          .getOrElse {
-            q.toLowerCase match {
-              case "created" => Some(Failure(ParseException(rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_CREATED instead.")))
-              case "available" => Some(Failure(ParseException(rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_AVAILABLE instead.")))
-              case _ => Some(Failure(ParseException(rowNum, s"Value '$q' is not a valid date qualifier")))
-            }
-          }
-      case (Some(d), None) => Some(Success(TextualDate(d)))
-      case (None, Some(_)) => Some(Failure(ParseException(rowNum, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it")))
-      case (None, None) => None
-    }
-  }
-
-  def subject(rowNum: => Int)(row: DepositRow): Option[Try[Subject]] = {
+  def subject(rowNum: => Int)(row: DepositRow): Option[Validated[Subject]] = {
     val subject = row.find("DC_SUBJECT")
     val scheme = row.find("DC_SUBJECT_SCHEME")
 
     (subject, scheme) match {
-      case (Some(subj), Some(sch)) if sch == "abr:ABRcomplex" => Some(Try { Subject(subj, Some(sch)) })
-      case (Some(_), Some(_)) => Some(Failure(ParseException(rowNum, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'")))
-      case (Some(subj), None) => Some(Try { Subject(subj) })
-      case (None, Some(_)) => Some(Try { Subject(scheme = scheme) })
+      case (Some(subj), sch) => Some {
+        val subjectScheme: Validated[Option[String]] = sch.toValidated.ensure(ParseError(rowNum, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'").chained)(_.forall(_ == "abr:ABRcomplex"))
+
+        (
+          subj.toValidated,
+          subjectScheme,
+        ).mapN(Subject)
+      }
+      case (None, Some(_)) => Some {
+        Subject(scheme = scheme).toValidated
+      }
       case (None, None) => None
     }
   }
 
-  def temporal(rowNum: => Int)(row: DepositRow): Option[Try[Temporal]] = {
-    val temporal = row.find("DCT_TEMPORAL")
-    val scheme = row.find("DCT_TEMPORAL_SCHEME")
-
-    (temporal, scheme) match {
-      case (Some(temp), Some(sch)) if sch == "abr:ABRperiode" => Some(Try { Temporal(temp, Some(sch)) })
-      case (Some(_), Some(_)) => Some(Failure(ParseException(rowNum, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'")))
-      case (Some(temp), None) => Some(Try { Temporal(temp, None) })
-      case (None, Some(_)) => Some(Try { Temporal(scheme = scheme) })
-      case (None, None) => None
-    }
-  }
-
-  def spatialPoint(rowNum: => Int)(row: DepositRow): Option[Try[SpatialPoint]] = {
+  def spatialPoint(rowNum: => Int)(row: DepositRow): Option[Validated[SpatialPoint]] = {
     val maybeX = row.find("DCX_SPATIAL_X")
     val maybeY = row.find("DCX_SPATIAL_Y")
     val maybeScheme = row.find("DCX_SPATIAL_SCHEME")
 
     (maybeX, maybeY, maybeScheme) match {
-      case (Some(x), Some(y), scheme) => Some(Try { SpatialPoint(x, y, scheme) })
+      case (Some(x), Some(y), scheme) => Some {
+        SpatialPoint(x, y, scheme).toValidated
+      }
       case (None, None, _) => None
-      case _ => Some(missingRequired(rowNum, row, Set("DCX_SPATIAL_X", "DCX_SPATIAL_Y")))
+      case _ => Some {
+        missingRequired(rowNum, row, Set("DCX_SPATIAL_X", "DCX_SPATIAL_Y")).toInvalid
+      }
     }
   }
 
-  def spatialBox(rowNum: => Int)(row: DepositRow): Option[Try[SpatialBox]] = {
+  def spatialBox(rowNum: => Int)(row: DepositRow): Option[Validated[SpatialBox]] = {
     val west = row.find("DCX_SPATIAL_WEST")
     val east = row.find("DCX_SPATIAL_EAST")
     val south = row.find("DCX_SPATIAL_SOUTH")
@@ -199,19 +247,41 @@ trait MetadataParser {
     val maybeScheme = row.find("DCX_SPATIAL_SCHEME")
 
     (west, east, south, north, maybeScheme) match {
-      case (Some(w), Some(e), Some(s), Some(n), scheme) => Some(Try { SpatialBox(n, s, e, w, scheme) })
+      case (Some(w), Some(e), Some(s), Some(n), scheme) => Some {
+        SpatialBox(n, s, e, w, scheme).toValidated
+      }
       case (None, None, None, None, _) => None
-      case _ => Some(missingRequired(rowNum, row, Set("DCX_SPATIAL_WEST", "DCX_SPATIAL_EAST", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_NORTH")))
+      case _ => Some {
+        missingRequired(rowNum, row, Set("DCX_SPATIAL_WEST", "DCX_SPATIAL_EAST", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_NORTH")).toInvalid
+      }
     }
   }
 
-  def userLicense(rowNum: => Int)(row: DepositRow): Option[Try[UserLicense]] = {
-    val license = row.find("DCT_LICENSE")
+  def temporal(rowNum: => Int)(row: DepositRow): Option[Validated[Temporal]] = {
+    val temporal = row.find("DCT_TEMPORAL")
+    val scheme = row.find("DCT_TEMPORAL_SCHEME")
 
-    license match {
-      case Some(l) if userLicenses.contains(l) => Some(Success(UserLicense(l)))
-      case Some(l) => Some(Failure(ParseException(rowNum, s"User license '$l' is not allowed.")))
-      case None => None
+    (temporal, scheme) match {
+      case (Some(temp), sch) => Some {
+        val temporalScheme: Validated[Option[String]] = sch.toValidated
+          .ensure(ParseError(rowNum, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'").chained)(_.forall(_ == "abr:ABRperiode"))
+
+        (
+          temp.toValidated,
+          temporalScheme,
+        ).mapN(Temporal)
+      }
+      case (None, Some(_)) => Some {
+        Temporal(scheme = scheme).toValidated
+      }
+      case (None, None) => None
     }
+  }
+
+  def userLicense(rowNum: => Int, columnName: => String)(licenseString: String): FailFast[UserLicense] = {
+    if (userLicenses contains licenseString)
+      UserLicense(licenseString).asRight
+    else
+      ParseError(rowNum, s"User license '$licenseString' is not allowed.").asLeft
   }
 }

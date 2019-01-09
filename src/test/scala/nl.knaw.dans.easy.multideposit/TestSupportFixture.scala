@@ -24,9 +24,9 @@ import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPa
 import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
 import org.scalatest.enablers.Existence
-import org.scalatest.{ FlatSpec, Inside, Matchers, OptionValues }
+import org.scalatest._
 
-trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
+trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with EitherValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
 
   implicit def existenceOfFile[FILE <: better.files.File]: Existence[FILE] = _.exists
 
