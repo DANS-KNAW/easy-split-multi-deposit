@@ -20,42 +20,43 @@ import java.nio.file._
 import java.nio.file.attribute._
 
 import better.files.File
+import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.DepositPermissions
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
-import nl.knaw.dans.lib.error.TryExtensions
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
 
 class SetDepositPermissions(depositPermissions: DepositPermissions) extends DebugEnhancedLogging {
 
-  def setDepositPermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+  def setDepositPermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
     logger.debug(s"set deposit permissions for $depositId")
 
-    setFilePermissions(depositId).recoverWith {
-      case e: ActionException => Failure(e)
-      case NonFatal(e) => Failure(ActionException(e.getMessage, e))
+    setFilePermissions(depositId).leftMap {
+      case e: ActionException => e
+      case e => ActionException(e.getMessage, e)
     }
   }
 
-  private def setFilePermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+  private def setFilePermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): Either[Throwable, Unit] = {
     val stagingDirectory = stage.stagingDir(depositId)
     isOnPosixFileSystem(stagingDirectory)
       .flatMap {
-        case true => Try {
+        case true => Either.catchNonFatal {
           Files.walkFileTree(stagingDirectory.path, PermissionFileVisitor(depositPermissions))
         }
-        case false => Success(())
+        case false => ().asRight
       }
   }
 
-  private def isOnPosixFileSystem(file: File): Try[Boolean] = Try {
-    file.permissions
-    true
-  } recover {
-    case _: UnsupportedOperationException => false
+  private def isOnPosixFileSystem(file: File): Either[Throwable, Boolean] = {
+    Either.catchNonFatal {
+      file.permissions
+      true
+    } recover {
+      case _: UnsupportedOperationException => false
+    }
   }
 
   private case class PermissionFileVisitor(depositPermissions: DepositPermissions) extends SimpleFileVisitor[Path] with DebugEnhancedLogging {
@@ -70,14 +71,14 @@ class SetDepositPermissions(depositPermissions: DepositPermissions) extends Debu
     }
 
     private def changePermissions(path: Path): FileVisitResult = {
-      Try {
+      Either.catchNonFatal {
         Files.setPosixFilePermissions(path, PosixFilePermissions.fromString(depositPermissions.permissions))
 
         val group = path.getFileSystem.getUserPrincipalLookupService.lookupPrincipalByGroupName(depositPermissions.group)
         Files.getFileAttributeView(path, classOf[PosixFileAttributeView], LinkOption.NOFOLLOW_LINKS).setGroup(group)
 
         FileVisitResult.CONTINUE
-      } getOrRecover {
+      }.fold({
         case upnf: UserPrincipalNotFoundException => throw ActionException(s"Group ${ depositPermissions.group } could not be found", upnf)
         case usoe: UnsupportedOperationException => throw ActionException("Not on a POSIX supported file system", usoe)
         case cce: ClassCastException => throw ActionException("No file permission elements in set", cce)
@@ -86,7 +87,7 @@ class SetDepositPermissions(depositPermissions: DepositPermissions) extends Debu
         case ioe: IOException => throw ActionException(s"Could not set file permissions or group on $path", ioe)
         case se: SecurityException => throw ActionException(s"Not enough privileges to set file permissions or group on $path", se)
         case NonFatal(e) => throw ActionException(s"unexpected error occured on $path", e)
-      }
+      }, fvr => fvr)
     }
   }
 }

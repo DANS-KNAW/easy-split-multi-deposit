@@ -22,8 +22,6 @@ import better.files.File
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.{ Failure, Success }
-
 class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterEach {
 
   private val depositId1 = "ruimtereis01"
@@ -54,7 +52,7 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
   "execute" should "move the deposit to the outputDepositDirectory" in {
     val bagId = UUID.randomUUID()
 
-    action.moveDepositsToOutputDir(depositId1, bagId) shouldBe a[Success[_]]
+    action.moveDepositsToOutputDir(depositId1, bagId) shouldBe a[Right[_, _]]
 
     stagingDir(depositId1).toJava shouldNot exist
     outputDepositDir(bagId).toJava should exist
@@ -63,7 +61,7 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
   it should "only move the one deposit to the outputDepositDirectory, not other deposits in the staging directory" in {
     val bagId = UUID.randomUUID()
 
-    action.moveDepositsToOutputDir(depositId1, bagId) shouldBe a[Success[_]]
+    action.moveDepositsToOutputDir(depositId1, bagId) shouldBe a[Right[_, _]]
 
     stagingDir(depositId2).toJava should exist
     // even though ruimtereis02 is staged as well, it is not moved to the outputDepositDir
@@ -78,7 +76,7 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
     outputDepositDir(bagId).toJava should exist
 
     inside(action.moveDepositsToOutputDir(depositId1, bagId)) {
-      case Failure(ActionException(msg, cause: FileAlreadyExistsException)) =>
+      case Left(ActionException(msg, cause: FileAlreadyExistsException)) =>
         msg should startWith (s"Could not move ${stagingDir(depositId1)} to " +
           s"${outputDepositDir(bagId)}. The target directory already exists.")
 

@@ -21,7 +21,7 @@ import java.nio.file.attribute.{ PosixFilePermission, UserPrincipalNotFoundExcep
 import nl.knaw.dans.easy.multideposit.{ DepositPermissions, TestSupportFixture }
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.{ Failure, Properties, Success }
+import scala.util.Properties
 
 class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEach {
 
@@ -73,7 +73,7 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
 
     val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", userGroup))
 
-    action.setDepositPermissions(depositId) shouldBe a[Success[_]]
+    action.setDepositPermissions(depositId) shouldBe a[Right[_, _]]
 
     for (file <- filesAndFolders) {
       file.permissions should {
@@ -99,7 +99,8 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", "non-existing-group-name"))
 
     inside(action.setDepositPermissions(depositId)) {
-      case Failure(ActionException(msg, _: UserPrincipalNotFoundException)) => msg shouldBe "Group non-existing-group-name could not be found"
+      case Left(ActionException(msg, _: UserPrincipalNotFoundException)) =>
+        msg shouldBe "Group non-existing-group-name could not be found"
     }
   }
 
@@ -107,7 +108,8 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val action = new SetDepositPermissions(DepositPermissions("abcdefghi", "admin"))
 
     inside(action.setDepositPermissions(depositId)) {
-      case Failure(ActionException(msg, _: IllegalArgumentException)) => msg shouldBe "Invalid privileges (abcdefghi)"
+      case Left(ActionException(msg, _: IllegalArgumentException)) =>
+        msg shouldBe "Invalid privileges (abcdefghi)"
     }
   }
 
@@ -115,7 +117,8 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", unrelatedGroup))
 
     inside(action.setDepositPermissions(depositId)) {
-      case Failure(ActionException(msg, _: FileSystemException)) => msg should include(s"Not able to set the group to $unrelatedGroup")
+      case Left(ActionException(msg, _: FileSystemException)) =>
+        msg should include(s"Not able to set the group to $unrelatedGroup")
     }
   }
 }

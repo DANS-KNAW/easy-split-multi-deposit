@@ -16,17 +16,19 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
+import cats.data.ValidatedNec
+import cats.instances.list._
+import cats.syntax.either._
+import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit, DepositId }
 import nl.knaw.dans.easy.multideposit.{ FfprobeRunner, Ldap }
-import nl.knaw.dans.lib.error._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-
-import scala.util.{ Failure, Success, Try }
 
 class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnhancedLogging {
 
-  def validateDeposit(deposit: Deposit)(implicit stage: StagingPathExplorer): Try[Unit] = {
+  //  TODO refactor to Validated
+  def validateDeposit(deposit: Deposit)(implicit stage: StagingPathExplorer): Either[Throwable, Unit] = {
     val id = deposit.depositId
     logger.debug(s"validating deposit $id")
     for {
@@ -36,41 +38,47 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
     } yield ()
   }
 
-  def checkDirectoriesDoNotExist(depositId: DepositId)(directories: File*): Try[Unit] = {
+  def checkDirectoriesDoNotExist(depositId: DepositId)(directories: File*): Either[ActionException, Unit] = {
     logger.debug(s"check directories don't exist yet: ${ directories.mkString("[", ", ", "]") }")
 
     directories.find(_.exists)
-      .map(file => Failure(ActionException(s"The deposit for dataset $depositId already exists in $file.")))
-      .getOrElse(Success(()))
+      .map(file => ActionException(s"The deposit for dataset $depositId already exists in $file.").asLeft)
+      .getOrElse(().asRight)
   }
 
-  def checkAudioVideoNotCorrupt(deposit: Deposit): Try[Unit] = {
+  def checkAudioVideoNotCorrupt(deposit: Deposit): Either[InvalidInputException, Unit] = {
     logger.debug("check that A/V files can be successfully probed by ffprobe")
 
+    type Validated[T] = ValidatedNec[Throwable, T]
+
     deposit.files.collect { case fmd: AVFileMetadata => fmd.filepath }
-      .map(ffprobe.run)
-      .collectResults
-      .recoverWith {
-        case CompositeException(errors) =>
-          Failure(InvalidInputException(deposit.row, s"Possibly found corrupt A/V files. Ffprobe failed when probing the following files:\n${
-            errors.map { case FfprobeErrorException(t, e, _) => s" - File: $t, exit code: $e" }.mkString("\n")
-          }"))
-      }.map(_ => ())
+      .map(ffprobe.run(_).toValidatedNec)
+      .toList
+      .sequence[Validated, Unit]
+      .leftMap(errors => {
+        val ffProbeErrors = errors.toNonEmptyList.toList
+          .map { case FfprobeErrorException(t, e, _) => s" - File: $t, exit code: $e" }
+          .mkString("\n")
+
+        InvalidInputException(deposit.row, "Possibly found corrupt A/V files. Ffprobe failed when probing the following files:\\n" + ffProbeErrors)
+      })
+      .map(_ => ())
+      .toEither
   }
 
-  def checkDepositorUserId(deposit: Deposit): Try[Unit] = {
+  def checkDepositorUserId(deposit: Deposit): Either[Throwable, Unit] = {
     logger.debug("check that the depositor is an active user")
 
     val depositorUserId = deposit.depositorUserId
     ldap.query(depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE"))
       .flatMap {
-        case Seq() => Failure(InvalidInputException(deposit.row, s"depositorUserId '$depositorUserId' is unknown"))
-        case Seq(head) => Success(head)
-        case _ => Failure(ActionException(s"There appear to be multiple users with id '$depositorUserId'"))
+        case Seq() => InvalidInputException(deposit.row, s"depositorUserId '$depositorUserId' is unknown").asLeft
+        case Seq(head) => head.asRight
+        case _ => ActionException(s"There appear to be multiple users with id '$depositorUserId'").asLeft
       }
       .flatMap {
-        case true => Success(())
-        case false => Failure(InvalidInputException(deposit.row, s"The depositor '$depositorUserId' is not an active user"))
+        case true => ().asRight
+        case false => InvalidInputException(deposit.row, s"The depositor '$depositorUserId' is not an active user").asLeft
       }
   }
 }

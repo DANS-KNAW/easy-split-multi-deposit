@@ -40,7 +40,7 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
 
   "addDepositProperties" should "generate the properties file and write the properties in it" in {
     val uuid = UUID.randomUUID()
-    action.addDepositProperties(testInstructions1.copy(audioVideo = AudioVideo()).toDeposit().copy(bagId = uuid), datamanagerId, datamanagerEmail) shouldBe a[Success[_]]
+    action.addDepositProperties(testInstructions1.copy(audioVideo = AudioVideo()).toDeposit().copy(bagId = uuid), datamanagerId, datamanagerEmail) shouldBe a[Right[_, _]]
 
     val props = stagingPropertiesFile(testInstructions1.depositId)
     props.toJava should exist
@@ -84,7 +84,7 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
   it should "generate the properties file with springfield fields and write the properties in it" in {
     val uuid = UUID.randomUUID()
 
-    action.addDepositProperties(testInstructions1.toDeposit().copy(bagId = uuid), datamanagerId, datamanagerEmail) shouldBe a[Success[_]]
+    action.addDepositProperties(testInstructions1.toDeposit().copy(bagId = uuid), datamanagerId, datamanagerEmail) shouldBe a[Right[_, _]]
 
     val props = stagingPropertiesFile(testInstructions1.depositId)
     props.toJava should exist

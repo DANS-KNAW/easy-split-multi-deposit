@@ -54,8 +54,8 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
     for {
       _ <- Try { Locale.setDefault(Locale.US) }
       deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(e => ParseFailed(e.report)).toTry
-      _ <- deposits.map(validator.validateDeposit).collectResults
-      _ <- datamanager.getDatamanagerEmailaddress(datamanagerId)
+      _ <- deposits.map(validator.validateDeposit(_).toTry).collectResults
+      _ <- datamanager.getDatamanagerEmailaddress(datamanagerId).toTry
     } yield deposits
   }
 
@@ -67,17 +67,17 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
     for {
       _ <- Try { Locale.setDefault(Locale.US) }
       deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(e => ParseFailed(e.report)).toTry
-      dataManagerEmailAddress <- datamanager.getDatamanagerEmailaddress(datamanagerId)
+      dataManagerEmailAddress <- datamanager.getDatamanagerEmailaddress(datamanagerId).toTry
       _ <- deposits.mapUntilFailure(convertDeposit(paths, datamanagerId, dataManagerEmailAddress)).recoverWith {
-        case NonFatal(e) => deposits.mapUntilFailure(d => createDirs.discardDeposit(d.depositId)) match {
+        case NonFatal(e) => deposits.mapUntilFailure(d => createDirs.discardDeposit(d.depositId).toTry) match {
           case Success(_) => Failure(e)
           case Failure(e2) => Failure(ActionException("discarding deposits failed after creating deposits failed", new CompositeException(e, e2)))
         }
       }
       _ = logger.info("deposits were created successfully")
-      _ <- reportDatasets.report(deposits)
+      _ <- reportDatasets.report(deposits).toTry
       _ = logger.info(s"report generated at ${ paths.reportFile }")
-      _ <- deposits.mapUntilFailure(deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId))
+      _ <- deposits.mapUntilFailure(deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId).toTry)
       _ = logger.info(s"deposits were successfully moved to ${ output.outputDepositDir }")
     } yield ()
   }
@@ -91,14 +91,14 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
     logger.info(s"convert ${ depositId }")
 
     for {
-      _ <- validator.validateDeposit(deposit)
-      _ <- createDirs.createDepositDirectories(depositId)
-      _ <- createBag.addBagToDeposit(depositId, deposit.profile.created, deposit.baseUUID)
-      _ <- createDirs.createMetadataDirectory(depositId)
-      _ <- datasetMetadata.addDatasetMetadata(deposit)
-      _ <- fileMetadata.addFileMetadata(depositId, deposit.files)
-      _ <- depositProperties.addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress)
-      _ <- setPermissions.setDepositPermissions(depositId)
+      _ <- validator.validateDeposit(deposit).toTry
+      _ <- createDirs.createDepositDirectories(depositId).toTry
+      _ <- createBag.addBagToDeposit(depositId, deposit.profile.created, deposit.baseUUID).toTry
+      _ <- createDirs.createMetadataDirectory(depositId).toTry
+      _ <- datasetMetadata.addDatasetMetadata(deposit).toTry
+      _ <- fileMetadata.addFileMetadata(depositId, deposit.files).toTry
+      _ <- depositProperties.addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress).toTry
+      _ <- setPermissions.setDepositPermissions(depositId).toTry
       _ = logger.info(s"deposit was created successfully for $depositId with bagId ${ deposit.bagId }")
     } yield ()
   }

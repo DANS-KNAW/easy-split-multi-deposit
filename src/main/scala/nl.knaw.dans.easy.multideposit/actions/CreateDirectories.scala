@@ -16,40 +16,35 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
+import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.util.control.NonFatal
-import scala.util.{ Failure, Try }
-
 class CreateDirectories extends DebugEnhancedLogging {
 
-  def createDepositDirectories(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+  def createDepositDirectories(depositId: DepositId)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
     createDirectories(stage.stagingDir(depositId), stage.stagingBagDir(depositId))
   }
 
-  def createMetadataDirectory(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+  def createMetadataDirectory(depositId: DepositId)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
     createDirectories(stage.stagingBagMetadataDir(depositId))
   }
 
-  private def createDirectories(directories: File*): Try[Unit] = {
-    Try {
+  private def createDirectories(directories: File*): Either[ActionException, Unit] = {
+    Either.catchNonFatal {
       for (directory <- directories) {
         logger.debug(s"create directory $directory")
         directory.createDirectories()
       }
-    } recoverWith {
-      case NonFatal(e) => Failure(ActionException(s"Could not create the directories at $directories", e))
-    }
+    }.leftMap(e => ActionException(s"Could not create the directories at $directories", e))
   }
 
-  def discardDeposit(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+  def discardDeposit(depositId: DepositId)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
     logger.debug(s"delete deposit '$depositId' from staging directory")
 
     val dir = stage.stagingDir(depositId)
-    Try { if (dir.exists) dir.delete(); () } recoverWith {
-      case NonFatal(e) => Failure(ActionException(s"Could not delete $dir", e))
-    }
+    Either.catchNonFatal { if (dir.exists) dir.delete(); () }
+      .leftMap(e => ActionException(s"Could not delete $dir", e))
   }
 }

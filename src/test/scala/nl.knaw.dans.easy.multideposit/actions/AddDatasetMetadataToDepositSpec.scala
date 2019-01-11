@@ -25,7 +25,6 @@ import nl.knaw.dans.easy.multideposit.{ CustomMatchers, TestSupportFixture }
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.Success
 import scala.xml.{ Elem, Node }
 
 class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatchers with BeforeAndAfterEach {
@@ -139,7 +138,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
 
     file.toJava shouldNot exist
 
-    action.addDatasetMetadata(deposit) shouldBe a[Success[_]]
+    action.addDatasetMetadata(deposit) shouldBe a[Right[_, _]]
 
     file.toJava should exist
   }

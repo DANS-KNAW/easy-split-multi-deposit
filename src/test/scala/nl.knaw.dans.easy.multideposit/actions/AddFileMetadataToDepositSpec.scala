@@ -59,7 +59,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
       )
     )
 
-    action.addFileMetadata(depositId, fileMetadata) shouldBe a[Success[_]]
+    action.addFileMetadata(depositId, fileMetadata) shouldBe a[Right[_, _]]
     stagingBagMetadataDir(depositId).toJava should exist
     stagingFileMetadataFile(depositId).toJava should exist
   }
@@ -93,7 +93,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
       )
     )
 
-    action.addFileMetadata(depositId, fileMetadata) shouldBe a[Success[_]]
+    action.addFileMetadata(depositId, fileMetadata) shouldBe a[Right[_, _]]
 
     val actual = (loadXmlNormalized(stagingFileMetadataFile(depositId)) \ "file").filter(selectVideos).toSet
     val expected = (loadXmlNormalized(File(getClass.getResource("/allfields/output/input-ruimtereis01/bag/metadata/files.xml").toURI)) \ "file").filter(selectVideos).toSet
@@ -125,7 +125,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         mimeType = "image/jpeg"
       )
     )
-    action.addFileMetadata(depositId, fileMetadata) shouldBe a[Success[_]]
+    action.addFileMetadata(depositId, fileMetadata) shouldBe a[Right[_, _]]
 
     val actual = (loadXmlNormalized(stagingFileMetadataFile(depositId)) \ "file").filter(_.isInstanceOf[Elem]).toSet
     val expected = (loadXmlNormalized(File(getClass.getResource("/allfields/output/input-ruimtereis02/bag/metadata/files.xml").toURI)) \ "file").filter(_.isInstanceOf[Elem]).toSet
@@ -136,7 +136,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
 
   it should "produce the xml for a deposit with no files" in {
     val depositId = "ruimtereis03"
-    action.addFileMetadata(depositId, Seq.empty) shouldBe a[Success[_]]
+    action.addFileMetadata(depositId, Seq.empty) shouldBe a[Right[_, _]]
 
     val actual = XML.loadFile(stagingFileMetadataFile(depositId).toJava)
     val expected = XML.loadFile(File(getClass.getResource("/allfields/output/input-ruimtereis03/bag/metadata/files.xml").toURI).toJava)

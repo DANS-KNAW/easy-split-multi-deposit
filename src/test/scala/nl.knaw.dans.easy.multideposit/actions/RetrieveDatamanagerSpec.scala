@@ -16,11 +16,8 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
-
 import nl.knaw.dans.easy.multideposit.{ Ldap, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
-
-import scala.util.{ Failure, Success, Try }
 
 class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
 
@@ -45,58 +42,51 @@ class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
     }
   }
 
-  def mockLdapForDatamanager(attrs: Try[Seq[Attributes]]): Unit = {
-    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects("dm", *) once() returning attrs
+  def mockLdapForDatamanager(attrs: Seq[Attributes]): Unit = {
+    (ldapMock.query(_: String)(_: Attributes => Attributes)) expects("dm", *) once() returning Right(attrs)
   }
 
   "getDatamanagerEmailaddress" should "succeed if the datamanager email can be retrieved" in {
-    mockLdapForDatamanager(Success(Seq(correctDatamanagerAttrs)))
+    mockLdapForDatamanager(Seq(correctDatamanagerAttrs))
 
-    action.getDatamanagerEmailaddress(datamanagerId) should matchPattern {
-      case Success("dm@test.org") =>
-    }
+    action.getDatamanagerEmailaddress(datamanagerId).right.value shouldBe "dm@test.org"
   }
 
   it should "fail if ldap does not return anything for the datamanager" in {
-    mockLdapForDatamanager(Success(Seq.empty))
+    mockLdapForDatamanager(Seq.empty)
 
-    inside(action.getDatamanagerEmailaddress(datamanagerId)) {
-      case Failure(InvalidDatamanagerException(message)) => message should include("The datamanager 'dm' is unknown")
-    }
+    action.getDatamanagerEmailaddress(datamanagerId).left.value.getMessage should
+      include("The datamanager 'dm' is unknown")
   }
 
   it should "fail if ldap does not return multiple users" in {
-    mockLdapForDatamanager(Success(Seq(correctDatamanagerAttrs, correctDatamanagerAttrs)))
+    mockLdapForDatamanager(Seq(correctDatamanagerAttrs, correctDatamanagerAttrs))
 
-    inside(action.getDatamanagerEmailaddress(datamanagerId)) {
-      case Failure(ActionException(message, _)) => message shouldBe s"There appear to be multiple users with id '$datamanagerId'"
-    }
+    action.getDatamanagerEmailaddress(datamanagerId).left.value.getMessage shouldBe
+      s"There appear to be multiple users with id '$datamanagerId'"
   }
 
   it should "fail when the datamanager is not an active user" in {
     val nonActiveDatamanagerAttrs = createDatamanagerAttributes(state = "BLOCKED")
-    mockLdapForDatamanager(Success(Seq(nonActiveDatamanagerAttrs)))
+    mockLdapForDatamanager(Seq(nonActiveDatamanagerAttrs))
 
-    inside(action.getDatamanagerEmailaddress(datamanagerId)) {
-      case Failure(InvalidDatamanagerException(message)) => message should include("not an active user")
-    }
+    action.getDatamanagerEmailaddress(datamanagerId).left.value.getMessage should
+      include("not an active user")
   }
 
   it should "fail when the datamanager is not an achivist" in {
     val nonArchivistDatamanagerAttrs = createDatamanagerAttributes(roles = Seq("USER"))
-    mockLdapForDatamanager(Success(Seq(nonArchivistDatamanagerAttrs)))
+    mockLdapForDatamanager(Seq(nonArchivistDatamanagerAttrs))
 
-    inside(action.getDatamanagerEmailaddress(datamanagerId)) {
-      case Failure(InvalidDatamanagerException(message)) => message should include("is not an archivist")
-    }
+    action.getDatamanagerEmailaddress(datamanagerId).left.value.getMessage should
+      include("is not an archivist")
   }
 
   it should "fail when the datamanager has no email" in {
     val nonEmailDatamanagerAttrs = createDatamanagerAttributes(mail = "")
-    mockLdapForDatamanager(Success(Seq(nonEmailDatamanagerAttrs)))
+    mockLdapForDatamanager(Seq(nonEmailDatamanagerAttrs))
 
-    inside(action.getDatamanagerEmailaddress(datamanagerId)) {
-      case Failure(InvalidDatamanagerException(message)) => message should include("does not have an email address")
-    }
+    action.getDatamanagerEmailaddress(datamanagerId).left.value.getMessage should
+      include("does not have an email address")
   }
 }

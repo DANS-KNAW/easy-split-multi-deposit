@@ -17,44 +17,43 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.FileAlreadyExistsException
 
+import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ BagId, DepositId }
 import nl.knaw.dans.lib.error.CompositeException
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.util.{ Failure, Success, Try }
-
 class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
-  def moveDepositsToOutputDir(depositId: DepositId, bagId: BagId)(implicit stage: StagingPathExplorer, output: OutputPathExplorer): Try[Unit] = {
+  def moveDepositsToOutputDir(depositId: DepositId, bagId: BagId)(implicit stage: StagingPathExplorer, output: OutputPathExplorer): Either[ActionException, Unit] = {
     val stagingDirectory = stage.stagingDir(depositId)
     val outputDir = output.outputDepositDir(bagId)
 
     logger.debug(s"moving $stagingDirectory to $outputDir")
 
-    Try { stagingDirectory.moveTo(outputDir, overwrite = false); () } recoverWith {
+    Either.catchNonFatal { stagingDirectory.moveTo(outputDir, overwrite = false); () }.leftMap {
       case e: FileAlreadyExistsException =>
-        Failure(ActionException(s"Could not move $stagingDirectory to $outputDir. The target " +
+        ActionException(s"Could not move $stagingDirectory to $outputDir. The target " +
           "directory already exists. Since this is only possible when a UUID (universally unique " +
           "identifier) is not unique; you have hit the jackpot. The chance of this happening is " +
           "smaller than you being hit by a meteorite. So rejoice in the moment, because this " +
           "will be a once-in-a-lifetime experience. When you're done celebrating, just try to " +
           "deposit this and all remaining deposits (be careful not to deposit the deposits that " +
-          "came before this lucky one, because they went through successfully).", e))
+          "came before this lucky one, because they went through successfully).", e)
       case e =>
-        Try { outputDir.exists } match {
-          case Success(true) => Failure(ActionException("An error occurred while moving " +
+        Either.catchNonFatal { outputDir.exists } match {
+          case Right(true) => ActionException("An error occurred while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move is probably only partially " +
             "done since the output directory does exist. This move is, however, NOT revertable! " +
-            "Please contact your application manager ASAP!", e))
-          case Success(false) => Failure(ActionException("An error occurred while moving " +
+            "Please contact your application manager ASAP!", e)
+          case Right(false) => ActionException("An error occurred while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move did not take place, since " +
             "the output directory does not yet exist or is not on the same partition as the " +
-            "staging directory.", e))
-          case Failure(e2) => Failure(ActionException("An error occurred both while moving " +
+            "staging directory.", e)
+          case Left(e2) => ActionException("An error occurred both while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage } and while checking whether the " +
             s"output directory actually exists now: ${ e2.getMessage }. Please contact your " +
-            "application manager ASAP!", new CompositeException(e, e2)))
+            "application manager ASAP!", new CompositeException(e, e2))
         }
     }
   }

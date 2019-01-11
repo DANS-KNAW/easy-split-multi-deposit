@@ -18,13 +18,13 @@ package nl.knaw.dans.easy.multideposit
 import java.io.ByteArrayOutputStream
 
 import better.files.File
+import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.actions.FfprobeErrorException
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.io.IOUtils
 
-import scala.util.{ Failure, Success, Try }
-import scala.sys.process.{ ProcessIO, _ }
 import scala.language.postfixOps
+import scala.sys.process.{ ProcessIO, _ }
 
 /**
  * Simple runner for ffprobe. The constructor will fail if the executable does not exist or the current user
@@ -40,9 +40,9 @@ trait FfprobeRunner {
    * @param target the target to probe
    * @return the result of the call
    */
-  def run(target: File): Try[Unit] = {
+  def run(target: File): Either[Throwable, Unit] = {
     val err = new ByteArrayOutputStream()
-    Try {
+    Either.catchNonFatal {
       /*
        * We are ignoring the STDOUT, as we are not interested in the output on successful execution. Note, by the way that
        * ffprobe returns its messages on the STDERR on successful execution as well!
@@ -51,8 +51,8 @@ trait FfprobeRunner {
       proc.exitValue
     }.flatMap {
       exit =>
-        if (exit == 0) Success(())
-        else Failure(FfprobeErrorException(target, exit, new String(err.toByteArray)))
+        if (exit == 0) ().asRight
+        else FfprobeErrorException(target, exit, new String(err.toByteArray)).asLeft
     }
   }
 }

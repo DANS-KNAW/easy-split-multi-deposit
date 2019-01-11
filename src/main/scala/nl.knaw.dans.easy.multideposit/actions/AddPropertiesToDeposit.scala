@@ -15,18 +15,16 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
-import nl.knaw.dans.easy.multideposit.now
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
+import nl.knaw.dans.easy.multideposit.now
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.configuration.PropertiesConfiguration
 
-import scala.util.control.NonFatal
-import scala.util.{ Failure, Try }
-
 class AddPropertiesToDeposit extends DebugEnhancedLogging {
 
-  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(implicit stage: StagingPathExplorer): Try[Unit] = {
+  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
     logger.debug(s"add deposit properties for ${ deposit.depositId }")
 
     val props = new PropertiesConfiguration {
@@ -36,11 +34,9 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
         .toJava)
     }
 
-    Try { addProperties(deposit, datamanagerId, emailaddress)(props) }
+    Either.catchNonFatal { addProperties(deposit, datamanagerId, emailaddress)(props) }
       .map(_ => props.save())
-      .recoverWith {
-        case NonFatal(e) => Failure(ActionException(s"Could not write properties to file: $e", e))
-      }
+      .leftMap(e => ActionException(s"Could not write properties to file: $e", e))
   }
 
   private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(properties: PropertiesConfiguration): Unit = {

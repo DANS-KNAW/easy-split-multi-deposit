@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.BetterFileExtensions
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model._
@@ -22,18 +23,16 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
-import scala.util.control.NonFatal
-import scala.util.{ Failure, Try }
 import scala.xml.{ Elem, Null, PrefixedAttribute }
 
 class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLogging {
 
-  def addDatasetMetadata(deposit: Deposit)(implicit stage: StagingPathExplorer): Try[Unit] = Try {
-    logger.debug(s"add dataset metadata for ${ deposit.depositId }")
+  def addDatasetMetadata(deposit: Deposit)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
+    Either.catchNonFatal {
+      logger.debug(s"add dataset metadata for ${ deposit.depositId }")
 
-    stage.stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
-  } recoverWith {
-    case NonFatal(e) => Failure(ActionException(s"Could not write deposit metadata for ${ deposit.depositId }", e))
+      stage.stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
+    }.leftMap(e => ActionException(s"Could not write deposit metadata for ${ deposit.depositId }", e))
   }
 
   def depositToDDM(deposit: Deposit): Elem = {
@@ -210,13 +209,13 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
       case QualifiedRelation(qualifier, Some(link), Some(title)) =>
         <key href={link}>{title}</key>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, Some(link), None) =>
-        <key href={link}/>.copy(label = s"ddm:${ qualifier.toString }")
+          <key href={link}/>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, None, Some(title)) =>
         <key>{title}</key>.copy(label = s"dcterms:${ qualifier.toString }")
       case UnqualifiedRelation(Some(link), Some(title)) =>
         <ddm:relation href={link}>{title}</ddm:relation>
       case UnqualifiedRelation(Some(link), None) =>
-        <ddm:relation href={link}/>
+          <ddm:relation href={link}/>
       case UnqualifiedRelation(None, Some(title)) =>
         <dc:relation>{title}</dc:relation>
       case other => throw new UnsupportedOperationException(s"Relation $other is not supported. You should not even be able to create this object!")
