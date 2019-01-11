@@ -28,8 +28,6 @@ import org.joda.time.DateTime
 trait ParserUtils {
   this: InputPathExplorer =>
 
-  def getRowNum(row: DepositRow): Int = row("ROW").toInt
-
   def extractExactlyOne(rowNum: Int, name: MultiDepositKey, rows: DepositRows): FailFast[String] = {
     rows.flatMap(_.find(name)).distinct match {
       case Seq() => ParseError(rowNum, s"There should be one non-empty value for $name").asLeft
@@ -53,8 +51,8 @@ trait ParserUtils {
     }
   }
 
-  def extractList[T](rows: DepositRows)(f: (=> Int) => DepositRow => Option[Validated[T]]): Validated[List[T]] = {
-    rows.flatMap(row => f(getRowNum(row))(row)).toList.sequence
+  def extractList[T](rows: DepositRows)(f: DepositRow => Option[Validated[T]]): Validated[List[T]] = {
+    rows.flatMap(row => f(row)).toList.sequence
   }
 
   def extractList(rows: DepositRows, name: MultiDepositKey): List[String] = {
@@ -69,18 +67,18 @@ trait ParserUtils {
 
   def date(rowNum: => Int, columnName: => String)(s: String): FailFast[DateTime] = {
     Either.catchOnly[IllegalArgumentException] { DateTime.parse(s) }
-      .leftMap(e => ParseError(rowNum, s"$columnName value '$s' does not represent a date"))
+      .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' does not represent a date"))
   }
 
-  def missingRequired[T](rowNum: Int, row: DepositRow, required: Set[String]): ParseError = {
-    val blankRequired = row.collect { case (key, value) if value.isBlank && required.contains(key) => key }
-    val missingColumns = required.diff(row.keySet)
+  def missingRequired[T](row: DepositRow, required: Set[String]): ParseError = {
+    val blankRequired = row.content.collect { case (key, value) if value.isBlank && required.contains(key) => key }
+    val missingColumns = required.diff(row.content.keySet)
     val missing = blankRequired.toSet ++ missingColumns
     require(missing.nonEmpty, "the list of missing elements is supposed to be non-empty")
 
     missing.toList match {
-      case value :: Nil => ParseError(rowNum, s"Missing value for: $value")
-      case values => ParseError(rowNum, s"Missing value(s) for: ${ values.mkString("[", ", ", "]") }")
+      case value :: Nil => ParseError(row.rowNum, s"Missing value for: $value")
+      case values => ParseError(row.rowNum, s"Missing value(s) for: ${ values.mkString("[", ", ", "]") }")
     }
   }
 

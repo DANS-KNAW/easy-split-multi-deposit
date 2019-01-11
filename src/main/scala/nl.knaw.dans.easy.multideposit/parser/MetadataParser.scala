@@ -64,14 +64,14 @@ trait MetadataParser {
     extractList(rows)(dcType).map(_ defaultIfEmpty DcType.DATASET)
   }
 
-  def dcType(rowNum: => Int)(row: DepositRow): Option[Validated[DcType]] = {
+  def dcType(row: DepositRow): Option[Validated[DcType]] = {
     row.find("DC_TYPE")
       .map(t => DcType.valueOf(t)
         .map(_.toValidated)
-        .getOrElse(ParseError(rowNum, s"Value '$t' is not a valid type").toInvalid))
+        .getOrElse(ParseError(row.rowNum, s"Value '$t' is not a valid type").toInvalid))
   }
 
-  def identifier(rowNum: => Int)(row: DepositRow): Option[Validated[Identifier]] = {
+  def identifier(row: DepositRow): Option[Validated[Identifier]] = {
     val identifier = row.find("DC_IDENTIFIER")
     val idType = row.find("DC_IDENTIFIER_TYPE")
 
@@ -79,11 +79,11 @@ trait MetadataParser {
       case (Some(id), idt) => Some {
         (
           id.toValidated,
-          idt.map(identifierType(rowNum)).sequence[FailFast, IdentifierType].toValidated
+          idt.map(identifierType(row.rowNum)).sequence[FailFast, IdentifierType].toValidated
         ).mapN(Identifier)
       }
       case (None, Some(_)) => Some {
-        missingRequired(rowNum, row, Set("DC_IDENTIFIER")).toInvalid
+        missingRequired(row, Set("DC_IDENTIFIER")).toInvalid
       }
       case (None, None) => none
     }
@@ -96,7 +96,7 @@ trait MetadataParser {
 
   private lazy val iso639v2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
 
-  def iso639_2Language(columnName: MultiDepositKey)(rowNum: => Int)(row: DepositRow): Option[Validated[String]] = {
+  def iso639_2Language(columnName: MultiDepositKey)(row: DepositRow): Option[Validated[String]] = {
     row.find(columnName)
       .map(lang => {
         // Most ISO 639-2/T languages are contained in the iso639v2Languages Set.
@@ -107,25 +107,25 @@ trait MetadataParser {
         lazy val b2 = new Locale(lang).getDisplayLanguage.toLowerCase != lang.toLowerCase
 
         if (b0 && (b1 || b2)) lang.toValidated
-        else ParseError(rowNum, s"Value '$lang' is not a valid value for $columnName").toInvalid
+        else ParseError(row.rowNum, s"Value '$lang' is not a valid value for $columnName").toInvalid
       })
   }
 
-  def relation(rowNum: => Int)(row: DepositRow): Option[Validated[Relation]] = {
+  def relation(row: DepositRow): Option[Validated[Relation]] = {
     val qualifier = row.find("DCX_RELATION_QUALIFIER")
     val link = row.find("DCX_RELATION_LINK")
     val title = row.find("DCX_RELATION_TITLE")
 
     (qualifier, link, title) match {
       case (Some(_), None, None) => Some {
-        ParseError(rowNum, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well").toInvalid
+        ParseError(row.rowNum, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well").toInvalid
       }
       case (_, Some(_), None) => Some {
-        ParseError(rowNum, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context").toInvalid
+        ParseError(row.rowNum, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context").toInvalid
       }
       case (Some(q), l, t) => Some {
         (
-          RelationQualifier.valueOf(q).map(_.toValidated).getOrElse(ParseError(rowNum, s"Value '$q' is not a valid relation qualifier").toInvalid),
+          RelationQualifier.valueOf(q).map(_.toValidated).getOrElse(ParseError(row.rowNum, s"Value '$q' is not a valid relation qualifier").toInvalid),
           l.toValidated,
           t.toValidated,
         ).mapN(QualifiedRelation)
@@ -137,21 +137,21 @@ trait MetadataParser {
     }
   }
 
-  def dateColumn(rowNum: => Int)(row: DepositRow): Option[Validated[Date]] = {
+  def dateColumn(row: DepositRow): Option[Validated[Date]] = {
     val dateString = row.find("DCT_DATE")
     val qualifierString = row.find("DCT_DATE_QUALIFIER")
 
     (dateString, qualifierString) match {
       case (Some(d), Some(q)) => Some {
         (
-          date(rowNum, "DCT_DATE")(d).toValidated,
+          date(row.rowNum, "DCT_DATE")(d).toValidated,
           DateQualifier.valueOf(q)
             .map(_.toValidated)
             .getOrElse {
               q.toLowerCase match {
-                case "created" => ParseError(rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_CREATED instead.").toInvalid
-                case "available" => ParseError(rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_AVAILABLE instead.").toInvalid
-                case _ => ParseError(rowNum, s"Value '$q' is not a valid date qualifier").toInvalid
+                case "created" => ParseError(row.rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_CREATED instead.").toInvalid
+                case "available" => ParseError(row.rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_AVAILABLE instead.").toInvalid
+                case _ => ParseError(row.rowNum, s"Value '$q' is not a valid date qualifier").toInvalid
               }
             },
         ).mapN(QualifiedDate)
@@ -160,13 +160,13 @@ trait MetadataParser {
         TextualDate(d).toValidated
       }
       case (None, Some(_)) => Some {
-        ParseError(rowNum, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it").toInvalid
+        ParseError(row.rowNum, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it").toInvalid
       }
       case (None, None) => None
     }
   }
 
-  def contributor(rowNum: => Int)(row: DepositRow): Option[Validated[Contributor]] = {
+  def contributor(row: DepositRow): Option[Validated[Contributor]] = {
     val titles = row.find("DCX_CONTRIBUTOR_TITLES")
     val initials = row.find("DCX_CONTRIBUTOR_INITIALS")
     val insertions = row.find("DCX_CONTRIBUTOR_INSERTIONS")
@@ -180,7 +180,7 @@ trait MetadataParser {
       case (None, None, None, None, Some(org), None, _) => Some {
         (
           org.toValidated,
-          cRole.map(contributorRole(rowNum)).sequence[FailFast, ContributorRole].toValidated,
+          cRole.map(contributorRole(row.rowNum)).sequence[FailFast, ContributorRole].toValidated,
         ).mapN(ContributorOrganization)
       }
       case (_, Some(init), _, Some(sur), _, _, _) => Some {
@@ -190,11 +190,11 @@ trait MetadataParser {
           insertions.toValidated,
           sur.toValidated,
           organization.toValidated,
-          cRole.map(contributorRole(rowNum)).sequence[FailFast, ContributorRole].toValidated,
+          cRole.map(contributorRole(row.rowNum)).sequence[FailFast, ContributorRole].toValidated,
           dai.toValidated,
         ).mapN(ContributorPerson)
       }
-      case (_, _, _, _, _, _, _) => Some(missingRequired(rowNum, row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")).toInvalid)
+      case (_, _, _, _, _, _, _) => Some(missingRequired(row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")).toInvalid)
     }
   }
 
@@ -203,13 +203,13 @@ trait MetadataParser {
       .toRight(ParseError(rowNum, s"Value '$role' is not a valid contributor role"))
   }
 
-  def subject(rowNum: => Int)(row: DepositRow): Option[Validated[Subject]] = {
+  def subject(row: DepositRow): Option[Validated[Subject]] = {
     val subject = row.find("DC_SUBJECT")
     val scheme = row.find("DC_SUBJECT_SCHEME")
 
     (subject, scheme) match {
       case (Some(subj), sch) => Some {
-        val subjectScheme: Validated[Option[String]] = sch.toValidated.ensure(ParseError(rowNum, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'").chained)(_.forall(_ == "abr:ABRcomplex"))
+        val subjectScheme: Validated[Option[String]] = sch.toValidated.ensure(ParseError(row.rowNum, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'").chained)(_.forall(_ == "abr:ABRcomplex"))
 
         (
           subj.toValidated,
@@ -223,7 +223,7 @@ trait MetadataParser {
     }
   }
 
-  def spatialPoint(rowNum: => Int)(row: DepositRow): Option[Validated[SpatialPoint]] = {
+  def spatialPoint(row: DepositRow): Option[Validated[SpatialPoint]] = {
     val maybeX = row.find("DCX_SPATIAL_X")
     val maybeY = row.find("DCX_SPATIAL_Y")
     val maybeScheme = row.find("DCX_SPATIAL_SCHEME")
@@ -234,12 +234,12 @@ trait MetadataParser {
       }
       case (None, None, _) => None
       case _ => Some {
-        missingRequired(rowNum, row, Set("DCX_SPATIAL_X", "DCX_SPATIAL_Y")).toInvalid
+        missingRequired(row, Set("DCX_SPATIAL_X", "DCX_SPATIAL_Y")).toInvalid
       }
     }
   }
 
-  def spatialBox(rowNum: => Int)(row: DepositRow): Option[Validated[SpatialBox]] = {
+  def spatialBox(row: DepositRow): Option[Validated[SpatialBox]] = {
     val west = row.find("DCX_SPATIAL_WEST")
     val east = row.find("DCX_SPATIAL_EAST")
     val south = row.find("DCX_SPATIAL_SOUTH")
@@ -252,19 +252,19 @@ trait MetadataParser {
       }
       case (None, None, None, None, _) => None
       case _ => Some {
-        missingRequired(rowNum, row, Set("DCX_SPATIAL_WEST", "DCX_SPATIAL_EAST", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_NORTH")).toInvalid
+        missingRequired(row, Set("DCX_SPATIAL_WEST", "DCX_SPATIAL_EAST", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_NORTH")).toInvalid
       }
     }
   }
 
-  def temporal(rowNum: => Int)(row: DepositRow): Option[Validated[Temporal]] = {
+  def temporal(row: DepositRow): Option[Validated[Temporal]] = {
     val temporal = row.find("DCT_TEMPORAL")
     val scheme = row.find("DCT_TEMPORAL_SCHEME")
 
     (temporal, scheme) match {
       case (Some(temp), sch) => Some {
         val temporalScheme: Validated[Option[String]] = sch.toValidated
-          .ensure(ParseError(rowNum, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'").chained)(_.forall(_ == "abr:ABRperiode"))
+          .ensure(ParseError(row.rowNum, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'").chained)(_.forall(_ == "abr:ABRperiode"))
 
         (
           temp.toValidated,

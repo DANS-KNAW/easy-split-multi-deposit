@@ -24,11 +24,11 @@ import nl.knaw.dans.lib.string._
 
 package object parser {
 
-  type DepositRow = Map[MultiDepositKey, String]
+  case class DepositRow(rowNum: Int, content: Map[MultiDepositKey, String])
   type DepositRows = Seq[DepositRow]
 
   implicit class DatasetRowFind(val row: DepositRow) extends AnyVal {
-    def find(name: MultiDepositKey): Option[String] = row.get(name).filterNot(_.isBlank)
+    def find(name: MultiDepositKey): Option[String] = row.content.get(name).filterNot(_.isBlank)
   }
 
   type FailFast[T] = Either[ParseError, T]

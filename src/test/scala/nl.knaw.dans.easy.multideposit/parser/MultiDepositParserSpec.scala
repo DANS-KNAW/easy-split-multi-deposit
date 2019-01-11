@@ -33,8 +33,13 @@ trait DepositTestObjects extends AudioVideoTestObjects
   this: TestSupportFixture =>
 
   lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: Nil = List(
-    Map("ROW" -> "2", "DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke", "BASE_REVISION" ->"1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
-    Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
+    Map("DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke", "BASE_REVISION" ->"1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
+    Map("DATASET" -> "ruimtereis01", "BASE_REVISION" -> "") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2,
+  )
+
+  lazy val depositCSVRow = List(
+    DepositRow(2, depositCSVRow1),
+    DepositRow(3, depositCSVRow2),
   )
 
   lazy val instructions = Instructions(
@@ -65,17 +70,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
 
   import parser._
 
-  "extractDeposit" should "throw an exception if a row number is not found on each row" in {
-    // This is supposed to throw an exception rather than fail, because the ROW is a column
-    // that is created by our program itself. If the ROW is not present, something has gone
-    // terribly wrong!
-    val rows = depositCSVRow1 :: (depositCSVRow2 - "ROW") :: Nil
-
-    the[NoSuchElementException] thrownBy extractDeposit(multiDepositDir)("ruimtereis01", rows) should have message "key not found: ROW"
-  }
-
-  it should "fail if the depositId contains invalid characters" in {
-    extractDeposit(multiDepositDir)("ruimtereis01#", depositCSV).left.value shouldBe
+  "extractDeposit" should "fail if the depositId contains invalid characters" in {
+    extractDeposit(multiDepositDir)("ruimtereis01#", depositCSVRow).left.value shouldBe
       Chain(ParseError(2, "The column 'DATASET' contains the following invalid characters: {#}"))
   }
 
@@ -118,13 +114,13 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc", "def", "ghi", "jkl"),
-      List("3", "mno", "pqr", "stu", "vwx"),
-      List("4", "yzy", "xwv", "uts", "rqp"),
-      List("5", "onm", "lkj", "ihg", "fed"),
-      List("6", "cba", "abc", "def", "ghi")
+      2 -> List("abc", "def", "ghi", "jkl"),
+      3 -> List("mno", "pqr", "stu", "vwx"),
+      4 -> List("yzy", "xwv", "uts", "rqp"),
+      5 -> List("onm", "lkj", "ihg", "fed"),
+      6 -> List("cba", "abc", "def", "ghi")
     )
 
     read(file).right.value shouldBe (expectedHeaders, expectedData)
@@ -142,13 +138,13 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "a  bc", "def", "ghi", "jkl"),
-      List("3", "mno", "pq\nr", "stu", "vwx"),
-      List("4", "yzy", "xwv", "uts", "rqp"),
-      List("5", "onm", "lkj", "ihg", "fed"),
-      List("6", "cba", "abc", "def", "ghi")
+      2 -> List("a  bc", "def", "ghi", "jkl"),
+      3 -> List("mno", "pq\nr", "stu", "vwx"),
+      4 -> List("yzy", "xwv", "uts", "rqp"),
+      5 -> List("onm", "lkj", "ihg", "fed"),
+      6 -> List("cba", "abc", "def", "ghi")
     )
 
     read(file).right.value shouldBe (expectedHeaders, expectedData)
@@ -165,13 +161,13 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc", "def", "", "jkl"),
-      List("3", "mno", "", "stu", "vwx"),
-      List("4", "yzy", "xwv", "uts", "rqp"),
-      List("5", "onm", "lkj", "", "fed"),
-      List("6", "cba", "abc", "def", "ghi")
+      2 -> List("abc", "def", "", "jkl"),
+      3 -> List("mno", "", "stu", "vwx"),
+      4 -> List("yzy", "xwv", "uts", "rqp"),
+      5 -> List("onm", "lkj", "", "fed"),
+      6 -> List("cba", "abc", "def", "ghi")
     )
 
     read(file).right.value shouldBe (expectedHeaders, expectedData)
@@ -188,13 +184,13 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc", "def", "ghi", "jkl"),
-      List("3", "mno", "", "stu", "vwx"),
-      List("4", "", "xwv", "uts", "rqp"),
-      List("5", "onm", "lkj", "", "fed"),
-      List("6", "cba", "abc", "def", "ghi")
+      2 -> List("abc", "def", "ghi", "jkl"),
+      3 -> List("mno", "", "stu", "vwx"),
+      4 -> List("", "xwv", "uts", "rqp"),
+      5 -> List("onm", "lkj", "", "fed"),
+      6 -> List("cba", "abc", "def", "ghi")
     )
 
     read(file).right.value shouldBe (expectedHeaders, expectedData)
@@ -211,12 +207,12 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List(
-      List("2", "abc", "def", "ghi", "jkl"),
-      List("3", "mno", "pqr", "stu", "vwx"),
-      List("5", "onm", "lkj", "ihg", "fed"),
-      List("6", "cba", "abc", "def", "ghi")
+      2 -> List("abc", "def", "ghi", "jkl"),
+      3 -> List("mno", "pqr", "stu", "vwx"),
+      5 -> List("onm", "lkj", "ihg", "fed"),
+      6 -> List("cba", "abc", "def", "ghi")
     )
 
     read(file).right.value shouldBe (expectedHeaders, expectedData)
@@ -227,8 +223,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
-    val expectedData = List.empty[String]
+    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedData = List.empty[(Int, String)]
 
     read(file).right.value shouldBe (expectedHeaders, expectedData)
   }
@@ -291,33 +287,37 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   }
 
   "extractInstructions" should "convert the csv input to the corresponding output" in {
-    extractInstructions("ruimtereis01", 2, depositCSV) shouldBe Valid(instructions)
+    extractInstructions("ruimtereis01", 2, depositCSVRow) shouldBe Valid(instructions)
   }
 
   it should "fail if there are multiple distinct depositorUserIDs" in {
-    val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) :: Nil
+    val rows = DepositRow(2, depositCSVRow1) ::
+      DepositRow(3, depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) ::
+      Nil
 
     extractInstructions("ruimtereis01", 2, rows) shouldBe
       Invalid(Chain(ParseError(2, "Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [ikke, ikke2]")))
   }
 
   it should "succeed if there are multiple depositorUserIDs that are all equal" in {
-    val rows = depositCSVRow1 :: (depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) :: Nil
+    val rows = DepositRow(2, depositCSVRow1) ::
+      DepositRow(2, depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) ::
+      Nil
 
     extractInstructions("ruimtereis01", 2, rows) shouldBe Valid(instructions)
   }
 
   it should "fail if there are multiple distinct base revisions" in {
-    val row = Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "9de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
-    val rows = depositCSVRow1 :: row :: Nil
+    val row = DepositRow(3, Map("DATASET" -> "ruimtereis01", "BASE_REVISION" -> "9de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2)
+    val rows = DepositRow(2, depositCSVRow1) :: row :: Nil
 
     extractInstructions("ruimtereis01", 2, rows) shouldBe
       Invalid(Chain(ParseError(2, "At most one row is allowed to contain a value for the column 'BASE_REVISION'. Found: [1de3f841-0f0d-048b-b3db-4b03ad4834d7, 9de3f841-0f0d-048b-b3db-4b03ad4834d7]")))
   }
 
   it should "not fail if there are multiple nondistinct base revisions" in {
-    val row = Map("ROW" -> "3", "DATASET" -> "ruimtereis01", "BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2
-    val rows = depositCSVRow1 :: row :: Nil
+    val row = DepositRow(3, Map("DATASET" -> "ruimtereis01", "BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2)
+    val rows = DepositRow(2, depositCSVRow1) :: row :: Nil
 
     extractInstructions("ruimtereis01", 2, rows) shouldBe a[Valid[_]]
   }

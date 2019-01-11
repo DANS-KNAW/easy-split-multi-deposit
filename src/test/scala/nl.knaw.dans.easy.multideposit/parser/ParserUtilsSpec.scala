@@ -31,27 +31,9 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   import parser._
 
-  "getRowNum" should "extract the row number from the deposit row" in {
-    val row = Map("ROW" -> "2", "TEST" -> "abc")
-
-    getRowNum(row) shouldBe 2
-  }
-
-  it should "throw a NoSuchElementException when ROW is not a header in the deposit" in {
-    val row = Map("TEST" -> "abc")
-
-    the[NoSuchElementException] thrownBy getRowNum(row) should have message "key not found: ROW"
-  }
-
-  it should "throw a NumberFormatException when the value for ROW cannot be converted to an integer" in {
-    val row = Map("ROW" -> "def", "TEST" -> "abc")
-
-    the[NumberFormatException] thrownBy getRowNum(row) should have message "For input string: \"def\""
-  }
-
   "extractExactlyOne" should "find the value for the given rows" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
     )
 
     extractExactlyOne(2, "FOO", rows).right.value shouldBe "abc"
@@ -59,8 +41,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "filter out the blank values" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "ghi", "BAR" -> "")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
     )
 
     extractExactlyOne(2, "BAR", rows).right.value shouldBe "def"
@@ -68,8 +50,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "fail when the output is empty" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "ghi", "BAR" -> "jkl")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
     extractExactlyOne(2, "QUX", rows).left.value shouldBe
@@ -78,8 +60,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "fail when the input contains multiple distinct values for the same columnName" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "ghi", "BAR" -> "jkl")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
     extractExactlyOne(2, "FOO", rows).left.value shouldBe
@@ -88,8 +70,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "succeed when the input contains multiple identical values for the same columnName" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "abc", "BAR" -> "jkl")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
     )
 
     extractExactlyOne(2, "FOO", rows).right.value shouldBe "abc"
@@ -97,8 +79,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   "extractAtLeastOne" should "find the values for the given rows" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "ghi", "BAR" -> "jkl"),
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
     extractAtLeastOne(2, "FOO", rows).right.value shouldBe List("abc", "ghi")
@@ -106,8 +88,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "filter out the blank values" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "ghi", "BAR" -> "")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
     )
 
     extractAtLeastOne(2, "BAR", rows).right.value shouldBe List("def")
@@ -115,8 +97,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "fail when the output is empty" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "ghi", "BAR" -> "jkl")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
     extractAtLeastOne(2, "QUX", rows).left.value shouldBe
@@ -125,8 +107,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "succeed when the input contains multiple identical values for the same columnName" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "abc", "BAR" -> "jkl")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
     )
 
     extractAtLeastOne(2, "FOO", rows).right.value shouldBe List("abc")
@@ -134,7 +116,7 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   "extractAtMostOne" should "find the value for the given rows" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
     )
 
     extractAtMostOne(2, "FOO", rows).right.value shouldBe Some("abc")
@@ -142,8 +124,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "filter out the blank values" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "ghi", "BAR" -> "")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
     )
 
     extractAtMostOne(2, "BAR", rows).right.value shouldBe Some("def")
@@ -151,8 +133,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "return a None when the output is empty" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "ghi", "BAR" -> "jkl")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
     extractAtMostOne(2, "QUX", rows).right.value shouldBe empty
@@ -160,8 +142,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "fail when the input contains multiple distinct values for the same columnName" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "ghi", "BAR" -> "jkl")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
     extractAtMostOne(2, "FOO", rows).left.value shouldBe
@@ -170,8 +152,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "succeed when the input contains multiple identical values for the same columnName" in {
     val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("FOO" -> "abc", "BAR" -> "jkl")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
     )
 
     extractAtMostOne(2, "FOO", rows).right.value shouldBe Some("abc")
@@ -179,46 +161,36 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   "extractList curried" should "for each row run the given function and collect the results" in {
     val rows = List(
-      Map("ROW" -> "2", "FOO" -> "abc", "BAR" -> "def"),
-      Map("ROW" -> "3", "FOO" -> "ghi", "BAR" -> "jkl")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(3, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractList(rows)(i => _ => Some(i.toValidated)) shouldBe Valid(List(2, 3))
+    extractList(rows)(i => Some(i.rowNum.toValidated)) shouldBe Valid(List(2, 3))
   }
 
   it should "leave out the rows for which the function returns a None" in {
     val rows = List(
-      Map("ROW" -> "2", "FOO" -> "abc", "BAR" -> "def"),
-      Map("ROW" -> "3", "FOO" -> "ghi", "BAR" -> "jkl")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(3, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
     extractList(rows) {
-      case i if i % 2 == 0 => _ => Some(i.toValidated)
-      case _ => _ => None
+      case DepositRow(rowNum, _) if rowNum % 2 == 0 => Some(rowNum.toValidated)
+      case _ => None
     } shouldBe Valid(List(2))
   }
 
   it should "iterate over all rows and aggregate all errors until the end" in {
     val rows = List(
-      Map("ROW" -> "2", "FOO" -> "abc", "BAR" -> "def"),
-      Map("ROW" -> "3", "FOO" -> "ghi", "BAR" -> "jkl")
+      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(3, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractList(rows)(i => _ => Some(ParseError(i, s"foo $i").toInvalid)) shouldBe
+    extractList(rows)(i => Some(ParseError(i.rowNum, s"foo ${ i.rowNum }").toInvalid)) shouldBe
       Invalid(NonEmptyChain(
         ParseError(2, "foo 2"),
         ParseError(3, "foo 3")
       ))
-  }
-
-  it should "fail fast when a row does not contain a ROW column" in {
-    val rows = List(
-      Map("FOO" -> "abc", "BAR" -> "def"),
-      Map("ROW" -> "3", "FOO" -> "ghi", "BAR" -> "jkl")
-    )
-
-    the[NoSuchElementException] thrownBy extractList(rows)(i => _ => Some(i.toValidated)) should
-      have message "key not found: ROW"
   }
 
   "checkValidChars" should "succeed with the input value when all characters are valid" in {
@@ -239,20 +211,20 @@ class ParserUtilsSpec extends TestSupportFixture {
   }
 
   "missingRequired" should "return a ParseError listing the one missing column" in {
-    val row = Map("a" -> "1", "b" -> "2", "c" -> "3", "d" -> "4")
+    val row = DepositRow(2, Map("a" -> "1", "b" -> "2", "c" -> "3", "d" -> "4"))
 
-    missingRequired(2, row, Set("a", "b", "c", "d", "e")) shouldBe ParseError(2, "Missing value for: e")
+    missingRequired(row, Set("a", "b", "c", "d", "e")) shouldBe ParseError(2, "Missing value for: e")
   }
 
   it should "return a ParseError listing the missing columns" in {
-    val row = Map("a" -> "1", "b" -> "2", "c" -> "3", "d" -> "")
+    val row = DepositRow(2, Map("a" -> "1", "b" -> "2", "c" -> "3", "d" -> ""))
 
-    missingRequired(2, row, Set("a", "b", "c", "d", "e")) shouldBe ParseError(2, "Missing value(s) for: [d, e]")
+    missingRequired(row, Set("a", "b", "c", "d", "e")) shouldBe ParseError(2, "Missing value(s) for: [d, e]")
   }
 
   it should "throw an IllegalArgumentException if no columns were missing" in {
-    val row = Map("a" -> "1", "b" -> "2", "c" -> "3")
+    val row = DepositRow(2, Map("a" -> "1", "b" -> "2", "c" -> "3"))
 
-    the[IllegalArgumentException] thrownBy missingRequired(2, row, Set("a", "b", "c")) should have message "requirement failed: the list of missing elements is supposed to be non-empty"
+    the[IllegalArgumentException] thrownBy missingRequired(row, Set("a", "b", "c")) should have message "requirement failed: the list of missing elements is supposed to be non-empty"
   }
 }

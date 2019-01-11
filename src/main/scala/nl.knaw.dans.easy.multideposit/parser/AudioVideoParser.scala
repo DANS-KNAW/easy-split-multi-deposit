@@ -50,22 +50,22 @@ trait AudioVideoParser {
       })
   }
 
-  def springfield(rowNum: => Int)(row: DepositRow): Option[Validated[Springfield]] = {
+  def springfield(row: DepositRow): Option[Validated[Springfield]] = {
     val domain = row.find("SF_DOMAIN")
     val user = row.find("SF_USER")
     val collection = row.find("SF_COLLECTION")
-    val playmode = row.find("SF_PLAY_MODE").map(playMode(rowNum))
+    val playmode = row.find("SF_PLAY_MODE").map(playMode(row.rowNum))
 
-    lazy val collectionException = ParseError(rowNum, "Missing value for: SF_COLLECTION")
-    lazy val userException = ParseError(rowNum, "Missing value for: SF_USER")
-    lazy val playModeException = ParseError(rowNum, "Missing value for: SF_PLAY_MODE")
+    lazy val collectionException = ParseError(row.rowNum, "Missing value for: SF_COLLECTION")
+    lazy val userException = ParseError(row.rowNum, "Missing value for: SF_USER")
+    lazy val playModeException = ParseError(row.rowNum, "Missing value for: SF_PLAY_MODE")
 
     (domain, user, collection, playmode) match {
       case (maybeD, Some(u), Some(c), Some(pm)) => Some {
         (
-          maybeD.map(checkValidChars(_, rowNum, "SF_DOMAIN").toValidated).sequence,
-          checkValidChars(u, rowNum, "SF_USER").toValidated,
-          checkValidChars(c, rowNum, "SF_COLLECTION").toValidated,
+          maybeD.map(checkValidChars(_, row.rowNum, "SF_DOMAIN").toValidated).sequence,
+          checkValidChars(u, row.rowNum, "SF_USER").toValidated,
+          checkValidChars(c, row.rowNum, "SF_COLLECTION").toValidated,
           pm.toValidated,
         ).mapN(Springfield.maybeWithDomain)
       }
@@ -92,15 +92,15 @@ trait AudioVideoParser {
       .map(_.groupBy { case (file, _) => file }.mapValues(_.collect { case (_, subtitles) => subtitles }.toSet))
   }
 
-  def avFile(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Validated[(File, SubtitlesFile)]] = {
-    val file = row.find("AV_FILE_PATH").map(findRegularFile(depositId, rowNum))
-    val subtitle = row.find("AV_SUBTITLES").map(findRegularFile(depositId, rowNum))
+  def avFile(depositId: DepositId)(row: DepositRow): Option[Validated[(File, SubtitlesFile)]] = {
+    val file = row.find("AV_FILE_PATH").map(findRegularFile(depositId, row.rowNum))
+    val subtitle = row.find("AV_SUBTITLES").map(findRegularFile(depositId, row.rowNum))
     val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
 
     (file, subtitle, subtitleLang) match {
-      case (Some(Left(_)), Some(Left(_)), _) => ParseError(rowNum, "Both AV_FILE_PATH and AV_SUBTITLES do not represent a valid path").toInvalid.some
-      case (Some(Left(_)), _, _) => ParseError(rowNum, "AV_FILE_PATH does not represent a valid path").toInvalid.some
-      case (_, Some(Left(_)), _) => ParseError(rowNum, "AV_SUBTITLES does not represent a valid path").toInvalid.some
+      case (Some(Left(_)), Some(Left(_)), _) => ParseError(row.rowNum, "Both AV_FILE_PATH and AV_SUBTITLES do not represent a valid path").toInvalid.some
+      case (Some(Left(_)), _, _) => ParseError(row.rowNum, "AV_FILE_PATH does not represent a valid path").toInvalid.some
+      case (_, Some(Left(_)), _) => ParseError(row.rowNum, "AV_SUBTITLES does not represent a valid path").toInvalid.some
       case (Some(Right(p)), Some(Right(sub)), subLang)
         if p.exists &&
           p.isRegularFile &&
@@ -110,33 +110,33 @@ trait AudioVideoParser {
         (p, SubtitlesFile(sub, subLang)).toValidated.some
       case (Some(Right(p)), Some(_), _)
         if !p.exists =>
-        ParseError(rowNum, s"AV_FILE_PATH '$p' does not exist").toInvalid.some
+        ParseError(row.rowNum, s"AV_FILE_PATH '$p' does not exist").toInvalid.some
       case (Some(Right(p)), Some(_), _)
         if !p.isRegularFile =>
-        ParseError(rowNum, s"AV_FILE_PATH '$p' is not a file").toInvalid.some
+        ParseError(row.rowNum, s"AV_FILE_PATH '$p' is not a file").toInvalid.some
       case (Some(_), Some(Right(sub)), _)
         if !sub.exists =>
-        ParseError(rowNum, s"AV_SUBTITLES '$sub' does not exist").toInvalid.some
+        ParseError(row.rowNum, s"AV_SUBTITLES '$sub' does not exist").toInvalid.some
       case (Some(_), Some(Right(sub)), _)
         if !sub.isRegularFile =>
-        ParseError(rowNum, s"AV_SUBTITLES '$sub' is not a file").toInvalid.some
+        ParseError(row.rowNum, s"AV_SUBTITLES '$sub' is not a file").toInvalid.some
       case (Some(_), Some(_), Some(subLang))
         if !isValidISO639_1Language(subLang) =>
-        ParseError(rowNum, s"AV_SUBTITLES_LANGUAGE '$subLang' doesn't have a valid ISO 639-1 language value").toInvalid.some
+        ParseError(row.rowNum, s"AV_SUBTITLES_LANGUAGE '$subLang' doesn't have a valid ISO 639-1 language value").toInvalid.some
       case (Some(_), None, Some(subLang)) =>
-        ParseError(rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'").toInvalid.some
+        ParseError(row.rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'").toInvalid.some
       case (Some(Right(p)), None, None)
         if p.exists &&
           p.isRegularFile => none
       case (Some(Right(p)), None, None)
         if !p.exists =>
-        ParseError(rowNum, s"AV_FILE_PATH '$p' does not exist").toInvalid.some
+        ParseError(row.rowNum, s"AV_FILE_PATH '$p' does not exist").toInvalid.some
       case (Some(Right(p)), None, None)
         if !p.isRegularFile =>
-        ParseError(rowNum, s"AV_FILE_PATH '$p' is not a file").toInvalid.some
+        ParseError(row.rowNum, s"AV_FILE_PATH '$p' is not a file").toInvalid.some
       case (None, None, None) => None
       case (None, _, _) =>
-        ParseError(rowNum, "No value is defined for AV_FILE_PATH, while some of [AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined").toInvalid.some
+        ParseError(row.rowNum, "No value is defined for AV_FILE_PATH, while some of [AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined").toInvalid.some
     }
   }
 

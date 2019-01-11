@@ -47,6 +47,11 @@ trait AudioVideoTestObjects {
     )
   )
 
+  lazy val audioVideoCSVRow = List(
+    DepositRow(2, audioVideoCSVRow1),
+    DepositRow(3, audioVideoCSVRow2),
+  )
+
   lazy val audioVideo = AudioVideo(
     springfield = Option(Springfield("dans", "janvanmansum", "jans-test-files", PlayMode.Menu)),
     avFiles = Map(
@@ -82,11 +87,11 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   import parser._
 
   "extractAudioVideo" should "convert the csv input to the corresponding output" in {
-    extractAudioVideo("ruimtereis01", 2, audioVideoCSV) shouldBe Valid(audioVideo)
+    extractAudioVideo("ruimtereis01", 2, audioVideoCSVRow) shouldBe Valid(audioVideo)
   }
 
   it should "fail if there are AV_FILE_PATH values but there is no Springfield data" in {
-    val rows = Map(
+    val rows = DepositRow(2, Map(
       "SF_DOMAIN" -> "",
       "SF_USER" -> "",
       "SF_COLLECTION" -> "",
@@ -95,7 +100,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "AV_FILE_PATH" -> "",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
-    ) :: audioVideoCSVRow2 :: Nil
+    )) :: DepositRow(3, audioVideoCSVRow2) :: Nil
 
     extractAudioVideo("ruimtereis01", 2, rows) shouldBe
       Invalid(Chain(ParseError(2, "The column 'AV_FILE_PATH' contains values, but the columns [SF_COLLECTION, SF_USER] do not")))
@@ -103,36 +108,36 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
 
   it should "fail if there is more than one Springfield" in {
     // note: we require an extra column with the row numbers here!
-    val rows = (audioVideoCSVRow1 + ("ROW" -> "1")) ::
-      (audioVideoCSVRow2.updated("SF_DOMAIN", "extra1")
+    val rows = DepositRow(2, audioVideoCSVRow1) ::
+      DepositRow(3, audioVideoCSVRow2.updated("SF_DOMAIN", "extra1")
         .updated("SF_USER", "extra2")
         .updated("SF_COLLECTION", "extra3")
-        .updated("SF_PLAY_MODE", "continuous") + ("ROW" -> "2")) :: Nil
+        .updated("SF_PLAY_MODE", "continuous")) :: Nil
 
     extractAudioVideo("ruimtereis01", 2, rows) shouldBe
       Invalid(Chain(ParseError(2, "At most one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]. Found: [(dans,janvanmansum,jans-test-files,menu), (extra1,extra2,extra3,continuous)]")))
   }
 
   "springfield" should "convert the csv input into the corresponding object" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "randomdomain",
       "SF_USER" -> "randomuser",
       "SF_COLLECTION" -> "randomcollection",
       "SF_PLAY_MODE" -> "menu"
-    )
+    ))
 
-    springfield(2)(row).value shouldBe Valid(Springfield("randomdomain", "randomuser", "randomcollection", PlayMode.Menu))
+    springfield(row).value shouldBe Valid(Springfield("randomdomain", "randomuser", "randomcollection", PlayMode.Menu))
   }
 
   it should "fail if the values have invalid characters" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "inv@lïdçhæracter",
       "SF_USER" -> "#%!&@$",
       "SF_COLLECTION" -> "inv***d",
       "SF_PLAY_MODE" -> "menu"
-    )
+    ))
 
-    inside(springfield(2)(row).value) {
+    inside(springfield(row).value) {
       case Invalid(chain) =>
         chain.toNonEmptyList shouldBe NonEmptyList.of(
           ParseError(2, "The column 'SF_DOMAIN' contains the following invalid characters: {@, ï, ç, æ}"),
@@ -143,25 +148,25 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   it should "convert with a default value for SF_DOMAIN when it is not defined" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "",
       "SF_USER" -> "randomuser",
       "SF_COLLECTION" -> "randomcollection",
       "SF_PLAY_MODE" -> "menu"
-    )
+    ))
 
-    springfield(2)(row).value shouldBe Valid(Springfield("dans", "randomuser", "randomcollection", PlayMode.Menu))
+    springfield(row).value shouldBe Valid(Springfield("dans", "randomuser", "randomcollection", PlayMode.Menu))
   }
 
   it should "fail if the values have invalid characters when no SF_DOMAIN is given" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "",
       "SF_USER" -> "#%!&@$",
       "SF_COLLECTION" -> "inv***d",
       "SF_PLAY_MODE" -> "menu"
-    )
+    ))
 
-    inside(springfield(2)(row).value) {
+    inside(springfield(row).value) {
       case Invalid(chain) =>
         chain.toNonEmptyList shouldBe NonEmptyList.of(
           ParseError(2, "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"),
@@ -171,50 +176,50 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   it should "fail if SF_PLAY_MODE is given but this is an unknown value" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "randomdomain",
       "SF_USER" -> "randomuser",
       "SF_COLLECTION" -> "randomcollection",
       "SF_PLAY_MODE" -> "unknown"
-    )
+    ))
 
-    springfield(2)(row).value shouldBe
+    springfield(row).value shouldBe
       Invalid(Chain(ParseError(2, "Value 'unknown' is not a valid play mode")))
   }
 
   it should "fail if no SF_PLAY_MODE is given" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "randomdomain",
       "SF_USER" -> "randomuser",
       "SF_COLLECTION" -> "randomcollection",
       "SF_PLAY_MODE" -> ""
-    )
+    ))
 
-    springfield(2)(row).value shouldBe
+    springfield(row).value shouldBe
       Invalid(Chain(ParseError(2, "Missing value for: SF_PLAY_MODE")))
   }
 
   it should "fail if there is no value for SF_COLLECTION" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "randomdomain",
       "SF_USER" -> "randomuser",
       "SF_COLLECTION" -> "",
       "SF_PLAY_MODE" -> "menu"
-    )
+    ))
 
-    springfield(2)(row).value shouldBe
+    springfield(row).value shouldBe
       Invalid(Chain(ParseError(2, "Missing value for: SF_COLLECTION")))
   }
 
   it should "fail if there is no value for SF_COLLECTION and the value for SF_PLAY_MODE is unknown" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "randomdomain",
       "SF_USER" -> "randomuser",
       "SF_COLLECTION" -> "",
       "SF_PLAY_MODE" -> "unknown"
-    )
+    ))
 
-    inside(springfield(2)(row).value) {
+    inside(springfield(row).value) {
       case Invalid(chain) =>
         chain.toNonEmptyList shouldBe NonEmptyList.of(
           ParseError(2, "Missing value for: SF_COLLECTION"),
@@ -224,14 +229,14 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   it should "fail if both SF_COLLECTION and SF_PLAY_MODE are not given" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "randomdomain",
       "SF_USER" -> "randomuser",
       "SF_COLLECTION" -> "",
       "SF_PLAY_MODE" -> ""
-    )
+    ))
 
-    inside(springfield(2)(row).value) {
+    inside(springfield(row).value) {
       case Invalid(chain) =>
         chain.toNonEmptyList shouldBe NonEmptyList.of(
           ParseError(2, "Missing value for: SF_COLLECTION"),
@@ -241,26 +246,26 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   it should "fail if there is no value for SF_USER" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "randomdomain",
       "SF_USER" -> "",
       "SF_COLLECTION" -> "randomcollection",
       "SF_PLAY_MODE" -> "menu"
-    )
+    ))
 
-    springfield(2)(row).value shouldBe
+    springfield(row).value shouldBe
       Invalid(Chain(ParseError(2, "Missing value for: SF_USER")))
   }
 
   it should "fail if there is no value for SF_USER and the value for SF_PLAY_MODE is unknown" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "randomdomain",
       "SF_USER" -> "",
       "SF_COLLECTION" -> "randomcollection",
       "SF_PLAY_MODE" -> "unknown"
-    )
+    ))
 
-    inside(springfield(2)(row).value) {
+    inside(springfield(row).value) {
       case Invalid(chain) =>
         chain.toNonEmptyList shouldBe NonEmptyList.of(
           ParseError(2, "Missing value for: SF_USER"),
@@ -270,14 +275,14 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   it should "fail if both SF_USER and SF_PLAY_MODE are not given" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "randomdomain",
       "SF_USER" -> "",
       "SF_COLLECTION" -> "randomcollection",
       "SF_PLAY_MODE" -> ""
-    )
+    ))
 
-    inside(springfield(2)(row).value) {
+    inside(springfield(row).value) {
       case Invalid(chain) =>
         chain.toNonEmptyList shouldBe NonEmptyList.of(
           ParseError(2, "Missing value for: SF_USER"),
@@ -287,14 +292,14 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   it should "fail if both SF_USER and SF_COLLECTION are not given" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "randomdomain",
       "SF_USER" -> "",
       "SF_COLLECTION" -> "",
       "SF_PLAY_MODE" -> "menu"
-    )
+    ))
 
-    inside(springfield(2)(row).value) {
+    inside(springfield(row).value) {
       case Invalid(chain) =>
         chain.toNonEmptyList shouldBe NonEmptyList.of(
           ParseError(2, "Missing value for: SF_COLLECTION"),
@@ -304,14 +309,14 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   it should "fail if both SF_USER and SF_COLLECTION are not given and the value for SF_PLAY_MODE is unknown" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "randomdomain",
       "SF_USER" -> "",
       "SF_COLLECTION" -> "",
       "SF_PLAY_MODE" -> "unknown"
-    )
+    ))
 
-    inside(springfield(2)(row).value) {
+    inside(springfield(row).value) {
       case Invalid(chain) =>
         chain.toNonEmptyList shouldBe NonEmptyList.of(
           ParseError(2, "Missing value for: SF_COLLECTION"),
@@ -322,14 +327,14 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   it should "return None if there is no value for any of these keys" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "SF_DOMAIN" -> "",
       "SF_USER" -> "",
       "SF_COLLECTION" -> "",
       "SF_PLAY_MODE" -> ""
-    )
+    ))
 
-    springfield(2)(row) shouldBe empty
+    springfield(row) shouldBe empty
   }
 
   "playMode" should "convert the value for SF_PLAY_MODE into the corresponding enum object" in {
@@ -349,146 +354,146 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   "avFile" should "convert the csv input into the corresponding object" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
-    )
+    ))
 
     val file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg"
     val subtitles = SubtitlesFile(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt", Some("en"))
-    avFile("ruimtereis01")(2)(row).value shouldBe Valid((file, subtitles))
+    avFile("ruimtereis01")(row).value shouldBe Valid((file, subtitles))
   }
 
   it should "fail if the value for AV_FILE_PATH represents a path that does not exist" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "path/to/file/that/does/not/exist.mpg",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
-    )
+    ))
 
-    avFile("ruimtereis01")(2)(row).value shouldBe
+    avFile("ruimtereis01")(row).value shouldBe
       Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
   }
 
   it should "fail if the value for AV_FILE_PATH represents a folder" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "reisverslag/",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
-    )
+    ))
 
-    avFile("ruimtereis01")(2)(row).value shouldBe
+    avFile("ruimtereis01")(row).value shouldBe
       Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
   }
 
   it should "fail if the value for AV_FILE_PATH represents a path that does not exist when AV_SUBTITLES is not defined" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "path/to/file/that/does/not/exist.mpg",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
-    )
+    ))
 
-    avFile("ruimtereis01")(2)(row).value shouldBe
+    avFile("ruimtereis01")(row).value shouldBe
       Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
   }
 
   it should "fail if the value for AV_FILE_PATH represents a folder when AV_SUBTITLES is not defined" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "reisverslag/",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
-    )
+    ))
 
-    avFile("ruimtereis01")(2)(row).value shouldBe
+    avFile("ruimtereis01")(row).value shouldBe
       Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
   }
 
   it should "fail if the value for AV_SUBTITLES represents a path that does not exist" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "path/to/file/that/does/not/exist.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
-    )
+    ))
 
-    avFile("ruimtereis01")(2)(row).value shouldBe
+    avFile("ruimtereis01")(row).value shouldBe
       Invalid(Chain(ParseError(2, "AV_SUBTITLES does not represent a valid path")))
   }
 
   it should "fail if the value for AV_SUBTITLES represents a folder" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "reisverslag/",
       "AV_SUBTITLES_LANGUAGE" -> "en"
-    )
+    ))
 
-    avFile("ruimtereis01")(2)(row).value shouldBe
+    avFile("ruimtereis01")(row).value shouldBe
       Invalid(Chain(ParseError(2, "AV_SUBTITLES does not represent a valid path")))
   }
 
   it should "fail if the value for AV_SUBTITLES_LANGUAGE does not represent an ISO 639-1 language value" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "ac"
-    )
+    ))
 
-    avFile("ruimtereis01")(2)(row).value shouldBe
+    avFile("ruimtereis01")(row).value shouldBe
       Invalid(Chain(ParseError(2, "AV_SUBTITLES_LANGUAGE 'ac' doesn't have a valid ISO 639-1 language value")))
   }
 
   it should "fail if there is no AV_SUBTITLES value, but there is a AV_SUBTITLES_LANGUAGE" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> "en"
-    )
+    ))
 
-    avFile("ruimtereis01")(2)(row).value shouldBe
+    avFile("ruimtereis01")(row).value shouldBe
       Invalid(Chain(ParseError(2, "Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: 'en'")))
   }
 
   it should "succeed if there is a value for AV_SUBTITLES, but no value for AV_SUBTITLES_LANGUAGE" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> ""
-    )
+    ))
 
     val file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg"
     val subtitles = SubtitlesFile(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt")
-    avFile("ruimtereis01")(2)(row).value shouldBe Valid((`file`, `subtitles`))
+    avFile("ruimtereis01")(row).value shouldBe Valid((`file`, `subtitles`))
   }
 
   it should "succeed if there is no value for both AV_SUBTITLES and AV_SUBTITLES_LANGUAGE" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "reisverslag/centaur.mpg",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
-    )
+    ))
 
-    avFile("ruimtereis01")(2)(row) shouldBe empty
+    avFile("ruimtereis01")(row) shouldBe empty
   }
 
   it should "fail if there is no value for AV_FILE_PATH, but the other two do have values" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "",
       "AV_SUBTITLES" -> "reisverslag/centaur.srt",
       "AV_SUBTITLES_LANGUAGE" -> "en"
-    )
+    ))
 
-    avFile("ruimtereis01")(2)(row).value shouldBe
+    avFile("ruimtereis01")(row).value shouldBe
       Invalid(Chain(ParseError(2, "No value is defined for AV_FILE_PATH, while some of [AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined")))
   }
 
   it should "return None if all four values do not have any value" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "AV_FILE_PATH" -> "",
       "AV_SUBTITLES" -> "",
       "AV_SUBTITLES_LANGUAGE" -> ""
-    )
+    ))
 
-    avFile("ruimtereis01")(2)(row) shouldBe empty
+    avFile("ruimtereis01")(row) shouldBe empty
   }
 
   "iso639_1Language" should "return true if the tag matches an ISO 639-1 language" in {

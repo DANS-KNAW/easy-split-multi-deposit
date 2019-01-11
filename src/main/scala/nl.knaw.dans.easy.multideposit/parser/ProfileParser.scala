@@ -62,7 +62,7 @@ trait ProfileParser {
       .leftMap(_ => ParseError(rowNum, s"Value '$s' is not a valid accessright in column $columnName"))
   }
 
-  def creator(rowNum: => Int)(row: DepositRow): Option[Validated[Creator]] = {
+  def creator(row: DepositRow): Option[Validated[Creator]] = {
     val titles = row.find("DCX_CREATOR_TITLES")
     val initials = row.find("DCX_CREATOR_INITIALS")
     val insertions = row.find("DCX_CREATOR_INSERTIONS")
@@ -76,7 +76,7 @@ trait ProfileParser {
       case (None, None, None, None, Some(org), None, _) => Some {
         (
           org.toValidated,
-          cRole.map(creatorRole(rowNum)).sequence[FailFast, ContributorRole].toValidated,
+          cRole.map(creatorRole(row.rowNum)).sequence[FailFast, ContributorRole].toValidated,
         ).mapN(CreatorOrganization)
       }
       case (_, Some(init), _, Some(sur), _, _, _) => Some {
@@ -86,12 +86,12 @@ trait ProfileParser {
           insertions.toValidated,
           sur.toValidated,
           organization.toValidated,
-          cRole.map(creatorRole(rowNum)).sequence[FailFast, ContributorRole].toValidated,
+          cRole.map(creatorRole(row.rowNum)).sequence[FailFast, ContributorRole].toValidated,
           dai.toValidated,
         ).mapN(CreatorPerson)
       }
       case (_, _, _, _, _, _, _) => Some {
-        missingRequired(rowNum, row, Set("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME")).toInvalid
+        missingRequired(row, Set("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME")).toInvalid
       }
     }
   }

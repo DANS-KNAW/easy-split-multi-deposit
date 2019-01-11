@@ -54,9 +54,9 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
         res <- read(instructions).toEitherNec
         (headers, content) = res
         depositIdIndex = headers.indexOf("DATASET")
-        _ <- detectEmptyDepositCells(content.map(_ (depositIdIndex)))
-        result <- content.groupBy(_ (depositIdIndex))
-          .mapValues(_.map(headers.zip(_).filterNot { case (_, value) => value.isBlank }.toMap))
+        _ <- detectEmptyDepositCells(content.map { case (_, cs) => cs(depositIdIndex) })
+        result <- content.groupBy { case (_, cs) => cs(depositIdIndex) }
+          .mapValues(_.map { case (rowNum, data) => createDepositRow(headers)(rowNum, data) })
           .map { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows).toValidated }
           .toList
           .sequence[Validated, Deposit]
@@ -69,7 +69,16 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       ParseFailed(s"Could not find a file called 'instructions.csv' in $multiDepositDir").asLeft
   }
 
-  def read(instructions: File): Either[ParserError, (List[MultiDepositKey], List[List[String]])] = {
+  private def createDepositRow(headers: List[MultiDepositKey])
+                              (rowNum: Int, data: List[String]) = {
+    val content = headers.zip(data)
+      .filterNot { case (_, value) => value.isBlank }
+      .toMap
+
+    DepositRow(rowNum, content)
+  }
+
+  def read(instructions: File): Either[ParserError, (List[MultiDepositKey], List[(Int, List[String])])] = {
     managed(CSVParser.parse(instructions.toJava, encoding, CSVFormat.RFC4180))
       .map(csvParse)
       .tried
@@ -79,8 +88,8 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
         case Nil => EmptyInstructionsFileError(instructions).asLeft
         case headers :: rows =>
           validateDepositHeaders(headers)
-            .map(_ => ("ROW" :: headers, rows.zipWithIndex.collect {
-              case (row, index) if row.nonEmpty => (index + 2).toString :: row
+            .map(_ => (headers, rows.zipWithIndex.collect {
+              case (row, index) if row.nonEmpty => (index + 2, row)
             }))
       }
   }
@@ -128,7 +137,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
 
   def extractDeposit(multiDepositDirectory: File)
                     (depositId: DepositId, rows: DepositRows): Either[NonEmptyChain[ParseError], Deposit] = {
-    val rowNum = rows.map(getRowNum).min
+    val rowNum = rows.map(_.rowNum).min
 
     for {
       depositId <- checkValidChars(depositId, rowNum, "DATASET").toEitherNec

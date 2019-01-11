@@ -45,6 +45,11 @@ trait ProfileTestObjects {
     )
   )
 
+  lazy val profileCSVRows = List(
+    DepositRow(2, profileCSVRow1),
+    DepositRow(3, profileCSVRow2),
+  )
+
   lazy val profile = Profile(
     titles = List("title1", "title2"),
     descriptions = List("descr1", "descr2"),
@@ -66,11 +71,12 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
   import parser._
 
   "extractProfile" should "convert the csv input to the corresponding output" in {
-    extractProfile(2, profileCSV) shouldBe Valid(profile)
+    extractProfile(2, profileCSVRows) shouldBe Valid(profile)
   }
 
   it should "fail if there are no values for DC_TITLE, DC_DESCRIPTION, creator, DDM_CREATED, DDM_AUDIENCE and DDM_ACCESSRIGHTS" in {
-    val rows = Map.empty[MultiDepositKey, String] :: Map.empty[MultiDepositKey, String] :: Nil
+    val rows = DepositRow(2, Map.empty[MultiDepositKey, String]) ::
+      DepositRow(3, Map.empty[MultiDepositKey, String]) :: Nil
 
     inside(extractProfile(2, rows)) {
       case Invalid(chain) =>
@@ -86,10 +92,10 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
   }
 
   it should "fail if there are multiple values for DDM_CREATED, DDM_AVAILABLE and DDM_ACCESSRIGHTS" in {
-    val rows = profileCSVRow1 ::
-      profileCSVRow2.updated("DDM_CREATED", "2015-07-30")
+    val rows = DepositRow(2, profileCSVRow1) ::
+      DepositRow(3, profileCSVRow2.updated("DDM_CREATED", "2015-07-30")
         .updated("DDM_AVAILABLE", "2015-07-31")
-        .updated("DDM_ACCESSRIGHTS", "NO_ACCESS") :: Nil
+        .updated("DDM_ACCESSRIGHTS", "NO_ACCESS")) :: Nil
 
     inside(extractProfile(2, rows)) {
       case Invalid(chain) =>
@@ -102,7 +108,7 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
   }
 
   it should "fail if DDM_ACCESSRIGHTS is GROUPACCESS and DDM_AUDIENCE does not contain D37000" in {
-    val rows = profileCSVRow1 :: Nil
+    val rows = DepositRow(2, profileCSVRow1) :: Nil
 
     extractProfile(2, rows) shouldBe Invalid(Chain(
       ParseError(2, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeology)")
@@ -119,7 +125,7 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
   }
 
   "creator" should "return None if none of the fields are defined" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "DCX_CREATOR_TITLES" -> "",
       "DCX_CREATOR_INITIALS" -> "",
       "DCX_CREATOR_INSERTIONS" -> "",
@@ -127,13 +133,13 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ORGANIZATION" -> "",
       "DCX_CREATOR_DAI" -> "",
       "DCX_CREATOR_ROLE" -> ""
-    )
+    ))
 
-    creator(2)(row) shouldBe empty
+    creator(row) shouldBe empty
   }
 
   it should "succeed with an organisation when only the DCX_CREATOR_ORGANIZATION is defined" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "DCX_CREATOR_TITLES" -> "",
       "DCX_CREATOR_INITIALS" -> "",
       "DCX_CREATOR_INSERTIONS" -> "",
@@ -141,13 +147,13 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ORGANIZATION" -> "org",
       "DCX_CREATOR_DAI" -> "",
       "DCX_CREATOR_ROLE" -> ""
-    )
+    ))
 
-    creator(2)(row).value shouldBe Valid(CreatorOrganization("org", None))
+    creator(row).value shouldBe Valid(CreatorOrganization("org", None))
   }
 
   it should "succeed with an organisation when only the DCX_CREATOR_ORGANIZATION and DCX_CREATOR_ROLE are defined" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "DCX_CREATOR_TITLES" -> "",
       "DCX_CREATOR_INITIALS" -> "",
       "DCX_CREATOR_INSERTIONS" -> "",
@@ -155,14 +161,14 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ORGANIZATION" -> "org",
       "DCX_CREATOR_DAI" -> "",
       "DCX_CREATOR_ROLE" -> "ProjectManager"
-    )
+    ))
 
-    creator(2)(row).value shouldBe
+    creator(row).value shouldBe
       Valid(CreatorOrganization("org", Some(ContributorRole.PROJECT_MANAGER)))
   }
 
   it should "succeed with a person when only DCX_CREATOR_INITIALS and DCX_CREATOR_SURNAME are defined" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "DCX_CREATOR_TITLES" -> "",
       "DCX_CREATOR_INITIALS" -> "A.",
       "DCX_CREATOR_INSERTIONS" -> "",
@@ -170,14 +176,14 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ORGANIZATION" -> "",
       "DCX_CREATOR_DAI" -> "",
       "DCX_CREATOR_ROLE" -> ""
-    )
+    ))
 
-    creator(2)(row).value shouldBe
+    creator(row).value shouldBe
       Valid(CreatorPerson(None, "A.", None, "Jones", None, None, None))
   }
 
   it should "succeed with a more extensive person when more fields are filled in" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "DCX_CREATOR_TITLES" -> "Dr.",
       "DCX_CREATOR_INITIALS" -> "A.",
       "DCX_CREATOR_INSERTIONS" -> "X",
@@ -185,14 +191,14 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ORGANIZATION" -> "org",
       "DCX_CREATOR_DAI" -> "dai123",
       "DCX_CREATOR_ROLE" -> "rElAtEdpErsOn"
-    )
+    ))
 
-    creator(2)(row).value shouldBe
+    creator(row).value shouldBe
       Valid(CreatorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some(ContributorRole.RELATED_PERSON), Some("dai123")))
   }
 
   it should "fail if DCX_CREATOR_INITIALS is not defined" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "DCX_CREATOR_TITLES" -> "Dr.",
       "DCX_CREATOR_INITIALS" -> "",
       "DCX_CREATOR_INSERTIONS" -> "",
@@ -200,14 +206,14 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ORGANIZATION" -> "",
       "DCX_CREATOR_DAI" -> "",
       "DCX_CREATOR_ROLE" -> ""
-    )
+    ))
 
-    creator(2)(row).value shouldBe
+    creator(row).value shouldBe
       Invalid(Chain(ParseError(2, "Missing value for: DCX_CREATOR_INITIALS")))
   }
 
   it should "fail if DCX_CREATOR_SURNAME is not defined" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "DCX_CREATOR_TITLES" -> "Dr.",
       "DCX_CREATOR_INITIALS" -> "A.",
       "DCX_CREATOR_INSERTIONS" -> "",
@@ -215,14 +221,14 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ORGANIZATION" -> "",
       "DCX_CREATOR_DAI" -> "",
       "DCX_CREATOR_ROLE" -> ""
-    )
+    ))
 
-    creator(2)(row).value shouldBe
+    creator(row).value shouldBe
       Invalid(Chain(ParseError(2, "Missing value for: DCX_CREATOR_SURNAME")))
   }
 
   it should "fail if DCX_CREATOR_INITIALS and DCX_CREATOR_SURNAME are both not defined" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "DCX_CREATOR_TITLES" -> "Dr.",
       "DCX_CREATOR_INITIALS" -> "",
       "DCX_CREATOR_INSERTIONS" -> "",
@@ -230,14 +236,14 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ORGANIZATION" -> "",
       "DCX_CREATOR_DAI" -> "",
       "DCX_CREATOR_ROLE" -> ""
-    )
+    ))
 
-    creator(2)(row).value shouldBe
+    creator(row).value shouldBe
       Invalid(Chain(ParseError(2, "Missing value(s) for: [DCX_CREATOR_SURNAME, DCX_CREATOR_INITIALS]")))
   }
 
   it should "fail if DCX_CREATOR_ROLE has an invalid value" in {
-    val row = Map(
+    val row = DepositRow(2, Map(
       "DCX_CREATOR_TITLES" -> "Dr.",
       "DCX_CREATOR_INITIALS" -> "A.",
       "DCX_CREATOR_INSERTIONS" -> "",
@@ -245,9 +251,9 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ORGANIZATION" -> "",
       "DCX_CREATOR_DAI" -> "",
       "DCX_CREATOR_ROLE" -> "invalid!"
-    )
+    ))
 
-    creator(2)(row).value shouldBe
+    creator(row).value shouldBe
       Invalid(Chain(ParseError(2, "Value 'invalid!' is not a valid creator role")))
   }
 }

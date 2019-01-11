@@ -34,16 +34,16 @@ trait FileDescriptorParser {
       .fold(_.invalid, combineFileDescriptors(rowNum))
   }
 
-  def fileDescriptor(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Validated[(File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]] = {
-    val path = row.find("FILE_PATH").map(findRegularFile(depositId, rowNum))
+  def fileDescriptor(depositId: DepositId)(row: DepositRow): Option[Validated[(File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]] = {
+    val path = row.find("FILE_PATH").map(findRegularFile(depositId, row.rowNum))
     val title = row.find("FILE_TITLE")
-    val accessibility = row.find("FILE_ACCESSIBILITY").map(fileAccessibility(rowNum))
-    val visibility = row.find("FILE_VISIBILITY").map(fileVisibility(rowNum))
+    val accessibility = row.find("FILE_ACCESSIBILITY").map(fileAccessibility(row.rowNum))
+    val visibility = row.find("FILE_VISIBILITY").map(fileVisibility(row.rowNum))
 
     (path, title, accessibility, visibility) match {
       case (None, None, None, None) => None
       case (None, _, a, v) => Some {
-        val err = ParseError(rowNum, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given")
+        val err = ParseError(row.rowNum, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given")
 
         (
           a.sequence[FailFast, FileAccessRights].toValidated,
