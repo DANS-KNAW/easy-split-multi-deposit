@@ -16,8 +16,7 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
-import cats.data.Chain
-import cats.data.Validated.{ Invalid, Valid }
+import cats.data.Validated.Valid
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model._
@@ -36,7 +35,7 @@ trait LanguageBehavior {
     it should "fail when the language tag is invalid" in {
       val row = DepositRow(2, Map("taal" -> lang))
       parser.iso639_2Language("taal")(row).value shouldBe
-        Invalid(Chain(ParseError(2, s"Value '$lang' is not a valid value for taal")))
+        ParseError(2, s"Value '$lang' is not a valid value for taal").toInvalid
     }
   }
 }
@@ -171,7 +170,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     val row = DepositRow(2, Map("DC_TYPE" -> "unknown value"))
 
     dcType(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Value 'unknown value' is not a valid type")))
+      ParseError(2, "Value 'unknown value' is not a valid type").toInvalid
   }
 
   "identifier" should "return None if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are not defined" in {
@@ -190,7 +189,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     identifier(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Missing value for: DC_IDENTIFIER")))
+      ParseError(2, "Missing value for: DC_IDENTIFIER").toInvalid
   }
 
   it should "succeed if DC_IDENTIFIER is defined and DC_IDENTIFIER_TYPE is not" in {
@@ -218,7 +217,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     identifier(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Value 'INVALID_IDENTIFIER_TYPE' is not a valid identifier type")))
+      ParseError(2, "Value 'INVALID_IDENTIFIER_TYPE' is not a valid identifier type").toInvalid
   }
 
   "iso639_2Language (with normal 3-letter tag)" should behave like validLanguage3Tag(parser, "eng")
@@ -267,7 +266,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     relation(row).value shouldBe
-      Invalid(Chain(ParseError(2, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context")))
+      ParseError(2, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context").toInvalid
   }
 
   it should "succeed when only the qualifier and title are defined" in {
@@ -288,7 +287,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     relation(row).value shouldBe
-      Invalid(Chain(ParseError(2, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well")))
+      ParseError(2, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well").toInvalid
   }
 
   it should "fail if an invalid qualifier is given" in {
@@ -299,7 +298,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     relation(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Value 'invalid' is not a valid relation qualifier")))
+      ParseError(2, "Value 'invalid' is not a valid relation qualifier").toInvalid
   }
 
   it should "succeed if the qualifier is formatted differently" in {
@@ -320,7 +319,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     relation(row).value shouldBe
-      Invalid(Chain(ParseError(2, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context")))
+      ParseError(2, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context").toInvalid
   }
 
   it should "succeed if only the title is defined" in {
@@ -359,7 +358,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     dateColumn(row).value shouldBe
-      Invalid(Chain(ParseError(2, "DCT_DATE value 'random text' does not represent a date")))
+      ParseError(2, "DCT_DATE value 'random text' does not represent a date").toInvalid
   }
 
   it should "convert a date with qualifier into the corresponding object" in {
@@ -405,7 +404,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     dateColumn(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Value 'unknown' is not a valid date qualifier")))
+      ParseError(2, "Value 'unknown' is not a valid date qualifier").toInvalid
   }
 
   it should "fail if the date isn't properly formatted" in {
@@ -415,7 +414,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     dateColumn(row).value shouldBe
-      Invalid(Chain(ParseError(2, "DCT_DATE value '30-07-2016' does not represent a date")))
+      ParseError(2, "DCT_DATE value '30-07-2016' does not represent a date").toInvalid
   }
 
   it should "fail if no date is given, but a valid qualifier is given" in {
@@ -425,7 +424,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     dateColumn(row).value shouldBe
-      Invalid(Chain(ParseError(2, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it")))
+      ParseError(2, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it").toInvalid
   }
 
   it should "fail if the qualifier is equal to 'available' since we use a different keyword for that" in {
@@ -435,7 +434,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     dateColumn(row).value shouldBe
-      Invalid(Chain(ParseError(2, "DCT_DATE_QUALIFIER value 'Available' is not allowed here. Use column DDM_AVAILABLE instead.")))
+      ParseError(2, "DCT_DATE_QUALIFIER value 'Available' is not allowed here. Use column DDM_AVAILABLE instead.").toInvalid
   }
 
   it should "fail if the qualifier is equal to 'created' since we use a different keyword for that" in {
@@ -445,7 +444,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     dateColumn(row).value shouldBe
-      Invalid(Chain(ParseError(2, "DCT_DATE_QUALIFIER value 'Created' is not allowed here. Use column DDM_CREATED instead.")))
+      ParseError(2, "DCT_DATE_QUALIFIER value 'Created' is not allowed here. Use column DDM_CREATED instead.").toInvalid
   }
 
   it should "return an empty value if both values are empty" in {
@@ -539,7 +538,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     contributor(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Missing value for: DCX_CONTRIBUTOR_INITIALS")))
+      ParseError(2, "Missing value for: DCX_CONTRIBUTOR_INITIALS").toInvalid
   }
 
   it should "fail if DCX_CONTRIBUTOR_SURNAME is not defined" in {
@@ -554,7 +553,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     contributor(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Missing value for: DCX_CONTRIBUTOR_SURNAME")))
+      ParseError(2, "Missing value for: DCX_CONTRIBUTOR_SURNAME").toInvalid
   }
 
   it should "fail if DCX_CONTRIBUTOR_INITIALS and DCX_CONTRIBUTOR_SURNAME are both not defined" in {
@@ -569,7 +568,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     contributor(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME, DCX_CONTRIBUTOR_INITIALS]")))
+      ParseError(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME, DCX_CONTRIBUTOR_INITIALS]").toInvalid
   }
 
   it should "fail if DCX_CREATOR_ROLE has an invalid value" in {
@@ -584,7 +583,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     contributor(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Value 'invalid!' is not a valid contributor role")))
+      ParseError(2, "Value 'invalid!' is not a valid contributor role").toInvalid
   }
 
   "subject" should "convert the csv input into the corresponding object" in {
@@ -621,7 +620,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     subject(row).value shouldBe
-      Invalid(Chain(ParseError(2, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'")))
+      ParseError(2, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'").toInvalid
   }
 
   it should "return None when both fields are empty or blank" in {
@@ -671,7 +670,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     spatialPoint(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Missing value for: DCX_SPATIAL_Y")))
+      ParseError(2, "Missing value for: DCX_SPATIAL_Y").toInvalid
   }
 
   "spatialBox" should "convert the csv input into the corresponding object" in {
@@ -720,7 +719,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     spatialBox(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Missing value(s) for: [DCX_SPATIAL_NORTH, DCX_SPATIAL_EAST]")))
+      ParseError(2, "Missing value(s) for: [DCX_SPATIAL_NORTH, DCX_SPATIAL_EAST]").toInvalid
   }
 
   "temporal" should "convert the csv input into the corresponding object" in {
@@ -757,7 +756,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     temporal(row).value shouldBe
-      Invalid(Chain(ParseError(2, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'")))
+      ParseError(2, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'").toInvalid
   }
 
   it should "return None when both fields are empty or blank" in {
@@ -779,6 +778,6 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     val license = "unknown"
     val expectedErrorMsg = s"User license '$license' is not allowed."
 
-    userLicense(2, "DCT_LICENSE")(license) shouldBe Invalid(Chain(ParseError(2, expectedErrorMsg)))
+    userLicense(2, "DCT_LICENSE")(license) shouldBe ParseError(2, expectedErrorMsg).toInvalid
   }
 }

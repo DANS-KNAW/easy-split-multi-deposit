@@ -17,7 +17,6 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
 import cats.data.Validated.{ Invalid, Valid }
-import cats.data.{ Chain, NonEmptyList }
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.{ AudioVideo, PlayMode, Springfield, SubtitlesFile }
@@ -103,7 +102,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     )) :: DepositRow(3, audioVideoCSVRow2) :: Nil
 
     extractAudioVideo("ruimtereis01", 2, rows) shouldBe
-      Invalid(Chain(ParseError(2, "The column 'AV_FILE_PATH' contains values, but the columns [SF_COLLECTION, SF_USER] do not")))
+      ParseError(2, "The column 'AV_FILE_PATH' contains values, but the columns [SF_COLLECTION, SF_USER] do not").toInvalid
   }
 
   it should "fail if there is more than one Springfield" in {
@@ -115,7 +114,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
         .updated("SF_PLAY_MODE", "continuous")) :: Nil
 
     extractAudioVideo("ruimtereis01", 2, rows) shouldBe
-      Invalid(Chain(ParseError(2, "At most one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]. Found: [(dans,janvanmansum,jans-test-files,menu), (extra1,extra2,extra3,continuous)]")))
+      ParseError(2, "At most one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]. Found: [(dans,janvanmansum,jans-test-files,menu), (extra1,extra2,extra3,continuous)]").toInvalid
   }
 
   "springfield" should "convert the csv input into the corresponding object" in {
@@ -138,12 +137,11 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     inside(springfield(row).value) {
-      case Invalid(chain) =>
-        chain.toNonEmptyList shouldBe NonEmptyList.of(
-          ParseError(2, "The column 'SF_DOMAIN' contains the following invalid characters: {@, ï, ç, æ}"),
-          ParseError(2, "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"),
-          ParseError(2, "The column 'SF_COLLECTION' contains the following invalid characters: {*}"),
-        )
+      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
+        ParseError(2, "The column 'SF_DOMAIN' contains the following invalid characters: {@, ï, ç, æ}"),
+        ParseError(2, "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"),
+        ParseError(2, "The column 'SF_COLLECTION' contains the following invalid characters: {*}"),
+      )
     }
   }
 
@@ -167,11 +165,10 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     inside(springfield(row).value) {
-      case Invalid(chain) =>
-        chain.toNonEmptyList shouldBe NonEmptyList.of(
-          ParseError(2, "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"),
-          ParseError(2, "The column 'SF_COLLECTION' contains the following invalid characters: {*}"),
-        )
+      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
+        ParseError(2, "The column 'SF_USER' contains the following invalid characters: {#, %, !, &, @, $}"),
+        ParseError(2, "The column 'SF_COLLECTION' contains the following invalid characters: {*}"),
+      )
     }
   }
 
@@ -184,7 +181,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     springfield(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Value 'unknown' is not a valid play mode")))
+      ParseError(2, "Value 'unknown' is not a valid play mode").toInvalid
   }
 
   it should "fail if no SF_PLAY_MODE is given" in {
@@ -196,7 +193,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     springfield(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Missing value for: SF_PLAY_MODE")))
+      ParseError(2, "Missing value for: SF_PLAY_MODE").toInvalid
   }
 
   it should "fail if there is no value for SF_COLLECTION" in {
@@ -208,7 +205,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     springfield(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Missing value for: SF_COLLECTION")))
+      ParseError(2, "Missing value for: SF_COLLECTION").toInvalid
   }
 
   it should "fail if there is no value for SF_COLLECTION and the value for SF_PLAY_MODE is unknown" in {
@@ -220,11 +217,10 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     inside(springfield(row).value) {
-      case Invalid(chain) =>
-        chain.toNonEmptyList shouldBe NonEmptyList.of(
-          ParseError(2, "Missing value for: SF_COLLECTION"),
-          ParseError(2, "Value 'unknown' is not a valid play mode"),
-        )
+      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
+        ParseError(2, "Missing value for: SF_COLLECTION"),
+        ParseError(2, "Value 'unknown' is not a valid play mode"),
+      )
     }
   }
 
@@ -237,11 +233,10 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     inside(springfield(row).value) {
-      case Invalid(chain) =>
-        chain.toNonEmptyList shouldBe NonEmptyList.of(
-          ParseError(2, "Missing value for: SF_COLLECTION"),
-          ParseError(2, "Missing value for: SF_PLAY_MODE"),
-        )
+      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
+        ParseError(2, "Missing value for: SF_COLLECTION"),
+        ParseError(2, "Missing value for: SF_PLAY_MODE"),
+      )
     }
   }
 
@@ -254,7 +249,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     springfield(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Missing value for: SF_USER")))
+      ParseError(2, "Missing value for: SF_USER").toInvalid
   }
 
   it should "fail if there is no value for SF_USER and the value for SF_PLAY_MODE is unknown" in {
@@ -266,11 +261,10 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     inside(springfield(row).value) {
-      case Invalid(chain) =>
-        chain.toNonEmptyList shouldBe NonEmptyList.of(
-          ParseError(2, "Missing value for: SF_USER"),
-          ParseError(2, "Value 'unknown' is not a valid play mode"),
-        )
+      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
+        ParseError(2, "Missing value for: SF_USER"),
+        ParseError(2, "Value 'unknown' is not a valid play mode"),
+      )
     }
   }
 
@@ -283,11 +277,10 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     inside(springfield(row).value) {
-      case Invalid(chain) =>
-        chain.toNonEmptyList shouldBe NonEmptyList.of(
-          ParseError(2, "Missing value for: SF_USER"),
-          ParseError(2, "Missing value for: SF_PLAY_MODE"),
-        )
+      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
+        ParseError(2, "Missing value for: SF_USER"),
+        ParseError(2, "Missing value for: SF_PLAY_MODE"),
+      )
     }
   }
 
@@ -300,11 +293,10 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     inside(springfield(row).value) {
-      case Invalid(chain) =>
-        chain.toNonEmptyList shouldBe NonEmptyList.of(
-          ParseError(2, "Missing value for: SF_COLLECTION"),
-          ParseError(2, "Missing value for: SF_USER"),
-        )
+      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
+        ParseError(2, "Missing value for: SF_COLLECTION"),
+        ParseError(2, "Missing value for: SF_USER"),
+      )
     }
   }
 
@@ -317,12 +309,11 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     inside(springfield(row).value) {
-      case Invalid(chain) =>
-        chain.toNonEmptyList shouldBe NonEmptyList.of(
-          ParseError(2, "Missing value for: SF_COLLECTION"),
-          ParseError(2, "Missing value for: SF_USER"),
-          ParseError(2, "Value 'unknown' is not a valid play mode"),
-        )
+      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
+        ParseError(2, "Missing value for: SF_COLLECTION"),
+        ParseError(2, "Missing value for: SF_USER"),
+        ParseError(2, "Value 'unknown' is not a valid play mode"),
+      )
     }
   }
 
@@ -338,19 +329,20 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   "playMode" should "convert the value for SF_PLAY_MODE into the corresponding enum object" in {
-    playMode(2)("menu").right.value shouldBe PlayMode.Menu
+    playMode(2)("menu") shouldBe Valid(PlayMode.Menu)
   }
 
   it should "return the correct PlayMode if I use all-uppercase in the SF_PLAY_MODE value" in {
-    playMode(2)("CONTINUOUS").right.value shouldBe PlayMode.Continuous
+    playMode(2)("CONTINUOUS") shouldBe Valid(PlayMode.Continuous)
   }
 
   it should "return the correct PlayMode if I use some weird casing in the SF_PLAY_MODE value" in {
-    playMode(2)("mEnU").right.value shouldBe PlayMode.Menu
+    playMode(2)("mEnU") shouldBe Valid(PlayMode.Menu)
   }
 
   it should "fail if the SF_PLAY_MODE value does not correspond to an object in the enum" in {
-    playMode(2)("unknown value").left.value shouldBe ParseError(2, "Value 'unknown value' is not a valid play mode")
+    playMode(2)("unknown value") shouldBe
+      ParseError(2, "Value 'unknown value' is not a valid play mode").toInvalid
   }
 
   "avFile" should "convert the csv input into the corresponding object" in {
@@ -373,7 +365,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     avFile("ruimtereis01")(row).value shouldBe
-      Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
+      ParseError(2, "AV_FILE_PATH does not represent a valid path").toInvalid
   }
 
   it should "fail if the value for AV_FILE_PATH represents a folder" in {
@@ -384,7 +376,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     avFile("ruimtereis01")(row).value shouldBe
-      Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
+      ParseError(2, "AV_FILE_PATH does not represent a valid path").toInvalid
   }
 
   it should "fail if the value for AV_FILE_PATH represents a path that does not exist when AV_SUBTITLES is not defined" in {
@@ -395,7 +387,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     avFile("ruimtereis01")(row).value shouldBe
-      Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
+      ParseError(2, "AV_FILE_PATH does not represent a valid path").toInvalid
   }
 
   it should "fail if the value for AV_FILE_PATH represents a folder when AV_SUBTITLES is not defined" in {
@@ -406,7 +398,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     avFile("ruimtereis01")(row).value shouldBe
-      Invalid(Chain(ParseError(2, "AV_FILE_PATH does not represent a valid path")))
+      ParseError(2, "AV_FILE_PATH does not represent a valid path").toInvalid
   }
 
   it should "fail if the value for AV_SUBTITLES represents a path that does not exist" in {
@@ -417,7 +409,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     avFile("ruimtereis01")(row).value shouldBe
-      Invalid(Chain(ParseError(2, "AV_SUBTITLES does not represent a valid path")))
+      ParseError(2, "AV_SUBTITLES does not represent a valid path").toInvalid
   }
 
   it should "fail if the value for AV_SUBTITLES represents a folder" in {
@@ -428,7 +420,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     avFile("ruimtereis01")(row).value shouldBe
-      Invalid(Chain(ParseError(2, "AV_SUBTITLES does not represent a valid path")))
+      ParseError(2, "AV_SUBTITLES does not represent a valid path").toInvalid
   }
 
   it should "fail if the value for AV_SUBTITLES_LANGUAGE does not represent an ISO 639-1 language value" in {
@@ -439,7 +431,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     avFile("ruimtereis01")(row).value shouldBe
-      Invalid(Chain(ParseError(2, "AV_SUBTITLES_LANGUAGE 'ac' doesn't have a valid ISO 639-1 language value")))
+      ParseError(2, "AV_SUBTITLES_LANGUAGE 'ac' doesn't have a valid ISO 639-1 language value").toInvalid
   }
 
   it should "fail if there is no AV_SUBTITLES value, but there is a AV_SUBTITLES_LANGUAGE" in {
@@ -450,7 +442,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     avFile("ruimtereis01")(row).value shouldBe
-      Invalid(Chain(ParseError(2, "Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: 'en'")))
+      ParseError(2, "Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: 'en'").toInvalid
   }
 
   it should "succeed if there is a value for AV_SUBTITLES, but no value for AV_SUBTITLES_LANGUAGE" in {
@@ -483,7 +475,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
     ))
 
     avFile("ruimtereis01")(row).value shouldBe
-      Invalid(Chain(ParseError(2, "No value is defined for AV_FILE_PATH, while some of [AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined")))
+      ParseError(2, "No value is defined for AV_FILE_PATH, while some of [AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined").toInvalid
   }
 
   it should "return None if all four values do not have any value" in {

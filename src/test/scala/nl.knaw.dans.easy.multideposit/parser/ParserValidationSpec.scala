@@ -17,7 +17,6 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
 import better.files.File.currentWorkingDirectory
-import cats.data.Chain
 import cats.data.Validated.Invalid
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
@@ -86,7 +85,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     )
     val message = s"When access right '${ AccessCategory.OPEN_ACCESS }' is used, a user license must be specified as well."
 
-    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe Invalid(Chain(ParseError(2, message)))
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe ParseError(2, message).toInvalid
   }
 
   it should "fail when accessright=/=OPEN_ACCESS and user license is given" in {
@@ -102,7 +101,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     )
     val message = s"When access right '${ AccessCategory.OPEN_ACCESS }' is used, a user license must be specified as well."
 
-    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe Invalid(Chain(ParseError(2, message)))
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe ParseError(2, message).toInvalid
   }
 
   it should "succeed when accessright=/=OPEN_ACCESS and no user license is given" in {
@@ -212,6 +211,6 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       ))
 
     validation.checkEitherVideoOrAudio(deposit) shouldBe
-      Invalid(Chain(ParseError(2, "Found both audio and video in this dataset. Only one of them is allowed.")))
+      ParseError(2, "Found both audio and video in this dataset. Only one of them is allowed.").toInvalid
   }
 }

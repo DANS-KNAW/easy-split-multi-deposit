@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
-import cats.data.Chain
 import cats.data.Validated.{ Invalid, Valid }
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
@@ -168,7 +167,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     )
 
     extractFileMetadata(multiDepositDir / "ruimtereis01", instructions) shouldBe
-      Invalid(Chain(ParseError(2, s"No FILE_TITLE given for A/V file $fileWithNoDescription.")))
+      ParseError(2, s"No FILE_TITLE given for A/V file $fileWithNoDescription.").toInvalid
   }
 
   it should "fail when the deposit contains A/V files, Springfield PlayMode is Menu, and an A/V file is not listed" in {
@@ -178,7 +177,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     )
 
     extractFileMetadata(multiDepositDir / "ruimtereis01", instructions) shouldBe
-      Invalid(Chain(ParseError(2, s"Not listed A/V file detected: $fileWithNoDescription. Because Springfield PlayMode 'MENU' was choosen, all A/V files must be listed with a human readable title in the FILE_TITLE field.")))
+      ParseError(2, s"Not listed A/V file detected: $fileWithNoDescription. Because Springfield PlayMode 'MENU' was choosen, all A/V files must be listed with a human readable title in the FILE_TITLE field.").toInvalid
   }
 
   it should "collect multiple errors" in {
@@ -191,11 +190,10 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     )
 
     inside(extractFileMetadata(multiDepositDir / "ruimtereis01", instructions)) {
-      case Invalid(chain) =>
-        chain.toNonEmptyList.toList should contain only(
-          ParseError(2, s"No FILE_TITLE given for A/V file $file1."),
-          ParseError(2, s"No FILE_TITLE given for A/V file $file2."),
-        )
+      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
+        ParseError(2, s"No FILE_TITLE given for A/V file $file2."),
+        ParseError(2, s"No FILE_TITLE given for A/V file $file1."),
+      )
     }
   }
 }

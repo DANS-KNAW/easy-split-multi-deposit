@@ -19,7 +19,6 @@ import java.util.UUID
 import java.util.UUID.fromString
 
 import better.files.File
-import cats.data.{ Chain, NonEmptyList }
 import cats.data.Validated.{ Invalid, Valid }
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.Instructions
@@ -72,7 +71,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
 
   "extractDeposit" should "fail if the depositId contains invalid characters" in {
     extractDeposit(multiDepositDir)("ruimtereis01#", depositCSVRow) shouldBe
-      Invalid(Chain(ParseError(2, "The column 'DATASET' contains the following invalid characters: {#}")))
+      ParseError(2, "The column 'DATASET' contains the following invalid characters: {#}").toInvalid
   }
 
   "parse" should "load the input csv file into the object model" in {
@@ -234,7 +233,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    read(file) shouldBe Invalid(Chain(EmptyInstructionsFileError(file)))
+    read(file) shouldBe EmptyInstructionsFileError(file).toInvalid
   }
 
   it should "fail when the input contains invalid headers" in {
@@ -280,10 +279,12 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   it should "fail when any number of elements in the input are blank" in {
     val dsIds = List("ds1", "", "ds2", "ds2", "   ", "ds3")
 
-    detectEmptyDepositCells(dsIds).leftMap(_.toNonEmptyList) shouldBe Invalid(NonEmptyList.of(
-      ParseError(3, "Row 3 does not have a depositId in column DATASET"),
-      ParseError(6, "Row 6 does not have a depositId in column DATASET"),
-    ))
+    inside(detectEmptyDepositCells(dsIds)) {
+      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
+        ParseError(3, "Row 3 does not have a depositId in column DATASET"),
+        ParseError(6, "Row 6 does not have a depositId in column DATASET"),
+      )
+    }
   }
 
   "extractInstructions" should "convert the csv input to the corresponding output" in {
@@ -296,7 +297,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       Nil
 
     extractInstructions("ruimtereis01", 2, rows) shouldBe
-      Invalid(Chain(ParseError(2, "Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [ikke, ikke2]")))
+      ParseError(2, "Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [ikke, ikke2]").toInvalid
   }
 
   it should "succeed if there are multiple depositorUserIDs that are all equal" in {
@@ -312,7 +313,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val rows = DepositRow(2, depositCSVRow1) :: row :: Nil
 
     extractInstructions("ruimtereis01", 2, rows) shouldBe
-      Invalid(Chain(ParseError(2, "At most one row is allowed to contain a value for the column 'BASE_REVISION'. Found: [1de3f841-0f0d-048b-b3db-4b03ad4834d7, 9de3f841-0f0d-048b-b3db-4b03ad4834d7]")))
+      ParseError(2, "At most one row is allowed to contain a value for the column 'BASE_REVISION'. Found: [1de3f841-0f0d-048b-b3db-4b03ad4834d7, 9de3f841-0f0d-048b-b3db-4b03ad4834d7]").toInvalid
   }
 
   it should "not fail if there are multiple nondistinct base revisions" in {
@@ -324,7 +325,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
 
   "uuid" should "fail if the base revision does not conform to uuid format" in {
     uuid(2, "BASE_REVISION")("abcd-12xy") shouldBe
-      Invalid(Chain(ParseError(2, "BASE_REVISION value 'abcd-12xy' does not conform to the UUID format")))
+      ParseError(2, "BASE_REVISION value 'abcd-12xy' does not conform to the UUID format").toInvalid
   }
 
   it should "not fail if the base revision conforms to uuid format" in {
