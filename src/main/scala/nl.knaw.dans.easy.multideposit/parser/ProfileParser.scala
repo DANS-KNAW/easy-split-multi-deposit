@@ -38,9 +38,10 @@ trait ProfileParser {
       extractAtLeastOne(rowNum, "DDM_AUDIENCE", rows),
       extractDdmAccessrights(rowNum, rows),
     ).mapN(Profile)
-      .ensure(ParseError(rowNum, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeology)").chained) {
-        case Profile(_, _, _, _, _, audiences, AccessCategory.GROUP_ACCESS) => audiences.contains("D37000")
-        case _ => true
+      .andThen {
+        case Profile(_, _, _, _, _, audiences, AccessCategory.GROUP_ACCESS) if !audiences.contains("D37000") =>
+          ParseError(rowNum, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeology)").toInvalid
+        case otherwise => otherwise.toValidated
       }
   }
 

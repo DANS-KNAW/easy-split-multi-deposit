@@ -36,9 +36,10 @@ trait AudioVideoParser {
       extractSpringfieldList(rowNum, rows),
       extractSubtitlesPerFile(depositId, rows),
     ).mapN(AudioVideo)
-      .ensure(ParseError(rowNum, "The column 'AV_FILE_PATH' contains values, but the columns [SF_COLLECTION, SF_USER] do not").chained) {
-        case AudioVideo(None, avFiles) => avFiles.isEmpty
-        case _ => true
+      .andThen {
+        case AudioVideo(None, avFiles) if avFiles.nonEmpty =>
+          ParseError(rowNum, "The column 'AV_FILE_PATH' contains values, but the columns [SF_COLLECTION, SF_USER] do not").toInvalid
+        case otherwise => otherwise.toValidated
       }
   }
 

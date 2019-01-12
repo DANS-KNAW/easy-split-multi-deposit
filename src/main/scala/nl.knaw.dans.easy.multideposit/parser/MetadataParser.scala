@@ -210,7 +210,12 @@ trait MetadataParser {
 
     (subject, scheme) match {
       case (Some(subj), sch) => Some {
-        val subjectScheme: Validated[Option[String]] = sch.toValidated.ensure(ParseError(row.rowNum, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'").chained)(_.forall(_ == "abr:ABRcomplex"))
+        val subjectScheme: Validated[Option[String]] = sch.toValidated
+            .andThen {
+              case abr @ Some("abr:ABRcomplex") => abr.toValidated
+              case Some(_) => ParseError(row.rowNum, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'").toInvalid
+              case None => none.toValidated
+            }
 
         (
           subj.toValidated,
@@ -265,7 +270,11 @@ trait MetadataParser {
     (temporal, scheme) match {
       case (Some(temp), sch) => Some {
         val temporalScheme: Validated[Option[String]] = sch.toValidated
-          .ensure(ParseError(row.rowNum, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'").chained)(_.forall(_ == "abr:ABRperiode"))
+          .andThen {
+            case abr @ Some("abr:ABRperiode") => abr.toValidated
+            case Some(_) => ParseError(row.rowNum, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'").toInvalid
+            case None => none.toValidated
+          }
 
         (
           temp.toValidated,
