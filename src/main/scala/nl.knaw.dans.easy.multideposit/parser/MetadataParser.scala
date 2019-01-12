@@ -77,15 +77,12 @@ trait MetadataParser {
     val idType = row.find("DC_IDENTIFIER_TYPE")
 
     (identifier, idType) match {
-      case (Some(id), idt) => Some {
+      case (Some(id), idt) =>
         (
           id.toValidated,
           idt.map(identifierType(row.rowNum)).sequence[Validated, IdentifierType]
-        ).mapN(Identifier)
-      }
-      case (None, Some(_)) => Some {
-        missingRequired(row, Set("DC_IDENTIFIER")).toInvalid
-      }
+        ).mapN(Identifier).some
+      case (None, Some(_)) => missingRequired(row, Set("DC_IDENTIFIER")).toInvalid.some
       case (None, None) => none
     }
   }
@@ -118,23 +115,18 @@ trait MetadataParser {
     val title = row.find("DCX_RELATION_TITLE")
 
     (qualifier, link, title) match {
-      case (Some(_), None, None) => Some {
-        ParseError(row.rowNum, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well").toInvalid
-      }
-      case (_, Some(_), None) => Some {
-        ParseError(row.rowNum, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context").toInvalid
-      }
-      case (Some(q), l, t) => Some {
+      case (Some(_), None, None) =>
+        ParseError(row.rowNum, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well").toInvalid.some
+      case (_, Some(_), None) =>
+        ParseError(row.rowNum, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context").toInvalid.some
+      case (Some(q), l, t) =>
         (
           RelationQualifier.valueOf(q).map(_.toValidated).getOrElse(ParseError(row.rowNum, s"Value '$q' is not a valid relation qualifier").toInvalid),
           l.toValidated,
           t.toValidated,
-        ).mapN(QualifiedRelation)
-      }
-      case (None, None, None) => None
-      case (None, l, t) => Some {
-        UnqualifiedRelation(l, t).toValidated
-      }
+        ).mapN(QualifiedRelation).some
+      case (None, None, None) => none
+      case (None, l, t) => UnqualifiedRelation(l, t).toValidated.some
     }
   }
 
@@ -143,7 +135,7 @@ trait MetadataParser {
     val qualifierString = row.find("DCT_DATE_QUALIFIER")
 
     (dateString, qualifierString) match {
-      case (Some(d), Some(q)) => Some {
+      case (Some(d), Some(q)) =>
         (
           date(row.rowNum, "DCT_DATE")(d),
           DateQualifier.valueOf(q)
@@ -155,15 +147,11 @@ trait MetadataParser {
                 case _ => ParseError(row.rowNum, s"Value '$q' is not a valid date qualifier").toInvalid
               }
             },
-        ).mapN(QualifiedDate)
-      }
-      case (Some(d), None) => Some {
-        TextualDate(d).toValidated
-      }
-      case (None, Some(_)) => Some {
-        ParseError(row.rowNum, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it").toInvalid
-      }
-      case (None, None) => None
+        ).mapN(QualifiedDate).some
+      case (Some(d), None) => TextualDate(d).toValidated.some
+      case (None, Some(_)) =>
+        ParseError(row.rowNum, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it").toInvalid.some
+      case (None, None) => none
     }
   }
 
@@ -177,14 +165,13 @@ trait MetadataParser {
     val cRole = row.find("DCX_CONTRIBUTOR_ROLE")
 
     (titles, initials, insertions, surname, organization, dai, cRole) match {
-      case (None, None, None, None, None, None, None) => None
-      case (None, None, None, None, Some(org), None, _) => Some {
+      case (None, None, None, None, None, None, None) => none
+      case (None, None, None, None, Some(org), None, _) =>
         (
           org.toValidated,
           cRole.map(contributorRole(row.rowNum)).sequence[Validated, ContributorRole],
-        ).mapN(ContributorOrganization)
-      }
-      case (_, Some(init), _, Some(sur), _, _, _) => Some {
+        ).mapN(ContributorOrganization).some
+      case (_, Some(init), _, Some(sur), _, _, _) =>
         (
           titles.toValidated,
           init.toValidated,
@@ -193,9 +180,8 @@ trait MetadataParser {
           organization.toValidated,
           cRole.map(contributorRole(row.rowNum)).sequence[Validated, ContributorRole],
           dai.toValidated,
-        ).mapN(ContributorPerson)
-      }
-      case (_, _, _, _, _, _, _) => Some(missingRequired(row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")).toInvalid)
+        ).mapN(ContributorPerson).some
+      case (_, _, _, _, _, _, _) => missingRequired(row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")).toInvalid.some
     }
   }
 
@@ -209,7 +195,7 @@ trait MetadataParser {
     val scheme = row.find("DC_SUBJECT_SCHEME")
 
     (subject, scheme) match {
-      case (Some(subj), sch) => Some {
+      case (Some(subj), sch) =>
         val subjectScheme: Validated[Option[String]] = sch.toValidated
             .andThen {
               case abr @ Some("abr:ABRcomplex") => abr.toValidated
@@ -220,12 +206,9 @@ trait MetadataParser {
         (
           subj.toValidated,
           subjectScheme,
-        ).mapN(Subject)
-      }
-      case (None, Some(_)) => Some {
-        Subject(scheme = scheme).toValidated
-      }
-      case (None, None) => None
+        ).mapN(Subject).some
+      case (None, Some(_)) => Subject(scheme = scheme).toValidated.some
+      case (None, None) => none
     }
   }
 
@@ -235,13 +218,9 @@ trait MetadataParser {
     val maybeScheme = row.find("DCX_SPATIAL_SCHEME")
 
     (maybeX, maybeY, maybeScheme) match {
-      case (Some(x), Some(y), scheme) => Some {
-        SpatialPoint(x, y, scheme).toValidated
-      }
-      case (None, None, _) => None
-      case _ => Some {
-        missingRequired(row, Set("DCX_SPATIAL_X", "DCX_SPATIAL_Y")).toInvalid
-      }
+      case (Some(x), Some(y), scheme) => SpatialPoint(x, y, scheme).toValidated.some
+      case (None, None, _) => none
+      case _ => missingRequired(row, Set("DCX_SPATIAL_X", "DCX_SPATIAL_Y")).toInvalid.some
     }
   }
 
@@ -253,13 +232,11 @@ trait MetadataParser {
     val maybeScheme = row.find("DCX_SPATIAL_SCHEME")
 
     (west, east, south, north, maybeScheme) match {
-      case (Some(w), Some(e), Some(s), Some(n), scheme) => Some {
-        SpatialBox(n, s, e, w, scheme).toValidated
-      }
-      case (None, None, None, None, _) => None
-      case _ => Some {
-        missingRequired(row, Set("DCX_SPATIAL_WEST", "DCX_SPATIAL_EAST", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_NORTH")).toInvalid
-      }
+      case (Some(w), Some(e), Some(s), Some(n), scheme) =>
+        SpatialBox(n, s, e, w, scheme).toValidated.some
+      case (None, None, None, None, _) => none
+      case _ =>
+        missingRequired(row, Set("DCX_SPATIAL_WEST", "DCX_SPATIAL_EAST", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_NORTH")).toInvalid.some
     }
   }
 
@@ -268,7 +245,7 @@ trait MetadataParser {
     val scheme = row.find("DCT_TEMPORAL_SCHEME")
 
     (temporal, scheme) match {
-      case (Some(temp), sch) => Some {
+      case (Some(temp), sch) =>
         val temporalScheme: Validated[Option[String]] = sch.toValidated
           .andThen {
             case abr @ Some("abr:ABRperiode") => abr.toValidated
@@ -279,12 +256,9 @@ trait MetadataParser {
         (
           temp.toValidated,
           temporalScheme,
-        ).mapN(Temporal)
-      }
-      case (None, Some(_)) => Some {
-        Temporal(scheme = scheme).toValidated
-      }
-      case (None, None) => None
+        ).mapN(Temporal).some
+      case (None, Some(_)) => Temporal(scheme = scheme).toValidated.some
+      case (None, None) => none
     }
   }
 

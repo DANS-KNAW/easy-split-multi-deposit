@@ -86,13 +86,12 @@ trait ProfileParser {
 
     (titles, initials, insertions, surname, organization, dai, cRole) match {
       case (None, None, None, None, None, None, None) => none
-      case (None, None, None, None, Some(org), None, _) => Some {
+      case (None, None, None, None, Some(org), None, _) =>
         (
           org.toValidated,
           cRole.map(creatorRole(row.rowNum)).sequence[Validated, ContributorRole],
-        ).mapN(CreatorOrganization)
-      }
-      case (_, Some(init), _, Some(sur), _, _, _) => Some {
+        ).mapN(CreatorOrganization).some
+      case (_, Some(init), _, Some(sur), _, _, _) =>
         (
           titles.toValidated,
           init.toValidated,
@@ -101,11 +100,9 @@ trait ProfileParser {
           organization.toValidated,
           cRole.map(creatorRole(row.rowNum)).sequence[Validated, ContributorRole],
           dai.toValidated,
-        ).mapN(CreatorPerson)
-      }
-      case (_, _, _, _, _, _, _) => Some {
-        missingRequired(row, Set("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME")).toInvalid
-      }
+        ).mapN(CreatorPerson).some
+      case (_, _, _, _, _, _, _) =>
+        missingRequired(row, Set("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME")).toInvalid.some
     }
   }
 

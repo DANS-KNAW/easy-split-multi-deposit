@@ -41,7 +41,7 @@ trait FileDescriptorParser {
 
     (path, title, accessibility, visibility) match {
       case (None, None, None, None) => None
-      case (None, _, a, v) => Some {
+      case (None, _, a, v) =>
         val err = ParseError(row.rowNum, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given")
 
         (
@@ -49,15 +49,14 @@ trait FileDescriptorParser {
           v.sequence[Validated, FileAccessRights],
         ).tupled
           .fold(e => (err +: e).invalid, _ => err.toInvalid)
-      }
-      case (Some(p), t, a, v) => Some {
+          .some
+      case (Some(p), t, a, v) =>
         (
           p,
           t.toValidated,
           a.sequence[Validated, FileAccessRights],
           v.sequence[Validated, FileAccessRights],
-        ).tupled
-      }
+        ).tupled.some
     }
   }
 

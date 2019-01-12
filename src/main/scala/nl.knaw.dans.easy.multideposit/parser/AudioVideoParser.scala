@@ -63,14 +63,13 @@ trait AudioVideoParser {
     lazy val playModeException = ParseError(row.rowNum, "Missing value for: SF_PLAY_MODE")
 
     (domain, user, collection, playmode) match {
-      case (maybeD, Some(u), Some(c), Some(pm)) => Some {
+      case (maybeD, Some(u), Some(c), Some(pm)) =>
         (
           maybeD.map(checkValidChars(_, row.rowNum, "SF_DOMAIN")).sequence,
           checkValidChars(u, row.rowNum, "SF_USER"),
           checkValidChars(c, row.rowNum, "SF_COLLECTION"),
           pm,
-        ).mapN(Springfield.maybeWithDomain)
-      }
+        ).mapN(Springfield.maybeWithDomain).some
       case (_, Some(_), Some(_), None) => playModeException.toInvalid.some
       case (_, Some(_), None, Some(Valid(_))) => collectionException.toInvalid.some
       case (_, Some(_), None, Some(Invalid(parseError))) => (collectionException +: parseError).invalid.some
