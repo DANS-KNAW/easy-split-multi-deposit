@@ -16,8 +16,7 @@
 package nl.knaw.dans.easy.multideposit
 
 import better.files.File
-import cats.data.{ EitherNec, NonEmptyChain, ValidatedNec }
-import cats.syntax.either._
+import cats.data.{ NonEmptyChain, ValidatedNec }
 import cats.syntax.validated._
 import nl.knaw.dans.easy.multideposit.model.MultiDepositKey
 import nl.knaw.dans.lib.string._
@@ -31,25 +30,18 @@ package object parser {
     def find(name: MultiDepositKey): Option[String] = row.content.get(name).filterNot(_.isBlank)
   }
 
-  type FailFast[T] = Either[ParseError, T]
-  type FailFastNec[T] = EitherNec[ParseError, T]
-  type Validated[T] = ValidatedNec[ParseError, T]
+  type Validated[T] = ValidatedNec[ParserError, T]
 
   implicit class ValidatedSyntax[T](val t: T) extends AnyVal {
-    def toValidated: Validated[T] = t.validNec[ParseError]
+    def toValidated: Validated[T] = t.validNec[ParserError]
   }
 
-  implicit class FailFastSyntax[T](val either: FailFast[T]) extends AnyVal {
-    def toValidated: Validated[T] = either.toValidatedNec
+  private[parser] sealed abstract class ParserError {
+    def toInvalid[T]: Validated[T] = this.invalidNec[T]
+    def chained: NonEmptyChain[ParserError] = NonEmptyChain.one(this)
   }
-
-  private[parser] sealed abstract class ParserError
   private[parser] case class EmptyInstructionsFileError(file: File) extends ParserError
-  private[parser] case class ParseError(row: Int, message: String) extends ParserError {
-    def toInvalid[T]: Validated[T] = this.invalidNec
-
-    def chained: NonEmptyChain[ParseError] = NonEmptyChain.one(this)
-  }
+  private[parser] case class ParseError(row: Int, message: String) extends ParserError
 
   // TODO remove extends Exception
   // kept here for now to be conform with the rest of the application

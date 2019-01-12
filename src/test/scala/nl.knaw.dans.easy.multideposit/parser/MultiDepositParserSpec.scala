@@ -71,8 +71,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   import parser._
 
   "extractDeposit" should "fail if the depositId contains invalid characters" in {
-    extractDeposit(multiDepositDir)("ruimtereis01#", depositCSVRow).left.value shouldBe
-      Chain(ParseError(2, "The column 'DATASET' contains the following invalid characters: {#}"))
+    extractDeposit(multiDepositDir)("ruimtereis01#", depositCSVRow) shouldBe
+      Invalid(Chain(ParseError(2, "The column 'DATASET' contains the following invalid characters: {#}")))
   }
 
   "parse" should "load the input csv file into the object model" in {
@@ -123,7 +123,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file).right.value shouldBe (expectedHeaders, expectedData)
+    read(file) shouldBe Valid((expectedHeaders, expectedData))
   }
 
   it should "correctly parse newlines in the data (using quotes according to RFC4180) and still correctly do the row numbering" in {
@@ -147,7 +147,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file).right.value shouldBe (expectedHeaders, expectedData)
+    read(file) shouldBe Valid((expectedHeaders, expectedData))
   }
 
   it should "parse the input when some cells are empty" in {
@@ -170,7 +170,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file).right.value shouldBe (expectedHeaders, expectedData)
+    read(file) shouldBe Valid((expectedHeaders, expectedData))
   }
 
   it should "parse the input when some cells are blank and leave these cells empty in the result" in {
@@ -193,7 +193,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file).right.value shouldBe (expectedHeaders, expectedData)
+    read(file) shouldBe Valid((expectedHeaders, expectedData))
   }
 
   it should "parse the input while leaving out blank rows" in {
@@ -215,7 +215,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file).right.value shouldBe (expectedHeaders, expectedData)
+    read(file) shouldBe Valid((expectedHeaders, expectedData))
   }
 
   it should "parse the input if it only contains a row of headers and no data" in {
@@ -226,7 +226,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List.empty[(Int, String)]
 
-    read(file).right.value shouldBe (expectedHeaders, expectedData)
+    read(file) shouldBe Valid((expectedHeaders, expectedData))
   }
 
   it should "fail when the input csv file is empty" in {
@@ -234,7 +234,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    read(file).left.value shouldBe EmptyInstructionsFileError(file)
+    read(file) shouldBe Invalid(Chain(EmptyInstructionsFileError(file)))
   }
 
   it should "fail when the input contains invalid headers" in {
@@ -248,8 +248,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    inside(read(file).left.value) {
-      case ParseError(0, msg) =>
+    inside(read(file).leftMap(_.toNonEmptyList.toList)) {
+      case Invalid(List(ParseError(0, msg))) =>
         msg should include("unknown headers: [foo]")
     }
   }
@@ -265,8 +265,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    inside(read(file).left.value) {
-      case ParseError(0, msg) =>
+    inside(read(file).leftMap(_.toNonEmptyList.toList)) {
+      case Invalid(List(ParseError(0, msg))) =>
         msg should include("duplicate headers: [DEPOSITOR_ID]")
     }
   }
@@ -274,16 +274,16 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   "detectEmptyDepositCells" should "succeed when no elements in the input are empty" in {
     val dsIds = List("ds1", "ds1", "ds2", "ds2", "ds2", "ds3")
 
-    detectEmptyDepositCells(dsIds) shouldBe a[Right[_, _]]
+    detectEmptyDepositCells(dsIds).isValid shouldBe true
   }
 
   it should "fail when any number of elements in the input are blank" in {
     val dsIds = List("ds1", "", "ds2", "ds2", "   ", "ds3")
 
-    detectEmptyDepositCells(dsIds).left.value.toNonEmptyList shouldBe NonEmptyList.of(
+    detectEmptyDepositCells(dsIds).leftMap(_.toNonEmptyList) shouldBe Invalid(NonEmptyList.of(
       ParseError(3, "Row 3 does not have a depositId in column DATASET"),
       ParseError(6, "Row 6 does not have a depositId in column DATASET"),
-    )
+    ))
   }
 
   "extractInstructions" should "convert the csv input to the corresponding output" in {
@@ -319,16 +319,16 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val row = DepositRow(3, Map("DATASET" -> "ruimtereis01", "BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2)
     val rows = DepositRow(2, depositCSVRow1) :: row :: Nil
 
-    extractInstructions("ruimtereis01", 2, rows) shouldBe a[Valid[_]]
+    extractInstructions("ruimtereis01", 2, rows).isValid shouldBe true
   }
 
   "uuid" should "fail if the base revision does not conform to uuid format" in {
-    uuid(2, "BASE_REVISION")("abcd-12xy").left.value shouldBe
-      ParseError(2, "BASE_REVISION value 'abcd-12xy' does not conform to the UUID format")
+    uuid(2, "BASE_REVISION")("abcd-12xy") shouldBe
+      Invalid(Chain(ParseError(2, "BASE_REVISION value 'abcd-12xy' does not conform to the UUID format")))
   }
 
   it should "not fail if the base revision conforms to uuid format" in {
     val uuidString = "1de3f841-0f0d-048b-b3db-4b03ad4834d7"
-    uuid(2, "BASE_REVISION")(uuidString).right.value shouldBe Some(UUID.fromString(uuidString))
+    uuid(2, "BASE_REVISION")(uuidString) shouldBe Valid(Some(UUID.fromString(uuidString)))
   }
 }

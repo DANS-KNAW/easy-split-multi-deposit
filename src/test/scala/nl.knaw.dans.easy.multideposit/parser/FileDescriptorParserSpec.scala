@@ -304,18 +304,20 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
   }
 
   "fileAccessibility" should "convert the value for SF_ACCESSIBILITY into the corresponding enum object" in {
-    fileAccessibility(2)("NONE").right.value shouldBe FileAccessRights.NONE
+    fileAccessibility(2)("NONE") shouldBe Valid(FileAccessRights.NONE)
   }
 
   it should "fail if the SF_ACCESSIBILITY value does not correspond to an object in the enum" in {
-    fileAccessibility(2)("unknown value").left.value shouldBe ParseError(2, "Value 'unknown value' is not a valid file accessright")
+    fileAccessibility(2)("unknown value") shouldBe
+      Invalid(Chain(ParseError(2, "Value 'unknown value' is not a valid file accessright")))
   }
 
   "fileVisibility" should "convert the value for SF_ACCESSIBILITY into the corresponding enum object" in {
-    fileVisibility(2)("NONE").right.value shouldBe FileAccessRights.NONE
+    fileVisibility(2)("NONE") shouldBe Valid(FileAccessRights.NONE)
   }
 
   it should "fail if the SF_ACCESSIBILITY value does not correspond to an object in the enum" in {
-    fileVisibility(2)("unknown value").left.value shouldBe ParseError(2, "Value 'unknown value' is not a valid file visibility")
+    fileVisibility(2)("unknown value") shouldBe
+      Invalid(Chain(ParseError(2, "Value 'unknown value' is not a valid file visibility")))
   }
 }

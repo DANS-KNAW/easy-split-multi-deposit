@@ -772,13 +772,13 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
   "userLicense" should "return a user license object when the given license is allowed" in {
     val license = "http://www.mozilla.org/en-US/MPL/2.0/FAQ/"
 
-    userLicense(2, "DCT_LICENSE")(license).right.value shouldBe UserLicense(`license`)
+    userLicense(2, "DCT_LICENSE")(license) shouldBe Valid(UserLicense(license))
   }
 
   it should "fail when the given license is unknown" in {
     val license = "unknown"
     val expectedErrorMsg = s"User license '$license' is not allowed."
 
-    userLicense(2, "DCT_LICENSE")(license).left.value shouldBe ParseError(2, expectedErrorMsg)
+    userLicense(2, "DCT_LICENSE")(license) shouldBe Invalid(Chain(ParseError(2, expectedErrorMsg)))
   }
 }

@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.parser
 import java.io.IOException
 
 import better.files.File
-import cats.syntax.either._
+import cats.data.Validated.catchOnly
 import nl.knaw.dans.easy.multideposit.model.MimeType
 import org.apache.tika.Tika
 
@@ -32,8 +32,8 @@ object MimeType {
    * @param file the file to identify
    * @return the mimeType of the path if the identification was successful; `Failure` otherwise
    */
-  def get(file: File): FailFast[MimeType] = {
-    Either.catchOnly[IOException] { tika.detect(file.path) }
-      .leftMap(ioe => ParseError(-1, ioe.getMessage))
+  def get(file: File): Validated[MimeType] = {
+    catchOnly[IOException] { tika.detect(file.path) }
+      .leftMap(ioe => ParseError(-1, ioe.getMessage).chained)
   }
 }

@@ -15,10 +15,9 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import cats.instances.either._
+import cats.data.Validated.catchOnly
 import cats.instances.option._
 import cats.syntax.apply._
-import cats.syntax.either._
 import cats.syntax.option._
 import cats.syntax.traverse._
 import nl.knaw.dans.common.lang.dataset.AccessCategory
@@ -31,19 +30,13 @@ trait ProfileParser {
 
   def extractProfile(rowNum: Int, rows: DepositRows): Validated[Profile] = {
     (
-      extractAtLeastOne(rowNum, "DC_TITLE", rows).toValidated,
-      extractAtLeastOne(rowNum, "DC_DESCRIPTION", rows).toValidated,
+      extractAtLeastOne(rowNum, "DC_TITLE", rows),
+      extractAtLeastOne(rowNum, "DC_DESCRIPTION", rows),
       extractCreators(rowNum, rows),
-      extractExactlyOne(rowNum, "DDM_CREATED", rows)
-        .flatMap(date(rowNum, "DDM_CREATED"))
-        .toValidated,
-      extractAtMostOne(rowNum, "DDM_AVAILABLE", rows)
-        .flatMap(_.map(date(rowNum, "DDM_AVAILABLE")).getOrElse(DateTime.now().asRight))
-        .toValidated,
-      extractAtLeastOne(rowNum, "DDM_AUDIENCE", rows).toValidated,
-      extractExactlyOne(rowNum, "DDM_ACCESSRIGHTS", rows)
-        .flatMap(accessCategory(rowNum, "DDM_ACCESSRIGHTS"))
-        .toValidated,
+      extractDdmCreated(rowNum, rows),
+      extractDdmAvailable(rowNum, rows),
+      extractAtLeastOne(rowNum, "DDM_AUDIENCE", rows),
+      extractDdmAccessrights(rowNum, rows),
     ).mapN(Profile)
       .ensure(ParseError(rowNum, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeology)").chained) {
         case Profile(_, _, _, _, _, audiences, AccessCategory.GROUP_ACCESS) => audiences.contains("D37000")
@@ -57,9 +50,28 @@ trait ProfileParser {
       .map(listToNEL)
   }
 
-  def accessCategory(rowNum: => Int, columnName: => String)(s: String): FailFast[AccessCategory] = {
-    Either.catchOnly[IllegalArgumentException] { AccessCategory.valueOf(s) }
+  private def extractDdmCreated(rowNum: Int, rows: DepositRows): Validated[DateTime] = {
+    extractExactlyOne(rowNum, "DDM_CREATED", rows)
+      .andThen(date(rowNum, "DDM_CREATED"))
+  }
+
+  private def extractDdmAvailable(rowNum: Int, rows: DepositRows): Validated[DateTime] = {
+    extractAtMostOne(rowNum, "DDM_AVAILABLE", rows)
+      .andThen {
+        case Some(value) => date(rowNum, "DDM_AVAILABLE")(value)
+        case None => DateTime.now().toValidated
+      }
+  }
+
+  private def extractDdmAccessrights(rowNum: Int, rows: DepositRows): Validated[AccessCategory] = {
+    extractExactlyOne(rowNum, "DDM_ACCESSRIGHTS", rows)
+      .andThen(accessCategory(rowNum, "DDM_ACCESSRIGHTS")(_))
+  }
+
+  def accessCategory(rowNum: => Int, columnName: => String)(s: String): Validated[AccessCategory] = {
+    catchOnly[IllegalArgumentException] { AccessCategory.valueOf(s) }
       .leftMap(_ => ParseError(rowNum, s"Value '$s' is not a valid accessright in column $columnName"))
+      .toValidatedNec
   }
 
   def creator(row: DepositRow): Option[Validated[Creator]] = {
@@ -76,7 +88,7 @@ trait ProfileParser {
       case (None, None, None, None, Some(org), None, _) => Some {
         (
           org.toValidated,
-          cRole.map(creatorRole(row.rowNum)).sequence[FailFast, ContributorRole].toValidated,
+          cRole.map(creatorRole(row.rowNum)).sequence[Validated, ContributorRole],
         ).mapN(CreatorOrganization)
       }
       case (_, Some(init), _, Some(sur), _, _, _) => Some {
@@ -86,7 +98,7 @@ trait ProfileParser {
           insertions.toValidated,
           sur.toValidated,
           organization.toValidated,
-          cRole.map(creatorRole(row.rowNum)).sequence[FailFast, ContributorRole].toValidated,
+          cRole.map(creatorRole(row.rowNum)).sequence[Validated, ContributorRole],
           dai.toValidated,
         ).mapN(CreatorPerson)
       }
@@ -96,8 +108,8 @@ trait ProfileParser {
     }
   }
 
-  private def creatorRole(rowNum: => Int)(role: String): FailFast[ContributorRole] = {
+  private def creatorRole(rowNum: => Int)(role: String): Validated[ContributorRole] = {
     ContributorRole.valueOf(role)
-      .toRight(ParseError(rowNum, s"Value '$role' is not a valid creator role"))
+      .toValidNec(ParseError(rowNum, s"Value '$role' is not a valid creator role"))
   }
 }

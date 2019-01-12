@@ -116,12 +116,12 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
   }
 
   "accessCategory" should "convert the value for DDM_ACCESSRIGHTS into the corresponding enum object" in {
-    accessCategory(2, "DDM_ACCESSRIGHTS")("ANONYMOUS_ACCESS").right.value shouldBe AccessCategory.ANONYMOUS_ACCESS
+    accessCategory(2, "DDM_ACCESSRIGHTS")("ANONYMOUS_ACCESS") shouldBe Valid(AccessCategory.ANONYMOUS_ACCESS)
   }
 
   it should "fail if the DDM_ACCESSRIGHTS value does not correspond to an object in the enum" in {
-    accessCategory(2, "DDM_ACCESSRIGHTS")("unknown value").left.value shouldBe
-      ParseError(2, "Value 'unknown value' is not a valid accessright in column DDM_ACCESSRIGHTS")
+    accessCategory(2, "DDM_ACCESSRIGHTS")("unknown value") shouldBe
+      Invalid(Chain(ParseError(2, "Value 'unknown value' is not a valid accessright in column DDM_ACCESSRIGHTS")))
   }
 
   "creator" should "return None if none of the fields are defined" in {

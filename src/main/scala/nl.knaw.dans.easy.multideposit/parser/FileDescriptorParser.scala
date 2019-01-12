@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
-import cats.instances.either._
 import cats.instances.list._
 import cats.instances.option._
 import cats.syntax.apply._
@@ -46,17 +45,17 @@ trait FileDescriptorParser {
         val err = ParseError(row.rowNum, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given")
 
         (
-          a.sequence[FailFast, FileAccessRights].toValidated,
-          v.sequence[FailFast, FileAccessRights].toValidated,
+          a.sequence[Validated, FileAccessRights],
+          v.sequence[Validated, FileAccessRights],
         ).tupled
           .fold(e => (err +: e).invalid, _ => err.toInvalid)
       }
       case (Some(p), t, a, v) => Some {
         (
-          p.toValidated,
+          p,
           t.toValidated,
-          a.sequence[FailFast, FileAccessRights].toValidated,
-          v.sequence[FailFast, FileAccessRights].toValidated,
+          a.sequence[Validated, FileAccessRights],
+          v.sequence[Validated, FileAccessRights],
         ).tupled
       }
     }
@@ -85,24 +84,19 @@ trait FileDescriptorParser {
       ensureAtMostOneElementInList(dataPerPath.collect { case (_, _, _, Some(fv)) => fv })(fileVisibilities => ParseError(rowNum, s"FILE_VISIBILITY defined multiple values for file '$file': ${ fileVisibilities.mkString("[", ", ", "]") }")),
     ).mapN(FileDescriptor)
       .map((file, _))
-      .ensureOr {
-        case (_, FileDescriptor(_, Some(as), Some(vs))) =>
-          ParseError(rowNum, s"FILE_VISIBILITY ($vs) is more restricted than FILE_ACCESSIBILITY ($as) for file '$file'. (User will potentially have access to an invisible file.)").chained
-        case _ =>
-          ParseError(rowNum, "should not happen, I'm just here to satisfy the compiler").chained
-      } {
-        case (_, FileDescriptor(_, Some(as), Some(vs))) => vs < as
-        case _ => true
+      .andThen {
+        case (_, FileDescriptor(_, Some(as), Some(vs))) if vs >= as => ParseError(rowNum, s"FILE_VISIBILITY ($vs) is more restricted than FILE_ACCESSIBILITY ($as) for file '$file'. (User will potentially have access to an invisible file.)").toInvalid
+        case tuple => tuple.toValidated
       }
   }
 
-  def fileAccessibility(rowNum: => Int)(role: String): FailFast[FileAccessRights] = {
+  def fileAccessibility(rowNum: => Int)(role: String): Validated[FileAccessRights] = {
     FileAccessRights.valueOf(role)
-      .toRight(ParseError(rowNum, s"Value '$role' is not a valid file accessright"))
+      .toValidNec(ParseError(rowNum, s"Value '$role' is not a valid file accessright"))
   }
 
-  def fileVisibility(rowNum: => Int)(role: String): FailFast[FileAccessRights] = {
+  def fileVisibility(rowNum: => Int)(role: String): Validated[FileAccessRights] = {
     FileAccessRights.valueOf(role)
-      .toRight(ParseError(rowNum, s"Value '$role' is not a valid file visibility"))
+      .toValidNec(ParseError(rowNum, s"Value '$role' is not a valid file visibility"))
   }
 }

@@ -19,9 +19,11 @@ import java.util.UUID
 
 import better.files.File
 import cats.data.NonEmptyChain
+import cats.data.Validated.catchOnly
 import cats.instances.list._
 import cats.syntax.apply._
 import cats.syntax.either._
+import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
@@ -50,27 +52,30 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
     if (instructions.exists) {
       logger.info(s"Parsing $instructions")
 
-      val deposits = for {
-        res <- read(instructions).toEitherNec
-        (headers, content) = res
-        depositIdIndex = headers.indexOf("DATASET")
-        _ <- detectEmptyDepositCells(content.map { case (_, cs) => cs(depositIdIndex) })
-        result <- content.groupBy { case (_, cs) => cs(depositIdIndex) }
-          .mapValues(_.map { case (rowNum, data) => createDepositRow(headers)(rowNum, data) })
-          .map { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows).toValidated }
-          .toList
-          .sequence[Validated, Deposit]
-          .toEither
-      } yield result
-
-      deposits.leftMap(chain => parserErrorReport(chain))
+      read(instructions)
+        .andThen {
+          case (headers, content) =>
+            val depositIdIndex = headers.indexOf("DATASET")
+            detectEmptyDepositCells(content.map { case (_, cs) => cs(depositIdIndex) })
+              .productR(createDeposits(depositIdIndex)(headers, content))
+        }
+        .leftMap(parserErrorReport)
+        .toEither
     }
     else
       ParseFailed(s"Could not find a file called 'instructions.csv' in $multiDepositDir").asLeft
   }
 
-  private def createDepositRow(headers: List[MultiDepositKey])
-                              (rowNum: Int, data: List[String]) = {
+  private def createDeposits(depositIdIndex: Int)
+                            (headers: List[MultiDepositKey], content: List[(Int, List[String])]): Validated[List[Deposit]] = {
+    content.groupBy { case (_, cs) => cs(depositIdIndex) }
+      .mapValues(_.map { case (rowNum, data) => createDepositRow(headers)(rowNum, data) })
+      .map { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows) }
+      .toList
+      .sequence[Validated, Deposit]
+  }
+
+  private def createDepositRow(headers: List[MultiDepositKey])(rowNum: Int, data: List[String]): DepositRow = {
     val content = headers.zip(data)
       .filterNot { case (_, value) => value.isBlank }
       .toMap
@@ -78,14 +83,15 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
     DepositRow(rowNum, content)
   }
 
-  def read(instructions: File): Either[ParserError, (List[MultiDepositKey], List[(Int, List[String])])] = {
+  def read(instructions: File): Validated[(List[MultiDepositKey], List[(Int, List[String])])] = {
     managed(CSVParser.parse(instructions.toJava, encoding, CSVFormat.RFC4180))
       .map(csvParse)
       .tried
       .toEither
-      .leftMap(e => ParseError(-1, e.getMessage))
-      .flatMap {
-        case Nil => EmptyInstructionsFileError(instructions).asLeft
+      .toValidated
+      .leftMap(e => ParseError(-1, e.getMessage).chained)
+      .andThen {
+        case Nil => EmptyInstructionsFileError(instructions).toInvalid
         case headers :: rows =>
           validateDepositHeaders(headers)
             .map(_ => (headers, rows.zipWithIndex.collect {
@@ -103,7 +109,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       }
   }
 
-  private def validateDepositHeaders(headers: List[MultiDepositKey]): FailFast[Unit] = {
+  private def validateDepositHeaders(headers: List[MultiDepositKey]): Validated[Unit] = {
     val validHeaders = Headers.validHeaders
     val invalidHeaders = headers.filterNot(validHeaders.contains)
     lazy val uniqueHeaders = headers.distinct
@@ -112,17 +118,17 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       case Nil =>
         headers match {
           case hs if hs.size != uniqueHeaders.size =>
-            ParseError(0, "SIP Instructions file contains duplicate headers: " + headers.diff(uniqueHeaders).mkString("[", ", ", "]")).asLeft
-          case _ => ().asRight
+            ParseError(0, "SIP Instructions file contains duplicate headers: " + headers.diff(uniqueHeaders).mkString("[", ", ", "]")).toInvalid
+          case _ => ().toValidated
         }
       case invalids =>
         ParseError(0, "SIP Instructions file contains unknown headers: " +
           s"${ invalids.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
-          "consult the documentation for the list of valid headers.").asLeft
+          "consult the documentation for the list of valid headers.").toInvalid
     }
   }
 
-  def detectEmptyDepositCells(depositIds: List[String]): Either[NonEmptyChain[ParseError], Unit] = {
+  def detectEmptyDepositCells(depositIds: List[String]): Validated[Unit] = {
     depositIds.zipWithIndex
       .map {
         case (s, i) if s.isBlank =>
@@ -132,41 +138,49 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       }
       .sequence[Validated, Unit]
       .map(_ => ())
-      .toEither
   }
 
-  def extractDeposit(multiDepositDirectory: File)
-                    (depositId: DepositId, rows: DepositRows): Either[NonEmptyChain[ParseError], Deposit] = {
+  def extractDeposit(multiDepositDirectory: File)(depositId: DepositId, rows: DepositRows): Validated[Deposit] = {
     val rowNum = rows.map(_.rowNum).min
 
-    for {
-      depositId <- checkValidChars(depositId, rowNum, "DATASET").toEitherNec
-      instructions <- extractInstructions(depositId, rowNum, rows).toEither
-      depositDir = multiDepositDirectory / depositId
-      fileMetadata <- extractFileMetadata(depositDir, instructions).toEither
-      deposit = instructions.toDeposit(fileMetadata)
-      _ <- validateDeposit(deposit).toEither
-    } yield deposit
+    checkValidChars(depositId, rowNum, "DATASET")
+      .andThen(depositId =>
+        extractInstructions(depositId, rowNum, rows)
+          .tupleRight(multiDepositDirectory / depositId)
+      )
+      .andThen {
+        case (instructions, depositDir) =>
+          extractFileMetadata(depositDir, instructions)
+            .map(instructions.toDeposit)
+      }
+      .andThen(deposit => validateDeposit(deposit).as(deposit))
   }
 
   def extractInstructions(depositId: DepositId, rowNum: Int, rows: DepositRows): Validated[Instructions] = {
     (
       depositId.toValidated,
       rowNum.toValidated,
-      extractExactlyOne(rowNum, "DEPOSITOR_ID", rows).toValidated,
+      extractExactlyOne(rowNum, "DEPOSITOR_ID", rows),
       extractProfile(rowNum, rows),
-      extractAtMostOne(rowNum, "BASE_REVISION", rows)
-        .flatMap(_.map(uuid(rowNum, "BASE_REVISION")).getOrElse(none.asRight))
-        .toValidated,
+      extractBaseRevision(rowNum, rows),
       extractMetadata(rowNum, rows),
       extractFileDescriptors(depositId, rowNum, rows),
       extractAudioVideo(depositId, rowNum, rows),
     ).mapN(Instructions)
   }
 
-  def uuid(rowNum: => Int, columnName: => String)(s: String): FailFast[Option[UUID]] = {
-    Either.catchOnly[IllegalArgumentException] { Option(UUID.fromString(s)) }
+  private def extractBaseRevision(rowNum: Int, rows: DepositRows): Validated[Option[UUID]] = {
+    extractAtMostOne(rowNum, "BASE_REVISION", rows)
+      .andThen {
+        case Some(value) => uuid(rowNum, "BASE_REVISION")(value)
+        case None => none.toValidated
+      }
+  }
+
+  def uuid(rowNum: => Int, columnName: => String)(s: String): Validated[Option[UUID]] = {
+    catchOnly[IllegalArgumentException] { Option(UUID.fromString(s)) }
       .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' does not conform to the UUID format"))
+      .toValidatedNec
   }
 
   private def parserErrorReport(errors: NonEmptyChain[ParserError]): ParseFailed = {

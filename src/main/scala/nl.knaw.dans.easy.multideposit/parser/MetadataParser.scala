@@ -17,10 +17,8 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import java.util.Locale
 
-import cats.instances.either._
 import cats.instances.option._
 import cats.syntax.apply._
-import cats.syntax.either._
 import cats.syntax.option._
 import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
@@ -51,17 +49,20 @@ trait MetadataParser {
       extractList(rows)(spatialPoint),
       extractList(rows)(spatialBox),
       extractList(rows)(temporal),
-      extractAtMostOne(rowNum, "DCT_LICENSE", rows)
-        .flatMap {
-          case Some(license) => userLicense(rowNum, "DCT_LICENSE")(license).map(_.some)
-          case None => none.asRight
-        }
-        .toValidated,
+      extractUserLicenses(rowNum, rows),
     ).mapN(Metadata)
   }
 
-  def extractDcType(rows: DepositRows): Validated[NonEmptyList[DcType]] = {
+  private def extractDcType(rows: DepositRows): Validated[NonEmptyList[DcType]] = {
     extractList(rows)(dcType).map(_ defaultIfEmpty DcType.DATASET)
+  }
+
+  private def extractUserLicenses(rowNum: Int, rows: DepositRows): Validated[Option[UserLicense]] = {
+    extractAtMostOne(rowNum, "DCT_LICENSE", rows)
+      .andThen {
+        case Some(license) => userLicense(rowNum, "DCT_LICENSE")(license).map(_.some)
+        case None => none.toValidated
+      }
   }
 
   def dcType(row: DepositRow): Option[Validated[DcType]] = {
@@ -79,7 +80,7 @@ trait MetadataParser {
       case (Some(id), idt) => Some {
         (
           id.toValidated,
-          idt.map(identifierType(row.rowNum)).sequence[FailFast, IdentifierType].toValidated
+          idt.map(identifierType(row.rowNum)).sequence[Validated, IdentifierType]
         ).mapN(Identifier)
       }
       case (None, Some(_)) => Some {
@@ -89,9 +90,9 @@ trait MetadataParser {
     }
   }
 
-  private def identifierType(rowNum: => Int)(role: String): FailFast[IdentifierType] = {
+  private def identifierType(rowNum: => Int)(role: String): Validated[IdentifierType] = {
     IdentifierType.valueOf(role)
-      .toRight(ParseError(rowNum, s"Value '$role' is not a valid identifier type"))
+      .toValidNec(ParseError(rowNum, s"Value '$role' is not a valid identifier type"))
   }
 
   private lazy val iso639v2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
@@ -144,7 +145,7 @@ trait MetadataParser {
     (dateString, qualifierString) match {
       case (Some(d), Some(q)) => Some {
         (
-          date(row.rowNum, "DCT_DATE")(d).toValidated,
+          date(row.rowNum, "DCT_DATE")(d),
           DateQualifier.valueOf(q)
             .map(_.toValidated)
             .getOrElse {
@@ -180,7 +181,7 @@ trait MetadataParser {
       case (None, None, None, None, Some(org), None, _) => Some {
         (
           org.toValidated,
-          cRole.map(contributorRole(row.rowNum)).sequence[FailFast, ContributorRole].toValidated,
+          cRole.map(contributorRole(row.rowNum)).sequence[Validated, ContributorRole],
         ).mapN(ContributorOrganization)
       }
       case (_, Some(init), _, Some(sur), _, _, _) => Some {
@@ -190,7 +191,7 @@ trait MetadataParser {
           insertions.toValidated,
           sur.toValidated,
           organization.toValidated,
-          cRole.map(contributorRole(row.rowNum)).sequence[FailFast, ContributorRole].toValidated,
+          cRole.map(contributorRole(row.rowNum)).sequence[Validated, ContributorRole],
           dai.toValidated,
         ).mapN(ContributorPerson)
       }
@@ -198,9 +199,9 @@ trait MetadataParser {
     }
   }
 
-  private def contributorRole(rowNum: => Int)(role: String): FailFast[ContributorRole] = {
+  private def contributorRole(rowNum: => Int)(role: String): Validated[ContributorRole] = {
     ContributorRole.valueOf(role)
-      .toRight(ParseError(rowNum, s"Value '$role' is not a valid contributor role"))
+      .toValidNec(ParseError(rowNum, s"Value '$role' is not a valid contributor role"))
   }
 
   def subject(row: DepositRow): Option[Validated[Subject]] = {
@@ -278,10 +279,10 @@ trait MetadataParser {
     }
   }
 
-  def userLicense(rowNum: => Int, columnName: => String)(licenseString: String): FailFast[UserLicense] = {
+  def userLicense(rowNum: => Int, columnName: => String)(licenseString: String): Validated[UserLicense] = {
     if (userLicenses contains licenseString)
-      UserLicense(licenseString).asRight
+      UserLicense(licenseString).toValidated
     else
-      ParseError(rowNum, s"User license '$licenseString' is not allowed.").asLeft
+      ParseError(rowNum, s"User license '$licenseString' is not allowed.").toInvalid
   }
 }

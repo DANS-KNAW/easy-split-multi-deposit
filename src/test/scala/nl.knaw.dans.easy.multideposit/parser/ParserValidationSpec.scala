@@ -17,6 +17,8 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
 import better.files.File.currentWorkingDirectory
+import cats.data.Chain
+import cats.data.Validated.Invalid
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, PlayMode, Springfield, UserLicense, Video }
@@ -68,7 +70,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       ),
     )
 
-    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe a[Right[_, _]]
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit).isValid shouldBe true
   }
 
   it should "fail when accessright=OPEN_ACCESS and no user license is given" in {
@@ -84,7 +86,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     )
     val message = s"When access right '${ AccessCategory.OPEN_ACCESS }' is used, a user license must be specified as well."
 
-    validation.checkUserLicenseOnlyWithOpenAccess(deposit).left.value shouldBe ParseError(2, message)
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe Invalid(Chain(ParseError(2, message)))
   }
 
   it should "fail when accessright=/=OPEN_ACCESS and user license is given" in {
@@ -100,7 +102,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     )
     val message = s"When access right '${ AccessCategory.OPEN_ACCESS }' is used, a user license must be specified as well."
 
-    validation.checkUserLicenseOnlyWithOpenAccess(deposit).left.value shouldBe ParseError(2, message)
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe Invalid(Chain(ParseError(2, message)))
   }
 
   it should "succeed when accessright=/=OPEN_ACCESS and no user license is given" in {
@@ -115,7 +117,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       ),
     )
 
-    validation.checkUserLicenseOnlyWithOpenAccess(deposit) shouldBe a[Right[_, _]]
+    validation.checkUserLicenseOnlyWithOpenAccess(deposit).isValid shouldBe true
   }
 
   "checkSpringFieldDepositHasAVformat" should "fail if the deposit contains SF_* fields, but no AV DC_FORMAT is given" in {
@@ -125,8 +127,9 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
         formats = List("text/plain")
       )
     )
-    inside(validation.checkSpringFieldDepositHasAVformat(deposit)) {
-      case Left(ParseError(_, message)) =>
+
+    inside(validation.checkSpringFieldDepositHasAVformat(deposit).leftMap(_.toNonEmptyList.toList)) {
+      case Invalid(List(ParseError(_, message))) =>
         message should include("No audio/video format found for this column: [DC_FORMAT]")
     }
   }
@@ -138,7 +141,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
         formats = List("audio/mpeg3")
       )
     )
-    validation.checkSpringFieldDepositHasAVformat(deposit) shouldBe a[Right[_, _]]
+    validation.checkSpringFieldDepositHasAVformat(deposit).isValid shouldBe true
   }
 
   "checkSFColumnsIfDepositContainsAVFiles" should "succeed if the deposit contains the SF_* fields in case an A/V file is found" in {
@@ -146,7 +149,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       depositId = depositId,
       springfield = Option(Springfield("domain", "user", "collection", PlayMode.Continuous))
     )
-    validation.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Right[_, _]]
+    validation.checkSFColumnsIfDepositContainsAVFiles(deposit).isValid shouldBe true
   }
 
   it should "fail if the deposit contains A/V files but the SF_* fields are not present" in {
@@ -155,8 +158,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       springfield = Option.empty
     )
 
-    inside(validation.checkSFColumnsIfDepositContainsAVFiles(deposit)) {
-      case Left(ParseError(_, message)) =>
+    inside(validation.checkSFColumnsIfDepositContainsAVFiles(deposit).leftMap(_.toNonEmptyList.toList)) {
+      case Invalid(List(ParseError(_, message))) =>
         message should {
           include("No values found for these columns: [SF_USER, SF_COLLECTION, SF_PLAY_MODE]") and
             include("reisverslag/centaur.mpg")
@@ -171,7 +174,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       springfield = Option.empty
     )
 
-    validation.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Right[_, _]]
+    validation.checkSFColumnsIfDepositContainsAVFiles(deposit).isValid shouldBe true
   }
 
   it should "fail if the deposit contains no A/V files and any of the SF_* fields are present" in {
@@ -182,8 +185,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       springfield = Option(Springfield(user = "user", collection = "collection", playMode = PlayMode.Continuous))
     )
 
-    inside(validation.checkSFColumnsIfDepositContainsAVFiles(deposit)) {
-      case Left(ParseError(_, message)) =>
+    inside(validation.checkSFColumnsIfDepositContainsAVFiles(deposit).leftMap(_.toNonEmptyList.toList)) {
+      case Invalid(List(ParseError(_, message))) =>
         message should include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]; these columns should be empty because there are no audio/video files found in this deposit")
     }
   }
@@ -193,7 +196,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     val deposit = testInstructions2.copy(depositId = depositId).toDeposit()
     depositDir(depositId).toJava should not(exist)
 
-    validation.checkSFColumnsIfDepositContainsAVFiles(deposit) shouldBe a[Right[_, _]]
+    validation.checkSFColumnsIfDepositContainsAVFiles(deposit).isValid shouldBe true
   }
 
   "checkEitherVideoOrAudio" should "fail if a dataset has both audio and video material in it" in {
@@ -208,7 +211,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
         visibleTo = FileAccessRights.ANONYMOUS
       ))
 
-    validation.checkEitherVideoOrAudio(deposit).left.value shouldBe
-      ParseError(2, "Found both audio and video in this dataset. Only one of them is allowed.")
+    validation.checkEitherVideoOrAudio(deposit) shouldBe
+      Invalid(Chain(ParseError(2, "Found both audio and video in this dataset. Only one of them is allowed.")))
   }
 }

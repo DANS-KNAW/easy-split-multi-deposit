@@ -17,7 +17,6 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
 import cats.instances.list._
-import cats.syntax.either._
 import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.model.FileAccessRights.FileAccessRights
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, AvVocabulary, DefaultFileMetadata, FileAccessRights, FileMetadata, Instructions, MimeType, PlayMode, Springfield, Video }
@@ -30,19 +29,19 @@ trait FileMetadataParser extends DebugEnhancedLogging {
 
     if (depositDir.exists)
       depositDir.listRecursively
-        .collect { case file if !file.isDirectory => getFileMetadata(instructions)(file).toValidated }
+        .collect { case file if !file.isDirectory => getFileMetadata(instructions)(file) }
         .toList
         .sequence[Validated, FileMetadata]
     else // if the deposit does not contain any data
       List.empty[FileMetadata].toValidated
   }
 
-  private def getFileMetadata(instructions: Instructions)(file: File): FailFast[FileMetadata] = {
+  private def getFileMetadata(instructions: Instructions)(file: File): Validated[FileMetadata] = {
     MimeType.get(file)
-      .flatMap {
+      .andThen {
         case mimetype if mimetype startsWith "audio" => mkAvFileMetadata(file, mimetype, Audio, instructions)
         case mimetype if mimetype startsWith "video" => mkAvFileMetadata(file, mimetype, Video, instructions)
-        case mimetype => mkDefaultFileMetadata(file, mimetype, instructions).asRight
+        case mimetype => mkDefaultFileMetadata(file, mimetype, instructions).toValidated
       }
   }
 
@@ -52,14 +51,14 @@ trait FileMetadataParser extends DebugEnhancedLogging {
       .getOrElse(DefaultFileMetadata(file.path, m))
   }
 
-  private def mkAvFileMetadata(file: File, m: MimeType, vocabulary: AvVocabulary, instructions: Instructions): FailFast[FileMetadata] = {
+  private def mkAvFileMetadata(file: File, m: MimeType, vocabulary: AvVocabulary, instructions: Instructions): Validated[FileMetadata] = {
     instructions.audioVideo.springfield
       .map(mkAvFileWithSpringfield(file, m, vocabulary, instructions))
-      .getOrElse(mkAvFileWithoutSpringfield(file, m, vocabulary, instructions).asRight)
+      .getOrElse(mkAvFileWithoutSpringfield(file, m, vocabulary, instructions).toValidated)
   }
 
   private def mkAvFileWithSpringfield(file: File, m: MimeType, vocabulary: AvVocabulary, instructions: Instructions)
-                                     (springfield: Springfield): FailFast[AVFileMetadata] = {
+                                     (springfield: Springfield): Validated[AVFileMetadata] = {
     val subtitles = instructions.audioVideo.avFiles.getOrElse(file.path, Set.empty)
     lazy val defaultAccess = defaultAccessibility(instructions)
     lazy val defaultVisibility = FileAccessRights.ANONYMOUS
@@ -73,10 +72,10 @@ trait FileMetadataParser extends DebugEnhancedLogging {
         springfield.playMode match {
           case PlayMode.Menu =>
             fd.title
-              .map(title => AVFileMetadata(file.path, m, vocabulary, title, accessibility, visibility, subtitles).asRight)
-              .getOrElse(ParseError(instructions.row, s"No FILE_TITLE given for A/V file $file.").asLeft)
+              .map(title => AVFileMetadata(file.path, m, vocabulary, title, accessibility, visibility, subtitles).toValidated)
+              .getOrElse(ParseError(instructions.row, s"No FILE_TITLE given for A/V file $file.").toInvalid)
           case PlayMode.Continuous =>
-            AVFileMetadata(file.path, m, vocabulary, fd.title.getOrElse(filename), accessibility, visibility, subtitles).asRight
+            AVFileMetadata(file.path, m, vocabulary, fd.title.getOrElse(filename), accessibility, visibility, subtitles).toValidated
         }
       })
       .getOrElse {
@@ -84,9 +83,9 @@ trait FileMetadataParser extends DebugEnhancedLogging {
           case PlayMode.Menu =>
             ParseError(instructions.row, s"Not listed A/V file detected: $file. " +
               "Because Springfield PlayMode 'MENU' was choosen, all A/V files must be listed " +
-              "with a human readable title in the FILE_TITLE field.").asLeft
+              "with a human readable title in the FILE_TITLE field.").toInvalid
           case PlayMode.Continuous =>
-            AVFileMetadata(file.path, m, vocabulary, filename, defaultAccess, defaultVisibility, subtitles).asRight
+            AVFileMetadata(file.path, m, vocabulary, filename, defaultAccess, defaultVisibility, subtitles).toValidated
         }
       }
   }
