@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
-import cats.data.Validated.{ Invalid, Valid }
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, DefaultFileMetadata, FileAccessRights, FileDescriptor, PlayMode, Springfield, SubtitlesFile, Video }
@@ -131,9 +130,8 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
   import parser._
 
   "extractFileMetadata" should "collect the metadata for all files in ruimtereis01" in {
-    inside(extractFileMetadata(multiDepositDir / "ruimtereis01", testInstructions1)) {
-      case Valid(fs) =>
-        fs should { have size 9 and contain allElementsOf fileMetadata1 }
+    extractFileMetadata(multiDepositDir / "ruimtereis01", testInstructions1).validValue should {
+      have size 9 and contain allElementsOf fileMetadata1
     }
   }
 
@@ -144,7 +142,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     ruimtereis03Path shouldNot exist
 
     // test
-    extractFileMetadata(ruimtereis03Path, testInstructions1) shouldBe Valid(Nil)
+    extractFileMetadata(ruimtereis03Path, testInstructions1).validValue shouldBe empty
   }
 
   it should "collect the metadata for all files in ruimtereis04" in {
@@ -154,9 +152,8 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
       )
     )
 
-    inside(extractFileMetadata(multiDepositDir / "ruimtereis04", instructions)) {
-      case Valid(fs) =>
-        fs should { have size 3 and contain allElementsOf fileMetadata4 }
+    extractFileMetadata(multiDepositDir / "ruimtereis04", instructions).validValue should {
+      have size 3 and contain allElementsOf fileMetadata4
     }
   }
 
@@ -166,8 +163,8 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
       files = testInstructions1.files.updated(fileWithNoDescription, FileDescriptor(title = Option.empty)),
     )
 
-    extractFileMetadata(multiDepositDir / "ruimtereis01", instructions) shouldBe
-      ParseError(2, s"No FILE_TITLE given for A/V file $fileWithNoDescription.").toInvalid
+    extractFileMetadata(multiDepositDir / "ruimtereis01", instructions).invalidValue shouldBe
+      ParseError(2, s"No FILE_TITLE given for A/V file $fileWithNoDescription.").chained
   }
 
   it should "fail when the deposit contains A/V files, Springfield PlayMode is Menu, and an A/V file is not listed" in {
@@ -176,8 +173,8 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
       files = testInstructions1.files - fileWithNoDescription,
     )
 
-    extractFileMetadata(multiDepositDir / "ruimtereis01", instructions) shouldBe
-      ParseError(2, s"Not listed A/V file detected: $fileWithNoDescription. Because Springfield PlayMode 'MENU' was choosen, all A/V files must be listed with a human readable title in the FILE_TITLE field.").toInvalid
+    extractFileMetadata(multiDepositDir / "ruimtereis01", instructions).invalidValue shouldBe
+      ParseError(2, s"Not listed A/V file detected: $fileWithNoDescription. Because Springfield PlayMode 'MENU' was choosen, all A/V files must be listed with a human readable title in the FILE_TITLE field.").chained
   }
 
   it should "collect multiple errors" in {
@@ -189,11 +186,9 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
         .updated(file2, FileDescriptor(Option.empty))
     )
 
-    inside(extractFileMetadata(multiDepositDir / "ruimtereis01", instructions)) {
-      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
-        ParseError(2, s"No FILE_TITLE given for A/V file $file2."),
-        ParseError(2, s"No FILE_TITLE given for A/V file $file1."),
-      )
-    }
+    extractFileMetadata(multiDepositDir / "ruimtereis01", instructions).invalidValue.toNonEmptyList.toList should contain inOrderOnly(
+      ParseError(2, s"No FILE_TITLE given for A/V file $file2."),
+      ParseError(2, s"No FILE_TITLE given for A/V file $file1."),
+    )
   }
 }

@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
-import cats.data.Validated.{ Invalid, Valid }
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import org.joda.time.DateTime
@@ -35,7 +34,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
     )
 
-    extractExactlyOne(2, "FOO", rows) shouldBe Valid("abc")
+    extractExactlyOne(2, "FOO", rows).validValue shouldBe "abc"
   }
 
   it should "filter out the blank values" in {
@@ -44,7 +43,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
     )
 
-    extractExactlyOne(2, "BAR", rows) shouldBe Valid("def")
+    extractExactlyOne(2, "BAR", rows).validValue shouldBe "def"
   }
 
   it should "fail when the output is empty" in {
@@ -53,8 +52,8 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractExactlyOne(2, "QUX", rows) shouldBe
-      ParseError(2, "There should be one non-empty value for QUX").toInvalid
+    extractExactlyOne(2, "QUX", rows).invalidValue shouldBe
+      ParseError(2, "There should be one non-empty value for QUX").chained
   }
 
   it should "fail when the input contains multiple distinct values for the same columnName" in {
@@ -63,8 +62,8 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractExactlyOne(2, "FOO", rows) shouldBe
-      ParseError(2, "Only one row is allowed to contain a value for the column 'FOO'. Found: [abc, ghi]").toInvalid
+    extractExactlyOne(2, "FOO", rows).invalidValue shouldBe
+      ParseError(2, "Only one row is allowed to contain a value for the column 'FOO'. Found: [abc, ghi]").chained
   }
 
   it should "succeed when the input contains multiple identical values for the same columnName" in {
@@ -73,7 +72,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
     )
 
-    extractExactlyOne(2, "FOO", rows) shouldBe Valid("abc")
+    extractExactlyOne(2, "FOO", rows).validValue shouldBe "abc"
   }
 
   "extractAtLeastOne" should "find the values for the given rows" in {
@@ -82,7 +81,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractAtLeastOne(2, "FOO", rows) shouldBe Valid(List("abc", "ghi"))
+    extractAtLeastOne(2, "FOO", rows).validValue should contain inOrderOnly("abc", "ghi")
   }
 
   it should "filter out the blank values" in {
@@ -91,7 +90,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
     )
 
-    extractAtLeastOne(2, "BAR", rows) shouldBe Valid(List("def"))
+    extractAtLeastOne(2, "BAR", rows).validValue should contain only "def"
   }
 
   it should "fail when the output is empty" in {
@@ -100,8 +99,8 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractAtLeastOne(2, "QUX", rows) shouldBe
-      ParseError(2, "There should be at least one non-empty value for QUX").toInvalid
+    extractAtLeastOne(2, "QUX", rows).invalidValue shouldBe
+      ParseError(2, "There should be at least one non-empty value for QUX").chained
   }
 
   it should "succeed when the input contains multiple identical values for the same columnName" in {
@@ -110,7 +109,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
     )
 
-    extractAtLeastOne(2, "FOO", rows) shouldBe Valid(List("abc"))
+    extractAtLeastOne(2, "FOO", rows).validValue should contain only "abc"
   }
 
   "extractAtMostOne" should "find the value for the given rows" in {
@@ -118,7 +117,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
     )
 
-    extractAtMostOne(2, "FOO", rows) shouldBe Valid(Some("abc"))
+    extractAtMostOne(2, "FOO", rows).validValue.value shouldBe "abc"
   }
 
   it should "filter out the blank values" in {
@@ -127,7 +126,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
     )
 
-    extractAtMostOne(2, "BAR", rows) shouldBe Valid(Some("def"))
+    extractAtMostOne(2, "BAR", rows).validValue.value shouldBe "def"
   }
 
   it should "return a None when the output is empty" in {
@@ -136,7 +135,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractAtMostOne(2, "QUX", rows) shouldBe Valid(None)
+    extractAtMostOne(2, "QUX", rows).validValue shouldBe empty
   }
 
   it should "fail when the input contains multiple distinct values for the same columnName" in {
@@ -145,8 +144,8 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractAtMostOne(2, "FOO", rows) shouldBe
-      ParseError(2, "At most one row is allowed to contain a value for the column 'FOO'. Found: [abc, ghi]").toInvalid
+    extractAtMostOne(2, "FOO", rows).invalidValue shouldBe
+      ParseError(2, "At most one row is allowed to contain a value for the column 'FOO'. Found: [abc, ghi]").chained
   }
 
   it should "succeed when the input contains multiple identical values for the same columnName" in {
@@ -155,7 +154,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
     )
 
-    extractAtMostOne(2, "FOO", rows) shouldBe Valid(Some("abc"))
+    extractAtMostOne(2, "FOO", rows).validValue.value shouldBe "abc"
   }
 
   "extractList curried" should "for each row run the given function and collect the results" in {
@@ -164,7 +163,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(3, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractList(rows)(i => Some(i.rowNum.toValidated)) shouldBe Valid(List(2, 3))
+    extractList(rows)(i => Some(i.rowNum.toValidated)).validValue should contain inOrderOnly(2, 3)
   }
 
   it should "leave out the rows for which the function returns a None" in {
@@ -176,7 +175,7 @@ class ParserUtilsSpec extends TestSupportFixture {
     extractList(rows) {
       case DepositRow(rowNum, _) if rowNum % 2 == 0 => Some(rowNum.toValidated)
       case _ => None
-    } shouldBe Valid(List(2))
+    }.validValue should contain only 2
   }
 
   it should "iterate over all rows and aggregate all errors until the end" in {
@@ -185,30 +184,29 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(3, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    inside(extractList(rows)(i => Some(ParseError(i.rowNum, s"foo ${ i.rowNum }").toInvalid))) {
-      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
-        ParseError(2, "foo 2"),
-        ParseError(3, "foo 3")
-      )
-    }
+    extractList(rows)(i => Some(ParseError(i.rowNum, s"foo ${ i.rowNum }").toInvalid))
+      .invalidValue.toNonEmptyList.toList should contain inOrderOnly(
+      ParseError(2, "foo 2"),
+      ParseError(3, "foo 3")
+    )
   }
 
   "checkValidChars" should "succeed with the input value when all characters are valid" in {
-    checkValidChars("valid-input", 2, "TEST") shouldBe Valid("valid-input")
+    checkValidChars("valid-input", 2, "TEST").validValue shouldBe "valid-input"
   }
 
   it should "fail when the input contains invalid characters" in {
-    checkValidChars("#$%", 2, "TEST") shouldBe
-      ParseError(2, "The column 'TEST' contains the following invalid characters: {#, $, %}").toInvalid
+    checkValidChars("#$%", 2, "TEST").invalidValue shouldBe
+      ParseError(2, "The column 'TEST' contains the following invalid characters: {#, $, %}").chained
   }
 
   "date" should "convert the value of the date into the corresponding object" in {
-    date(2, "datum")("2016-07-30") shouldBe Valid(DateTime.parse("2016-07-30"))
+    date(2, "datum")("2016-07-30").validValue shouldBe DateTime.parse("2016-07-30")
   }
 
   it should "fail if the value does not represent a date" in {
-    date(2, "datum")("you can't parse me!") shouldBe
-      ParseError(2, "datum value 'you can't parse me!' does not represent a date").toInvalid
+    date(2, "datum")("you can't parse me!").invalidValue shouldBe
+      ParseError(2, "datum value 'you can't parse me!' does not represent a date").chained
   }
 
   "missingRequired" should "return a ParseError listing the one missing column" in {

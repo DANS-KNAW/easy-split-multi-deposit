@@ -16,7 +16,6 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
-import cats.data.Validated.{ Invalid, Valid }
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.{ FileAccessRights, FileDescriptor }
@@ -87,9 +86,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
-    inside(extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil)) {
-      case Valid(result) => result should (have size 1 and contain only
-        file -> FileDescriptor(Some("some title"), Some(FileAccessRights.KNOWN)))
+    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).validValue should {
+      have size 1 and contain only
+        file -> FileDescriptor(Some("some title"), Some(FileAccessRights.KNOWN))
     }
   }
 
@@ -107,8 +106,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
-    inside(extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil)) {
-      case Valid(result) => result should (have size 1 and contain only file -> FileDescriptor())
+    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).validValue should {
+      have size 1 and contain only file -> FileDescriptor()
     }
   }
 
@@ -121,9 +120,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
-    inside(extractFileDescriptors("ruimtereis01", 2, row :: Nil)) {
-      case Valid(result) => result should (have size 1 and contain only
-        file -> FileDescriptor(Some("some title"), None))
+    extractFileDescriptors("ruimtereis01", 2, row :: Nil).validValue should {
+      have size 1 and contain only
+        file -> FileDescriptor(Some("some title"), None)
     }
   }
 
@@ -136,9 +135,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
-    inside(extractFileDescriptors("ruimtereis01", 2, row :: Nil)) {
-      case Valid(result) => result should (have size 1 and contain only
-        file -> FileDescriptor(accessibility = Some(FileAccessRights.KNOWN)))
+    extractFileDescriptors("ruimtereis01", 2, row :: Nil).validValue should {
+      have size 1 and contain only
+        file -> FileDescriptor(accessibility = Some(FileAccessRights.KNOWN))
     }
   }
 
@@ -156,8 +155,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
-    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil) shouldBe
-      ParseError(2, s"FILE_TITLE defined multiple values for file '$file': [title1, title2]").toInvalid
+    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).invalidValue shouldBe
+      ParseError(2, s"FILE_TITLE defined multiple values for file '$file': [title1, title2]").chained
   }
 
   it should "fail if multiple accessibilities are given for a single file" in {
@@ -174,8 +173,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
-    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil) shouldBe
-      ParseError(2, s"FILE_ACCESSIBILITY defined multiple values for file '$file': [KNOWN, ANONYMOUS]").toInvalid
+    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).invalidValue shouldBe
+      ParseError(2, s"FILE_ACCESSIBILITY defined multiple values for file '$file': [KNOWN, ANONYMOUS]").chained
   }
 
   it should "fail if multiple titles and accessibilities are given for a single file" in {
@@ -192,12 +191,10 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
-    inside(extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil)) {
-      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
-        ParseError(2, s"FILE_TITLE defined multiple values for file '$file': [title1, title2]"),
-        ParseError(2, s"FILE_ACCESSIBILITY defined multiple values for file '$file': [KNOWN, ANONYMOUS]"),
-      )
-    }
+    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).invalidValue.toNonEmptyList.toList should contain inOrderOnly(
+      ParseError(2, s"FILE_TITLE defined multiple values for file '$file': [title1, title2]"),
+      ParseError(2, s"FILE_ACCESSIBILITY defined multiple values for file '$file': [KNOWN, ANONYMOUS]"),
+    )
   }
 
   it should "fail if visibility is more restricted than accessibility" in {
@@ -208,8 +205,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
-    extractFileDescriptors("ruimtereis01", 2, row :: Nil) shouldBe
-      ParseError(2, s"FILE_VISIBILITY (NONE) is more restricted than FILE_ACCESSIBILITY (KNOWN) for file '$file'. (User will potentially have access to an invisible file.)").toInvalid
+    extractFileDescriptors("ruimtereis01", 2, row :: Nil).invalidValue shouldBe
+      ParseError(2, s"FILE_VISIBILITY (NONE) is more restricted than FILE_ACCESSIBILITY (KNOWN) for file '$file'. (User will potentially have access to an invisible file.)").chained
   }
 
   "fileDescriptor" should "convert the csv input to the corresponding output" in {
@@ -220,7 +217,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
-    fileDescriptor("ruimtereis01")(row).value shouldBe Valid((file, Some("some title"), Some(FileAccessRights.KNOWN), None))
+    fileDescriptor("ruimtereis01")(row).value.validValue shouldBe (file, Some("some title"), Some(FileAccessRights.KNOWN), None)
   }
 
   it should "fail if the path does not exist" in {
@@ -230,8 +227,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
       "FILE_ACCESSIBILITY" -> "KNOWN"
     ))
 
-    fileDescriptor("ruimtereis01")(row).value shouldBe
-      ParseError(2, "unable to find path 'path/that/does/not/exist.txt'").toInvalid
+    fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
+      ParseError(2, "unable to find path 'path/that/does/not/exist.txt'").chained
   }
 
   it should "fail if the path represents a directory" in {
@@ -241,8 +238,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
       "FILE_ACCESSIBILITY" -> "KNOWN"
     ))
 
-    fileDescriptor("ruimtereis01")(row).value shouldBe
-      ParseError(2, s"path 'reisverslag/' exists, but is not a regular file").toInvalid
+    fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
+      ParseError(2, s"path 'reisverslag/' exists, but is not a regular file").chained
   }
 
   it should "succeed if no FILE_ACCESSIBILITY is given" in {
@@ -253,7 +250,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
-    fileDescriptor("ruimtereis01")(row).value shouldBe Valid((file, Some("some title"), None, None))
+    fileDescriptor("ruimtereis01")(row).value.validValue shouldBe (file, Some("some title"), None, None)
   }
 
   it should "fail if an invalid FILE_ACCESSIBILITY is given" in {
@@ -263,8 +260,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
       "FILE_ACCESSIBILITY" -> "invalid"
     ))
 
-    fileDescriptor("ruimtereis01")(row).value shouldBe
-      ParseError(2, "Value 'invalid' is not a valid file accessright").toInvalid
+    fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
+      ParseError(2, "Value 'invalid' is not a valid file accessright").chained
   }
 
   it should "fail if FILE_PATH is not given but FILE_TITLE and FILE_ACCESSIBILITY are given" in {
@@ -274,8 +271,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
       "FILE_ACCESSIBILITY" -> "KNOWN"
     ))
 
-    fileDescriptor("ruimtereis01")(row).value shouldBe
-      ParseError(2, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given").toInvalid
+    fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
+      ParseError(2, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given").chained
   }
 
   it should "fail if only FILE_TITLE is given" in {
@@ -285,8 +282,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
       "FILE_ACCESSIBILITY" -> ""
     ))
 
-    fileDescriptor("ruimtereis01")(row).value shouldBe
-      ParseError(2, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given").toInvalid
+    fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
+      ParseError(2, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given").chained
   }
 
   it should "fail if only FILE_ACCESSIBILITY is given" in {
@@ -296,8 +293,8 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
       "FILE_ACCESSIBILITY" -> "KNOWN"
     ))
 
-    fileDescriptor("ruimtereis01")(row).value shouldBe
-      ParseError(2, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given").toInvalid
+    fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
+      ParseError(2, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given").chained
   }
 
   it should "succeed when all fields are empty" in {
@@ -311,20 +308,20 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
   }
 
   "fileAccessibility" should "convert the value for SF_ACCESSIBILITY into the corresponding enum object" in {
-    fileAccessibility(2)("NONE") shouldBe Valid(FileAccessRights.NONE)
+    fileAccessibility(2)("NONE").validValue shouldBe FileAccessRights.NONE
   }
 
   it should "fail if the SF_ACCESSIBILITY value does not correspond to an object in the enum" in {
-    fileAccessibility(2)("unknown value") shouldBe
-      ParseError(2, "Value 'unknown value' is not a valid file accessright").toInvalid
+    fileAccessibility(2)("unknown value").invalidValue shouldBe
+      ParseError(2, "Value 'unknown value' is not a valid file accessright").chained
   }
 
   "fileVisibility" should "convert the value for SF_ACCESSIBILITY into the corresponding enum object" in {
-    fileVisibility(2)("NONE") shouldBe Valid(FileAccessRights.NONE)
+    fileVisibility(2)("NONE").validValue shouldBe FileAccessRights.NONE
   }
 
   it should "fail if the SF_ACCESSIBILITY value does not correspond to an object in the enum" in {
-    fileVisibility(2)("unknown value") shouldBe
-      ParseError(2, "Value 'unknown value' is not a valid file visibility").toInvalid
+    fileVisibility(2)("unknown value").invalidValue shouldBe
+      ParseError(2, "Value 'unknown value' is not a valid file visibility").chained
   }
 }

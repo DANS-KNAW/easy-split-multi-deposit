@@ -19,7 +19,6 @@ import java.util.UUID
 import java.util.UUID.fromString
 
 import better.files.File
-import cats.data.Validated.{ Invalid, Valid }
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.Instructions
 import org.scalatest.BeforeAndAfterEach
@@ -32,7 +31,7 @@ trait DepositTestObjects extends AudioVideoTestObjects
   this: TestSupportFixture =>
 
   lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: Nil = List(
-    Map("DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke", "BASE_REVISION" ->"1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
+    Map("DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke", "BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
     Map("DATASET" -> "ruimtereis01", "BASE_REVISION" -> "") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2,
   )
 
@@ -53,7 +52,8 @@ trait DepositTestObjects extends AudioVideoTestObjects
   )
 }
 
-class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects with BeforeAndAfterEach { self =>
+class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects with BeforeAndAfterEach {
+  self =>
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -70,8 +70,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   import parser._
 
   "extractDeposit" should "fail if the depositId contains invalid characters" in {
-    extractDeposit(multiDepositDir)("ruimtereis01#", depositCSVRow) shouldBe
-      ParseError(2, "The column 'DATASET' contains the following invalid characters: {#}").toInvalid
+    extractDeposit(multiDepositDir)("ruimtereis01#", depositCSVRow).invalidValue shouldBe
+      ParseError(2, "The column 'DATASET' contains the following invalid characters: {#}").chained
   }
 
   "parse" should "load the input csv file into the object model" in {
@@ -122,7 +122,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file) shouldBe Valid((expectedHeaders, expectedData))
+    read(file).validValue shouldBe(expectedHeaders, expectedData)
   }
 
   it should "correctly parse newlines in the data (using quotes according to RFC4180) and still correctly do the row numbering" in {
@@ -146,7 +146,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file) shouldBe Valid((expectedHeaders, expectedData))
+    read(file).validValue shouldBe(expectedHeaders, expectedData)
   }
 
   it should "parse the input when some cells are empty" in {
@@ -169,7 +169,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file) shouldBe Valid((expectedHeaders, expectedData))
+    read(file).validValue shouldBe(expectedHeaders, expectedData)
   }
 
   it should "parse the input when some cells are blank and leave these cells empty in the result" in {
@@ -192,7 +192,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file) shouldBe Valid((expectedHeaders, expectedData))
+    read(file).validValue shouldBe(expectedHeaders, expectedData)
   }
 
   it should "parse the input while leaving out blank rows" in {
@@ -214,7 +214,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file) shouldBe Valid((expectedHeaders, expectedData))
+    read(file).validValue shouldBe(expectedHeaders, expectedData)
   }
 
   it should "parse the input if it only contains a row of headers and no data" in {
@@ -225,7 +225,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List.empty[(Int, String)]
 
-    read(file) shouldBe Valid((expectedHeaders, expectedData))
+    read(file).validValue shouldBe (expectedHeaders, expectedData)
   }
 
   it should "fail when the input csv file is empty" in {
@@ -233,7 +233,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    read(file) shouldBe EmptyInstructionsFileError(file).toInvalid
+    read(file).invalidValue shouldBe EmptyInstructionsFileError(file).chained
   }
 
   it should "fail when the input contains invalid headers" in {
@@ -247,8 +247,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    inside(read(file).leftMap(_.toNonEmptyList.toList)) {
-      case Invalid(List(ParseError(0, msg))) =>
+    inside(read(file).invalidValue.toNonEmptyList.toList) {
+      case List(ParseError(0, msg)) =>
         msg should include("unknown headers: [foo]")
     }
   }
@@ -264,8 +264,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    inside(read(file).leftMap(_.toNonEmptyList.toList)) {
-      case Invalid(List(ParseError(0, msg))) =>
+    inside(read(file).invalidValue.toNonEmptyList.toList) {
+      case List(ParseError(0, msg)) =>
         msg should include("duplicate headers: [DEPOSITOR_ID]")
     }
   }
@@ -279,16 +279,14 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   it should "fail when any number of elements in the input are blank" in {
     val dsIds = List("ds1", "", "ds2", "ds2", "   ", "ds3")
 
-    inside(detectEmptyDepositCells(dsIds)) {
-      case Invalid(chain) => chain.toNonEmptyList.toList should contain inOrderOnly(
-        ParseError(3, "Row 3 does not have a depositId in column DATASET"),
-        ParseError(6, "Row 6 does not have a depositId in column DATASET"),
-      )
-    }
+    detectEmptyDepositCells(dsIds).invalidValue.toNonEmptyList.toList should contain inOrderOnly(
+      ParseError(3, "Row 3 does not have a depositId in column DATASET"),
+      ParseError(6, "Row 6 does not have a depositId in column DATASET"),
+    )
   }
 
   "extractInstructions" should "convert the csv input to the corresponding output" in {
-    extractInstructions("ruimtereis01", 2, depositCSVRow) shouldBe Valid(instructions)
+    extractInstructions("ruimtereis01", 2, depositCSVRow).validValue shouldBe instructions
   }
 
   it should "fail if there are multiple distinct depositorUserIDs" in {
@@ -296,8 +294,8 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       DepositRow(3, depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) ::
       Nil
 
-    extractInstructions("ruimtereis01", 2, rows) shouldBe
-      ParseError(2, "Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [ikke, ikke2]").toInvalid
+    extractInstructions("ruimtereis01", 2, rows).invalidValue shouldBe
+      ParseError(2, "Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [ikke, ikke2]").chained
   }
 
   it should "succeed if there are multiple depositorUserIDs that are all equal" in {
@@ -305,15 +303,15 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       DepositRow(2, depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) ::
       Nil
 
-    extractInstructions("ruimtereis01", 2, rows) shouldBe Valid(instructions)
+    extractInstructions("ruimtereis01", 2, rows).validValue shouldBe instructions
   }
 
   it should "fail if there are multiple distinct base revisions" in {
     val row = DepositRow(3, Map("DATASET" -> "ruimtereis01", "BASE_REVISION" -> "9de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2)
     val rows = DepositRow(2, depositCSVRow1) :: row :: Nil
 
-    extractInstructions("ruimtereis01", 2, rows) shouldBe
-      ParseError(2, "At most one row is allowed to contain a value for the column 'BASE_REVISION'. Found: [1de3f841-0f0d-048b-b3db-4b03ad4834d7, 9de3f841-0f0d-048b-b3db-4b03ad4834d7]").toInvalid
+    extractInstructions("ruimtereis01", 2, rows).invalidValue shouldBe
+      ParseError(2, "At most one row is allowed to contain a value for the column 'BASE_REVISION'. Found: [1de3f841-0f0d-048b-b3db-4b03ad4834d7, 9de3f841-0f0d-048b-b3db-4b03ad4834d7]").chained
   }
 
   it should "not fail if there are multiple nondistinct base revisions" in {
@@ -324,12 +322,12 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   }
 
   "uuid" should "fail if the base revision does not conform to uuid format" in {
-    uuid(2, "BASE_REVISION")("abcd-12xy") shouldBe
-      ParseError(2, "BASE_REVISION value 'abcd-12xy' does not conform to the UUID format").toInvalid
+    uuid(2, "BASE_REVISION")("abcd-12xy").invalidValue shouldBe
+      ParseError(2, "BASE_REVISION value 'abcd-12xy' does not conform to the UUID format").chained
   }
 
   it should "not fail if the base revision conforms to uuid format" in {
     val uuidString = "1de3f841-0f0d-048b-b3db-4b03ad4834d7"
-    uuid(2, "BASE_REVISION")(uuidString) shouldBe Valid(Some(UUID.fromString(uuidString)))
+    uuid(2, "BASE_REVISION")(uuidString).validValue.value shouldBe UUID.fromString(uuidString)
   }
 }

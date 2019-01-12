@@ -17,7 +17,6 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
 import better.files.File.currentWorkingDirectory
-import cats.data.Validated.Invalid
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, PlayMode, Springfield, UserLicense, Video }
@@ -127,8 +126,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       )
     )
 
-    inside(validation.checkSpringFieldDepositHasAVformat(deposit).leftMap(_.toNonEmptyList.toList)) {
-      case Invalid(List(ParseError(_, message))) =>
+    inside(validation.checkSpringFieldDepositHasAVformat(deposit).invalidValue.toNonEmptyList.toList) {
+      case List(ParseError(_, message)) =>
         message should include("No audio/video format found for this column: [DC_FORMAT]")
     }
   }
@@ -157,8 +156,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       springfield = Option.empty
     )
 
-    inside(validation.checkSFColumnsIfDepositContainsAVFiles(deposit).leftMap(_.toNonEmptyList.toList)) {
-      case Invalid(List(ParseError(_, message))) =>
+    inside(validation.checkSFColumnsIfDepositContainsAVFiles(deposit).invalidValue.toNonEmptyList.toList) {
+      case List(ParseError(_, message)) =>
         message should {
           include("No values found for these columns: [SF_USER, SF_COLLECTION, SF_PLAY_MODE]") and
             include("reisverslag/centaur.mpg")
@@ -184,8 +183,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
       springfield = Option(Springfield(user = "user", collection = "collection", playMode = PlayMode.Continuous))
     )
 
-    inside(validation.checkSFColumnsIfDepositContainsAVFiles(deposit).leftMap(_.toNonEmptyList.toList)) {
-      case Invalid(List(ParseError(_, message))) =>
+    inside(validation.checkSFColumnsIfDepositContainsAVFiles(deposit).invalidValue.toNonEmptyList.toList) {
+      case List(ParseError(_, message)) =>
         message should include("Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]; these columns should be empty because there are no audio/video files found in this deposit")
     }
   }
