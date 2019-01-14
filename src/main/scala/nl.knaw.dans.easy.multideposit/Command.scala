@@ -20,7 +20,6 @@ import cats.data.NonEmptyChain
 import cats.data.NonEmptyChain.catsNonEmptyChainOps
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit.actions.{ InvalidDatamanagerException, InvalidInputException }
-import nl.knaw.dans.easy.multideposit.parser.ParseFailed
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource.managed
 

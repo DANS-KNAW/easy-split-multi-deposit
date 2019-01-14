@@ -32,6 +32,6 @@ package object actions {
     def unapply(arg: ActionException): Option[(String, Throwable)] = Some((arg.getMessage, arg.getCause))
   }
   case class InvalidDatamanagerException(msg: String) extends CreateDepositError(msg)
-  case class InvalidInputException(row: Int, msg: String) extends CreateDepositError(msg)
+  case class InvalidInputException(row: Int, msg: String) extends CreateDepositError(s"row $row: $msg")
   case class FfprobeErrorException(file: File, exitValue: Int, err: String) extends CreateDepositError(s"File '$file' could not be probed. Exit value: $exitValue, STDERR: '$err'")
 }

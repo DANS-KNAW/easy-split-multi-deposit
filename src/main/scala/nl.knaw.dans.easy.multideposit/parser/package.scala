@@ -42,8 +42,4 @@ package object parser {
   }
   private[parser] case class EmptyInstructionsFileError(file: File) extends ParserError
   private[parser] case class ParseError(row: Int, message: String) extends ParserError
-
-  // TODO remove extends Exception
-  // kept here for now to be conform with the rest of the application
-  case class ParseFailed(report: String) extends Exception(report)
 }

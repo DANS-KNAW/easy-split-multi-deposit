@@ -33,6 +33,12 @@ package object multideposit {
 
   case class DepositPermissions(permissions: String, group: String)
 
+  // TODO remove extends Exception
+  // kept here for now to be conform with the rest of the application
+  sealed abstract class SmdError(report: String, cause: Option[Throwable] = None) extends Exception(report, cause.orNull)
+  case class ParseFailed(report: String) extends SmdError(report)
+  case class ConversionFailed(msg: String, cause: Option[Throwable] = None) extends SmdError(msg, cause)
+
   implicit class BetterFileExtensions(val file: File) extends AnyVal {
     /**
      * Writes the xml to `file` and prepends a simple xml header: `<?xml version="1.0" encoding="UTF-8"?>`

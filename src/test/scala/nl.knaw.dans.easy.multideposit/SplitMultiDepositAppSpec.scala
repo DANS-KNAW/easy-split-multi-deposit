@@ -21,7 +21,6 @@ import better.files.File
 import better.files.File.currentWorkingDirectory
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
-import nl.knaw.dans.easy.multideposit.parser.ParseFailed
 import org.apache.commons.configuration.PropertiesConfiguration
 import org.joda.time.DateTime
 import org.scalamock.scalatest.MockFactory

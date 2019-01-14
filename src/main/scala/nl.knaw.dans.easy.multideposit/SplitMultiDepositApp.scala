@@ -28,22 +28,14 @@ import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.multideposit.PathExplorer._
 import nl.knaw.dans.easy.multideposit.actions.{ RetrieveDatamanager, _ }
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
-import nl.knaw.dans.easy.multideposit.parser.{ MultiDepositParser, ParseFailed }
+import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.postfixOps
 
 class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap: Ldap, ffprobe: FfprobeRunner, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
-  private val validator = new ValidatePreconditions(ldap, ffprobe)
   private val datamanager = new RetrieveDatamanager(ldap)
-  private val createDirs = new CreateDirectories()
-  private val createBag = new AddBagToDeposit()
-  private val datasetMetadata = new AddDatasetMetadataToDeposit(formats)
-  private val fileMetadata = new AddFileMetadataToDeposit()
-  private val depositProperties = new AddPropertiesToDeposit()
-  private val setPermissions = new SetDepositPermissions(permissions)
-  private val reportDatasets = new ReportDatasets()
-  private val moveDeposit = new MoveDepositToOutputDir()
+  private val createMultiDeposit = new CreateMultiDeposit(formats, ldap, ffprobe, permissions)
 
   override def close(): Unit = ldap.close()
 
@@ -57,7 +49,7 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
     for {
       _ <- Locale.setDefault(Locale.US).asRight[NonEmptyChain[Throwable]]
       deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(NonEmptyChain.one).map(_.toList)
-      _ <- deposits.traverse[Validated, Unit](validator.validateDeposit(_).toValidatedNec).toEither
+      _ <- deposits.traverse[Validated, Unit](createMultiDeposit.validateDeposit(_).toValidatedNec).toEither
       _ <- datamanager.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
     } yield deposits
   }
@@ -67,13 +59,15 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
     implicit val staging: StagingPathExplorer = paths
     implicit val output: OutputPathExplorer = paths
 
+    type X[T] = Either[ConversionFailed, T]
+
     for {
       _ <- Locale.setDefault(Locale.US).asRight[NonEmptyChain[Throwable]]
       deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(e => NonEmptyChain.one(ParseFailed(e.report))).map(_.toList)
       dataManagerEmailAddress <- datamanager.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
-      _ <- deposits.traverse[FailFast, Unit](convertDeposit(paths, datamanagerId, dataManagerEmailAddress))
+      _ <- deposits.traverse[X, Unit](createMultiDeposit.convertDeposit(paths, datamanagerId, dataManagerEmailAddress))
         .leftMap(error => {
-          deposits.traverse(d => createDirs.discardDeposit(d.depositId))
+          deposits.traverse[X, Unit](d => createMultiDeposit.clearDeposit(d.depositId))
             .fold(discardError => NonEmptyChain(
               ActionException("discarding deposits failed after creating deposits failed"),
               error,
@@ -81,31 +75,10 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
             ), _ => NonEmptyChain.one(error))
         })
       _ = logger.info("deposits were created successfully")
-      _ <- reportDatasets.report(deposits).leftMap(NonEmptyChain.one)
+      _ <- createMultiDeposit.report(deposits).leftMap(NonEmptyChain.one)
       _ = logger.info(s"report generated at ${ paths.reportFile }")
-      _ <- deposits.traverse[FailFast, Unit](deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId)).leftMap(NonEmptyChain.one)
+      _ <- deposits.traverse[X, Unit](deposit => createMultiDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId)).leftMap(NonEmptyChain.one)
       _ = logger.info(s"deposits were successfully moved to ${ output.outputDepositDir }")
-    } yield ()
-  }
-
-  private def convertDeposit(paths: PathExplorers, datamanagerId: Datamanager, dataManagerEmailAddress: DatamanagerEmailaddress)(deposit: Deposit): FailFast[Unit] = {
-    val depositId = deposit.depositId
-    implicit val input: InputPathExplorer = paths
-    implicit val staging: StagingPathExplorer = paths
-    implicit val output: OutputPathExplorer = paths
-
-    logger.info(s"convert ${ depositId }")
-
-    for {
-      _ <- validator.validateDeposit(deposit)
-      _ <- createDirs.createDepositDirectories(depositId)
-      _ <- createBag.addBagToDeposit(depositId, deposit.profile.created, deposit.baseUUID)
-      _ <- createDirs.createMetadataDirectory(depositId)
-      _ <- datasetMetadata.addDatasetMetadata(deposit)
-      _ <- fileMetadata.addFileMetadata(depositId, deposit.files)
-      _ <- depositProperties.addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress)
-      _ <- setPermissions.setDepositPermissions(depositId)
-      _ = logger.info(s"deposit was created successfully for $depositId with bagId ${ deposit.bagId }")
     } yield ()
   }
 }
