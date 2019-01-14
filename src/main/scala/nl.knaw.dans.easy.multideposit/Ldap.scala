@@ -20,7 +20,6 @@ import javax.naming.ldap.LdapContext
 
 import scala.collection.JavaConverters._
 import cats.syntax.either._
-import nl.knaw.dans.easy.multideposit.actions.{ ActionException, FailFast }
 
 trait Ldap extends AutoCloseable {
 

@@ -19,7 +19,6 @@ import java.io.ByteArrayOutputStream
 
 import better.files.File
 import cats.syntax.either._
-import nl.knaw.dans.easy.multideposit.actions.FfprobeErrorException
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.io.IOUtils
 
@@ -34,7 +33,7 @@ trait FfprobeRunner {
   val ffprobeExe: File
 
   /**
-   * Runs ffprobe on a given file. If a non-zero exit value is returned from the ffprobe process, a [[nl.knaw.dans.easy.multideposit.actions.FfprobeErrorException]] is
+   * Runs ffprobe on a given file. If a non-zero exit value is returned from the ffprobe process, a [[nl.knaw.dans.easy.multideposit.FfprobeErrorException]] is
    * returned, which details the exit code and the standard error contents.
    *
    * @param target the target to probe

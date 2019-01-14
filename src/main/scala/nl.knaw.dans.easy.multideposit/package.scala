@@ -26,7 +26,10 @@ import org.joda.time.{ DateTime, DateTimeZone }
 import scala.xml.{ Elem, PrettyPrinter, Utility, XML }
 
 package object multideposit {
+  type FailFast[T] = Either[ConversionFailed, T]
+
   val dateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime()
+
   def now: String = DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)
 
   val encoding: Charset = Charsets.UTF_8
@@ -37,7 +40,19 @@ package object multideposit {
   // kept here for now to be conform with the rest of the application
   sealed abstract class SmdError(report: String, cause: Option[Throwable] = None) extends Exception(report, cause.orNull)
   case class ParseFailed(report: String) extends SmdError(report)
-  case class ConversionFailed(msg: String, cause: Option[Throwable] = None) extends SmdError(msg, cause)
+
+  sealed abstract class ConversionFailed(msg: String, cause: Option[Throwable] = None) extends SmdError(msg, cause)
+  class ActionException(msg: String, cause: Option[Throwable] = None) extends ConversionFailed(msg, cause)
+  object ActionException {
+    def apply(msg: String, cause: Throwable): ActionException = new ActionException(msg, Option(cause))
+
+    def apply(msg: String): ActionException = new ActionException(msg)
+
+    def unapply(arg: ActionException): Option[(String, Throwable)] = Some((arg.getMessage, arg.getCause))
+  }
+  case class InvalidDatamanagerException(msg: String) extends ConversionFailed(msg)
+  case class InvalidInputException(row: Int, msg: String) extends ConversionFailed(s"row $row: $msg")
+  case class FfprobeErrorException(file: File, exitValue: Int, err: String) extends ConversionFailed(s"File '$file' could not be probed. Exit value: $exitValue, STDERR: '$err'")
 
   implicit class BetterFileExtensions(val file: File) extends AnyVal {
     /**

@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
-import nl.knaw.dans.easy.multideposit.now
+import nl.knaw.dans.easy.multideposit.{ ActionException, FailFast, now }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.configuration.PropertiesConfiguration
 

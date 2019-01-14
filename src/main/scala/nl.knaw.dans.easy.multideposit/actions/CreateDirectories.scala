@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
 import cats.syntax.either._
+import nl.knaw.dans.easy.multideposit.{ ActionException, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging

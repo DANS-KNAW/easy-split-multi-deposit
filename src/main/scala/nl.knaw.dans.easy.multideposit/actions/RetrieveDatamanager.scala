@@ -17,7 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import cats.syntax.either._
 import javax.naming.directory.Attributes
-import nl.knaw.dans.easy.multideposit.Ldap
+import nl.knaw.dans.easy.multideposit.{ ActionException, FailFast, InvalidDatamanagerException, Ldap }
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 

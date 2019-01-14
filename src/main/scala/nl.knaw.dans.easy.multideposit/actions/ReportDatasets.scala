@@ -19,7 +19,7 @@ import better.files.{ Dispose, _ }
 import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.PathExplorer.OutputPathExplorer
 import nl.knaw.dans.easy.multideposit.actions.ReportDatasets._
-import nl.knaw.dans.easy.multideposit.encoding
+import nl.knaw.dans.easy.multideposit.{ ActionException, FailFast, encoding }
 import nl.knaw.dans.easy.multideposit.model.Deposit
 import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 

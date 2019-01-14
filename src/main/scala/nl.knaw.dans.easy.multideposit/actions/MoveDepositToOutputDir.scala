@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.FileAlreadyExistsException
 
 import cats.syntax.either._
+import nl.knaw.dans.easy.multideposit.{ ActionException, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ BagId, DepositId }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging

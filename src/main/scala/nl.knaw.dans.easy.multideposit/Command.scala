@@ -19,7 +19,6 @@ import better.files.File
 import cats.data.NonEmptyChain
 import cats.data.NonEmptyChain.catsNonEmptyChainOps
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
-import nl.knaw.dans.easy.multideposit.actions.{ InvalidDatamanagerException, InvalidInputException }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource.managed
 
@@ -48,7 +47,7 @@ object Command extends App with DebugEnhancedLogging {
       }
   }
 
-  private def runSubcommand(app: SplitMultiDepositApp): Either[NonEmptyChain[Throwable], FeedBackMessage] = {
+  private def runSubcommand(app: SplitMultiDepositApp): Either[NonEmptyChain[SmdError], FeedBackMessage] = {
     lazy val defaultStagingDir = File(configuration.properties.getString("staging-dir"))
 
     val md = File(commandLine.multiDepositDir())

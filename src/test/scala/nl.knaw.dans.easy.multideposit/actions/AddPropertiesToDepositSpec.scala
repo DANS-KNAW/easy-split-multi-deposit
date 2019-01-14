@@ -23,7 +23,6 @@ import org.apache.commons.configuration.PropertiesConfiguration
 import org.scalatest.BeforeAndAfterEach
 
 import scala.collection.JavaConverters._
-import scala.util.Success
 
 class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
 

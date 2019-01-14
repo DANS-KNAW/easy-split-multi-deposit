@@ -19,7 +19,7 @@ import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 
 import better.files.File
-import nl.knaw.dans.easy.multideposit.TestSupportFixture
+import nl.knaw.dans.easy.multideposit.{ ActionException, TestSupportFixture }
 import org.scalatest.BeforeAndAfterEach
 
 class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterEach {

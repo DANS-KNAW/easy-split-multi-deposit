@@ -17,8 +17,8 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
 import javax.naming.directory.Attributes
+import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, FileAccessRights, Video }
-import nl.knaw.dans.easy.multideposit.{ FfprobeRunner, Ldap, TestSupportFixture }
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 

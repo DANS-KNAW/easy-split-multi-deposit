@@ -21,7 +21,7 @@ import java.nio.file.attribute._
 
 import better.files.File
 import cats.syntax.either._
-import nl.knaw.dans.easy.multideposit.DepositPermissions
+import nl.knaw.dans.easy.multideposit.{ ActionException, DepositPermissions, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging

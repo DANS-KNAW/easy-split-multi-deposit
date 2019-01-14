@@ -18,8 +18,6 @@ package nl.knaw.dans.easy.multideposit.actions
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.Success
-
 class CreateDirectoriesSpec extends TestSupportFixture with BeforeAndAfterEach {
 
   private val depositId = "dsId1"

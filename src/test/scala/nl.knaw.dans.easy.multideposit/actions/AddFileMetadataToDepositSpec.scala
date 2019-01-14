@@ -16,11 +16,10 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
+import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.{ CustomMatchers, TestSupportFixture }
-import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, DefaultFileMetadata, FileAccessRights, SubtitlesFile, Video }
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.Success
 import scala.xml.{ Elem, Node, PrettyPrinter, XML }
 
 class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatchers with BeforeAndAfterEach {

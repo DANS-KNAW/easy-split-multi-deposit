@@ -22,7 +22,7 @@ import cats.syntax.either._
 import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit, DepositId }
-import nl.knaw.dans.easy.multideposit.{ FfprobeRunner, Ldap }
+import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnhancedLogging {
@@ -46,10 +46,10 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
       .getOrElse(().asRight)
   }
 
+  private type Validated[T] = ValidatedNec[Throwable, T]
+
   def checkAudioVideoNotCorrupt(deposit: Deposit): Either[InvalidInputException, Unit] = {
     logger.debug("check that A/V files can be successfully probed by ffprobe")
-
-    type Validated[T] = ValidatedNec[Throwable, T]
 
     deposit.files.collect { case fmd: AVFileMetadata => fmd.filepath }
       .toList
