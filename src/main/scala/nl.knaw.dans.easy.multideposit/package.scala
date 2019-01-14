@@ -36,9 +36,12 @@ package object multideposit {
 
   case class DepositPermissions(permissions: String, group: String)
 
-  sealed abstract class SmdError(val msg: String, val cause: Option[Throwable] = None)
+  sealed abstract class SmdError(val msg: String, val cause: Option[Throwable] = None) {
+    override def toString: String = {
+      s"${getClass.getSimpleName}: $msg"
+    }
+  }
   case class ParseFailed(report: String) extends SmdError(report)
-
   sealed abstract class ConversionFailed(msg: String, cause: Option[Throwable] = None) extends SmdError(msg, cause)
   case class ActionError(override val msg: String, override val cause: Option[Throwable] = None) extends ConversionFailed(msg, cause)
   object ActionError {

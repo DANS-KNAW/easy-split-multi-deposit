@@ -17,7 +17,6 @@ package nl.knaw.dans.easy.multideposit
 
 import better.files.File
 import cats.data.NonEmptyChain
-import cats.data.NonEmptyChain.catsNonEmptyChainOps
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource.managed
@@ -29,7 +28,7 @@ object Command extends App with DebugEnhancedLogging {
   type FeedBackMessage = String
 
   val configuration = Configuration(File(System.getProperty("app.home")))
-  val commandLine: CommandLineOptions = new CommandLineOptions(args, configuration.version)
+  val commandLine = new CommandLineOptions(args, configuration.version)
   val app = SplitMultiDepositApp(configuration)
 
   managed(app).acquireAndGet(runSubcommand) match {
@@ -40,10 +39,10 @@ object Command extends App with DebugEnhancedLogging {
           case ParseFailed(_) |
                InvalidDatamanager(_) |
                InvalidInput(_, _) => // do nothing
-          case _ => logger.error(e.msg, e.cause)
+          case _ => logger.error(e.toString, e.cause)
         }
 
-        println(s"FAILED: ${ e.msg }")
+        println(s"FAILED: ${ e.toString }")
       }
   }
 
@@ -55,12 +54,13 @@ object Command extends App with DebugEnhancedLogging {
     val od = File(commandLine.outputDepositDir())
     val report = File(commandLine.reportFile())
     val dm = commandLine.datamanager()
+    val paths = new PathExplorers(md, sd, od, report)
 
     if (commandLine.validateOnly())
-      app.validate(new PathExplorers(md, sd, od, report), dm)
+      app.validate(paths, dm)
         .map(_ => "Finished successfully! Everything looks good.")
     else
-      app.convert(new PathExplorers(md, sd, od, report), dm)
+      app.convert(paths, dm)
         .map(_ => s"Finished successfully! The output can be found in $od.")
   }
 }
