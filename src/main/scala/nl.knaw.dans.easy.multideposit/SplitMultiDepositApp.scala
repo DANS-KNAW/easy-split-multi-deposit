@@ -18,66 +18,49 @@ package nl.knaw.dans.easy.multideposit
 import java.util.Locale
 
 import better.files.File
-import cats.data.{ NonEmptyChain, ValidatedNec }
-import cats.instances.either._
-import cats.instances.list._
+import cats.data.NonEmptyChain
 import cats.syntax.either._
-import cats.syntax.traverse._
 import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.multideposit.PathExplorer._
-import nl.knaw.dans.easy.multideposit.actions.{ RetrieveDatamanager, _ }
-import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
+import nl.knaw.dans.easy.multideposit.actions.CreateMultiDeposit
+import nl.knaw.dans.easy.multideposit.model.{ Datamanager, Deposit }
 import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.language.postfixOps
-
 class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap: Ldap, ffprobe: FfprobeRunner, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
-  private val datamanager = new RetrieveDatamanager(ldap)
   private val createMultiDeposit = new CreateMultiDeposit(formats, ldap, ffprobe, permissions)
 
   override def close(): Unit = ldap.close()
 
-  def validate(paths: PathExplorers, datamanagerId: Datamanager): Either[NonEmptyChain[Throwable], Seq[Deposit]] = {
+  def validate(paths: PathExplorers, datamanagerId: Datamanager): Either[NonEmptyChain[SmdError], Seq[Deposit]] = {
     implicit val input: InputPathExplorer = paths
     implicit val staging: StagingPathExplorer = paths
-    implicit val output: OutputPathExplorer = paths
 
-    type Validated[T] = ValidatedNec[Throwable, T]
+    Locale.setDefault(Locale.US)
 
     for {
-      _ <- Locale.setDefault(Locale.US).asRight[NonEmptyChain[Throwable]]
       deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(NonEmptyChain.one)
-      _ <- deposits.traverse[Validated, Unit](createMultiDeposit.validateDeposit(_).toValidatedNec).toEither
-      _ <- datamanager.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
+      _ <- createMultiDeposit.validateDeposits(deposits).toEither
+      _ <- createMultiDeposit.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
     } yield deposits
   }
 
-  def convert(paths: PathExplorers, datamanagerId: Datamanager): Either[NonEmptyChain[Throwable], Unit] = {
+  def convert(paths: PathExplorers, datamanagerId: Datamanager): Either[NonEmptyChain[SmdError], Unit] = {
     implicit val input: InputPathExplorer = paths
     implicit val staging: StagingPathExplorer = paths
     implicit val output: OutputPathExplorer = paths
 
-    type X[T] = Either[ConversionFailed, T]
+    Locale.setDefault(Locale.US)
 
     for {
-      _ <- Locale.setDefault(Locale.US).asRight[NonEmptyChain[Throwable]]
-      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(e => NonEmptyChain.one(ParseFailed(e.report)))
-      dataManagerEmailAddress <- datamanager.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
-      _ <- deposits.traverse[X, Unit](createMultiDeposit.convertDeposit(paths, datamanagerId, dataManagerEmailAddress))
-        .leftMap(error => {
-          deposits.traverse[X, Unit](d => createMultiDeposit.clearDeposit(d.depositId))
-            .fold(discardError => NonEmptyChain(
-              ActionException("discarding deposits failed after creating deposits failed"),
-              error,
-              discardError
-            ), _ => NonEmptyChain.one(error))
-        })
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(NonEmptyChain.one)
+      dataManagerEmailAddress <- createMultiDeposit.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
+      _ <- createMultiDeposit.convertDeposits(deposits, paths, datamanagerId, dataManagerEmailAddress)
       _ = logger.info("deposits were created successfully")
       _ <- createMultiDeposit.report(deposits).leftMap(NonEmptyChain.one)
       _ = logger.info(s"report generated at ${ paths.reportFile }")
-      _ <- deposits.traverse[X, Unit](deposit => createMultiDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId)).leftMap(NonEmptyChain.one)
+      _ <- createMultiDeposit.moveDepositsToOutputDir(deposits).leftMap(NonEmptyChain.one)
       _ = logger.info(s"deposits were successfully moved to ${ output.outputDepositDir }")
     } yield ()
   }
@@ -103,8 +86,8 @@ object SplitMultiDepositApp {
       val ffProbePath = configuration.properties.getString("audio-video.ffprobe")
       require(ffProbePath != null, "Missing configuration for ffprobe")
       val exeFile = File(ffProbePath)
-      require(exeFile isRegularFile, s"Ffprobe at $exeFile does not exist or is not a regular file")
-      require(exeFile isExecutable, s"Ffprobe at $exeFile is not executable")
+      require(exeFile.isRegularFile, s"Ffprobe at $exeFile does not exist or is not a regular file")
+      require(exeFile.isExecutable, s"Ffprobe at $exeFile is not executable")
       FfprobeRunner(exeFile)
     }
 

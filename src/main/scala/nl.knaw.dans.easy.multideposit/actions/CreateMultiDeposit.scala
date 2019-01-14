@@ -1,8 +1,12 @@
 package nl.knaw.dans.easy.multideposit.actions
 
+import cats.data.{ NonEmptyChain, ValidatedNec }
+import cats.instances.either._
+import cats.instances.list._
 import cats.syntax.either._
+import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPathExplorer, PathExplorers, StagingPathExplorer }
-import nl.knaw.dans.easy.multideposit.model.{ BagId, Datamanager, DatamanagerEmailaddress, Deposit, DepositId }
+import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.easy.multideposit.{ ConversionFailed, DepositPermissions, FfprobeRunner, Ldap }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -12,6 +16,7 @@ class CreateMultiDeposit(formats: Set[String],
                          permissions: DepositPermissions) extends DebugEnhancedLogging {
 
   private val validator = new ValidatePreconditions(ldap, ffprobe)
+  private val datamanager = new RetrieveDatamanager(ldap)
   private val createDirs = new CreateDirectories()
   private val createBag = new AddBagToDeposit()
   private val datasetMetadata = new AddDatasetMetadataToDeposit(formats)
@@ -21,12 +26,44 @@ class CreateMultiDeposit(formats: Set[String],
   private val reportDatasets = new ReportDatasets()
   private val moveDeposit = new MoveDepositToOutputDir()
 
-  def validateDeposit(deposit: Deposit)(implicit staging: StagingPathExplorer): Either[ConversionFailed, Unit] = {
+  private type ConversionFailedOr[T] = Either[ConversionFailed, T]
+  private type ConversionFailedValidated[T] = ValidatedNec[ConversionFailed, T]
+
+  def validateDeposits(deposits: List[Deposit])(implicit staging: StagingPathExplorer): ValidatedNec[ConversionFailed, Unit] = {
+    deposits.traverse[ConversionFailedValidated, Unit](validateDeposit).map(_ => ())
+  }
+
+  private def validateDeposit(deposit: Deposit)(implicit staging: StagingPathExplorer): ValidatedNec[ConversionFailed, Unit] = {
     validator.validateDeposit(deposit)
+      .leftMap(conversionErrorReport)
+      .toValidatedNec
+  }
+
+  def getDatamanagerEmailaddress(datamanagerId: Datamanager): Either[ConversionFailed, DatamanagerEmailaddress] = {
+    datamanager.getDatamanagerEmailaddress(datamanagerId)
       .leftMap(conversionErrorReport)
   }
 
-  def convertDeposit(paths: PathExplorers, datamanagerId: Datamanager, dataManagerEmailAddress: DatamanagerEmailaddress)(deposit: Deposit): Either[ConversionFailed, Unit] = {
+  def convertDeposits(deposits: List[Deposit],
+                      paths: PathExplorers,
+                      datamanagerId: Datamanager,
+                      dataManagerEmailAddress: DatamanagerEmailaddress)
+                     (implicit staging: StagingPathExplorer): Either[NonEmptyChain[ConversionFailed], Unit] = {
+    deposits.traverse[ConversionFailedOr, Unit](convertDeposit(paths, datamanagerId, dataManagerEmailAddress))
+      .leftMap(error => {
+        deposits.traverse[ConversionFailedOr, Unit](d => createDirs.discardDeposit(d.depositId).leftMap(conversionErrorReport))
+          .fold(discardError => NonEmptyChain(
+            error,
+            ConversionFailed("discarding deposits failed after creating deposits failed", Option(discardError))
+          ), _ => NonEmptyChain.one(error))
+      })
+      .map(_ => ())
+  }
+
+  private def convertDeposit(paths: PathExplorers,
+                             datamanagerId: Datamanager,
+                             dataManagerEmailAddress: DatamanagerEmailaddress)
+                            (deposit: Deposit): Either[ConversionFailed, Unit] = {
     val depositId = deposit.depositId
     implicit val input: InputPathExplorer = paths
     implicit val staging: StagingPathExplorer = paths
@@ -49,19 +86,15 @@ class CreateMultiDeposit(formats: Set[String],
     result.leftMap(conversionErrorReport)
   }
 
-  def clearDeposit(depositId: DepositId)(implicit staging: StagingPathExplorer): Either[ConversionFailed, Unit] = {
-    createDirs.discardDeposit(depositId)
-      .leftMap(conversionErrorReport)
-  }
-
-  def report(deposits: Seq[Deposit])(implicit output: OutputPathExplorer): Either[ConversionFailed, Unit] = {
+  def report(deposits: List[Deposit])(implicit output: OutputPathExplorer): Either[ConversionFailed, Unit] = {
     reportDatasets.report(deposits)
       .leftMap(conversionErrorReport)
   }
 
-  def moveDepositsToOutputDir(depositId: DepositId, bagId: BagId)(implicit staging: StagingPathExplorer, output: OutputPathExplorer): Either[ConversionFailed, Unit] = {
-    moveDeposit.moveDepositsToOutputDir(depositId, bagId)
-      .leftMap(conversionErrorReport)
+  def moveDepositsToOutputDir(deposits: List[Deposit])(implicit staging: StagingPathExplorer, output: OutputPathExplorer): Either[ConversionFailed, Unit] = {
+    deposits.traverse[ConversionFailedOr, Unit](deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId)
+      .leftMap(conversionErrorReport))
+      .map(_ => ())
   }
 
   private def conversionErrorReport(error: CreateDepositError): ConversionFailed = {

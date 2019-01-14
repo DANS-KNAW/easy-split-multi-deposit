@@ -16,12 +16,10 @@
 package nl.knaw.dans.easy.multideposit
 
 import better.files.File
-import cats.data.EitherNec
 
 package object actions {
 
   type FailFast[T] = Either[CreateDepositError, T]
-  type FailFastNec[T] = EitherNec[CreateDepositError, T]
 
   sealed abstract class CreateDepositError(msg: String, cause: Option[Throwable] = None) extends Exception(msg, cause.orNull)
 
