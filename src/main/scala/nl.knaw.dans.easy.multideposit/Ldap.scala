@@ -35,7 +35,7 @@ trait Ldap extends AutoCloseable {
       ctx.search("dc=dans,dc=knaw,dc=nl", searchFilter, searchControls)
         .asScala.toSeq
         .map(f compose (_.getAttributes))
-    }.leftMap(e => ActionException(e.getMessage, e))
+    }.leftMap(e => ActionError(e.getMessage, e))
   }
 
   override def close(): Unit = ctx.close()

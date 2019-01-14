@@ -20,6 +20,7 @@ import cats.data.ValidatedNec
 import cats.instances.list._
 import cats.syntax.either._
 import cats.syntax.traverse._
+import nl.knaw.dans.easy.multideposit.FfprobeRunner.FfprobeError
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit, DepositId }
 import nl.knaw.dans.easy.multideposit._
@@ -42,13 +43,13 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
     logger.debug(s"check directories don't exist yet: ${ directories.mkString("[", ", ", "]") }")
 
     directories.find(_.exists)
-      .map(file => ActionException(s"The deposit for dataset $depositId already exists in $file.").asLeft)
+      .map(file => ActionError(s"The deposit for dataset $depositId already exists in $file.").asLeft)
       .getOrElse(().asRight)
   }
 
-  private type Validated[T] = ValidatedNec[Throwable, T]
+  private type Validated[T] = ValidatedNec[FfprobeError, T]
 
-  def checkAudioVideoNotCorrupt(deposit: Deposit): Either[InvalidInputException, Unit] = {
+  def checkAudioVideoNotCorrupt(deposit: Deposit): Either[InvalidInput, Unit] = {
     logger.debug("check that A/V files can be successfully probed by ffprobe")
 
     deposit.files.collect { case fmd: AVFileMetadata => fmd.filepath }
@@ -56,10 +57,10 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
       .traverse[Validated, Unit](ffprobe.run(_).toValidatedNec)
       .leftMap(errors => {
         val ffProbeErrors = errors.toNonEmptyList.toList
-          .map { case FfprobeErrorException(t, e, _) => s" - File: $t, exit code: $e" }
+          .map { case FfprobeError(t, e, _) => s" - File: $t, exit code: $e" }
           .mkString("\n")
 
-        InvalidInputException(deposit.row, "Possibly found corrupt A/V files. Ffprobe failed when probing the following files:\\n" + ffProbeErrors)
+        InvalidInput(deposit.row, "Possibly found corrupt A/V files. Ffprobe failed when probing the following files:\\n" + ffProbeErrors)
       })
       .map(_ => ())
       .toEither
@@ -71,13 +72,13 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
     val depositorUserId = deposit.depositorUserId
     ldap.query(depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE"))
       .flatMap {
-        case Seq() => InvalidInputException(deposit.row, s"depositorUserId '$depositorUserId' is unknown").asLeft
+        case Seq() => InvalidInput(deposit.row, s"depositorUserId '$depositorUserId' is unknown").asLeft
         case Seq(head) => head.asRight
-        case _ => ActionException(s"There appear to be multiple users with id '$depositorUserId'").asLeft
+        case _ => ActionError(s"There appear to be multiple users with id '$depositorUserId'").asLeft
       }
       .flatMap {
         case true => ().asRight
-        case false => InvalidInputException(deposit.row, s"The depositor '$depositorUserId' is not an active user").asLeft
+        case false => InvalidInput(deposit.row, s"The depositor '$depositorUserId' is not an active user").asLeft
       }
   }
 }

@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream
 
 import better.files.File
 import cats.syntax.either._
+import nl.knaw.dans.easy.multideposit.FfprobeRunner.FfprobeError
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.io.IOUtils
 
@@ -33,13 +34,13 @@ trait FfprobeRunner {
   val ffprobeExe: File
 
   /**
-   * Runs ffprobe on a given file. If a non-zero exit value is returned from the ffprobe process, a [[nl.knaw.dans.easy.multideposit.FfprobeErrorException]] is
+   * Runs ffprobe on a given file. If a non-zero exit value is returned from the ffprobe process, a [[nl.knaw.dans.easy.multideposit.FfprobeRunner.FfprobeError]] is
    * returned, which details the exit code and the standard error contents.
    *
    * @param target the target to probe
    * @return the result of the call
    */
-  def run(target: File): Either[Throwable, Unit] = {
+  def run(target: File): Either[FfprobeError, Unit] = {
     val err = new ByteArrayOutputStream()
     Either.catchNonFatal {
       /*
@@ -48,15 +49,17 @@ trait FfprobeRunner {
        */
       val proc = Seq(ffprobeExe.toString(), target.toString) run new ProcessIO(_.close(), _ => (), IOUtils.copy(_, err))
       proc.exitValue
-    }.flatMap {
-      exit =>
-        if (exit == 0) ().asRight
-        else FfprobeErrorException(target, exit, new String(err.toByteArray)).asLeft
     }
+      .leftMap(e => FfprobeError(target, -1, e.getMessage))
+      .flatMap {
+        exit =>
+          if (exit == 0) ().asRight
+          else FfprobeError(target, exit, new String(err.toByteArray)).asLeft
+      }
   }
 }
 
-object FfprobeRunner extends DebugEnhancedLogging{
+object FfprobeRunner extends DebugEnhancedLogging {
 
   /**
    * Constructs an FfprobeRunner
@@ -67,4 +70,6 @@ object FfprobeRunner extends DebugEnhancedLogging{
   def apply(exe: File): FfprobeRunner = new FfprobeRunner {
     override val ffprobeExe: File = exe
   }
+
+  case class FfprobeError(file: File, exitValue: Int, err: String)
 }

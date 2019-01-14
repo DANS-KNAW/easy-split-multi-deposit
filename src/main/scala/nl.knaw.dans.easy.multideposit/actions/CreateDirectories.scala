@@ -17,7 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
 import cats.syntax.either._
-import nl.knaw.dans.easy.multideposit.{ ActionException, FailFast }
+import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -38,7 +38,7 @@ class CreateDirectories extends DebugEnhancedLogging {
         logger.debug(s"create directory $directory")
         directory.createDirectories()
       }
-    }.leftMap(e => ActionException(s"Could not create the directories at $directories", e))
+    }.leftMap(e => ActionError(s"Could not create the directories at $directories", e))
   }
 
   def discardDeposit(depositId: DepositId)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
@@ -46,6 +46,6 @@ class CreateDirectories extends DebugEnhancedLogging {
 
     val dir = stage.stagingDir(depositId)
     Either.catchNonFatal { if (dir.exists) dir.delete(); () }
-      .leftMap(e => ActionException(s"Could not delete $dir", e))
+      .leftMap(e => ActionError(s"Could not delete $dir", e))
   }
 }

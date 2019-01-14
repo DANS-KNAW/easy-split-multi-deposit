@@ -38,12 +38,12 @@ object Command extends App with DebugEnhancedLogging {
       for (e <- errors.toNonEmptyList.toList) {
         e match {
           case ParseFailed(_) |
-               InvalidDatamanagerException(_) |
-               InvalidInputException(_, _) => // do nothing
-          case _ => logger.error(e.getMessage, e)
+               InvalidDatamanager(_) |
+               InvalidInput(_, _) => // do nothing
+          case _ => logger.error(e.msg, e.cause)
         }
 
-        println(s"FAILED: ${ e.getMessage }")
+        println(s"FAILED: ${ e.msg }")
       }
   }
 

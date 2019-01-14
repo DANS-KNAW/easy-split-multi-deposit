@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import cats.syntax.either._
-import nl.knaw.dans.easy.multideposit.{ ActionException, BetterFileExtensions, FailFast }
+import nl.knaw.dans.easy.multideposit.{ ActionError, BetterFileExtensions, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -32,7 +32,7 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
       logger.debug(s"add dataset metadata for ${ deposit.depositId }")
 
       stage.stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
-    }.leftMap(e => ActionException(s"Could not write deposit metadata for ${ deposit.depositId }", e))
+    }.leftMap(e => ActionError(s"Could not write deposit metadata for ${ deposit.depositId }", e))
   }
 
   def depositToDDM(deposit: Deposit): Elem = {

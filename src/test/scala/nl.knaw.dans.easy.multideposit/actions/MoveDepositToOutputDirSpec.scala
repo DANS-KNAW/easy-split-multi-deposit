@@ -19,7 +19,7 @@ import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 
 import better.files.File
-import nl.knaw.dans.easy.multideposit.{ ActionException, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.{ ActionError, TestSupportFixture }
 import org.scalatest.BeforeAndAfterEach
 
 class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterEach {
@@ -76,7 +76,7 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
     outputDepositDir(bagId).toJava should exist
 
     inside(action.moveDepositsToOutputDir(depositId1, bagId).left.value) {
-      case ActionException(msg, cause: FileAlreadyExistsException) =>
+      case ActionError(msg, Some(cause: FileAlreadyExistsException)) =>
         msg should startWith (s"Could not move ${stagingDir(depositId1)} to " +
           s"${outputDepositDir(bagId)}. The target directory already exists.")
 

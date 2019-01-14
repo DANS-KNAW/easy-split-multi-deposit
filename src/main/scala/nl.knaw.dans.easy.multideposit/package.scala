@@ -36,23 +36,17 @@ package object multideposit {
 
   case class DepositPermissions(permissions: String, group: String)
 
-  // TODO remove extends Exception
-  // kept here for now to be conform with the rest of the application
-  sealed abstract class SmdError(report: String, cause: Option[Throwable] = None) extends Exception(report, cause.orNull)
+  sealed abstract class SmdError(val msg: String, val cause: Option[Throwable] = None)
   case class ParseFailed(report: String) extends SmdError(report)
 
   sealed abstract class ConversionFailed(msg: String, cause: Option[Throwable] = None) extends SmdError(msg, cause)
-  class ActionException(msg: String, cause: Option[Throwable] = None) extends ConversionFailed(msg, cause)
-  object ActionException {
-    def apply(msg: String, cause: Throwable): ActionException = new ActionException(msg, Option(cause))
-
-    def apply(msg: String): ActionException = new ActionException(msg)
-
-    def unapply(arg: ActionException): Option[(String, Throwable)] = Some((arg.getMessage, arg.getCause))
+  case class ActionError(override val msg: String, override val cause: Option[Throwable] = None) extends ConversionFailed(msg, cause)
+  object ActionError {
+    def apply(msg: String, cause: Throwable): ActionError = new ActionError(msg, Option(cause))
   }
-  case class InvalidDatamanagerException(msg: String) extends ConversionFailed(msg)
-  case class InvalidInputException(row: Int, msg: String) extends ConversionFailed(s"row $row: $msg")
-  case class FfprobeErrorException(file: File, exitValue: Int, err: String) extends ConversionFailed(s"File '$file' could not be probed. Exit value: $exitValue, STDERR: '$err'")
+  case class InvalidDatamanager(override val msg: String) extends ConversionFailed(msg)
+  case class InvalidInput(row: Int, localMsg: String) extends ConversionFailed(s"row $row: $localMsg")
+//  case class FfprobeError(file: File, exitValue: Int, err: String) extends ConversionFailed(s"File '$file' could not be probed. Exit value: $exitValue, STDERR: '$err'")
 
   implicit class BetterFileExtensions(val file: File) extends AnyVal {
     /**

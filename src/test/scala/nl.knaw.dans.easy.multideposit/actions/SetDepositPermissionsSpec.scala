@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.FileSystemException
 import java.nio.file.attribute.{ PosixFilePermission, UserPrincipalNotFoundException }
 
-import nl.knaw.dans.easy.multideposit.{ ActionException, DepositPermissions, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.{ ActionError, DepositPermissions, TestSupportFixture }
 import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Properties
@@ -99,7 +99,7 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", "non-existing-group-name"))
 
     inside(action.setDepositPermissions(depositId).left.value) {
-      case ActionException(msg, _: UserPrincipalNotFoundException) =>
+      case ActionError(msg, Some(_: UserPrincipalNotFoundException)) =>
         msg shouldBe "Group non-existing-group-name could not be found"
     }
   }
@@ -108,7 +108,7 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val action = new SetDepositPermissions(DepositPermissions("abcdefghi", "admin"))
 
     inside(action.setDepositPermissions(depositId).left.value) {
-      case ActionException(msg, _: IllegalArgumentException) =>
+      case ActionError(msg, Some(_: IllegalArgumentException)) =>
         msg shouldBe "Invalid privileges (abcdefghi)"
     }
   }
@@ -117,7 +117,7 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", unrelatedGroup))
 
     inside(action.setDepositPermissions(depositId).left.value) {
-      case ActionException(msg, _: FileSystemException) =>
+      case ActionError(msg, Some(_: FileSystemException)) =>
         msg should include(s"Not able to set the group to $unrelatedGroup")
     }
   }

@@ -21,21 +21,23 @@ import java.nio.file.attribute._
 
 import better.files.File
 import cats.syntax.either._
-import nl.knaw.dans.easy.multideposit.{ ActionException, DepositPermissions, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
+import nl.knaw.dans.easy.multideposit.{ ActionError, DepositPermissions, FailFast }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.control.NonFatal
 
 class SetDepositPermissions(depositPermissions: DepositPermissions) extends DebugEnhancedLogging {
 
+  case class FilePermissionException(msg: String, cause: Throwable) extends Exception(msg, cause)
+
   def setDepositPermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
     logger.debug(s"set deposit permissions for $depositId")
 
     setFilePermissions(depositId).leftMap {
-      case e: ActionException => e
-      case e => ActionException(e.getMessage, e)
+      case FilePermissionException(msg, cause) => ActionError(msg, cause)
+      case e => ActionError(e.getMessage, e)
     }
   }
 
@@ -79,14 +81,14 @@ class SetDepositPermissions(depositPermissions: DepositPermissions) extends Debu
 
         FileVisitResult.CONTINUE
       }.fold({
-        case upnf: UserPrincipalNotFoundException => throw ActionException(s"Group ${ depositPermissions.group } could not be found", upnf)
-        case usoe: UnsupportedOperationException => throw ActionException("Not on a POSIX supported file system", usoe)
-        case cce: ClassCastException => throw ActionException("No file permission elements in set", cce)
-        case iae: IllegalArgumentException => throw ActionException(s"Invalid privileges (${ depositPermissions.permissions })", iae)
-        case fse: FileSystemException => throw ActionException(s"Not able to set the group to ${ depositPermissions.group }. Probably the current user (${ System.getProperty("user.name") }) is not part of this group.", fse)
-        case ioe: IOException => throw ActionException(s"Could not set file permissions or group on $path", ioe)
-        case se: SecurityException => throw ActionException(s"Not enough privileges to set file permissions or group on $path", se)
-        case NonFatal(e) => throw ActionException(s"unexpected error occured on $path", e)
+        case upnf: UserPrincipalNotFoundException => throw FilePermissionException(s"Group ${ depositPermissions.group } could not be found", upnf)
+        case usoe: UnsupportedOperationException => throw FilePermissionException("Not on a POSIX supported file system", usoe)
+        case cce: ClassCastException => throw FilePermissionException("No file permission elements in set", cce)
+        case iae: IllegalArgumentException => throw FilePermissionException(s"Invalid privileges (${ depositPermissions.permissions })", iae)
+        case fse: FileSystemException => throw FilePermissionException(s"Not able to set the group to ${ depositPermissions.group }. Probably the current user (${ System.getProperty("user.name") }) is not part of this group.", fse)
+        case ioe: IOException => throw FilePermissionException(s"Could not set file permissions or group on $path", ioe)
+        case se: SecurityException => throw FilePermissionException(s"Not enough privileges to set file permissions or group on $path", se)
+        case NonFatal(e) => throw FilePermissionException(s"unexpected error occured on $path", e)
       }, fvr => fvr)
     }
   }

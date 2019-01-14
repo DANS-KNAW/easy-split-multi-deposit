@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.FileAlreadyExistsException
 
 import cats.syntax.either._
-import nl.knaw.dans.easy.multideposit.{ ActionException, FailFast }
+import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ BagId, DepositId }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -33,7 +33,7 @@ class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
     Either.catchNonFatal { stagingDirectory.moveTo(outputDir, overwrite = false); () }.leftMap {
       case e: FileAlreadyExistsException =>
-        ActionException(s"Could not move $stagingDirectory to $outputDir. The target " +
+        ActionError(s"Could not move $stagingDirectory to $outputDir. The target " +
           "directory already exists. Since this is only possible when a UUID (universally unique " +
           "identifier) is not unique; you have hit the jackpot. The chance of this happening is " +
           "smaller than you being hit by a meteorite. So rejoice in the moment, because this " +
@@ -42,15 +42,15 @@ class MoveDepositToOutputDir extends DebugEnhancedLogging {
           "came before this lucky one, because they went through successfully).", e)
       case e =>
         Either.catchNonFatal { outputDir.exists } match {
-          case Right(true) => ActionException("An error occurred while moving " +
+          case Right(true) => ActionError("An error occurred while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move is probably only partially " +
             "done since the output directory does exist. This move is, however, NOT revertable! " +
             "Please contact your application manager ASAP!", e)
-          case Right(false) => ActionException("An error occurred while moving " +
+          case Right(false) => ActionError("An error occurred while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move did not take place, since " +
             "the output directory does not yet exist or is not on the same partition as the " +
             "staging directory.", e)
-          case Left(e2) => ActionException("An error occurred both while moving " +
+          case Left(e2) => ActionError("An error occurred both while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage } and while checking whether the " +
             s"output directory actually exists now: ${ e2.getMessage }. Please contact your " +
             "application manager ASAP!")

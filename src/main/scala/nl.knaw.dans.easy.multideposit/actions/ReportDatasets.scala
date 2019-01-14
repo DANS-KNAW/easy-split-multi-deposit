@@ -19,7 +19,7 @@ import better.files.{ Dispose, _ }
 import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.PathExplorer.OutputPathExplorer
 import nl.knaw.dans.easy.multideposit.actions.ReportDatasets._
-import nl.knaw.dans.easy.multideposit.{ ActionException, FailFast, encoding }
+import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast, encoding }
 import nl.knaw.dans.easy.multideposit.model.Deposit
 import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 
@@ -30,7 +30,7 @@ class ReportDatasets {
       for (printer <- csvPrinter(output.reportFile);
            deposit <- deposits)
         printRecord(deposit, printer)
-    }.leftMap(e => ActionException("Could not write the dataset report", e))
+    }.leftMap(e => ActionError("Could not write the dataset report", e))
   }
 
   private def csvPrinter(file: File): Dispose[CSVPrinter] = {

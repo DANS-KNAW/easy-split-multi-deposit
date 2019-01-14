@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import cats.syntax.either._
-import nl.knaw.dans.easy.multideposit.{ ActionException, BetterFileExtensions, FailFast }
+import nl.knaw.dans.easy.multideposit.{ ActionError, BetterFileExtensions, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -30,7 +30,7 @@ class AddFileMetadataToDeposit extends DebugEnhancedLogging {
       logger.debug(s"add file metadata for $depositId")
 
       stage.stagingFileMetadataFile(depositId).writeXml(depositToFileXml(depositId, fileMetadata))
-    }.leftMap(e => ActionException(s"Could not write file metadata", e))
+    }.leftMap(e => ActionError(s"Could not write file metadata", e))
   }
 
   private def depositToFileXml(depositId: DepositId, fileMetadata: Seq[FileMetadata])(implicit input: InputPathExplorer): Elem = {

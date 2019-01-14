@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
-import nl.knaw.dans.easy.multideposit.{ ActionException, FailFast, now }
+import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast, now }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.configuration.PropertiesConfiguration
 
@@ -36,7 +36,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
 
     Either.catchNonFatal { addProperties(deposit, datamanagerId, emailaddress)(props) }
       .map(_ => props.save())
-      .leftMap(e => ActionException(s"Could not write properties to file: $e", e))
+      .leftMap(e => ActionError(s"Could not write properties to file: $e", e))
   }
 
   private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(properties: PropertiesConfiguration): Unit = {

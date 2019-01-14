@@ -55,14 +55,14 @@ class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
   it should "fail if ldap does not return anything for the datamanager" in {
     mockLdapForDatamanager(Seq.empty)
 
-    action.getDatamanagerEmailaddress(datamanagerId).left.value.getMessage should
+    action.getDatamanagerEmailaddress(datamanagerId).left.value.msg should
       include("The datamanager 'dm' is unknown")
   }
 
   it should "fail if ldap does not return multiple users" in {
     mockLdapForDatamanager(Seq(correctDatamanagerAttrs, correctDatamanagerAttrs))
 
-    action.getDatamanagerEmailaddress(datamanagerId).left.value.getMessage shouldBe
+    action.getDatamanagerEmailaddress(datamanagerId).left.value.msg shouldBe
       s"There appear to be multiple users with id '$datamanagerId'"
   }
 
@@ -70,7 +70,7 @@ class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
     val nonActiveDatamanagerAttrs = createDatamanagerAttributes(state = "BLOCKED")
     mockLdapForDatamanager(Seq(nonActiveDatamanagerAttrs))
 
-    action.getDatamanagerEmailaddress(datamanagerId).left.value.getMessage should
+    action.getDatamanagerEmailaddress(datamanagerId).left.value.msg should
       include("not an active user")
   }
 
@@ -78,7 +78,7 @@ class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
     val nonArchivistDatamanagerAttrs = createDatamanagerAttributes(roles = Seq("USER"))
     mockLdapForDatamanager(Seq(nonArchivistDatamanagerAttrs))
 
-    action.getDatamanagerEmailaddress(datamanagerId).left.value.getMessage should
+    action.getDatamanagerEmailaddress(datamanagerId).left.value.msg should
       include("is not an archivist")
   }
 
@@ -86,7 +86,7 @@ class RetrieveDatamanagerSpec extends TestSupportFixture with MockFactory {
     val nonEmailDatamanagerAttrs = createDatamanagerAttributes(mail = "")
     mockLdapForDatamanager(Seq(nonEmailDatamanagerAttrs))
 
-    action.getDatamanagerEmailaddress(datamanagerId).left.value.getMessage should
+    action.getDatamanagerEmailaddress(datamanagerId).left.value.msg should
       include("does not have an email address")
   }
 }

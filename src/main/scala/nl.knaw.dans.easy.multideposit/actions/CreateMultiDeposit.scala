@@ -50,7 +50,7 @@ class CreateMultiDeposit(formats: Set[String],
         deposits.traverse[FailFast, Unit](d => createDirs.discardDeposit(d.depositId))
           .fold(discardError => NonEmptyChain(
             error,
-            ActionException("discarding deposits failed after creating deposits failed", discardError)
+            discardError
           ), _ => NonEmptyChain.one(error))
       })
       .map(_ => ())

@@ -24,7 +24,7 @@ import gov.loc.repository.bagit.creator.BagCreator
 import gov.loc.repository.bagit.domain.{ Metadata => BagitMetadata }
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import gov.loc.repository.bagit.verify.FileCountAndTotalSizeVistor
-import nl.knaw.dans.easy.multideposit.{ ActionException, FailFast }
+import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ BaseUUID, DepositId }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -37,7 +37,7 @@ class AddBagToDeposit extends DebugEnhancedLogging {
     logger.debug(s"construct the bag for $depositId with timestamp ${ created.toString(ISODateTimeFormat.dateTime()) }")
 
     createBag(depositId, created, base)
-      .leftMap(e => ActionException(s"Error occurred in creating the bag for $depositId", e))
+      .leftMap(e => ActionError(s"Error occurred in creating the bag for $depositId", e))
   }
 
   private def createBag(depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Either[Throwable, Unit] = Either.catchNonFatal {

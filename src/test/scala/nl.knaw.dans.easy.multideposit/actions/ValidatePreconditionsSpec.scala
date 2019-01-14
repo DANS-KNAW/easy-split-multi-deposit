@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
 import javax.naming.directory.Attributes
+import nl.knaw.dans.easy.multideposit.FfprobeRunner.FfprobeError
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, FileAccessRights, Video }
 import org.scalamock.scalatest.MockFactory
@@ -58,7 +59,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     dir.createDirectories()
     dir.toJava should exist
 
-    action.checkDirectoriesDoNotExist(depositId)(dir).left.value.getMessage should
+    action.checkDirectoriesDoNotExist(depositId)(dir).left.value.msg should
       include(s"The deposit for dataset $depositId already exists")
   }
 
@@ -86,21 +87,21 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     mockLdapForDepositor(Seq(false))
 
     action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())
-      .left.value.getMessage should include("depositor 'dp1' is not an active user")
+      .left.value.msg should include("depositor 'dp1' is not an active user")
   }
 
   it should "fail if ldap does not return anything for the depositor" in {
     mockLdapForDepositor(Seq.empty)
 
     action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())
-      .left.value.getMessage should include("depositorUserId 'dp1' is unknown")
+      .left.value.msg should include("depositorUserId 'dp1' is unknown")
   }
 
   it should "fail if ldap returns multiple values" in {
     mockLdapForDepositor(Seq(true, true))
 
     action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())
-      .left.value.getMessage should include("multiple users with id 'dp1'")
+      .left.value.msg should include("multiple users with id 'dp1'")
   }
 
   def mockFfprobeRunnerForAllSuccess(): Unit = {
@@ -109,7 +110,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
 
   // TODO remove CompositeException
   def mockFfprobeRunnerForOneFailure(): Unit = {
-    (ffprobeMock.run(_: File)) expects * once() returning Left(FfprobeErrorException(File("dummy"), 0, "dummy"))
+    (ffprobeMock.run(_: File)) expects * once() returning Left(FfprobeError(File("dummy"), 0, "dummy"))
   }
 
   "checkAudioVideoNotCorrupt" should "succeed if no A/V files are present" in {
@@ -128,7 +129,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val deposit = testInstructions1.toDeposit(avFileReferences)
 
     inside(action.checkAudioVideoNotCorrupt(deposit)) {
-      case Left(InvalidInputException(row, msg)) =>
+      case Left(InvalidInput(row, msg)) =>
         row shouldBe testInstructions1.row
         msg should include("Possibly found corrupt A/V files.")
     }
