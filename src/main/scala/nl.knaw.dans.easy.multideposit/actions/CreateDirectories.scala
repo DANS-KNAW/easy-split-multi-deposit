@@ -23,15 +23,15 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 class CreateDirectories extends DebugEnhancedLogging {
 
-  def createDepositDirectories(depositId: DepositId)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
+  def createDepositDirectories(depositId: DepositId)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
     createDirectories(stage.stagingDir(depositId), stage.stagingBagDir(depositId))
   }
 
-  def createMetadataDirectory(depositId: DepositId)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
+  def createMetadataDirectory(depositId: DepositId)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
     createDirectories(stage.stagingBagMetadataDir(depositId))
   }
 
-  private def createDirectories(directories: File*): Either[ActionException, Unit] = {
+  private def createDirectories(directories: File*): FailFast[Unit] = {
     Either.catchNonFatal {
       for (directory <- directories) {
         logger.debug(s"create directory $directory")
@@ -40,7 +40,7 @@ class CreateDirectories extends DebugEnhancedLogging {
     }.leftMap(e => ActionException(s"Could not create the directories at $directories", e))
   }
 
-  def discardDeposit(depositId: DepositId)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
+  def discardDeposit(depositId: DepositId)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
     logger.debug(s"delete deposit '$depositId' from staging directory")
 
     val dir = stage.stagingDir(depositId)

@@ -20,12 +20,11 @@ import java.nio.file.FileAlreadyExistsException
 import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ BagId, DepositId }
-import nl.knaw.dans.lib.error.CompositeException
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
-  def moveDepositsToOutputDir(depositId: DepositId, bagId: BagId)(implicit stage: StagingPathExplorer, output: OutputPathExplorer): Either[ActionException, Unit] = {
+  def moveDepositsToOutputDir(depositId: DepositId, bagId: BagId)(implicit stage: StagingPathExplorer, output: OutputPathExplorer): FailFast[Unit] = {
     val stagingDirectory = stage.stagingDir(depositId)
     val outputDir = output.outputDepositDir(bagId)
 
@@ -53,7 +52,7 @@ class MoveDepositToOutputDir extends DebugEnhancedLogging {
           case Left(e2) => ActionException("An error occurred both while moving " +
             s"$stagingDirectory to $outputDir: ${ e.getMessage } and while checking whether the " +
             s"output directory actually exists now: ${ e2.getMessage }. Please contact your " +
-            "application manager ASAP!", new CompositeException(e, e2))
+            "application manager ASAP!")
         }
     }
   }

@@ -98,8 +98,8 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
   it should "fail if the group name does not exist" in {
     val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", "non-existing-group-name"))
 
-    inside(action.setDepositPermissions(depositId)) {
-      case Left(ActionException(msg, _: UserPrincipalNotFoundException)) =>
+    inside(action.setDepositPermissions(depositId).left.value) {
+      case ActionException(msg, _: UserPrincipalNotFoundException) =>
         msg shouldBe "Group non-existing-group-name could not be found"
     }
   }
@@ -107,8 +107,8 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
   it should "fail if the access permissions are invalid" in {
     val action = new SetDepositPermissions(DepositPermissions("abcdefghi", "admin"))
 
-    inside(action.setDepositPermissions(depositId)) {
-      case Left(ActionException(msg, _: IllegalArgumentException)) =>
+    inside(action.setDepositPermissions(depositId).left.value) {
+      case ActionException(msg, _: IllegalArgumentException) =>
         msg shouldBe "Invalid privileges (abcdefghi)"
     }
   }
@@ -116,8 +116,8 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
   it should "fail if the user is not part of the given group" in {
     val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", unrelatedGroup))
 
-    inside(action.setDepositPermissions(depositId)) {
-      case Left(ActionException(msg, _: FileSystemException)) =>
+    inside(action.setDepositPermissions(depositId).left.value) {
+      case ActionException(msg, _: FileSystemException) =>
         msg should include(s"Not able to set the group to $unrelatedGroup")
     }
   }

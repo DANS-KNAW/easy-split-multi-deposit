@@ -25,7 +25,7 @@ import scala.xml.{ Elem, NodeSeq }
 
 class AddFileMetadataToDeposit extends DebugEnhancedLogging {
 
-  def addFileMetadata(depositId: DepositId, fileMetadata: Seq[FileMetadata])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Either[ActionException, Unit] = {
+  def addFileMetadata(depositId: DepositId, fileMetadata: Seq[FileMetadata])(implicit input: InputPathExplorer, stage: StagingPathExplorer): FailFast[Unit] = {
     Either.catchNonFatal {
       logger.debug(s"add file metadata for $depositId")
 

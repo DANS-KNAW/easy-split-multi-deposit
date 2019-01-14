@@ -25,7 +25,7 @@ import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 
 class ReportDatasets {
 
-  def report(deposits: Seq[Deposit])(implicit output: OutputPathExplorer): Either[ActionException, Unit] = {
+  def report(deposits: Seq[Deposit])(implicit output: OutputPathExplorer): FailFast[Unit] = {
     Either.catchNonFatal {
       for (printer <- csvPrinter(output.reportFile);
            deposit <- deposits)

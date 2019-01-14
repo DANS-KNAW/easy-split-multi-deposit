@@ -18,19 +18,20 @@ package nl.knaw.dans.easy.multideposit
 import java.util.Locale
 
 import better.files.File
+import cats.data.{ NonEmptyChain, ValidatedNec }
+import cats.instances.either._
+import cats.instances.list._
 import cats.syntax.either._
+import cats.syntax.traverse._
 import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.multideposit.PathExplorer._
 import nl.knaw.dans.easy.multideposit.actions.{ RetrieveDatamanager, _ }
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.easy.multideposit.parser.{ MultiDepositParser, ParseFailed }
-import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.language.postfixOps
-import scala.util.{ Failure, Success, Try }
-import scala.util.control.NonFatal
 
 class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap: Ldap, ffprobe: FfprobeRunner, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
   private val validator = new ValidatePreconditions(ldap, ffprobe)
@@ -46,43 +47,48 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
 
   override def close(): Unit = ldap.close()
 
-  def validate(paths: PathExplorers, datamanagerId: Datamanager): Try[Seq[Deposit]] = {
+  def validate(paths: PathExplorers, datamanagerId: Datamanager): Either[NonEmptyChain[Throwable], Seq[Deposit]] = {
     implicit val input: InputPathExplorer = paths
     implicit val staging: StagingPathExplorer = paths
     implicit val output: OutputPathExplorer = paths
 
+    type Validated[T] = ValidatedNec[Throwable, T]
+
     for {
-      _ <- Try { Locale.setDefault(Locale.US) }
-      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(e => ParseFailed(e.report)).toTry
-      _ <- deposits.map(validator.validateDeposit(_).toTry).collectResults
-      _ <- datamanager.getDatamanagerEmailaddress(datamanagerId).toTry
+      _ <- Locale.setDefault(Locale.US).asRight[NonEmptyChain[Throwable]]
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(NonEmptyChain.one).map(_.toList)
+      _ <- deposits.traverse[Validated, Unit](validator.validateDeposit(_).toValidatedNec).toEither
+      _ <- datamanager.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
     } yield deposits
   }
 
-  def convert(paths: PathExplorers, datamanagerId: Datamanager): Try[Unit] = {
+  def convert(paths: PathExplorers, datamanagerId: Datamanager): Either[NonEmptyChain[Throwable], Unit] = {
     implicit val input: InputPathExplorer = paths
     implicit val staging: StagingPathExplorer = paths
     implicit val output: OutputPathExplorer = paths
 
     for {
-      _ <- Try { Locale.setDefault(Locale.US) }
-      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(e => ParseFailed(e.report)).toTry
-      dataManagerEmailAddress <- datamanager.getDatamanagerEmailaddress(datamanagerId).toTry
-      _ <- deposits.mapUntilFailure(convertDeposit(paths, datamanagerId, dataManagerEmailAddress)).recoverWith {
-        case NonFatal(e) => deposits.mapUntilFailure(d => createDirs.discardDeposit(d.depositId).toTry) match {
-          case Success(_) => Failure(e)
-          case Failure(e2) => Failure(ActionException("discarding deposits failed after creating deposits failed", new CompositeException(e, e2)))
-        }
-      }
+      _ <- Locale.setDefault(Locale.US).asRight[NonEmptyChain[Throwable]]
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(e => NonEmptyChain.one(ParseFailed(e.report))).map(_.toList)
+      dataManagerEmailAddress <- datamanager.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
+      _ <- deposits.traverse[FailFast, Unit](convertDeposit(paths, datamanagerId, dataManagerEmailAddress))
+        .leftMap(error => {
+          deposits.traverse(d => createDirs.discardDeposit(d.depositId))
+            .fold(discardError => NonEmptyChain(
+              ActionException("discarding deposits failed after creating deposits failed"),
+              error,
+              discardError
+            ), _ => NonEmptyChain.one(error))
+        })
       _ = logger.info("deposits were created successfully")
-      _ <- reportDatasets.report(deposits).toTry
+      _ <- reportDatasets.report(deposits).leftMap(NonEmptyChain.one)
       _ = logger.info(s"report generated at ${ paths.reportFile }")
-      _ <- deposits.mapUntilFailure(deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId).toTry)
+      _ <- deposits.traverse[FailFast, Unit](deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId)).leftMap(NonEmptyChain.one)
       _ = logger.info(s"deposits were successfully moved to ${ output.outputDepositDir }")
     } yield ()
   }
 
-  private def convertDeposit(paths: PathExplorers, datamanagerId: Datamanager, dataManagerEmailAddress: DatamanagerEmailaddress)(deposit: Deposit): Try[Unit] = {
+  private def convertDeposit(paths: PathExplorers, datamanagerId: Datamanager, dataManagerEmailAddress: DatamanagerEmailaddress)(deposit: Deposit): FailFast[Unit] = {
     val depositId = deposit.depositId
     implicit val input: InputPathExplorer = paths
     implicit val staging: StagingPathExplorer = paths
@@ -91,14 +97,14 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
     logger.info(s"convert ${ depositId }")
 
     for {
-      _ <- validator.validateDeposit(deposit).toTry
-      _ <- createDirs.createDepositDirectories(depositId).toTry
-      _ <- createBag.addBagToDeposit(depositId, deposit.profile.created, deposit.baseUUID).toTry
-      _ <- createDirs.createMetadataDirectory(depositId).toTry
-      _ <- datasetMetadata.addDatasetMetadata(deposit).toTry
-      _ <- fileMetadata.addFileMetadata(depositId, deposit.files).toTry
-      _ <- depositProperties.addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress).toTry
-      _ <- setPermissions.setDepositPermissions(depositId).toTry
+      _ <- validator.validateDeposit(deposit)
+      _ <- createDirs.createDepositDirectories(depositId)
+      _ <- createBag.addBagToDeposit(depositId, deposit.profile.created, deposit.baseUUID)
+      _ <- createDirs.createMetadataDirectory(depositId)
+      _ <- datasetMetadata.addDatasetMetadata(deposit)
+      _ <- fileMetadata.addFileMetadata(depositId, deposit.files)
+      _ <- depositProperties.addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress)
+      _ <- setPermissions.setDepositPermissions(depositId)
       _ = logger.info(s"deposit was created successfully for $depositId with bagId ${ deposit.bagId }")
     } yield ()
   }

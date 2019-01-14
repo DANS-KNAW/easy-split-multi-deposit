@@ -27,7 +27,7 @@ class RetrieveDatamanager(ldap: Ldap) extends DebugEnhancedLogging {
    * Tries to retrieve the email address of the datamanager
    * Also used for validation: checks if the datamanager is an active archivist with an email address
    */
-  def getDatamanagerEmailaddress(datamanagerId: Datamanager): Either[Throwable, DatamanagerEmailaddress] = {
+  def getDatamanagerEmailaddress(datamanagerId: Datamanager): FailFast[DatamanagerEmailaddress] = {
     logger.info("retrieve datamanager email address")
 
     for {
@@ -39,7 +39,7 @@ class RetrieveDatamanager(ldap: Ldap) extends DebugEnhancedLogging {
     } yield email
   }
 
-  private def getFirstAttrs(datamanagerId: Datamanager)(attrsSeq: Seq[Attributes]): Either[Throwable, Attributes] = {
+  private def getFirstAttrs(datamanagerId: Datamanager)(attrsSeq: Seq[Attributes]): FailFast[Attributes] = {
     logger.debug("check that only one user is found")
     attrsSeq match {
       case Seq() => InvalidDatamanagerException(s"The datamanager '$datamanagerId' is unknown").asLeft
@@ -48,7 +48,7 @@ class RetrieveDatamanager(ldap: Ldap) extends DebugEnhancedLogging {
     }
   }
 
-  private def datamanagerIsActive(datamanagerId: Datamanager)(attrs: Attributes): Either[InvalidDatamanagerException, Attributes] = {
+  private def datamanagerIsActive(datamanagerId: Datamanager)(attrs: Attributes): FailFast[Attributes] = {
     logger.debug("check that datamanager is an active user")
     Option(attrs.get("dansState"))
       .filter(_.get().toString == "ACTIVE")
@@ -56,7 +56,7 @@ class RetrieveDatamanager(ldap: Ldap) extends DebugEnhancedLogging {
       .getOrElse(InvalidDatamanagerException(s"The datamanager '$datamanagerId' is not an active user").asLeft)
   }
 
-  private def datamanagerHasArchivistRole(datamanagerId: Datamanager)(attrs: Attributes): Either[InvalidDatamanagerException, Attributes] = {
+  private def datamanagerHasArchivistRole(datamanagerId: Datamanager)(attrs: Attributes): FailFast[Attributes] = {
     logger.debug("check that datamanager has archivist role")
     Option(attrs.get("easyRoles"))
       .filter(_.contains("ARCHIVIST"))
@@ -64,7 +64,7 @@ class RetrieveDatamanager(ldap: Ldap) extends DebugEnhancedLogging {
       .getOrElse(InvalidDatamanagerException(s"The datamanager '$datamanagerId' is not an archivist").asLeft)
   }
 
-  private def getDatamanagerEmail(datamanagerId: Datamanager)(attrs: Attributes): Either[InvalidDatamanagerException, String] = {
+  private def getDatamanagerEmail(datamanagerId: Datamanager)(attrs: Attributes): FailFast[String] = {
     logger.debug("get datamanager email address")
     Option(attrs.get("mail"))
       .filter(_.get().toString.nonEmpty)

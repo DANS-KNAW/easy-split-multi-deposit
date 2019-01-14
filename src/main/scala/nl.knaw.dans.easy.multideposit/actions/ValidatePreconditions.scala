@@ -28,7 +28,7 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnhancedLogging {
 
   //  TODO refactor to Validated
-  def validateDeposit(deposit: Deposit)(implicit stage: StagingPathExplorer): Either[Throwable, Unit] = {
+  def validateDeposit(deposit: Deposit)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
     val id = deposit.depositId
     logger.debug(s"validating deposit $id")
     for {
@@ -38,7 +38,7 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
     } yield ()
   }
 
-  def checkDirectoriesDoNotExist(depositId: DepositId)(directories: File*): Either[ActionException, Unit] = {
+  def checkDirectoriesDoNotExist(depositId: DepositId)(directories: File*): FailFast[Unit] = {
     logger.debug(s"check directories don't exist yet: ${ directories.mkString("[", ", ", "]") }")
 
     directories.find(_.exists)
@@ -52,9 +52,8 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
     type Validated[T] = ValidatedNec[Throwable, T]
 
     deposit.files.collect { case fmd: AVFileMetadata => fmd.filepath }
-      .map(ffprobe.run(_).toValidatedNec)
       .toList
-      .sequence[Validated, Unit]
+      .traverse[Validated, Unit](ffprobe.run(_).toValidatedNec)
       .leftMap(errors => {
         val ffProbeErrors = errors.toNonEmptyList.toList
           .map { case FfprobeErrorException(t, e, _) => s" - File: $t, exit code: $e" }
@@ -66,7 +65,7 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
       .toEither
   }
 
-  def checkDepositorUserId(deposit: Deposit): Either[Throwable, Unit] = {
+  def checkDepositorUserId(deposit: Deposit): FailFast[Unit] = {
     logger.debug("check that the depositor is an active user")
 
     val depositorUserId = deposit.depositorUserId

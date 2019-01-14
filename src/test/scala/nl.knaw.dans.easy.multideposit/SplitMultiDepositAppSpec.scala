@@ -28,7 +28,7 @@ import org.scalamock.scalatest.MockFactory
 
 import scala.collection.JavaConverters._
 import scala.language.postfixOps
-import scala.util.{ Failure, Properties, Success }
+import scala.util.Properties
 import scala.xml.transform.{ RewriteRule, RuleTransformer }
 import scala.xml.{ Elem, Node, NodeSeq, XML }
 
@@ -114,13 +114,13 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
 
     it should "succeed validating the multideposit" in {
       configureMocksBehavior()
-      app.validate(paths, datamanager) shouldBe a[Success[_]]
+      app.validate(paths, datamanager) shouldBe a[Right[_, _]]
     }
 
     it should "succeed converting the multideposit" in {
       doNotRunOnTravis()
       configureMocksBehavior()
-      app.convert(paths, datamanager) shouldBe a[Success[_]]
+      app.convert(paths, datamanager) shouldBe a[Right[_, _]]
     }
 
     // taken from https://stackoverflow.com/a/6640851/2389405
@@ -342,8 +342,8 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
     )
     val app = new SplitMultiDepositApp(formats, userLicenses, mock[Ldap], mock[FfprobeRunner], DepositPermissions("rwxrwx---", getFileSystemGroup))
 
-    inside(app.convert(paths, "easyadmin")) {
-      case Failure(ParseFailed(report)) =>
+    inside(app.convert(paths, "easyadmin").left.value.toNonEmptyList.toList) {
+      case List(ParseFailed(report)) =>
         report.lines.toSeq should contain inOrderOnly(
           "CSV failures:",
           " - row 2: Only one row is allowed to contain a value for the column 'DEPOSITOR_ID'. Found: [user001, invalid-user]",

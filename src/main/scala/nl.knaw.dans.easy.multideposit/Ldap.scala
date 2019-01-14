@@ -20,20 +20,23 @@ import javax.naming.ldap.LdapContext
 
 import scala.collection.JavaConverters._
 import cats.syntax.either._
+import nl.knaw.dans.easy.multideposit.actions.{ ActionException, FailFast }
 
 trait Ldap extends AutoCloseable {
 
   protected val ctx: LdapContext
 
-  def query[T](userId: String)(f: Attributes => T): Either[Throwable, Seq[T]] = Either.catchNonFatal {
-    val searchFilter = s"(&(objectClass=easyUser)(uid=$userId))"
-    val searchControls = new SearchControls() {
-      setSearchScope(SearchControls.SUBTREE_SCOPE)
-    }
+  def query[T](userId: String)(f: Attributes => T): FailFast[Seq[T]] = {
+    Either.catchNonFatal {
+      val searchFilter = s"(&(objectClass=easyUser)(uid=$userId))"
+      val searchControls = new SearchControls() {
+        setSearchScope(SearchControls.SUBTREE_SCOPE)
+      }
 
-    ctx.search("dc=dans,dc=knaw,dc=nl", searchFilter, searchControls)
-      .asScala.toSeq
-      .map(f compose (_.getAttributes))
+      ctx.search("dc=dans,dc=knaw,dc=nl", searchFilter, searchControls)
+        .asScala.toSeq
+        .map(f compose (_.getAttributes))
+    }.leftMap(e => ActionException(e.getMessage, e))
   }
 
   override def close(): Unit = ctx.close()

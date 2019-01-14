@@ -32,7 +32,7 @@ import org.joda.time.format.ISODateTimeFormat
 
 class AddBagToDeposit extends DebugEnhancedLogging {
 
-  def addBagToDeposit(depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Either[ActionException, Unit] = {
+  def addBagToDeposit(depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit input: InputPathExplorer, stage: StagingPathExplorer): FailFast[Unit] = {
     logger.debug(s"construct the bag for $depositId with timestamp ${ created.toString(ISODateTimeFormat.dateTime()) }")
 
     createBag(depositId, created, base)

@@ -16,16 +16,15 @@
 package nl.knaw.dans.easy.multideposit
 
 import better.files.File
+import cats.data.NonEmptyChain
+import cats.data.NonEmptyChain.catsNonEmptyChainOps
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
 import nl.knaw.dans.easy.multideposit.actions.{ InvalidDatamanagerException, InvalidInputException }
 import nl.knaw.dans.easy.multideposit.parser.ParseFailed
-import nl.knaw.dans.lib.error.{ CompositeException, TryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource.managed
 
 import scala.language.reflectiveCalls
-import scala.util.Try
-import scala.util.control.NonFatal
 
 object Command extends App with DebugEnhancedLogging {
 
@@ -35,19 +34,22 @@ object Command extends App with DebugEnhancedLogging {
   val commandLine: CommandLineOptions = new CommandLineOptions(args, configuration.version)
   val app = SplitMultiDepositApp(configuration)
 
-  managed(app)
-    .acquireAndGet(runSubcommand)
-    .doIfSuccess(msg => println(s"OK: $msg"))
-    .doIfFailure {
-      case ParseFailed(_) |
-           InvalidDatamanagerException(_) |
-           InvalidInputException(_, _) |
-           CompositeException(_) => // do nothing
-      case e => logger.error(e.getMessage, e)
-    }
-    .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
+  managed(app).acquireAndGet(runSubcommand) match {
+    case Right(msg) => println(s"OK: $msg")
+    case Left(errors) =>
+      for (e <- errors.toNonEmptyList.toList) {
+        e match {
+          case ParseFailed(_) |
+               InvalidDatamanagerException(_) |
+               InvalidInputException(_, _) => // do nothing
+          case _ => logger.error(e.getMessage, e)
+        }
 
-  private def runSubcommand(app: SplitMultiDepositApp): Try[FeedBackMessage] = {
+        println(s"FAILED: ${ e.getMessage }")
+      }
+  }
+
+  private def runSubcommand(app: SplitMultiDepositApp): Either[NonEmptyChain[Throwable], FeedBackMessage] = {
     lazy val defaultStagingDir = File(configuration.properties.getString("staging-dir"))
 
     val md = File(commandLine.multiDepositDir())

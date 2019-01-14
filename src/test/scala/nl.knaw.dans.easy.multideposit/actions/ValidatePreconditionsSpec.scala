@@ -85,22 +85,22 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
   it should "fail if ldap identifies the depositorUserId as not active" in {
     mockLdapForDepositor(Seq(false))
 
-    action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit()).left.value.getMessage should
-      include("depositor 'dp1' is not an active user")
+    action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())
+      .left.value.getMessage should include("depositor 'dp1' is not an active user")
   }
 
   it should "fail if ldap does not return anything for the depositor" in {
     mockLdapForDepositor(Seq.empty)
 
-    action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit()).left.value.getMessage should
-      include("depositorUserId 'dp1' is unknown")
+    action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())
+      .left.value.getMessage should include("depositorUserId 'dp1' is unknown")
   }
 
   it should "fail if ldap returns multiple values" in {
     mockLdapForDepositor(Seq(true, true))
 
-    action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit()).left.value.getMessage should
-      include("multiple users with id 'dp1'")
+    action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())
+      .left.value.getMessage should include("multiple users with id 'dp1'")
   }
 
   def mockFfprobeRunnerForAllSuccess(): Unit = {

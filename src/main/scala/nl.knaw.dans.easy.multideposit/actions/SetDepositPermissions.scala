@@ -30,7 +30,7 @@ import scala.util.control.NonFatal
 
 class SetDepositPermissions(depositPermissions: DepositPermissions) extends DebugEnhancedLogging {
 
-  def setDepositPermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
+  def setDepositPermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
     logger.debug(s"set deposit permissions for $depositId")
 
     setFilePermissions(depositId).leftMap {

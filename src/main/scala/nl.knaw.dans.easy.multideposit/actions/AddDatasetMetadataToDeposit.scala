@@ -27,7 +27,7 @@ import scala.xml.{ Elem, Null, PrefixedAttribute }
 
 class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLogging {
 
-  def addDatasetMetadata(deposit: Deposit)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
+  def addDatasetMetadata(deposit: Deposit)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
     Either.catchNonFatal {
       logger.debug(s"add dataset metadata for ${ deposit.depositId }")
 

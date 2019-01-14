@@ -24,7 +24,7 @@ import org.apache.commons.configuration.PropertiesConfiguration
 
 class AddPropertiesToDeposit extends DebugEnhancedLogging {
 
-  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(implicit stage: StagingPathExplorer): Either[ActionException, Unit] = {
+  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
     logger.debug(s"add deposit properties for ${ deposit.depositId }")
 
     val props = new PropertiesConfiguration {
