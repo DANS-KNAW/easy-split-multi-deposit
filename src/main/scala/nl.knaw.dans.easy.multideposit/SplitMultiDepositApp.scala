@@ -48,7 +48,7 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
 
     for {
       _ <- Locale.setDefault(Locale.US).asRight[NonEmptyChain[Throwable]]
-      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(NonEmptyChain.one).map(_.toList)
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(NonEmptyChain.one)
       _ <- deposits.traverse[Validated, Unit](createMultiDeposit.validateDeposit(_).toValidatedNec).toEither
       _ <- datamanager.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
     } yield deposits
@@ -63,7 +63,7 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
 
     for {
       _ <- Locale.setDefault(Locale.US).asRight[NonEmptyChain[Throwable]]
-      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(e => NonEmptyChain.one(ParseFailed(e.report))).map(_.toList)
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(e => NonEmptyChain.one(ParseFailed(e.report)))
       dataManagerEmailAddress <- datamanager.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
       _ <- deposits.traverse[X, Unit](createMultiDeposit.convertDeposit(paths, datamanagerId, dataManagerEmailAddress))
         .leftMap(error => {

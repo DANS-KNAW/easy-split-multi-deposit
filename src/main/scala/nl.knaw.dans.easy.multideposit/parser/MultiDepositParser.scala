@@ -45,7 +45,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
   with ParserValidation
   with DebugEnhancedLogging {
 
-  def parse: Either[ParseFailed, Seq[Deposit]] = {
+  def parse: Either[ParseFailed, List[Deposit]] = {
     logger.info(s"Reading data in $multiDepositDir")
 
     val instructions = instructionsFile
@@ -70,9 +70,8 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
                             (headers: List[MultiDepositKey], content: List[(Int, List[String])]): Validated[List[Deposit]] = {
     content.groupBy { case (_, cs) => cs(depositIdIndex) }
       .mapValues(_.map { case (rowNum, data) => createDepositRow(headers)(rowNum, data) })
-      .map { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows) }
       .toList
-      .sequence[Validated, Deposit]
+      .traverse[Validated, Deposit] { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows) }
   }
 
   private def createDepositRow(headers: List[MultiDepositKey])(rowNum: Int, data: List[String]): DepositRow = {
@@ -130,13 +129,12 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
 
   def detectEmptyDepositCells(depositIds: List[String]): Validated[Unit] = {
     depositIds.zipWithIndex
-      .map {
+      .traverse[Validated, Unit] {
         case (s, i) if s.isBlank =>
           val index = i + 2
           ParseError(index, s"Row $index does not have a depositId in column DATASET").toInvalid
         case _ => ().toValidated
       }
-      .sequence[Validated, Unit]
       .map(_ => ())
   }
 
@@ -204,7 +202,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
 }
 
 object MultiDepositParser {
-  def parse(md: File, licenses: Set[String]): Either[ParseFailed, Seq[Deposit]] = new MultiDepositParser {
+  def parse(md: File, licenses: Set[String]): Either[ParseFailed, List[Deposit]] = new MultiDepositParser {
     val multiDepositDir: File = md
     val userLicenses: Set[String] = licenses
   }.parse
