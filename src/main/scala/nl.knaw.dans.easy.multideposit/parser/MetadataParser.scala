@@ -80,7 +80,7 @@ trait MetadataParser {
       case (Some(id), idt) =>
         (
           id.toValidated,
-          idt.map(identifierType(row.rowNum)).sequence[Validated, IdentifierType]
+          idt.map(identifierType(row.rowNum)).sequence
         ).mapN(Identifier).some
       case (None, Some(_)) => missingRequired(row, Set("DC_IDENTIFIER")).toInvalid.some
       case (None, None) => none
@@ -169,7 +169,7 @@ trait MetadataParser {
       case (None, None, None, None, Some(org), None, _) =>
         (
           org.toValidated,
-          cRole.map(contributorRole(row.rowNum)).sequence[Validated, ContributorRole],
+          cRole.map(contributorRole(row.rowNum)).sequence,
         ).mapN(ContributorOrganization).some
       case (_, Some(init), _, Some(sur), _, _, _) =>
         (
@@ -178,7 +178,7 @@ trait MetadataParser {
           insertions.toValidated,
           sur.toValidated,
           organization.toValidated,
-          cRole.map(contributorRole(row.rowNum)).sequence[Validated, ContributorRole],
+          cRole.map(contributorRole(row.rowNum)).sequence,
           dai.toValidated,
         ).mapN(ContributorPerson).some
       case (_, _, _, _, _, _, _) => missingRequired(row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")).toInvalid.some

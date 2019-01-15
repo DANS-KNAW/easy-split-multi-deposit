@@ -89,7 +89,7 @@ trait ProfileParser {
       case (None, None, None, None, Some(org), None, _) =>
         (
           org.toValidated,
-          cRole.map(creatorRole(row.rowNum)).sequence[Validated, ContributorRole],
+          cRole.map(creatorRole(row.rowNum)).sequence,
         ).mapN(CreatorOrganization).some
       case (_, Some(init), _, Some(sur), _, _, _) =>
         (
@@ -98,7 +98,7 @@ trait ProfileParser {
           insertions.toValidated,
           sur.toValidated,
           organization.toValidated,
-          cRole.map(creatorRole(row.rowNum)).sequence[Validated, ContributorRole],
+          cRole.map(creatorRole(row.rowNum)).sequence,
           dai.toValidated,
         ).mapN(CreatorPerson).some
       case (_, _, _, _, _, _, _) =>

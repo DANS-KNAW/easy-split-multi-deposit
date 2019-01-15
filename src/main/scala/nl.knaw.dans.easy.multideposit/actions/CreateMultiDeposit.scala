@@ -60,9 +60,9 @@ class CreateMultiDeposit(formats: Set[String],
                       datamanagerId: Datamanager,
                       dataManagerEmailAddress: DatamanagerEmailaddress)
                      (implicit staging: StagingPathExplorer): Either[NonEmptyChain[ConversionFailed], Unit] = {
-    deposits.traverse[FailFast, Unit](convertDeposit(paths, datamanagerId, dataManagerEmailAddress))
+    deposits.traverse(convertDeposit(paths, datamanagerId, dataManagerEmailAddress))
       .leftMap(error => {
-        deposits.traverse[FailFast, Unit](d => createDirs.discardDeposit(d.depositId))
+        deposits.traverse(d => createDirs.discardDeposit(d.depositId))
           .fold(discardError => NonEmptyChain(
             error,
             discardError
@@ -100,7 +100,7 @@ class CreateMultiDeposit(formats: Set[String],
   }
 
   def moveDepositsToOutputDir(deposits: List[Deposit])(implicit staging: StagingPathExplorer, output: OutputPathExplorer): FailFast[Unit] = {
-    deposits.traverse[FailFast, Unit](deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId))
+    deposits.traverse(deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId))
       .map(_ => ())
   }
 }

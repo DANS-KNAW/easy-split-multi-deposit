@@ -45,8 +45,8 @@ trait FileDescriptorParser {
         val err = ParseError(row.rowNum, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given")
 
         (
-          a.sequence[Validated, FileAccessRights],
-          v.sequence[Validated, FileAccessRights],
+          a.sequence,
+          v.sequence,
         ).tupled
           .fold(e => (err +: e).invalid, _ => err.toInvalid)
           .some
@@ -54,8 +54,8 @@ trait FileDescriptorParser {
         (
           p,
           t.toValidated,
-          a.sequence[Validated, FileAccessRights],
-          v.sequence[Validated, FileAccessRights],
+          a.sequence,
+          v.sequence,
         ).tupled.some
     }
   }

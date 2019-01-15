@@ -31,7 +31,7 @@ trait FileMetadataParser extends DebugEnhancedLogging {
       depositDir.listRecursively
         .collect { case file if !file.isDirectory => getFileMetadata(instructions)(file) }
         .toList
-        .sequence[Validated, FileMetadata]
+        .sequence
     else // if the deposit does not contain any data
       List.empty[FileMetadata].toValidated
   }

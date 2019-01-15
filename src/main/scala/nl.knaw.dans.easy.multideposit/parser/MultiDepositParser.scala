@@ -71,7 +71,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
     content.groupBy { case (_, cs) => cs(depositIdIndex) }
       .mapValues(_.map { case (rowNum, data) => createDepositRow(headers)(rowNum, data) })
       .toList
-      .traverse[Validated, Deposit] { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows) }
+      .traverse { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows) }
   }
 
   private def createDepositRow(headers: List[MultiDepositKey])(rowNum: Int, data: List[String]): DepositRow = {
@@ -129,7 +129,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
 
   def detectEmptyDepositCells(depositIds: List[String]): Validated[Unit] = {
     depositIds.zipWithIndex
-      .traverse[Validated, Unit] {
+      .traverse {
         case (s, i) if s.isBlank =>
           val index = i + 2
           ParseError(index, s"Row $index does not have a depositId in column DATASET").toInvalid
