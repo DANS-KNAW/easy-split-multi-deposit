@@ -39,10 +39,10 @@ object Command extends App with DebugEnhancedLogging {
           case ParseFailed(_) |
                InvalidDatamanager(_) |
                InvalidInput(_, _) => // do nothing
-          case _ => logger.error(e.toString, e.cause)
+          case _ => logger.error(e.msg, e.cause)
         }
 
-        println(s"FAILED: ${ e.toString }")
+        println(s"FAILED: ${ e.msg }")
       }
   }
 

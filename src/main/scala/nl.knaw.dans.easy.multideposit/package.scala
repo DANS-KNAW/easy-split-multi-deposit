@@ -36,20 +36,25 @@ package object multideposit {
 
   case class DepositPermissions(permissions: String, group: String)
 
-  sealed abstract class SmdError(val msg: String, val cause: Option[Throwable] = None) {
-    override def toString: String = {
-      s"${getClass.getSimpleName}: $msg"
-    }
+  sealed trait SmdError {
+    val msg: String
+    val cause: Option[Throwable] = None
   }
-  case class ParseFailed(report: String) extends SmdError(report)
-  sealed abstract class ConversionFailed(msg: String, cause: Option[Throwable] = None) extends SmdError(msg, cause)
-  case class ActionError(override val msg: String, override val cause: Option[Throwable] = None) extends ConversionFailed(msg, cause)
+
+  case class ParseFailed(override val msg: String) extends SmdError
+
+  sealed trait ConversionFailed extends SmdError
+
+  case class ActionError(override val msg: String, override val cause: Option[Throwable] = None) extends ConversionFailed
   object ActionError {
     def apply(msg: String, cause: Throwable): ActionError = new ActionError(msg, Option(cause))
   }
-  case class InvalidDatamanager(override val msg: String) extends ConversionFailed(msg)
-  case class InvalidInput(row: Int, localMsg: String) extends ConversionFailed(s"row $row: $localMsg")
-//  case class FfprobeError(file: File, exitValue: Int, err: String) extends ConversionFailed(s"File '$file' could not be probed. Exit value: $exitValue, STDERR: '$err'")
+
+  case class InvalidDatamanager(override val msg: String) extends ConversionFailed
+
+  case class InvalidInput(row: Int, localMsg: String) extends ConversionFailed {
+    override val msg = s"row $row: $localMsg"
+  }
 
   implicit class BetterFileExtensions(val file: File) extends AnyVal {
     /**
