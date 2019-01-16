@@ -85,7 +85,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   import parser._
 
   "extractAudioVideo" should "convert the csv input to the corresponding output" in {
-    extractAudioVideo("ruimtereis01", 2, audioVideoCSVRow).validValue shouldBe audioVideo
+    extractAudioVideo("ruimtereis01", 2, audioVideoCSVRow).value shouldBe audioVideo
   }
 
   it should "fail if there are AV_FILE_PATH values but there is no Springfield data" in {
@@ -124,7 +124,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "SF_PLAY_MODE" -> "menu"
     ))
 
-    springfield(row).value.validValue shouldBe Springfield("randomdomain", "randomuser", "randomcollection", PlayMode.Menu)
+    springfield(row).value.value shouldBe Springfield("randomdomain", "randomuser", "randomcollection", PlayMode.Menu)
   }
 
   it should "fail if the values have invalid characters" in {
@@ -150,7 +150,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       "SF_PLAY_MODE" -> "menu"
     ))
 
-    springfield(row).value.validValue shouldBe Springfield("dans", "randomuser", "randomcollection", PlayMode.Menu)
+    springfield(row).value.value shouldBe Springfield("dans", "randomuser", "randomcollection", PlayMode.Menu)
   }
 
   it should "fail if the values have invalid characters when no SF_DOMAIN is given" in {
@@ -312,15 +312,15 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
   }
 
   "playMode" should "convert the value for SF_PLAY_MODE into the corresponding enum object" in {
-    playMode(2)("menu").validValue shouldBe PlayMode.Menu
+    playMode(2)("menu").value shouldBe PlayMode.Menu
   }
 
   it should "return the correct PlayMode if I use all-uppercase in the SF_PLAY_MODE value" in {
-    playMode(2)("CONTINUOUS").validValue shouldBe PlayMode.Continuous
+    playMode(2)("CONTINUOUS").value shouldBe PlayMode.Continuous
   }
 
   it should "return the correct PlayMode if I use some weird casing in the SF_PLAY_MODE value" in {
-    playMode(2)("mEnU").validValue shouldBe PlayMode.Menu
+    playMode(2)("mEnU").value shouldBe PlayMode.Menu
   }
 
   it should "fail if the SF_PLAY_MODE value does not correspond to an object in the enum" in {
@@ -337,7 +337,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
 
     val file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg"
     val subtitles = SubtitlesFile(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt", Some("en"))
-    avFile("ruimtereis01")(row).value.validValue shouldBe(file, subtitles)
+    avFile("ruimtereis01")(row).value.value shouldBe(file, subtitles)
   }
 
   it should "fail if the value for AV_FILE_PATH represents a path that does not exist" in {
@@ -437,7 +437,7 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
 
     val file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg"
     val subtitles = SubtitlesFile(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt")
-    avFile("ruimtereis01")(row).value.validValue shouldBe(`file`, `subtitles`)
+    avFile("ruimtereis01")(row).value.value shouldBe(`file`, `subtitles`)
   }
 
   it should "succeed if there is no value for both AV_SUBTITLES and AV_SUBTITLES_LANGUAGE" in {

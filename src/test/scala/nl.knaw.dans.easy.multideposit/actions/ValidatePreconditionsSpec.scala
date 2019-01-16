@@ -51,7 +51,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val dir = stagingBagDir(depositId)
     dir.toJava shouldNot exist
 
-    action.checkDirectoriesDoNotExist(depositId)(dir) shouldBe a[Right[_, _]]
+    action.checkDirectoriesDoNotExist(depositId)(dir) shouldBe right[Unit]
   }
 
   it should "fail if any of the directories already exist" in {
@@ -59,7 +59,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     dir.createDirectories()
     dir.toJava should exist
 
-    action.checkDirectoriesDoNotExist(depositId)(dir).left.value.msg should
+    action.checkDirectoriesDoNotExist(depositId)(dir).leftValue.msg should
       include(s"The deposit for dataset $depositId already exists")
   }
 
@@ -80,28 +80,28 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
   "checkDepositorUserId" should "succeed if ldap identifies the depositorUserId as active" in {
     mockLdapForDepositor(Seq(true))
 
-    action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit()) shouldBe a[Right[_, _]]
+    action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit()) shouldBe right[Unit]
   }
 
   it should "fail if ldap identifies the depositorUserId as not active" in {
     mockLdapForDepositor(Seq(false))
 
     action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())
-      .left.value.msg should include("depositor 'dp1' is not an active user")
+      .leftValue.msg should include("depositor 'dp1' is not an active user")
   }
 
   it should "fail if ldap does not return anything for the depositor" in {
     mockLdapForDepositor(Seq.empty)
 
     action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())
-      .left.value.msg should include("depositorUserId 'dp1' is unknown")
+      .leftValue.msg should include("depositorUserId 'dp1' is unknown")
   }
 
   it should "fail if ldap returns multiple values" in {
     mockLdapForDepositor(Seq(true, true))
 
     action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())
-      .left.value.msg should include("multiple users with id 'dp1'")
+      .leftValue.msg should include("multiple users with id 'dp1'")
   }
 
   def mockFfprobeRunnerForAllSuccess(): Unit = {
@@ -115,13 +115,13 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
 
   "checkAudioVideoNotCorrupt" should "succeed if no A/V files are present" in {
     mockFfprobeRunnerForAllSuccess()
-    action.checkAudioVideoNotCorrupt(testInstructions2.toDeposit()) shouldBe a[Right[_, _]]
+    action.checkAudioVideoNotCorrupt(testInstructions2.toDeposit()) shouldBe right[Unit]
   }
 
   it should "succeed if A/V files are present and ffprobe returns 0 for all of them" in {
     mockFfprobeRunnerForAllSuccess()
     val deposit = testInstructions1.toDeposit(avFileReferences)
-    action.checkAudioVideoNotCorrupt(deposit) shouldBe a[Right[_, _]]
+    action.checkAudioVideoNotCorrupt(deposit) shouldBe right[Unit]
   }
 
   it should "fail if one A/V file makes ffprobe return nonzero" in {

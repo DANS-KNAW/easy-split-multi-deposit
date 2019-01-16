@@ -28,7 +28,7 @@ trait LanguageBehavior {
   def validLanguage3Tag(parser: MetadataParser, lang: String): Unit = {
     it should "succeed when the language tag is valid" in {
       val row = DepositRow(2, Map("taal" -> lang))
-      parser.iso639_2Language("taal")(row).value.validValue shouldBe lang
+      parser.iso639_2Language("taal")(row).value.value shouldBe lang
     }
   }
 
@@ -141,7 +141,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
   import parser._
 
   "extractMetadata" should "convert the csv input to the corresponding output" in {
-    extractMetadata(2, metadataCSVRow).validValue shouldBe metadata
+    extractMetadata(2, metadataCSVRow).value shouldBe metadata
   }
 
   it should "use the default type value if no value for DC_TYPE is specified" in {
@@ -158,7 +158,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
   "dcType" should "convert the value for DC_TYPE into the corresponding enum object" in {
     val row = DepositRow(2, Map("DC_TYPE" -> "Collection"))
 
-    dcType(row).value.validValue shouldBe DcType.COLLECTION
+    dcType(row).value.value shouldBe DcType.COLLECTION
   }
 
   it should "return None if DC_TYPE is not defined" in {
@@ -199,7 +199,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DC_IDENTIFIER_TYPE" -> ""
     ))
 
-    identifier(row).value.validValue shouldBe Identifier("id", None)
+    identifier(row).value.value shouldBe Identifier("id", None)
   }
 
   it should "succeed if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are defined and DC_IDENTIFIER_TYPE is valid" in {
@@ -208,7 +208,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DC_IDENTIFIER_TYPE" -> "ISSN"
     ))
 
-    identifier(row).value.validValue shouldBe Identifier("123456", Some(IdentifierType.ISSN))
+    identifier(row).value.value shouldBe Identifier("123456", Some(IdentifierType.ISSN))
   }
 
   it should "fail if both DC_IDENTIFIER and DC_IDENTIFIER_TYPE are defined, but DC_IDENTIFIER_TYPE is invalid" in {
@@ -246,7 +246,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_RELATION_TITLE" -> "bar"
     ))
 
-    relation(row).value.validValue shouldBe UnqualifiedRelation(Some("foo"), Some("bar"))
+    relation(row).value.value shouldBe UnqualifiedRelation(Some("foo"), Some("bar"))
   }
 
   it should "succeed if the qualifier and both the link and title are defined" in {
@@ -256,7 +256,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_RELATION_TITLE" -> "bar"
     ))
 
-    relation(row).value.validValue shouldBe QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))
+    relation(row).value.value shouldBe QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))
   }
 
   it should "fail when only the qualifier and link are defined" in {
@@ -277,7 +277,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_RELATION_TITLE" -> "bar"
     ))
 
-    relation(row).value.validValue shouldBe QualifiedRelation(RelationQualifier.Replaces, None, Some("bar"))
+    relation(row).value.value shouldBe QualifiedRelation(RelationQualifier.Replaces, None, Some("bar"))
   }
 
   it should "fail if only the qualifier is defined" in {
@@ -309,7 +309,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_RELATION_TITLE" -> "bar"
     ))
 
-    relation(row).value.validValue shouldBe QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))
+    relation(row).value.value shouldBe QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))
   }
 
   it should "fail if only the link is defined" in {
@@ -330,7 +330,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_RELATION_TITLE" -> "bar"
     ))
 
-    relation(row).value.validValue shouldBe UnqualifiedRelation(None, Some("bar"))
+    relation(row).value.value shouldBe UnqualifiedRelation(None, Some("bar"))
   }
 
   it should "return None if none of these fields are defined" in {
@@ -349,7 +349,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCT_DATE_QUALIFIER" -> ""
     ))
 
-    dateColumn(row).value.validValue shouldBe TextualDate("random text")
+    dateColumn(row).value.value shouldBe TextualDate("random text")
   }
 
   it should "fail if it has a correct qualifier but no well formatted date" in {
@@ -368,7 +368,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCT_DATE_QUALIFIER" -> "Issued"
     ))
 
-    dateColumn(row).value.validValue shouldBe QualifiedDate(new DateTime(2016, 7, 30, 0, 0), DateQualifier.ISSUED)
+    dateColumn(row).value.value shouldBe QualifiedDate(new DateTime(2016, 7, 30, 0, 0), DateQualifier.ISSUED)
   }
 
   it should "succeed when the qualifier is formatted differently (capitals)" in {
@@ -377,7 +377,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCT_DATE_QUALIFIER" -> "dateAccepted"
     ))
 
-    dateColumn(row).value.validValue shouldBe QualifiedDate(new DateTime(2016, 7, 30, 0, 0), DateQualifier.DATE_ACCEPTED)
+    dateColumn(row).value.value shouldBe QualifiedDate(new DateTime(2016, 7, 30, 0, 0), DateQualifier.DATE_ACCEPTED)
   }
 
   it should "succeed when the qualifier contains spaces instead of CamelCase" in {
@@ -386,7 +386,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCT_DATE_QUALIFIER" -> "date accepted"
     ))
 
-    dateColumn(row).value.validValue shouldBe QualifiedDate(new DateTime(2016, 7, 30, 0, 0), DateQualifier.DATE_ACCEPTED)
+    dateColumn(row).value.value shouldBe QualifiedDate(new DateTime(2016, 7, 30, 0, 0), DateQualifier.DATE_ACCEPTED)
   }
 
   it should "succeed if the qualifier isn't given, but the date is (properly formatted)" in {
@@ -395,7 +395,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCT_DATE_QUALIFIER" -> ""
     ))
 
-    dateColumn(row).value.validValue shouldBe TextualDate("2016-07-30")
+    dateColumn(row).value.value shouldBe TextualDate("2016-07-30")
   }
 
   it should "fail if the qualifier is unknown" in {
@@ -482,7 +482,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_CONTRIBUTOR_ROLE" -> ""
     ))
 
-    contributor(row).value.validValue shouldBe ContributorOrganization("org", None)
+    contributor(row).value.value shouldBe ContributorOrganization("org", None)
   }
 
   it should "succeed with an organisation when only the DCX_CONTRIBUTOR_ORGANIZATION and DCX_CONTRIBUTOR_ROLE are defined" in {
@@ -496,7 +496,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_CONTRIBUTOR_ROLE" -> "RelatedPERSON"
     ))
 
-    contributor(row).value.validValue shouldBe ContributorOrganization("org", Some(ContributorRole.RELATED_PERSON))
+    contributor(row).value.value shouldBe ContributorOrganization("org", Some(ContributorRole.RELATED_PERSON))
   }
 
   it should "succeed with a person when only DCX_CONTRIBUTOR_INITIALS and DCX_CONTRIBUTOR_SURNAME are defined" in {
@@ -510,7 +510,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_CONTRIBUTOR_ROLE" -> ""
     ))
 
-    contributor(row).value.validValue shouldBe ContributorPerson(None, "A.", None, "Jones", None, None, None)
+    contributor(row).value.value shouldBe ContributorPerson(None, "A.", None, "Jones", None, None, None)
   }
 
   it should "succeed with a more extensive person when more fields are filled in" in {
@@ -524,7 +524,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_CONTRIBUTOR_ROLE" -> "related person"
     ))
 
-    contributor(row).value.validValue shouldBe ContributorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some(ContributorRole.RELATED_PERSON), Some("dai123"))
+    contributor(row).value.value shouldBe ContributorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some(ContributorRole.RELATED_PERSON), Some("dai123"))
   }
 
   it should "fail if DCX_CONTRIBUTOR_INITIALS is not defined" in {
@@ -593,7 +593,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DC_SUBJECT_SCHEME" -> "abr:ABRcomplex"
     ))
 
-    subject(row).value.validValue shouldBe Subject("IX", Some("abr:ABRcomplex"))
+    subject(row).value.value shouldBe Subject("IX", Some("abr:ABRcomplex"))
   }
 
   it should "succeed when the scheme is not defined" in {
@@ -602,7 +602,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DC_SUBJECT_SCHEME" -> ""
     ))
 
-    subject(row).value.validValue shouldBe Subject("test", None)
+    subject(row).value.value shouldBe Subject("test", None)
   }
 
   it should "succeed when only the scheme is defined (empty String for the temporal)" in {
@@ -611,7 +611,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DC_SUBJECT_SCHEME" -> "abr:ABRcomplex"
     ))
 
-    subject(row).value.validValue shouldBe Subject("", Some("abr:ABRcomplex"))
+    subject(row).value.value shouldBe Subject("", Some("abr:ABRcomplex"))
   }
 
   it should "fail if the scheme is not recognized" in {
@@ -640,7 +640,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_SPATIAL_SCHEME" -> "degrees"
     ))
 
-    spatialPoint(row).value.validValue shouldBe SpatialPoint("12", "34", Some("degrees"))
+    spatialPoint(row).value.value shouldBe SpatialPoint("12", "34", Some("degrees"))
   }
 
   it should "succeed when no scheme is defined" in {
@@ -650,7 +650,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_SPATIAL_SCHEME" -> ""
     ))
 
-    spatialPoint(row).value.validValue shouldBe SpatialPoint("12", "34", None)
+    spatialPoint(row).value.value shouldBe SpatialPoint("12", "34", None)
   }
 
   it should "return None if there is no value for any of these keys" in {
@@ -683,7 +683,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_SPATIAL_SCHEME" -> "RD"
     ))
 
-    spatialBox(row).value.validValue shouldBe SpatialBox("45", "34", "23", "12", Some("RD"))
+    spatialBox(row).value.value shouldBe SpatialBox("45", "34", "23", "12", Some("RD"))
   }
 
   it should "succeed when no scheme is defined" in {
@@ -695,7 +695,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCX_SPATIAL_SCHEME" -> ""
     ))
 
-    spatialBox(row).value.validValue shouldBe SpatialBox("45", "34", "23", "12", None)
+    spatialBox(row).value.value shouldBe SpatialBox("45", "34", "23", "12", None)
   }
 
   it should "return None if there is no value for any of these keys" in {
@@ -729,7 +729,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCT_TEMPORAL_SCHEME" -> "abr:ABRperiode"
     ))
 
-    temporal(row).value.validValue shouldBe Temporal("PALEOLB", Some("abr:ABRperiode"))
+    temporal(row).value.value shouldBe Temporal("PALEOLB", Some("abr:ABRperiode"))
   }
 
   it should "succeed when the scheme is not defined" in {
@@ -738,7 +738,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCT_TEMPORAL_SCHEME" -> ""
     ))
 
-    temporal(row).value.validValue shouldBe Temporal("test", None)
+    temporal(row).value.value shouldBe Temporal("test", None)
   }
 
   it should "succeed when only the scheme is defined (empty String for the temporal)" in {
@@ -747,7 +747,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       "DCT_TEMPORAL_SCHEME" -> "abr:ABRperiode"
     ))
 
-    temporal(row).value.validValue shouldBe Temporal("", Some("abr:ABRperiode"))
+    temporal(row).value.value shouldBe Temporal("", Some("abr:ABRperiode"))
   }
 
   it should "fail if the scheme is not recognized" in {
@@ -772,7 +772,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
   "userLicense" should "return a user license object when the given license is allowed" in {
     val license = "http://www.mozilla.org/en-US/MPL/2.0/FAQ/"
 
-    userLicense(2, "DCT_LICENSE")(license).validValue shouldBe UserLicense(license)
+    userLicense(2, "DCT_LICENSE")(license).value shouldBe UserLicense(license)
   }
 
   it should "fail when the given license is unknown" in {

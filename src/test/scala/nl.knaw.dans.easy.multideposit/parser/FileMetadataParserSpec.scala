@@ -130,7 +130,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
   import parser._
 
   "extractFileMetadata" should "collect the metadata for all files in ruimtereis01" in {
-    extractFileMetadata(multiDepositDir / "ruimtereis01", testInstructions1).validValue should {
+    extractFileMetadata(multiDepositDir / "ruimtereis01", testInstructions1).value should {
       have size 9 and contain allElementsOf fileMetadata1
     }
   }
@@ -142,7 +142,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     ruimtereis03Path shouldNot exist
 
     // test
-    extractFileMetadata(ruimtereis03Path, testInstructions1).validValue shouldBe empty
+    extractFileMetadata(ruimtereis03Path, testInstructions1).value shouldBe empty
   }
 
   it should "collect the metadata for all files in ruimtereis04" in {
@@ -152,7 +152,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
       )
     )
 
-    extractFileMetadata(multiDepositDir / "ruimtereis04", instructions).validValue should {
+    extractFileMetadata(multiDepositDir / "ruimtereis04", instructions).value should {
       have size 3 and contain allElementsOf fileMetadata4
     }
   }

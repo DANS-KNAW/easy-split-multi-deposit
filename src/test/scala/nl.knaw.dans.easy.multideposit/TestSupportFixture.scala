@@ -20,14 +20,15 @@ import java.util.UUID
 import better.files.File
 import better.files.File.currentWorkingDirectory
 import cats.data.NonEmptyList
+import cats.scalatest.{ EitherMatchers, EitherValues, ValidatedValues }
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
-import org.scalatest.enablers.Existence
 import org.scalatest._
+import org.scalatest.enablers.Existence
 
-trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with EitherValues with ValidatedValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
+trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with EitherMatchers with EitherValues with ValidatedValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
 
   implicit def existenceOfFile[FILE <: better.files.File]: Existence[FILE] = _.exists
 

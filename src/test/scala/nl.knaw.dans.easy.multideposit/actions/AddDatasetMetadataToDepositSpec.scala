@@ -139,7 +139,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
 
     file.toJava shouldNot exist
 
-    action.addDatasetMetadata(deposit) shouldBe a[Right[_, _]]
+    action.addDatasetMetadata(deposit) shouldBe right[Unit]
 
     file.toJava should exist
   }
@@ -150,9 +150,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
 
   it should "return xml on reading from the allfields input instructions csv" in {
     val multidepositDir = File(getClass.getResource("/allfields/input").toURI)
-    MultiDepositParser.parse(multidepositDir, userLicenses)
-      .map(_.map(action.depositToDDM))
-      .right.value should have size 4
+    MultiDepositParser.parse(multidepositDir, userLicenses).map(_.map(action.depositToDDM)).value should have size 4
   }
 
   "createDcmiMetadata" should "return the expected dcmidata" in {

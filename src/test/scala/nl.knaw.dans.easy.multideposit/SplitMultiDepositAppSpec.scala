@@ -113,13 +113,13 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
 
     it should "succeed validating the multideposit" in {
       configureMocksBehavior()
-      app.validate(paths, datamanager) shouldBe a[Right[_, _]]
+      app.validate(paths, datamanager) shouldBe right[Unit]
     }
 
     it should "succeed converting the multideposit" in {
       doNotRunOnTravis()
       configureMocksBehavior()
-      app.convert(paths, datamanager) shouldBe a[Right[_, _]]
+      app.convert(paths, datamanager) shouldBe right[Unit]
     }
 
     // taken from https://stackoverflow.com/a/6640851/2389405
@@ -341,7 +341,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
     )
     val app = new SplitMultiDepositApp(formats, userLicenses, mock[Ldap], mock[FfprobeRunner], DepositPermissions("rwxrwx---", getFileSystemGroup))
 
-    inside(app.convert(paths, "easyadmin").left.value.toNonEmptyList.toList) {
+    inside(app.convert(paths, "easyadmin").leftValue.toNonEmptyList.toList) {
       case List(ParseFailed(report)) =>
         report.lines.toSeq should contain inOrderOnly(
           "CSV failures:",

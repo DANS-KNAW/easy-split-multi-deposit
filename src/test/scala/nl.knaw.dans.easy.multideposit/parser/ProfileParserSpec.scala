@@ -70,7 +70,7 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
   import parser._
 
   "extractProfile" should "convert the csv input to the corresponding output" in {
-    extractProfile(2, profileCSVRows).validValue shouldBe profile
+    extractProfile(2, profileCSVRows).value shouldBe profile
   }
 
   it should "fail if there are no values for DC_TITLE, DC_DESCRIPTION, creator, DDM_CREATED, DDM_AUDIENCE and DDM_ACCESSRIGHTS" in {
@@ -108,7 +108,7 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
   }
 
   "accessCategory" should "convert the value for DDM_ACCESSRIGHTS into the corresponding enum object" in {
-    accessCategory(2, "DDM_ACCESSRIGHTS")("ANONYMOUS_ACCESS").validValue shouldBe AccessCategory.ANONYMOUS_ACCESS
+    accessCategory(2, "DDM_ACCESSRIGHTS")("ANONYMOUS_ACCESS").value shouldBe AccessCategory.ANONYMOUS_ACCESS
   }
 
   it should "fail if the DDM_ACCESSRIGHTS value does not correspond to an object in the enum" in {
@@ -141,7 +141,7 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ROLE" -> ""
     ))
 
-    creator(row).value.validValue shouldBe CreatorOrganization("org", None)
+    creator(row).value.value shouldBe CreatorOrganization("org", None)
   }
 
   it should "succeed with an organisation when only the DCX_CREATOR_ORGANIZATION and DCX_CREATOR_ROLE are defined" in {
@@ -155,7 +155,7 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ROLE" -> "ProjectManager"
     ))
 
-    creator(row).value.validValue shouldBe CreatorOrganization("org", Some(ContributorRole.PROJECT_MANAGER))
+    creator(row).value.value shouldBe CreatorOrganization("org", Some(ContributorRole.PROJECT_MANAGER))
   }
 
   it should "succeed with a person when only DCX_CREATOR_INITIALS and DCX_CREATOR_SURNAME are defined" in {
@@ -169,7 +169,7 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ROLE" -> ""
     ))
 
-    creator(row).value.validValue shouldBe CreatorPerson(None, "A.", None, "Jones", None, None, None)
+    creator(row).value.value shouldBe CreatorPerson(None, "A.", None, "Jones", None, None, None)
   }
 
   it should "succeed with a more extensive person when more fields are filled in" in {
@@ -183,7 +183,7 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
       "DCX_CREATOR_ROLE" -> "rElAtEdpErsOn"
     ))
 
-    creator(row).value.validValue shouldBe CreatorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some(ContributorRole.RELATED_PERSON), Some("dai123"))
+    creator(row).value.value shouldBe CreatorPerson(Some("Dr."), "A.", Some("X"), "Jones", Some("org"), Some(ContributorRole.RELATED_PERSON), Some("dai123"))
   }
 
   it should "fail if DCX_CREATOR_INITIALS is not defined" in {

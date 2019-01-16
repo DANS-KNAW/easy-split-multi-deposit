@@ -33,7 +33,7 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
 
   override def close(): Unit = ldap.close()
 
-  def validate(paths: PathExplorers, datamanagerId: Datamanager): Either[NonEmptyChain[SmdError], Seq[Deposit]] = {
+  def validate(paths: PathExplorers, datamanagerId: Datamanager): Either[NonEmptyChain[SmdError], Unit] = {
     implicit val input: InputPathExplorer = paths
     implicit val staging: StagingPathExplorer = paths
 
@@ -43,7 +43,7 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
       deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(NonEmptyChain.one)
       _ <- createMultiDeposit.validateDeposits(deposits).toEither
       _ <- createMultiDeposit.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
-    } yield deposits
+    } yield ()
   }
 
   def convert(paths: PathExplorers, datamanagerId: Datamanager): Either[NonEmptyChain[SmdError], Unit] = {

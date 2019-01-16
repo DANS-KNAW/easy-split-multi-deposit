@@ -57,6 +57,12 @@
             <groupId>org.scalamock</groupId>
             <artifactId>scalamock_2.12</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.ironcorelabs</groupId>
+            <artifactId>cats-scalatest_2.12</artifactId>
+            <version>2.4.0</version>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Scala utils -->
         <dependency>

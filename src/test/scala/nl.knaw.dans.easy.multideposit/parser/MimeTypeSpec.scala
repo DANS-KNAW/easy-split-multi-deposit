@@ -31,43 +31,43 @@ class MimeTypeSpec extends TestSupportFixture with BeforeAndAfterEach {
   }
 
   "getMimeType" should "produce the correct doc mimetype" in {
-    MimeType.get(mimetypesDir / "file-ms-doc.doc").validValue shouldBe "application/msword"
+    MimeType.get(mimetypesDir / "file-ms-doc.doc").value shouldBe "application/msword"
   }
 
   it should "produce the correct docx mimetype" in {
-    MimeType.get(mimetypesDir / "file-ms-docx.docx").validValue shouldBe "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    MimeType.get(mimetypesDir / "file-ms-docx.docx").value shouldBe "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   }
 
   it should "produce the correct xlsx mimetype" in {
-    MimeType.get(mimetypesDir / "file-ms-excel.xlsx").validValue shouldBe "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    MimeType.get(mimetypesDir / "file-ms-excel.xlsx").value shouldBe "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   }
 
   it should "produce the correct pdf mimetype" in {
-    MimeType.get(mimetypesDir / "file-pdf.pdf").validValue shouldBe "application/pdf"
+    MimeType.get(mimetypesDir / "file-pdf.pdf").value shouldBe "application/pdf"
   }
 
   it should "produce the correct plain text mimetype" in {
-    MimeType.get(mimetypesDir / "file-plain-text.txt").validValue shouldBe "text/plain"
+    MimeType.get(mimetypesDir / "file-plain-text.txt").value shouldBe "text/plain"
   }
 
   it should "produce the correct json mimetype" in {
-    MimeType.get(mimetypesDir / "file-json.json").validValue shouldBe "application/json"
+    MimeType.get(mimetypesDir / "file-json.json").value shouldBe "application/json"
   }
 
   it should "produce the correct xml mimetype" in {
-    MimeType.get(mimetypesDir / "file-xml.xml").validValue shouldBe "application/xml"
+    MimeType.get(mimetypesDir / "file-xml.xml").value shouldBe "application/xml"
   }
 
   it should "give the correct mimetype if the file is plain text and has no extension" in {
-    MimeType.get(mimetypesDir / "file-unknown").validValue shouldBe "text/plain"
+    MimeType.get(mimetypesDir / "file-unknown").value shouldBe "text/plain"
   }
 
   it should "give the correct mimetype if the file has no extension" in {
-    MimeType.get(mimetypesDir / "file-unknown-pdf").validValue shouldBe "application/pdf"
+    MimeType.get(mimetypesDir / "file-unknown-pdf").value shouldBe "application/pdf"
   }
 
   it should "give the correct mimetype if the file is hidden" in {
-    MimeType.get(mimetypesDir / ".file-hidden-pdf").validValue shouldBe "application/pdf"
+    MimeType.get(mimetypesDir / ".file-hidden-pdf").value shouldBe "application/pdf"
   }
 
   it should "fail if the file does not exist" in {

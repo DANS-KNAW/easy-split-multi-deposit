@@ -52,7 +52,7 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
   "execute" should "move the deposit to the outputDepositDirectory" in {
     val bagId = UUID.randomUUID()
 
-    action.moveDepositsToOutputDir(depositId1, bagId) shouldBe a[Right[_, _]]
+    action.moveDepositsToOutputDir(depositId1, bagId) shouldBe right[Unit]
 
     stagingDir(depositId1).toJava shouldNot exist
     outputDepositDir(bagId).toJava should exist
@@ -61,7 +61,7 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
   it should "only move the one deposit to the outputDepositDirectory, not other deposits in the staging directory" in {
     val bagId = UUID.randomUUID()
 
-    action.moveDepositsToOutputDir(depositId1, bagId) shouldBe a[Right[_, _]]
+    action.moveDepositsToOutputDir(depositId1, bagId) shouldBe right[Unit]
 
     stagingDir(depositId2).toJava should exist
     // even though ruimtereis02 is staged as well, it is not moved to the outputDepositDir
@@ -75,7 +75,7 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
     outputDepositDir(bagId).createIfNotExists(asDirectory = true, createParents = true)
     outputDepositDir(bagId).toJava should exist
 
-    inside(action.moveDepositsToOutputDir(depositId1, bagId).left.value) {
+    inside(action.moveDepositsToOutputDir(depositId1, bagId).leftValue) {
       case ActionError(msg, Some(cause: FileAlreadyExistsException)) =>
         msg should startWith (s"Could not move ${stagingDir(depositId1)} to " +
           s"${outputDepositDir(bagId)}. The target directory already exists.")

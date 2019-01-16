@@ -36,7 +36,7 @@ class CreateDirectoriesSpec extends TestSupportFixture with BeforeAndAfterEach {
     stagingDir(depositId).toJava shouldNot exist
     stagingBagDir(depositId).toJava shouldNot exist
 
-    action.createDepositDirectories(depositId) shouldBe a[Right[_, _]]
+    action.createDepositDirectories(depositId) shouldBe right[Unit]
 
     stagingDir(depositId).toJava should exist
     stagingBagDir(depositId).toJava should exist
@@ -45,19 +45,19 @@ class CreateDirectoriesSpec extends TestSupportFixture with BeforeAndAfterEach {
   "createMetadataDirectory" should "create the metadata directory inside the bag directory" in {
     stagingBagMetadataDir(depositId).toJava shouldNot exist
 
-    action.createMetadataDirectory(depositId) shouldBe a[Right[_, _]]
+    action.createMetadataDirectory(depositId) shouldBe right[Unit]
 
     stagingBagMetadataDir(depositId).toJava should exist
   }
 
   "discardDeposit" should "delete the bag directory in the staging area in case it exists" in {
-    action.createDepositDirectories(depositId) shouldBe a[Right[_, _]]
-    action.createMetadataDirectory(depositId) shouldBe a[Right[_, _]]
+    action.createDepositDirectories(depositId) shouldBe right[Unit]
+    action.createMetadataDirectory(depositId) shouldBe right[Unit]
     stagingDir(depositId).toJava should exist
     stagingBagDir(depositId).toJava should exist
     stagingBagMetadataDir(depositId).toJava should exist
 
-    action.discardDeposit(depositId) shouldBe a[Right[_, _]]
+    action.discardDeposit(depositId) shouldBe right[Unit]
     stagingBagMetadataDir(depositId).toJava shouldNot exist
     stagingBagDir(depositId).toJava shouldNot exist
     stagingDir(depositId).toJava shouldNot exist
@@ -68,7 +68,7 @@ class CreateDirectoriesSpec extends TestSupportFixture with BeforeAndAfterEach {
     stagingBagDir(depositId).toJava shouldNot exist
     stagingBagMetadataDir(depositId).toJava shouldNot exist
 
-    action.discardDeposit(depositId) shouldBe a[Right[_, _]]
+    action.discardDeposit(depositId) shouldBe right[Unit]
     stagingBagMetadataDir(depositId).toJava shouldNot exist
     stagingBagDir(depositId).toJava shouldNot exist
     stagingDir(depositId).toJava shouldNot exist

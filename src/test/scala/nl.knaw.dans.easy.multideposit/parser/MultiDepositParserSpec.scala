@@ -81,7 +81,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     inside(MultiDepositParser.parse(testDir / "md", self.userLicenses)) {
       case Right(datasets) =>
         datasets should have size 4
-        val deposit1 :: deposit2 :: deposit3 :: deposit4 :: Nil = datasets.toList.sortBy(_.depositId)
+        val deposit1 :: deposit2 :: deposit3 :: deposit4 :: Nil = datasets.sortBy(_.depositId)
 
         deposit1 should have(
           'depositId ("ruimtereis01"),
@@ -122,7 +122,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file).validValue shouldBe(expectedHeaders, expectedData)
+    read(file).value shouldBe(expectedHeaders, expectedData)
   }
 
   it should "correctly parse newlines in the data (using quotes according to RFC4180) and still correctly do the row numbering" in {
@@ -146,7 +146,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file).validValue shouldBe(expectedHeaders, expectedData)
+    read(file).value shouldBe(expectedHeaders, expectedData)
   }
 
   it should "parse the input when some cells are empty" in {
@@ -169,7 +169,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file).validValue shouldBe(expectedHeaders, expectedData)
+    read(file).value shouldBe(expectedHeaders, expectedData)
   }
 
   it should "parse the input when some cells are blank and leave these cells empty in the result" in {
@@ -192,7 +192,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file).validValue shouldBe(expectedHeaders, expectedData)
+    read(file).value shouldBe(expectedHeaders, expectedData)
   }
 
   it should "parse the input while leaving out blank rows" in {
@@ -214,7 +214,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       6 -> List("cba", "abc", "def", "ghi")
     )
 
-    read(file).validValue shouldBe(expectedHeaders, expectedData)
+    read(file).value shouldBe(expectedHeaders, expectedData)
   }
 
   it should "parse the input if it only contains a row of headers and no data" in {
@@ -225,7 +225,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
     val expectedData = List.empty[(Int, String)]
 
-    read(file).validValue shouldBe (expectedHeaders, expectedData)
+    read(file).value shouldBe (expectedHeaders, expectedData)
   }
 
   it should "fail when the input csv file is empty" in {
@@ -286,7 +286,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   }
 
   "extractInstructions" should "convert the csv input to the corresponding output" in {
-    extractInstructions("ruimtereis01", 2, depositCSVRow).validValue shouldBe instructions
+    extractInstructions("ruimtereis01", 2, depositCSVRow).value shouldBe instructions
   }
 
   it should "fail if there are multiple distinct depositorUserIDs" in {
@@ -303,7 +303,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       DepositRow(2, depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) ::
       Nil
 
-    extractInstructions("ruimtereis01", 2, rows).validValue shouldBe instructions
+    extractInstructions("ruimtereis01", 2, rows).value shouldBe instructions
   }
 
   it should "fail if there are multiple distinct base revisions" in {
@@ -328,6 +328,6 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
 
   it should "not fail if the base revision conforms to uuid format" in {
     val uuidString = "1de3f841-0f0d-048b-b3db-4b03ad4834d7"
-    uuid(2, "BASE_REVISION")(uuidString).validValue.value shouldBe UUID.fromString(uuidString)
+    uuid(2, "BASE_REVISION")(uuidString).value.value shouldBe UUID.fromString(uuidString)
   }
 }

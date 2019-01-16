@@ -34,7 +34,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
     )
 
-    extractExactlyOne(2, "FOO", rows).validValue shouldBe "abc"
+    extractExactlyOne(2, "FOO", rows).value shouldBe "abc"
   }
 
   it should "filter out the blank values" in {
@@ -43,7 +43,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
     )
 
-    extractExactlyOne(2, "BAR", rows).validValue shouldBe "def"
+    extractExactlyOne(2, "BAR", rows).value shouldBe "def"
   }
 
   it should "fail when the output is empty" in {
@@ -72,7 +72,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
     )
 
-    extractExactlyOne(2, "FOO", rows).validValue shouldBe "abc"
+    extractExactlyOne(2, "FOO", rows).value shouldBe "abc"
   }
 
   "extractAtLeastOne" should "find the values for the given rows" in {
@@ -81,7 +81,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractAtLeastOne(2, "FOO", rows).validValue.toList should contain inOrderOnly("abc", "ghi")
+    extractAtLeastOne(2, "FOO", rows).value.toList should contain inOrderOnly("abc", "ghi")
   }
 
   it should "filter out the blank values" in {
@@ -90,7 +90,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
     )
 
-    extractAtLeastOne(2, "BAR", rows).validValue.toList should contain only "def"
+    extractAtLeastOne(2, "BAR", rows).value.toList should contain only "def"
   }
 
   it should "fail when the output is empty" in {
@@ -109,7 +109,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
     )
 
-    extractAtLeastOne(2, "FOO", rows).validValue.toList should contain only "abc"
+    extractAtLeastOne(2, "FOO", rows).value.toList should contain only "abc"
   }
 
   "extractAtMostOne" should "find the value for the given rows" in {
@@ -117,7 +117,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
     )
 
-    extractAtMostOne(2, "FOO", rows).validValue.value shouldBe "abc"
+    extractAtMostOne(2, "FOO", rows).value.value shouldBe "abc"
   }
 
   it should "filter out the blank values" in {
@@ -126,7 +126,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
     )
 
-    extractAtMostOne(2, "BAR", rows).validValue.value shouldBe "def"
+    extractAtMostOne(2, "BAR", rows).value.value shouldBe "def"
   }
 
   it should "return a None when the output is empty" in {
@@ -135,7 +135,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractAtMostOne(2, "QUX", rows).validValue shouldBe empty
+    extractAtMostOne(2, "QUX", rows).value shouldBe empty
   }
 
   it should "fail when the input contains multiple distinct values for the same columnName" in {
@@ -154,7 +154,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
     )
 
-    extractAtMostOne(2, "FOO", rows).validValue.value shouldBe "abc"
+    extractAtMostOne(2, "FOO", rows).value.value shouldBe "abc"
   }
 
   "extractList curried" should "for each row run the given function and collect the results" in {
@@ -163,7 +163,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(3, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractList(rows)(i => Some(i.rowNum.toValidated)).validValue should contain inOrderOnly(2, 3)
+    extractList(rows)(i => Some(i.rowNum.toValidated)).value should contain inOrderOnly(2, 3)
   }
 
   it should "leave out the rows for which the function returns a None" in {
@@ -175,7 +175,7 @@ class ParserUtilsSpec extends TestSupportFixture {
     extractList(rows) {
       case DepositRow(rowNum, _) if rowNum % 2 == 0 => Some(rowNum.toValidated)
       case _ => None
-    }.validValue should contain only 2
+    }.value should contain only 2
   }
 
   it should "iterate over all rows and aggregate all errors until the end" in {
@@ -192,7 +192,7 @@ class ParserUtilsSpec extends TestSupportFixture {
   }
 
   "checkValidChars" should "succeed with the input value when all characters are valid" in {
-    checkValidChars("valid-input", 2, "TEST").validValue shouldBe "valid-input"
+    checkValidChars("valid-input", 2, "TEST").value shouldBe "valid-input"
   }
 
   it should "fail when the input contains invalid characters" in {
@@ -201,7 +201,7 @@ class ParserUtilsSpec extends TestSupportFixture {
   }
 
   "date" should "convert the value of the date into the corresponding object" in {
-    date(2, "datum")("2016-07-30").validValue shouldBe DateTime.parse("2016-07-30")
+    date(2, "datum")("2016-07-30").value shouldBe DateTime.parse("2016-07-30")
   }
 
   it should "fail if the value does not represent a date" in {

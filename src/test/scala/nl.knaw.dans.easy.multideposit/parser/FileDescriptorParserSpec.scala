@@ -86,7 +86,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
-    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).validValue should {
+    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).value should {
       have size 1 and contain only
         file -> FileDescriptor(Some("some title"), Some(FileAccessRights.KNOWN))
     }
@@ -106,7 +106,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
-    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).validValue should {
+    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).value should {
       have size 1 and contain only file -> FileDescriptor()
     }
   }
@@ -120,7 +120,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
-    extractFileDescriptors("ruimtereis01", 2, row :: Nil).validValue should {
+    extractFileDescriptors("ruimtereis01", 2, row :: Nil).value should {
       have size 1 and contain only
         file -> FileDescriptor(Some("some title"), None)
     }
@@ -135,7 +135,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
-    extractFileDescriptors("ruimtereis01", 2, row :: Nil).validValue should {
+    extractFileDescriptors("ruimtereis01", 2, row :: Nil).value should {
       have size 1 and contain only
         file -> FileDescriptor(accessibility = Some(FileAccessRights.KNOWN))
     }
@@ -217,7 +217,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
-    fileDescriptor("ruimtereis01")(row).value.validValue shouldBe (file, Some("some title"), Some(FileAccessRights.KNOWN), None)
+    fileDescriptor("ruimtereis01")(row).value.value shouldBe (file, Some("some title"), Some(FileAccessRights.KNOWN), None)
   }
 
   it should "fail if the path does not exist" in {
@@ -250,7 +250,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
-    fileDescriptor("ruimtereis01")(row).value.validValue shouldBe (file, Some("some title"), None, None)
+    fileDescriptor("ruimtereis01")(row).value.value shouldBe (file, Some("some title"), None, None)
   }
 
   it should "fail if an invalid FILE_ACCESSIBILITY is given" in {
@@ -308,7 +308,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
   }
 
   "fileAccessibility" should "convert the value for SF_ACCESSIBILITY into the corresponding enum object" in {
-    fileAccessibility(2)("NONE").validValue shouldBe FileAccessRights.NONE
+    fileAccessibility(2)("NONE").value shouldBe FileAccessRights.NONE
   }
 
   it should "fail if the SF_ACCESSIBILITY value does not correspond to an object in the enum" in {
@@ -317,7 +317,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
   }
 
   "fileVisibility" should "convert the value for SF_ACCESSIBILITY into the corresponding enum object" in {
-    fileVisibility(2)("NONE").validValue shouldBe FileAccessRights.NONE
+    fileVisibility(2)("NONE").value shouldBe FileAccessRights.NONE
   }
 
   it should "fail if the SF_ACCESSIBILITY value does not correspond to an object in the enum" in {
