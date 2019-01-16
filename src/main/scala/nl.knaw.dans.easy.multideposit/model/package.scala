@@ -29,19 +29,4 @@ package object model {
   type DatamanagerEmailaddress = String
   type BagId = UUID
   type BaseUUID = UUID
-
-  // inspired by http://stackoverflow.com/questions/28223692/what-is-the-optimal-way-not-using-scalaz-to-type-require-a-non-empty-list
-  type NonEmptyList[A] = ::[A]
-
-  implicit def listToNEL[A](list: List[A]): NonEmptyList[A] = {
-    require(list.nonEmpty, "the list can't be empty")
-    ::(list.head, list.tail)
-  }
-
-  implicit class NELOps[A](val list: List[A]) extends AnyVal {
-    def defaultIfEmpty(default: => A): NonEmptyList[A] = {
-      if (list.isEmpty) List(default)
-      else list
-    }
-  }
 }

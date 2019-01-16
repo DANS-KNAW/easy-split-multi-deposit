@@ -16,6 +16,7 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
+import cats.data.NonEmptyList
 import cats.data.Validated.Valid
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
@@ -111,7 +112,7 @@ trait MetadataTestObjects {
   lazy val metadata = Metadata(
     alternatives = List("alt1", "alt2"),
     publishers = List("pub1", "pub2"),
-    types = List(DcType.COLLECTION, DcType.MOVINGIMAGE),
+    types = NonEmptyList.of(DcType.COLLECTION, DcType.MOVINGIMAGE),
     formats = List("format1", "format2"),
     identifiers = List(Identifier("123456", Some(IdentifierType.ARCHIS_ZAAK_IDENTIFICATIE)), Identifier("id")),
     sources = List("src1", "src2"),
@@ -150,7 +151,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     )
 
     inside(extractMetadata(2, metadataCSVRow)) {
-      case Valid(md) => md.types should contain only DcType.DATASET
+      case Valid(md) => md.types.toList should contain only DcType.DATASET
     }
   }
 

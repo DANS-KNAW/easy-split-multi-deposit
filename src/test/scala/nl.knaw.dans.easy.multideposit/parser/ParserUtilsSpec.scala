@@ -81,7 +81,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
     )
 
-    extractAtLeastOne(2, "FOO", rows).validValue should contain inOrderOnly("abc", "ghi")
+    extractAtLeastOne(2, "FOO", rows).validValue.toList should contain inOrderOnly("abc", "ghi")
   }
 
   it should "filter out the blank values" in {
@@ -90,7 +90,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
     )
 
-    extractAtLeastOne(2, "BAR", rows).validValue should contain only "def"
+    extractAtLeastOne(2, "BAR", rows).validValue.toList should contain only "def"
   }
 
   it should "fail when the output is empty" in {
@@ -109,7 +109,7 @@ class ParserUtilsSpec extends TestSupportFixture {
       DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
     )
 
-    extractAtLeastOne(2, "FOO", rows).validValue should contain only "abc"
+    extractAtLeastOne(2, "FOO", rows).validValue.toList should contain only "abc"
   }
 
   "extractAtMostOne" should "find the value for the given rows" in {

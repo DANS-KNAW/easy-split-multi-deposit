@@ -16,10 +16,11 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
+import cats.data.NonEmptyList
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
-import nl.knaw.dans.easy.multideposit.model.{ ContributorRole, CreatorOrganization, CreatorPerson, MultiDepositKey, Profile, listToNEL }
+import nl.knaw.dans.easy.multideposit.model.{ ContributorRole, CreatorOrganization, CreatorPerson, MultiDepositKey, Profile }
 import org.joda.time.DateTime
 
 trait ProfileTestObjects {
@@ -49,12 +50,12 @@ trait ProfileTestObjects {
   )
 
   lazy val profile = Profile(
-    titles = List("title1", "title2"),
-    descriptions = List("descr1", "descr2"),
-    creators = List(CreatorPerson(initials = "A.", surname = "Jones", role = Option(ContributorRole.SUPERVISOR))),
+    titles = NonEmptyList.of("title1", "title2"),
+    descriptions = NonEmptyList.of("descr1", "descr2"),
+    creators = NonEmptyList.of(CreatorPerson(initials = "A.", surname = "Jones", role = Option(ContributorRole.SUPERVISOR))),
     created = DateTime.parse("2016-07-30"),
     available = DateTime.parse("2016-07-31"),
-    audiences = List("D30000", "D37000"),
+    audiences = NonEmptyList.of("D30000", "D37000"),
     accessright = AccessCategory.GROUP_ACCESS
   )
 }

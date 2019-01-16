@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.model
 
+import cats.data.NonEmptyList
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
 import org.joda.time.DateTime

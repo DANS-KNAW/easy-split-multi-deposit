@@ -15,12 +15,13 @@
  */
 package nl.knaw.dans.easy.multideposit.model
 
+import cats.data.NonEmptyList
 import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
 import org.joda.time.DateTime
 
 case class Metadata(alternatives: List[String] = List.empty,
                     publishers: List[String] = List.empty,
-                    types: NonEmptyList[DcType.Value] = List(DcType.DATASET),
+                    types: NonEmptyList[DcType.Value] = NonEmptyList.one(DcType.DATASET),
                     formats: List[String] = List.empty,
                     identifiers: List[Identifier] = List.empty,
                     sources: List[String] = List.empty,

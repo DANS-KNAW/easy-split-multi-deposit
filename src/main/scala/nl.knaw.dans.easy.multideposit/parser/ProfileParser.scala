@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import cats.data.NonEmptyList
 import cats.data.Validated.catchOnly
 import cats.instances.option._
 import cats.syntax.apply._
@@ -22,7 +23,7 @@ import cats.syntax.option._
 import cats.syntax.traverse._
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
-import nl.knaw.dans.easy.multideposit.model.{ ContributorRole, Creator, CreatorOrganization, CreatorPerson, NonEmptyList, Profile, listToNEL }
+import nl.knaw.dans.easy.multideposit.model.{ ContributorRole, Creator, CreatorOrganization, CreatorPerson, Profile }
 import org.joda.time.DateTime
 
 trait ProfileParser {
@@ -39,7 +40,7 @@ trait ProfileParser {
       extractDdmAccessrights(rowNum, rows),
     ).mapN(Profile)
       .andThen {
-        case Profile(_, _, _, _, _, audiences, AccessCategory.GROUP_ACCESS) if !audiences.contains("D37000") =>
+        case Profile(_, _, _, _, _, audiences, AccessCategory.GROUP_ACCESS) if !audiences.exists(_ == "D37000") =>
           ParseError(rowNum, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeology)").toInvalid
         case otherwise => otherwise.toValidated
       }
@@ -48,7 +49,7 @@ trait ProfileParser {
   private def extractCreators(rowNum: Int, rows: DepositRows): Validated[NonEmptyList[Creator]] = {
     extractList(rows)(creator)
       .ensure(ParseError(rowNum, "There should be at least one non-empty value for the creator fields").chained)(_.nonEmpty)
-      .map(listToNEL)
+      .map(NonEmptyList.fromListUnsafe)
   }
 
   private def extractDdmCreated(rowNum: Int, rows: DepositRows): Validated[DateTime] = {

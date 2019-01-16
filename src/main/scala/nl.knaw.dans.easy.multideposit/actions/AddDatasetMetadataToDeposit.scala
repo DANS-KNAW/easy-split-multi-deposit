@@ -57,12 +57,12 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
 
   def createProfile(profile: Profile): Elem = {
     <ddm:profile>
-      {profile.titles.map(elem("dc:title"))}
-      {profile.descriptions.map(elem("dcterms:description"))}
-      {profile.creators.map(createCreator)}
+      {profile.titles.toList.map(elem("dc:title"))}
+      {profile.descriptions.toList.map(elem("dcterms:description"))}
+      {profile.creators.toList.map(createCreator)}
       {elem("ddm:created")(formatDate(profile.created))}
       {elem("ddm:available")(formatDate(profile.available))}
-      {profile.audiences.map(elem("ddm:audience"))}
+      {profile.audiences.toList.map(elem("ddm:audience"))}
       {elem("ddm:accessRights")(profile.accessright.toString)}
     </ddm:profile>
   }
@@ -266,7 +266,7 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
     <ddm:dcmiMetadata>
       {metadata.alternatives.map(elem("dcterms:alternative"))}
       {metadata.publishers.map(elem("dcterms:publisher"))}
-      {metadata.types.map(createType)}
+      {metadata.types.toList.map(createType)}
       {metadata.formats.map(createFormat)}
       {metadata.identifiers.map(createIdentifier)}
       {metadata.sources.map(elem("dc:source"))}

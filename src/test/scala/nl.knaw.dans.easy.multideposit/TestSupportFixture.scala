@@ -19,6 +19,7 @@ import java.util.UUID
 
 import better.files.File
 import better.files.File.currentWorkingDirectory
+import cats.data.NonEmptyList
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model._
@@ -46,7 +47,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
   implicit val outputPathExplorer: OutputPathExplorer = this
 
   private val userLicensesFile: File = currentWorkingDirectory / "src" / "main" / "assembly" / "dist" / "cfg" / "licenses.txt"
-  val userLicenses =
+  val userLicenses: Set[MimeType] =
     if (userLicensesFile.exists) userLicensesFile.lines.map(_.trim).toSet
     else fail("Cannot find file: licenses.txt")
 
@@ -56,9 +57,9 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
       row = 2,
       depositorUserId = "ruimtereiziger1",
       profile = Profile(
-        titles = List("Reis naar Centaur-planetoïde", "Trip to Centaur asteroid"),
-        descriptions = List("Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.", "A two day mission to boldly go where no man has gone before"),
-        creators = List(
+        titles = NonEmptyList.of("Reis naar Centaur-planetoïde", "Trip to Centaur asteroid"),
+        descriptions = NonEmptyList.of("Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.", "A two day mission to boldly go where no man has gone before"),
+        creators = NonEmptyList.of(
           CreatorPerson(
             titles = Some("Captain"),
             initials = "J.T.",
@@ -67,7 +68,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
           )
         ),
         created = DateTime.parse("2015-05-19"),
-        audiences = List("D30000"),
+        audiences = NonEmptyList.of("D30000"),
         accessright = AccessCategory.OPEN_ACCESS
       ),
       baseUUID = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")),
@@ -98,12 +99,12 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
       row = 5,
       depositorUserId = "ruimtereiziger2",
       profile = Profile(
-        titles = List("Title 1 of deposit 2", "Title 2 of deposit 2"),
-        descriptions = List("A sample deposit with a not very long description"),
-        creators = List(CreatorOrganization("Creator A")),
+        titles = NonEmptyList.of("Title 1 of deposit 2", "Title 2 of deposit 2"),
+        descriptions = NonEmptyList.of("A sample deposit with a not very long description"),
+        creators = NonEmptyList.of(CreatorOrganization("Creator A")),
         created = DateTime.now(),
         available = DateTime.parse("2016-07-30"),
-        audiences = List("D37000"),
+        audiences = NonEmptyList.of("D37000"),
         accessright = AccessCategory.GROUP_ACCESS
       ),
       baseUUID = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")),
@@ -111,7 +112,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
         contributors = List(ContributorOrganization("Contributor 1"), ContributorOrganization("Contributor 2")),
         subjects = List(Subject("subject 1", Option("abr:ABRcomplex")), Subject("subject 2"), Subject("subject 3")),
         publishers = List("publisher 1"),
-        types = List(DcType.STILLIMAGE),
+        types = NonEmptyList.of(DcType.STILLIMAGE),
         identifiers = List(Identifier("id1234"))
       ),
       files = Map(

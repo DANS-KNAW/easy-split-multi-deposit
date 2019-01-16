@@ -16,12 +16,13 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
+import cats.data.NonEmptyList
 import cats.data.Validated.catchOnly
 import cats.instances.list._
 import cats.syntax.option._
 import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit.model.{ DepositId, MultiDepositKey, NonEmptyList, listToNEL }
+import nl.knaw.dans.easy.multideposit.model.{ DepositId, MultiDepositKey }
 import nl.knaw.dans.lib.string._
 import org.joda.time.DateTime
 
@@ -39,7 +40,7 @@ trait ParserUtils {
   def extractAtLeastOne(rowNum: Int, name: MultiDepositKey, rows: DepositRows): Validated[NonEmptyList[String]] = {
     rows.flatMap(_.find(name)).distinct match {
       case Seq() => ParseError(rowNum, s"There should be at least one non-empty value for $name").toInvalid
-      case xs => listToNEL(xs.toList).toValidated
+      case Seq(head, tail @ _*) => NonEmptyList.of(head, tail: _*).toValidated
     }
   }
 

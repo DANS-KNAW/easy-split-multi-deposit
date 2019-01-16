@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import java.util.Locale
 
+import cats.data.NonEmptyList
 import cats.instances.option._
 import cats.syntax.apply._
 import cats.syntax.option._
@@ -54,7 +55,10 @@ trait MetadataParser {
   }
 
   private def extractDcType(rows: DepositRows): Validated[NonEmptyList[DcType]] = {
-    extractList(rows)(dcType).map(_ defaultIfEmpty DcType.DATASET)
+    extractList(rows)(dcType).map {
+      case Nil => NonEmptyList.one(DcType.DATASET)
+      case x :: xs => NonEmptyList(x, xs)
+    }
   }
 
   private def extractUserLicenses(rowNum: Int, rows: DepositRows): Validated[Option[UserLicense]] = {
