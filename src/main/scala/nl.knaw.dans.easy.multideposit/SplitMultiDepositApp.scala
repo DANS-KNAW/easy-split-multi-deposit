@@ -24,7 +24,7 @@ import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.multideposit.PathExplorer._
 import nl.knaw.dans.easy.multideposit.actions.CreateMultiDeposit
-import nl.knaw.dans.easy.multideposit.model.{ Datamanager, Deposit }
+import nl.knaw.dans.easy.multideposit.model.Datamanager
 import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
@@ -40,9 +40,9 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
     Locale.setDefault(Locale.US)
 
     for {
-      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(NonEmptyChain.one)
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).toEitherNec
       _ <- createMultiDeposit.validateDeposits(deposits).toEither
-      _ <- createMultiDeposit.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
+      _ <- createMultiDeposit.getDatamanagerEmailaddress(datamanagerId).toEitherNec
     } yield ()
   }
 
@@ -54,13 +54,13 @@ class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap
     Locale.setDefault(Locale.US)
 
     for {
-      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).leftMap(NonEmptyChain.one)
-      dataManagerEmailAddress <- createMultiDeposit.getDatamanagerEmailaddress(datamanagerId).leftMap(NonEmptyChain.one)
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).toEitherNec
+      dataManagerEmailAddress <- createMultiDeposit.getDatamanagerEmailaddress(datamanagerId).toEitherNec
       _ <- createMultiDeposit.convertDeposits(deposits, paths, datamanagerId, dataManagerEmailAddress)
       _ = logger.info("deposits were created successfully")
-      _ <- createMultiDeposit.report(deposits).leftMap(NonEmptyChain.one)
+      _ <- createMultiDeposit.report(deposits).toEitherNec
       _ = logger.info(s"report generated at ${ paths.reportFile }")
-      _ <- createMultiDeposit.moveDepositsToOutputDir(deposits).leftMap(NonEmptyChain.one)
+      _ <- createMultiDeposit.moveDepositsToOutputDir(deposits).toEitherNec
       _ = logger.info(s"deposits were successfully moved to ${ output.outputDepositDir }")
     } yield ()
   }

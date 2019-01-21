@@ -59,7 +59,7 @@ class CreateMultiDeposit(formats: Set[String],
                       paths: PathExplorers,
                       datamanagerId: Datamanager,
                       dataManagerEmailAddress: DatamanagerEmailaddress)
-                     (implicit staging: StagingPathExplorer): Either[NonEmptyChain[ConversionFailed], Unit] = {
+                     (implicit staging: StagingPathExplorer): FailFastNec[Unit] = {
     deposits.traverse(convertDeposit(paths, datamanagerId, dataManagerEmailAddress))
       .leftMap(error => {
         deposits.traverse(d => createDirs.discardDeposit(d.depositId))

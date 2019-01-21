@@ -19,6 +19,7 @@ import java.io.IOException
 import java.nio.charset.Charset
 
 import better.files.File
+import cats.data.EitherNec
 import org.apache.commons.io.Charsets
 import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
 import org.joda.time.{ DateTime, DateTimeZone }
@@ -27,6 +28,7 @@ import scala.xml.{ Elem, PrettyPrinter, Utility, XML }
 
 package object multideposit {
   type FailFast[T] = Either[ConversionFailed, T]
+  type FailFastNec[T] = EitherNec[ConversionFailed, T]
 
   val dateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime()
 
