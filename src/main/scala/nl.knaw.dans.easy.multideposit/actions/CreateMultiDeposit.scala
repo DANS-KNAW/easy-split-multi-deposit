@@ -41,10 +41,8 @@ class CreateMultiDeposit(formats: Set[String],
   private val reportDatasets = new ReportDatasets()
   private val moveDeposit = new MoveDepositToOutputDir()
 
-  private type ConversionFailedValidated[T] = ValidatedNec[ConversionFailed, T]
-
   def validateDeposits(deposits: List[Deposit])(implicit staging: StagingPathExplorer): ValidatedNec[ConversionFailed, Unit] = {
-    deposits.traverse[ConversionFailedValidated, Unit](validateDeposit).map(_ => ())
+    deposits.traverse[ValidatedNec[ConversionFailed, ?], Unit](validateDeposit).map(_ => ())
   }
 
   private def validateDeposit(deposit: Deposit)(implicit staging: StagingPathExplorer): ValidatedNec[ConversionFailed, Unit] = {

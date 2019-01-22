@@ -22,7 +22,7 @@
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
         <artifactId>dans-scala-app-project</artifactId>
-        <version>2.2.5</version>
+        <version>2.2.5-SNAPSHOT</version>
     </parent>
 
     <groupId>nl.knaw.dans.easy</groupId>
@@ -60,8 +60,6 @@
         <dependency>
             <groupId>com.ironcorelabs</groupId>
             <artifactId>cats-scalatest_2.12</artifactId>
-            <version>2.4.0</version>
-            <scope>test</scope>
         </dependency>
 
         <!-- Scala utils -->
@@ -88,7 +86,6 @@
         <dependency>
             <groupId>org.typelevel</groupId>
             <artifactId>cats-core_2.12</artifactId>
-            <version>1.5.0</version>
         </dependency>
 
         <dependency>
