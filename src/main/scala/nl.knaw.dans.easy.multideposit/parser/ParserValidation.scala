@@ -28,6 +28,7 @@ trait ParserValidation extends DebugEnhancedLogging {
       checkSpringFieldDepositHasAVformat(deposit),
       checkSFColumnsIfDepositContainsAVFiles(deposit),
       checkEitherVideoOrAudio(deposit),
+      checkAllAVFilesHaveSameAccessibility(deposit),
     ).tupled.map(_ => ())
   }
 
@@ -79,6 +80,13 @@ trait ParserValidation extends DebugEnhancedLogging {
     deposit.files.collect { case fmd: AVFileMetadata => fmd.vocabulary }.distinct match {
       case Seq() | Seq(_) => ().toValidated
       case _ => ParseError(deposit.row, "Found both audio and video in this dataset. Only one of them is allowed.").toInvalid
+    }
+  }
+
+  def checkAllAVFilesHaveSameAccessibility(deposit: Deposit): Validated[Unit] = {
+    deposit.files.collect { case fmd: AVFileMetadata => fmd.accessibleTo }.distinct match {
+      case Seq() | Seq(_) => ().toValidated
+      case accs => ParseError(deposit.row, s"Multiple accessibility levels found for A/V files: ${accs.mkString("{", ", ", "}")}").toInvalid
     }
   }
 }

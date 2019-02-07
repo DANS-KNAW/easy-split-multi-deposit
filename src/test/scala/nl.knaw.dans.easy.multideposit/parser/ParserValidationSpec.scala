@@ -212,4 +212,20 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     validation.checkEitherVideoOrAudio(deposit) shouldBe
       ParseError(2, "Found both audio and video in this dataset. Only one of them is allowed.").toInvalid
   }
+
+  "checkAllAVFilesHaveSameAccessibility" should "fail if a dataset has multiple accessibleTo levels for A/V files" in {
+    val depositId = "ruimtereis01"
+    val deposit = testInstructions1.copy(depositId = depositId)
+      .toDeposit(avFileReferences :+ AVFileMetadata(
+        filepath = testDir / "md" / "ruimtereis01" / "reisverslag" / "centaur.mpg",
+        mimeType = "video/mpeg",
+        vocabulary = Video,
+        title = "flyby of centaur",
+        accessibleTo = FileAccessRights.RESTRICTED_GROUP,
+        visibleTo = FileAccessRights.ANONYMOUS
+      ))
+
+    validation.checkAllAVFilesHaveSameAccessibility(deposit) shouldBe
+      ParseError(2, "Multiple accessibility levels found for A/V files: {ANONYMOUS, RESTRICTED_GROUP}").toInvalid
+  }
 }
