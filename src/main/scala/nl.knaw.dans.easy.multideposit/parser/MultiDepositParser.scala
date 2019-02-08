@@ -66,15 +66,19 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       ParseFailed(s"Could not find a file called 'instructions.csv' in $multiDepositDir").asLeft
   }
 
+  private type Index = Int
+  private type CsvHeaderRow = List[MultiDepositKey]
+  private type CsvRow = List[String]
+
   private def createDeposits(depositIdIndex: Int)
-                            (headers: List[MultiDepositKey], content: List[(Int, List[String])]): Validated[List[Deposit]] = {
+                            (headers: CsvHeaderRow, content: List[(Index, CsvRow)]): Validated[List[Deposit]] = {
     content.groupBy { case (_, cs) => cs(depositIdIndex) }
       .mapValues(_.map { case (rowNum, data) => createDepositRow(headers)(rowNum, data) })
       .toList
       .traverse { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows) }
   }
 
-  private def createDepositRow(headers: List[MultiDepositKey])(rowNum: Int, data: List[String]): DepositRow = {
+  private def createDepositRow(headers: CsvHeaderRow)(rowNum: Index, data: CsvRow): DepositRow = {
     val content = headers.zip(data)
       .filterNot { case (_, value) => value.isBlank }
       .toMap
@@ -82,7 +86,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
     DepositRow(rowNum, content)
   }
 
-  def read(instructions: File): Validated[(List[MultiDepositKey], List[(Int, List[String])])] = {
+  def read(instructions: File): Validated[(CsvHeaderRow, List[(Index, CsvRow)])] = {
     managed(CSVParser.parse(instructions.toJava, encoding, CSVFormat.RFC4180))
       .map(csvParse)
       .tried
@@ -91,24 +95,19 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       .leftMap(e => ParseError(-1, e.getMessage).chained)
       .andThen {
         case Nil => EmptyInstructionsFileError(instructions).toInvalid
-        case headers :: rows =>
-          validateDepositHeaders(headers)
-            .map(_ => (headers, rows.zipWithIndex.collect {
-              case (row, index) if row.nonEmpty => (index + 2, row)
-            }))
+        case (_, headers) :: rows => validateDepositHeaders(headers).map(_ => headers -> rows)
       }
   }
 
-  private def csvParse(parser: CSVParser): List[List[String]] = {
-    parser.getRecords.asScala.toList
+  private def csvParse(parser: CSVParser): List[(Index, CsvRow)] = {
+    parser.iterator().asScala
       .map(_.asScala.toList.map(_.trim))
-      .map {
-        case "" :: Nil => Nil // blank line
-        case xs => xs
-      }
+      .zipWithIndex
+      .collect { case (row, index) if !row.forall(_.trim.isEmpty) => index + 1 -> row }
+      .toList
   }
 
-  private def validateDepositHeaders(headers: List[MultiDepositKey]): Validated[Unit] = {
+  private def validateDepositHeaders(headers: CsvHeaderRow): Validated[Unit] = {
     val validHeaders = Headers.validHeaders
     val invalidHeaders = headers.filterNot(validHeaders.contains)
     lazy val uniqueHeaders = headers.distinct

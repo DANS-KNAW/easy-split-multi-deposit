@@ -119,7 +119,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       3 -> List("mno", "pqr", "stu", "vwx"),
       4 -> List("yzy", "xwv", "uts", "rqp"),
       5 -> List("onm", "lkj", "ihg", "fed"),
-      6 -> List("cba", "abc", "def", "ghi")
+      6 -> List("cba", "abc", "def", "ghi"),
     )
 
     read(file).value shouldBe(expectedHeaders, expectedData)
@@ -143,7 +143,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       3 -> List("mno", "pq\nr", "stu", "vwx"),
       4 -> List("yzy", "xwv", "uts", "rqp"),
       5 -> List("onm", "lkj", "ihg", "fed"),
-      6 -> List("cba", "abc", "def", "ghi")
+      6 -> List("cba", "abc", "def", "ghi"),
     )
 
     read(file).value shouldBe(expectedHeaders, expectedData)
@@ -166,7 +166,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       3 -> List("mno", "", "stu", "vwx"),
       4 -> List("yzy", "xwv", "uts", "rqp"),
       5 -> List("onm", "lkj", "", "fed"),
-      6 -> List("cba", "abc", "def", "ghi")
+      6 -> List("cba", "abc", "def", "ghi"),
     )
 
     read(file).value shouldBe(expectedHeaders, expectedData)
@@ -189,7 +189,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       3 -> List("mno", "", "stu", "vwx"),
       4 -> List("", "xwv", "uts", "rqp"),
       5 -> List("onm", "lkj", "", "fed"),
-      6 -> List("cba", "abc", "def", "ghi")
+      6 -> List("cba", "abc", "def", "ghi"),
     )
 
     read(file).value shouldBe(expectedHeaders, expectedData)
@@ -211,10 +211,37 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       2 -> List("abc", "def", "ghi", "jkl"),
       3 -> List("mno", "pqr", "stu", "vwx"),
       5 -> List("onm", "lkj", "ihg", "fed"),
-      6 -> List("cba", "abc", "def", "ghi")
+      6 -> List("cba", "abc", "def", "ghi"),
     )
 
     read(file).value shouldBe(expectedHeaders, expectedData)
+  }
+
+  it should "parse the input while leaving out empty rows" in {
+    val csv =
+      """DATASET,DEPOSITOR_ID,SF_USER,SF_DOMAIN
+        |abc,def,ghi,jkl
+        |,,,
+        |mno,pqr,stu,vwx
+        |,,,
+        |,,,
+        |,,,
+        |,,,
+        |onm,lkj,ihg,fed
+        |,,,
+        |cba,abc,def,ghi""".stripMargin
+    val file = testDir / "input.csv"
+    file.write(csv)
+
+    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedData = List(
+      2 -> List("abc", "def", "ghi", "jkl"),
+      4 -> List("mno", "pqr", "stu", "vwx"),
+      9 -> List("onm", "lkj", "ihg", "fed"),
+      11 -> List("cba", "abc", "def", "ghi"),
+    )
+
+    read(file).value shouldBe (expectedHeaders, expectedData)
   }
 
   it should "parse the input if it only contains a row of headers and no data" in {
