@@ -65,30 +65,33 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       Failure(new NoSuchFileException(s"Could not find a file called 'instructions.csv' in $multiDepositDir"))
   }
 
-  def read(instructions: File): Try[(List[MultiDepositKey], List[List[String]])] = {
+  private type Index = Int
+  private type CsvHeaderRow = List[MultiDepositKey]
+  private type CsvRow = List[String]
+
+  def read(instructions: File): Try[(CsvHeaderRow, List[CsvRow])] = {
     managed(CSVParser.parse(instructions.toJava, encoding, CSVFormat.RFC4180))
       .map(csvParse)
       .tried
       .flatMap {
         case Nil => Failure(EmptyInstructionsFileException(instructions))
-        case headers :: rows =>
+        case (_, headers) :: rows =>
           validateDepositHeaders(headers)
-            .map(_ => ("ROW" :: headers, rows.zipWithIndex.collect {
-              case (row, index) if row.nonEmpty => (index + 2).toString :: row
+            .map(_ => ("ROW" :: headers, rows.collect {
+              case (index, row) => index.toString :: row
             }))
       }
   }
 
-  private def csvParse(parser: CSVParser): List[List[String]] = {
-    parser.getRecords.asScala.toList
+  private def csvParse(parser: CSVParser): List[(Index, CsvRow)] = {
+    parser.iterator().asScala
       .map(_.asScala.toList.map(_.trim))
-      .map {
-        case "" :: Nil => Nil // blank line
-        case xs => xs
-      }
+      .zipWithIndex
+      .collect { case (row, index) if !row.forall(_.trim.isEmpty) => index + 1 -> row }
+      .toList
   }
 
-  private def validateDepositHeaders(headers: List[MultiDepositKey]): Try[Unit] = {
+  private def validateDepositHeaders(headers: CsvHeaderRow): Try[Unit] = {
     val validHeaders = Headers.validHeaders
     val invalidHeaders = headers.filterNot(validHeaders.contains)
     lazy val uniqueHeaders = headers.distinct

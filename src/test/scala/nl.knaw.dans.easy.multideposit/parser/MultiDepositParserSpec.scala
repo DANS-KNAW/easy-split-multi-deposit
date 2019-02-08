@@ -209,6 +209,33 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
   }
 
+  it should "parse the input while leaving out empty rows" in {
+    val csv =
+      """DATASET,DEPOSITOR_ID,SF_USER,SF_DOMAIN
+        |abc,def,ghi,jkl
+        |,,,
+        |mno,pqr,stu,vwx
+        |,,,
+        |,,,
+        |,,,
+        |,,,
+        |onm,lkj,ihg,fed
+        |,,,
+        |cba,abc,def,ghi""".stripMargin
+    val file = testDir / "input.csv"
+    file.write(csv)
+
+    val expectedHeaders = List("ROW", "DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedData = List(
+      List("2", "abc", "def", "ghi", "jkl"),
+      List("4", "mno", "pqr", "stu", "vwx"),
+      List("9", "onm", "lkj", "ihg", "fed"),
+      List("11", "cba", "abc", "def", "ghi")
+    )
+
+    read(file) should matchPattern { case Success((`expectedHeaders`, `expectedData`)) => }
+  }
+
   it should "parse the input if it only contains a row of headers and no data" in {
     val csv = "DATASET,DEPOSITOR_ID,SF_USER,SF_DOMAIN"
     val file = testDir / "input.csv"
