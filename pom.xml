@@ -27,7 +27,7 @@
 
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-split-multi-deposit</artifactId>
-    <version>1.6.2-SNAPSHOT</version>
+    <version>1.6.2</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EASY Split Multi-Deposit</name>
@@ -40,7 +40,7 @@
 
     <scm>
         <developerConnection>scm:git:https://github.com/DANS-KNAW/${project.artifactId}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v1.6.2</tag>
     </scm>
 
     <dependencies>
