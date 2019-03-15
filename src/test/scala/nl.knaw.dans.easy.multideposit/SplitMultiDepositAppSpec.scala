@@ -352,6 +352,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
           " - row 2: BASE_REVISION value base revision '1de3f841-048b-b3db-4b03ad4834d7' does not conform to the UUID format",
           " - row 2: Value 'random test data' is not a valid type",
           " - row 2: Value 'NL' is not a valid value for DC_LANGUAGE",
+          " - row 2: There should be at least one non-empty value for DCT_RIGHTSHOLDER",
           " - row 2: DCT_DATE value 'Text with Qualifier' does not represent a date",
           " - row 2: unable to find path 'path/to/audiofile/that/does/not/exist.mp3'",
           " - row 2: Missing value for: SF_USER",

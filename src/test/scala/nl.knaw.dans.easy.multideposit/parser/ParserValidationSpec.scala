@@ -113,7 +113,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     val deposit = testInstructions1.toDeposit().copy(
       depositId = depositId,
       metadata = Metadata(
-        formats = List("text/plain")
+        formats = List("text/plain"),
+        rightsholder = List("morpheus"),
       )
     )
     inside(validation.checkSpringFieldDepositHasAVformat(deposit)) {
@@ -126,13 +127,14 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     val deposit = testInstructions1.toDeposit().copy(
       depositId = depositId,
       metadata = Metadata(
-        formats = List("audio/mpeg3")
+        formats = List("audio/mpeg3"),
+        rightsholder = List("Smith"),
       )
     )
     validation.checkSpringFieldDepositHasAVformat(deposit) shouldBe a[Success[_]]
   }
 
-  val avFileReferences = Seq(
+  val avFileReferences: Seq[AVFileMetadata] = Seq(
     AVFileMetadata(
       filepath = testDir / "md" / "ruimtereis01" / "reisverslag" / "centaur.mpg",
       mimeType = "video/mpeg",

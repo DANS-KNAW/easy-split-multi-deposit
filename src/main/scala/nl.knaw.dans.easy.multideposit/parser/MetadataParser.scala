@@ -36,7 +36,7 @@ trait MetadataParser {
       .map(_ (extractList(rows, "DC_SOURCE")))
       .combine(extractList(rows)(iso639_2Language("DC_LANGUAGE")))
       .map(_ (extractList(rows, "DCT_SPATIAL")))
-      .map(_ (extractList(rows, "DCT_RIGHTSHOLDER")))
+      .combine(extractNEL(rows, rowNum, "DCT_RIGHTSHOLDER"))
       .combine(extractList(rows)(relation))
       .combine(extractList(rows)(dateColumn))
       .combine(extractList(rows)(contributor))
