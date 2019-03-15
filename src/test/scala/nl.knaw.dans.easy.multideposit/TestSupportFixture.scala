@@ -76,7 +76,8 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
       metadata = Metadata(
         formats = List("video/mpeg", "text/plain"),
         languages = List("NL", "encoding=UTF-8"),
-        subjects = List(Subject("astronomie"), Subject("ruimtevaart"), Subject("planetoïden"))
+        subjects = List(Subject("astronomie"), Subject("ruimtevaart"), Subject("planetoïden")),
+        rightsholder = NonEmptyList.one("Mr. Anderson"),
       ),
       files = Map(
         testDir / "md/ruimtereis01/reisverslag/centaur.mpg" -> FileDescriptor(Option("flyby of centaur")),
@@ -114,7 +115,8 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
         subjects = List(Subject("subject 1", Option("abr:ABRcomplex")), Subject("subject 2"), Subject("subject 3")),
         publishers = List("publisher 1"),
         types = NonEmptyList.of(DcType.STILLIMAGE),
-        identifiers = List(Identifier("id1234"))
+        identifiers = List(Identifier("id1234")),
+        rightsholder = NonEmptyList.of("Neo"),
       ),
       files = Map(
         testDir / "md/ruimtereis02/path/to/images/Hubble_01.jpg" -> FileDescriptor(Some("Hubble"), Some(FileAccessRights.RESTRICTED_REQUEST))

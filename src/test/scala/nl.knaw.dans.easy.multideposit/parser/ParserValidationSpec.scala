@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
 import better.files.File.currentWorkingDirectory
+import cats.data.NonEmptyList
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, PlayMode, Springfield, UserLicense, Video }
@@ -122,7 +123,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     val deposit = testInstructions1.toDeposit().copy(
       depositId = depositId,
       metadata = Metadata(
-        formats = List("text/plain")
+        formats = List("text/plain"),
+        rightsholder = NonEmptyList.of("morpheus"),
       )
     )
 
@@ -136,7 +138,8 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     val deposit = testInstructions1.toDeposit().copy(
       depositId = depositId,
       metadata = Metadata(
-        formats = List("audio/mpeg3")
+        formats = List("audio/mpeg3"),
+        rightsholder = NonEmptyList.of("Smith"),
       )
     )
     validation.checkSpringFieldDepositHasAVformat(deposit).isValid shouldBe true

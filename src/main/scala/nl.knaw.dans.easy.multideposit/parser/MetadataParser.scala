@@ -42,7 +42,7 @@ trait MetadataParser {
       extractList(rows, "DC_SOURCE").toValidated,
       extractList(rows)(iso639_2Language("DC_LANGUAGE")),
       extractList(rows, "DCT_SPATIAL").toValidated,
-      extractList(rows, "DCT_RIGHTSHOLDER").toValidated,
+      extractAtLeastOne(rowNum, "DCT_RIGHTSHOLDER", rows),
       extractList(rows)(relation),
       extractList(rows)(dateColumn),
       extractList(rows)(contributor),

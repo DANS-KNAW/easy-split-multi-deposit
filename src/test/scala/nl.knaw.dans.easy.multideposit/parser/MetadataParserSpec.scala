@@ -118,7 +118,7 @@ trait MetadataTestObjects {
     sources = List("src1", "src2"),
     languages = List("dut", "nld"),
     spatials = List("spat1", "spat2"),
-    rightsholder = List("right1", "right2"),
+    rightsholder = NonEmptyList.of("right1", "right2"),
     relations = List(QualifiedRelation(RelationQualifier.Replaces, link = Some("foo"), title = Some("bar")), UnqualifiedRelation(link = Some("foo"), title = Some("bar"))),
     dates = List(QualifiedDate(new DateTime(2016, 2, 1, 0, 0), DateQualifier.DATE_SUBMITTED), TextualDate("some random text")),
     contributors = List(ContributorPerson(initials = "A.", surname = "Jones", role = Some(ContributorRole.RELATED_PERSON))),

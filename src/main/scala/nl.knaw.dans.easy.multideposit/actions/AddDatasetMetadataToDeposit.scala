@@ -272,7 +272,7 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
       {metadata.sources.map(elem("dc:source"))}
       {metadata.languages.map(createLanguage)}
       {metadata.spatials.map(elem("dcterms:spatial"))}
-      {metadata.rightsholder.map(elem("dcterms:rightsHolder"))}
+      {metadata.rightsholder.toList.map(elem("dcterms:rightsHolder"))}
       {metadata.relations.map(createRelation) ++ maybeSpringfield.map(createSurrogateRelation) }
       {metadata.dates.map(createDate)}
       {metadata.contributors.map(createContributor)}

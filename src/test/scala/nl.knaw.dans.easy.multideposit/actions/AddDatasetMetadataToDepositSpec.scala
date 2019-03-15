@@ -55,6 +55,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
       publishers = List("random publisher"),
       identifiers = List(Identifier("123456", Some(IdentifierType.ISBN)), Identifier("id")),
       userLicense = Option(UserLicense("http://www.tapr.org/TAPR_Open_Hardware_License_v1.0.txt")),
+      rightsholder = NonEmptyList.of("some rightsholder")
     )
   )
 
@@ -109,6 +110,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
         <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>
         <dc:identifier xsi:type="id-type:ISBN">123456</dc:identifier>
         <dc:identifier>id</dc:identifier>
+        <dcterms:rightsHolder>some rightsholder</dcterms:rightsHolder>
         <dcx-dai:contributorDetails>
           <dcx-dai:author>
             <dcx-dai:initials>B.</dcx-dai:initials>
@@ -166,7 +168,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
       sources = List("src", "test"),
       languages = List("eng", "nld"),
       spatials = List("sp1"),
-      rightsholder = List("rh1"),
+      rightsholder = NonEmptyList.of("rh1"),
       relations = List(
         QualifiedRelation(RelationQualifier.Replaces, link = Some("l1"), title = Some("t1")),
         QualifiedRelation(RelationQualifier.IsVersionOf, link = Some("l2")),
