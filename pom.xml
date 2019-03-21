@@ -22,8 +22,7 @@
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
         <artifactId>dans-scala-app-project</artifactId>
-        <!-- TODO change to 3.x once the 'kind-projector' compiler plugin is released in 'dans-mvn-plugin-defaults' -->
-        <version>3.0.1-SNAPSHOT</version>
+        <version>3.1.0</version>
     </parent>
 
     <groupId>nl.knaw.dans.easy</groupId>
