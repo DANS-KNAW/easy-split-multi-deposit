@@ -46,7 +46,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
   implicit val outputPathExplorer: OutputPathExplorer = this
 
   private val userLicensesFile: File = currentWorkingDirectory / "src" / "main" / "assembly" / "dist" / "cfg" / "licenses.txt"
-  val userLicenses =
+  val userLicenses: Set[MimeType] =
     if (userLicensesFile.exists) userLicensesFile.lines.map(_.trim).toSet
     else fail("Cannot find file: licenses.txt")
 
@@ -74,7 +74,8 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
       metadata = Metadata(
         formats = List("video/mpeg", "text/plain"),
         languages = List("NL", "encoding=UTF-8"),
-        subjects = List(Subject("astronomie"), Subject("ruimtevaart"), Subject("planetoïden"))
+        subjects = List(Subject("astronomie"), Subject("ruimtevaart"), Subject("planetoïden")),
+        rightsholder = List("Mr. Anderson"),
       ),
       files = Map(
         testDir / "md/ruimtereis01/reisverslag/centaur.mpg" -> FileDescriptor(Option("flyby of centaur")),
@@ -112,7 +113,8 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         subjects = List(Subject("subject 1", Option("abr:ABRcomplex")), Subject("subject 2"), Subject("subject 3")),
         publishers = List("publisher 1"),
         types = List(DcType.STILLIMAGE),
-        identifiers = List(Identifier("id1234"))
+        identifiers = List(Identifier("id1234")),
+        rightsholder = List("Neo"),
       ),
       files = Map(
         testDir / "md/ruimtereis02/path/to/images/Hubble_01.jpg" -> FileDescriptor(Some("Hubble"), Some(FileAccessRights.RESTRICTED_REQUEST))

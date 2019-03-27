@@ -18,6 +18,8 @@ This dataset contains an `instructions.csv` file that will be marked as invalid 
 * DC_LANGUAGE
     * not a valid (ISO639.2) language
     * '_encoding=UTF-8_' does not represent a valid language
+* DCT_RIGHTSHOLDER
+    * no value found
 * DCT_DATE
     * '_Text with Qualifier_' does not represent a date
     * '_30-07-1992_' does not represent a date
