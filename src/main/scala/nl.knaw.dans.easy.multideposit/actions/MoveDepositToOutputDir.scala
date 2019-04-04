@@ -17,6 +17,7 @@ package nl.knaw.dans.easy.multideposit.actions
 
 import java.nio.file.AtomicMoveNotSupportedException
 
+import better.files.File.CopyOptions
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ BagId, DepositId }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -45,7 +46,7 @@ class MoveDepositToOutputDir extends DebugEnhancedLogging {
           "will be a once-in-a-lifetime experience. When you're done celebrating, just try to " +
           "deposit this and all remaining deposits (be careful not to deposit the deposits that " +
           "came before this lucky one, because they went through successfully)."))
-        case false => Try { stagingDirectory.moveAtomicallyTo(outputDir); () } recoverWith {
+        case false => Try { stagingDirectory.moveTo(outputDir)(CopyOptions.atomically); () } recoverWith {
           case e: AtomicMoveNotSupportedException =>
             Failure(ActionException("An error occurred while moving " +
               s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move did not take place, since " +
