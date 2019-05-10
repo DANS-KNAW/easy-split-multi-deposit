@@ -15,14 +15,14 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import java.nio.file.FileAlreadyExistsException
+import java.nio.file.AtomicMoveNotSupportedException
 
+import better.files.File.CopyOptions
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ BagId, DepositId }
-import nl.knaw.dans.lib.error.CompositeException
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Try }
 
 class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
@@ -32,31 +32,29 @@ class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
     logger.debug(s"moving $stagingDirectory to $outputDir")
 
-    Try { stagingDirectory.moveTo(outputDir, overwrite = false); () } recoverWith {
-      case e: FileAlreadyExistsException =>
-        Failure(ActionException(s"Could not move $stagingDirectory to $outputDir. The target " +
+    Try { outputDir.exists }
+      .recoverWith {
+        case e => Failure(ActionException("An error occurred while moving " +
+          s"$stagingDirectory to $outputDir: could not determine whether the target directory " +
+          s"exists: ${ e.getMessage }", e))
+      }
+      .flatMap {
+        case true => Failure(ActionException(s"Could not move $stagingDirectory to $outputDir. The target " +
           "directory already exists. Since this is only possible when a UUID (universally unique " +
           "identifier) is not unique; you have hit the jackpot. The chance of this happening is " +
           "smaller than you being hit by a meteorite. So rejoice in the moment, because this " +
           "will be a once-in-a-lifetime experience. When you're done celebrating, just try to " +
           "deposit this and all remaining deposits (be careful not to deposit the deposits that " +
-          "came before this lucky one, because they went through successfully).", e))
-      case e =>
-        Try { outputDir.exists } match {
-          case Success(true) => Failure(ActionException("An error occurred while moving " +
-            s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move is probably only partially " +
-            "done since the output directory does exist. This move is, however, NOT revertable! " +
-            "Please contact your application manager ASAP!", e))
-          case Success(false) => Failure(ActionException("An error occurred while moving " +
-            s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move did not take place, since " +
-            "the output directory does not yet exist or is not on the same partition as the " +
-            "staging directory.", e))
-          case Failure(e2) => Failure(ActionException("An error occurred both while moving " +
-            s"$stagingDirectory to $outputDir: ${ e.getMessage } and while checking whether the " +
-            s"output directory actually exists now: ${ e2.getMessage }. Please contact your " +
-            "application manager ASAP!", new CompositeException(e, e2)))
+          "came before this lucky one, because they went through successfully)."))
+        case false => Try { stagingDirectory.moveTo(outputDir)(CopyOptions.atomically); () } recoverWith {
+          case e: AtomicMoveNotSupportedException =>
+            Failure(ActionException("An error occurred while moving " +
+              s"$stagingDirectory to $outputDir: ${ e.getMessage }. The move did not take place, since " +
+              "the output directory is not on the same partition/mount as the staging directory.", e))
+          case e => Failure(ActionException("An error occurred while moving " +
+            s"$stagingDirectory to $outputDir: ${ e.getMessage }.", e))
         }
-    }
+      }
   }
 
   // Moves from staging to output only happen when all deposit creations have completed successfully.
