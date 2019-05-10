@@ -46,7 +46,7 @@ class AddBagToDeposit extends DebugEnhancedLogging {
 
     val metadata = new BagitMetadata {
       add("Created", created.toString(ISODateTimeFormat.dateTime()))
-      base.foreach(uuid => add("Is-Version-Of", uuid.toString))
+      base.foreach(uuid => add("Is-Version-Of", s"urn:uuid:${ uuid.toString }"))
     }
 
     if (inputDir.exists) {

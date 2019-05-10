@@ -142,7 +142,7 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
     val bagInfo = stagingBagDir(depositId) / "bag-info.txt"
     bagInfo.toJava should exist
 
-    bagInfo.contentAsString should include(s"Is-Version-Of: $base")
+    bagInfo.contentAsString should include(s"Is-Version-Of: urn:uuid:$base")
   }
 
   it should "not contain the Is-Version-Of in the bag-info.txt if the Option[BaseUUID] is None " in {
