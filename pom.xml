@@ -82,6 +82,7 @@
         <dependency>
             <groupId>com.github.pathikrit</groupId>
             <artifactId>better-files_2.12</artifactId>
+            <version>3.8.0</version>
         </dependency>
         <dependency>
             <groupId>org.typelevel</groupId>
