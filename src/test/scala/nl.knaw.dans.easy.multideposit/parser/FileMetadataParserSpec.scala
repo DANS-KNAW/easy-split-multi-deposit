@@ -186,9 +186,9 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
         .updated(file2, FileDescriptor(Option.empty))
     )
 
-    extractFileMetadata(multiDepositDir / "ruimtereis01", instructions).invalidValue.toNonEmptyList.toList should contain inOrderOnly(
-      ParseError(2, s"No FILE_TITLE given for A/V file $file2."),
+    extractFileMetadata(multiDepositDir / "ruimtereis01", instructions).invalidValue.toNonEmptyList.toList should contain only(
       ParseError(2, s"No FILE_TITLE given for A/V file $file1."),
+      ParseError(2, s"No FILE_TITLE given for A/V file $file2."),
     )
   }
 }
