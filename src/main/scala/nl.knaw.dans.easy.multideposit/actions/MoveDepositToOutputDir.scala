@@ -23,11 +23,6 @@ import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, Staging
 import nl.knaw.dans.easy.multideposit.model.{ BagId, DepositId }
 import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-import nl.knaw.dans.easy.multideposit.PathExplorer.{ OutputPathExplorer, StagingPathExplorer }
-import nl.knaw.dans.easy.multideposit.model.{ BagId, DepositId }
-import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-
-import scala.util.{ Failure, Try }
 
 class MoveDepositToOutputDir extends DebugEnhancedLogging {
 
