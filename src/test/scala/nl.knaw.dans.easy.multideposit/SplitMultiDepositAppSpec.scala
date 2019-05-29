@@ -168,8 +168,8 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
       "random/", "file/", "file.txt", "sound/", "chicken.mp3")
 
     def bagContents(depositName: String, dataContent: Set[String]): Unit = {
-      lazy val bag = paths.outputDepositDir / bagIdsPerDeposit(depositName) / "bag"
-      val expBag = expectedOutputDir / s"input-$depositName" / "bag"
+      lazy val bag = paths.outputDepositDir / bagIdsPerDeposit(depositName) / bagDirName
+      val expBag = expectedOutputDir / s"input-$depositName" / bagDirName
 
       it should "check the files present in the bag" in {
         doNotRunOnTravis()

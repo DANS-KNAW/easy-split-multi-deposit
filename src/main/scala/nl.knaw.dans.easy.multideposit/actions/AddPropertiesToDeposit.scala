@@ -39,7 +39,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       .leftMap(e => ActionError(s"Could not write properties to file: $e", e))
   }
 
-  private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(properties: PropertiesConfiguration): Unit = {
+  private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress, bagDirName: String)(properties: PropertiesConfiguration): Unit = {
     val sf = deposit.springfield
     val props: Map[String, Option[String]] = Map(
       "bag-store.bag-id" -> Some(deposit.bagId.toString),
@@ -57,6 +57,8 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       "springfield.playmode" -> sf.map(_.playMode.toString),
       "identifier.dans-doi.registered" -> Some("no"),
       "identifier.dans-doi.action" -> Some("create"),
+      "bag-store.bag-name" ->  Some(bagDirName),
+
     )
 
     for ((key, value) <- props.collect { case (k, Some(v)) => (k, v) }) {

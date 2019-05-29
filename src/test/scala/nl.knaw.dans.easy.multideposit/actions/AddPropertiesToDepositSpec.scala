@@ -62,6 +62,7 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
         "curation.performed",
         "identifier.dans-doi.registered",
         "identifier.dans-doi.action",
+        "bag-store.bag-name",
       ) and contain noneOf(
         "springfield.domain",
         "springfield.user",
@@ -110,6 +111,7 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
         "springfield.playmode",
         "identifier.dans-doi.registered",
         "identifier.dans-doi.action",
+        "bag-store.bag-name",
       )
     }
 
@@ -125,5 +127,6 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
     resultProps.getString("springfield.playmode") shouldBe "menu"
     resultProps.getString("identifier.dans-doi.registered") shouldBe "no"
     resultProps.getString("identifier.dans-doi.action") shouldBe "create"
+    resultProps.getString("bag-store.bag-name") shouldBe bagDirName
   }
 }
