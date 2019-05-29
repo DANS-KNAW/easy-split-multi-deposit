@@ -34,7 +34,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
         .toJava)
     }
 
-    Either.catchNonFatal { addProperties(deposit, datamanagerId, emailaddress)(props) }
+    Either.catchNonFatal { addProperties(deposit, datamanagerId, emailaddress, stage.bagDirName)(props) }
       .map(_ => props.save())
       .leftMap(e => ActionError(s"Could not write properties to file: $e", e))
   }
@@ -58,7 +58,6 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       "identifier.dans-doi.registered" -> Some("no"),
       "identifier.dans-doi.action" -> Some("create"),
       "bag-store.bag-name" ->  Some(bagDirName),
-
     )
 
     for ((key, value) <- props.collect { case (k, Some(v)) => (k, v) }) {
