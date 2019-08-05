@@ -64,6 +64,7 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
         "identifier.dans-doi.registered",
         "identifier.dans-doi.action",
         "bag-store.bag-name",
+        "deposit.origin",
       ) and contain noneOf(
         "springfield.domain",
         "springfield.user",
@@ -80,6 +81,7 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
     resultProps.getString("curation.performed") shouldBe "yes"
     resultProps.getString("identifier.dans-doi.registered") shouldBe "no"
     resultProps.getString("identifier.dans-doi.action") shouldBe "create"
+    resultProps.getString("deposit.origin") shouldBe "SMD"
   }
 
   it should "generate the properties file with springfield fields and write the properties in it" in {
@@ -113,6 +115,7 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
         "identifier.dans-doi.registered",
         "identifier.dans-doi.action",
         "bag-store.bag-name",
+        "deposit.origin",
       )
     }
 
@@ -129,5 +132,6 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
     resultProps.getString("identifier.dans-doi.registered") shouldBe "no"
     resultProps.getString("identifier.dans-doi.action") shouldBe "create"
     resultProps.getString("bag-store.bag-name") shouldBe bagDirName
+    resultProps.getString("deposit.origin") shouldBe "SMD"
   }
 }
