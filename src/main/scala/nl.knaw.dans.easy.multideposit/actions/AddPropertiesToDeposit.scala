@@ -62,7 +62,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       "identifier.dans-doi.registered" -> Some("no"),
       "identifier.dans-doi.action" -> Some("create"),
       "bag-store.bag-name" ->  Some(bagDirName),
-      "deposit.source" ->  Some("SMD"),
+      "deposit.origin" ->  Some("SMD"),
 
     )
 
