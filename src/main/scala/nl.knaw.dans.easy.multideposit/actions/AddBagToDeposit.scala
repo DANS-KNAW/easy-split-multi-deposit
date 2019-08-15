@@ -19,30 +19,28 @@ import java.nio.file.Files
 import java.util.Collections
 
 import better.files.File
+import cats.syntax.either._
 import gov.loc.repository.bagit.creator.BagCreator
 import gov.loc.repository.bagit.domain.{ Metadata => BagitMetadata }
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import gov.loc.repository.bagit.verify.FileCountAndTotalSizeVistor
+import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ BaseUUID, DepositId }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
-import scala.util.control.NonFatal
-import scala.util.{ Failure, Try }
-
 class AddBagToDeposit extends DebugEnhancedLogging {
 
-  def addBagToDeposit(depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = {
+  def addBagToDeposit(depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit input: InputPathExplorer, stage: StagingPathExplorer): FailFast[Unit] = {
     logger.debug(s"construct the bag for $depositId with timestamp ${ created.toString(ISODateTimeFormat.dateTime()) }")
 
-    createBag(depositId, created, base) recoverWith {
-      case NonFatal(e) => Failure(ActionException(s"Error occured in creating the bag for $depositId", e))
-    }
+    createBag(depositId, created, base)
+      .leftMap(e => ActionError(s"Error occurred in creating the bag for $depositId", e))
   }
 
-  private def createBag(depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Try[Unit] = Try {
+  private def createBag(depositId: DepositId, created: DateTime, base: Option[BaseUUID])(implicit input: InputPathExplorer, stage: StagingPathExplorer): Either[Throwable, Unit] = Either.catchNonFatal {
     val inputDir = input.depositDir(depositId)
     val stageDir = stage.stagingBagDir(depositId)
 

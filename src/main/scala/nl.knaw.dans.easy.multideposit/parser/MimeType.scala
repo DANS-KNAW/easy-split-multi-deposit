@@ -15,13 +15,15 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import java.io.IOException
+
 import better.files.File
+import cats.data.Validated.catchOnly
 import nl.knaw.dans.easy.multideposit.model.MimeType
 import org.apache.tika.Tika
 
-import scala.util.Try
-
 object MimeType {
+
   private val tika = new Tika
 
   /**
@@ -30,7 +32,8 @@ object MimeType {
    * @param file the file to identify
    * @return the mimeType of the path if the identification was successful; `Failure` otherwise
    */
-  def get(file: File): Try[MimeType] = Try {
-    tika.detect(file.path)
+  def get(file: File): Validated[MimeType] = {
+    catchOnly[IOException] { tika.detect(file.path) }
+      .leftMap(ioe => ParseError(-1, ioe.getMessage).chained)
   }
 }

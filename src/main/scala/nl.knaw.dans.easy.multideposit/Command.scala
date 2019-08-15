@@ -16,39 +16,37 @@
 package nl.knaw.dans.easy.multideposit
 
 import better.files.File
+import cats.data.NonEmptyChain
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
-import nl.knaw.dans.easy.multideposit.actions.{ InvalidDatamanagerException, InvalidInputException }
-import nl.knaw.dans.easy.multideposit.parser.{ EmptyInstructionsFileException, ParserFailedException }
-import nl.knaw.dans.lib.error.{ CompositeException, TryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import resource.managed
 
 import scala.language.reflectiveCalls
-import scala.util.Try
-import scala.util.control.NonFatal
 
 object Command extends App with DebugEnhancedLogging {
 
   type FeedBackMessage = String
 
   val configuration = Configuration(File(System.getProperty("app.home")))
-  val commandLine: CommandLineOptions = new CommandLineOptions(args, configuration.version)
+  val commandLine = new CommandLineOptions(args, configuration.version)
   val app = SplitMultiDepositApp(configuration)
 
-  managed(app)
-    .acquireAndGet(runSubcommand)
-    .doIfSuccess(msg => println(s"OK: $msg"))
-    .doIfFailure {
-      case ParserFailedException(_, _) |
-           EmptyInstructionsFileException(_) |
-           InvalidDatamanagerException(_) |
-           InvalidInputException(_, _) |
-           CompositeException(_) => // do nothing
-      case e => logger.error(e.getMessage, e)
-    }
-    .doIfFailure { case NonFatal(e) => println(s"FAILED: ${ e.getMessage }") }
+  managed(app).acquireAndGet(runSubcommand) match {
+    case Right(msg) => println(s"OK: $msg")
+    case Left(errors) =>
+      for (e <- errors.toNonEmptyList.toList) {
+        e match {
+          case ParseFailed(_) |
+               InvalidDatamanager(_) |
+               InvalidInput(_, _) => // do nothing
+          case _ => logger.error(e.msg, e.cause)
+        }
 
-  private def runSubcommand(app: SplitMultiDepositApp): Try[FeedBackMessage] = {
+        println(s"FAILED: ${ e.msg }")
+      }
+  }
+
+  private def runSubcommand(app: SplitMultiDepositApp): Either[NonEmptyChain[SmdError], FeedBackMessage] = {
     lazy val defaultStagingDir = File(configuration.properties.getString("staging-dir"))
 
     val md = File(commandLine.multiDepositDir())
@@ -56,12 +54,13 @@ object Command extends App with DebugEnhancedLogging {
     val od = File(commandLine.outputDepositDir())
     val report = File(commandLine.reportFile())
     val dm = commandLine.datamanager()
+    val paths = new PathExplorers(md, sd, od, report)
 
     if (commandLine.validateOnly())
-      app.validate(new PathExplorers(md, sd, od, report), dm)
+      app.validate(paths, dm)
         .map(_ => "Finished successfully! Everything looks good.")
     else
-      app.convert(new PathExplorers(md, sd, od, report), dm)
+      app.convert(paths, dm)
         .map(_ => s"Finished successfully! The output can be found in $od.")
   }
 }

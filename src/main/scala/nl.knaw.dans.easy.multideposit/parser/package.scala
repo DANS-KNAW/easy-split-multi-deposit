@@ -16,31 +16,30 @@
 package nl.knaw.dans.easy.multideposit
 
 import better.files.File
+import cats.data.{ NonEmptyChain, ValidatedNec }
+import cats.syntax.validated._
 import nl.knaw.dans.easy.multideposit.model.MultiDepositKey
-import nl.knaw.dans.lib.string.StringExtensions
+import nl.knaw.dans.lib.string._
 
 package object parser {
 
-  type DepositRow = Map[MultiDepositKey, String]
+  case class DepositRow(rowNum: Int, content: Map[MultiDepositKey, String])
   type DepositRows = Seq[DepositRow]
 
   implicit class DatasetRowFind(val row: DepositRow) extends AnyVal {
-    def find(name: MultiDepositKey): Option[String] = row.get(name).filterNot(_.isBlank)
+    def find(name: MultiDepositKey): Option[String] = row.content.get(name).filterNot(_.isBlank)
   }
 
-  case class EmptyInstructionsFileException(file: File) extends Exception(s"The given instructions file in '$file' is empty")
-  class ParseException(val row: Int, message: String, cause: Option[Throwable] = None) extends Exception(message, cause.orNull)
-  object ParseException {
-    def apply(row: Int, message: String, cause: Throwable): ParseException = new ParseException(row, message, Option(cause))
-    def apply(row: Int, message: String): ParseException = new ParseException(row, message)
+  type Validated[T] = ValidatedNec[ParserError, T]
 
-    def unapply(arg: ParseException): Option[(Int, String, Throwable)] = Some(arg.row, arg.getMessage, arg.getCause)
+  implicit class ValidatedSyntax[T](val t: T) extends AnyVal {
+    def toValidated: Validated[T] = t.validNec[ParserError]
   }
 
-  class ParserFailedException(report: String, cause: Option[Throwable] = None) extends Exception(report, cause.orNull)
-  object ParserFailedException {
-    def apply(report: String, cause: Throwable): ParserFailedException = new ParserFailedException(report, Option(cause))
-    def apply(report: String): ParserFailedException = new ParserFailedException(report)
-    def unapply(arg: ParserFailedException): Option[(String, Throwable)] = Some((arg.getMessage, arg.getCause))
+  private[parser] sealed abstract class ParserError {
+    def toInvalid[T]: Validated[T] = this.invalidNec[T]
+    def chained: NonEmptyChain[ParserError] = NonEmptyChain.one(this)
   }
+  private[parser] case class EmptyInstructionsFileError(file: File) extends ParserError
+  private[parser] case class ParseError(row: Int, message: String) extends ParserError
 }

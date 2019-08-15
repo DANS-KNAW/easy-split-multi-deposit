@@ -18,87 +18,50 @@ package nl.knaw.dans.easy.multideposit
 import java.util.Locale
 
 import better.files.File
+import cats.data.NonEmptyChain
+import cats.syntax.either._
 import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
 import nl.knaw.dans.easy.multideposit.PathExplorer._
-import nl.knaw.dans.easy.multideposit.actions.{ RetrieveDatamanager, _ }
-import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
+import nl.knaw.dans.easy.multideposit.actions.CreateMultiDeposit
+import nl.knaw.dans.easy.multideposit.model.Datamanager
 import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
-import nl.knaw.dans.lib.error.{ CompositeException, TraversableTryExtensions }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-import scala.language.postfixOps
-import scala.util.{ Failure, Success, Try }
-import scala.util.control.NonFatal
-
 class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap: Ldap, ffprobe: FfprobeRunner, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
-  private val validator = new ValidatePreconditions(ldap, ffprobe)
-  private val datamanager = new RetrieveDatamanager(ldap)
-  private val createDirs = new CreateDirectories()
-  private val createBag = new AddBagToDeposit()
-  private val datasetMetadata = new AddDatasetMetadataToDeposit(formats)
-  private val fileMetadata = new AddFileMetadataToDeposit()
-  private val depositProperties = new AddPropertiesToDeposit()
-  private val setPermissions = new SetDepositPermissions(permissions)
-  private val reportDatasets = new ReportDatasets()
-  private val moveDeposit = new MoveDepositToOutputDir()
+  private val createMultiDeposit = new CreateMultiDeposit(formats, ldap, ffprobe, permissions)
 
   override def close(): Unit = ldap.close()
 
-  def validate(paths: PathExplorers, datamanagerId: Datamanager): Try[Seq[Deposit]] = {
+  def validate(paths: PathExplorers, datamanagerId: Datamanager): Either[NonEmptyChain[SmdError], Unit] = {
     implicit val input: InputPathExplorer = paths
     implicit val staging: StagingPathExplorer = paths
-    implicit val output: OutputPathExplorer = paths
+
+    Locale.setDefault(Locale.US)
 
     for {
-      _ <- Try { Locale.setDefault(Locale.US) }
-      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses)
-      _ <- deposits.map(validator.validateDeposit).collectResults
-      _ <- datamanager.getDatamanagerEmailaddress(datamanagerId)
-    } yield deposits
-  }
-
-  def convert(paths: PathExplorers, datamanagerId: Datamanager): Try[Unit] = {
-    implicit val input: InputPathExplorer = paths
-    implicit val staging: StagingPathExplorer = paths
-    implicit val output: OutputPathExplorer = paths
-
-    for {
-      _ <- Try { Locale.setDefault(Locale.US) }
-      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses)
-      dataManagerEmailAddress <- datamanager.getDatamanagerEmailaddress(datamanagerId)
-      _ <- deposits.mapUntilFailure(convertDeposit(paths, datamanagerId, dataManagerEmailAddress)).recoverWith {
-        case NonFatal(e) => deposits.mapUntilFailure(d => createDirs.discardDeposit(d.depositId)) match {
-          case Success(_) => Failure(e)
-          case Failure(e2) => Failure(ActionException("discarding deposits failed after creating deposits failed", new CompositeException(e, e2)))
-        }
-      }
-      _ = logger.info("deposits were created successfully")
-      _ <- reportDatasets.report(deposits)
-      _ = logger.info(s"report generated at ${ paths.reportFile }")
-      _ <- deposits.mapUntilFailure(deposit => moveDeposit.moveDepositsToOutputDir(deposit.depositId, deposit.bagId))
-      _ = logger.info(s"deposits were successfully moved to ${ output.outputDepositDir }")
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).toEitherNec
+      _ <- createMultiDeposit.validateDeposits(deposits).toEither
+      _ <- createMultiDeposit.getDatamanagerEmailaddress(datamanagerId).toEitherNec
     } yield ()
   }
 
-  private def convertDeposit(paths: PathExplorers, datamanagerId: Datamanager, dataManagerEmailAddress: DatamanagerEmailaddress)(deposit: Deposit): Try[Unit] = {
-    val depositId = deposit.depositId
+  def convert(paths: PathExplorers, datamanagerId: Datamanager): Either[NonEmptyChain[SmdError], Unit] = {
     implicit val input: InputPathExplorer = paths
     implicit val staging: StagingPathExplorer = paths
     implicit val output: OutputPathExplorer = paths
 
-    logger.info(s"convert ${ depositId }")
+    Locale.setDefault(Locale.US)
 
     for {
-      _ <- validator.validateDeposit(deposit)
-      _ <- createDirs.createDepositDirectories(depositId)
-      _ <- createBag.addBagToDeposit(depositId, deposit.profile.created, deposit.baseUUID)
-      _ <- createDirs.createMetadataDirectory(depositId)
-      _ <- datasetMetadata.addDatasetMetadata(deposit)
-      _ <- fileMetadata.addFileMetadata(depositId, deposit.files)
-      _ <- depositProperties.addDepositProperties(deposit, datamanagerId, dataManagerEmailAddress)
-      _ <- setPermissions.setDepositPermissions(depositId)
-      _ = logger.info(s"deposit was created successfully for $depositId with bagId ${ deposit.bagId }")
+      deposits <- MultiDepositParser.parse(input.multiDepositDir, userLicenses).toEitherNec
+      dataManagerEmailAddress <- createMultiDeposit.getDatamanagerEmailaddress(datamanagerId).toEitherNec
+      _ <- createMultiDeposit.convertDeposits(deposits, paths, datamanagerId, dataManagerEmailAddress)
+      _ = logger.info("deposits were created successfully")
+      _ <- createMultiDeposit.report(deposits).toEitherNec
+      _ = logger.info(s"report generated at ${ paths.reportFile }")
+      _ <- createMultiDeposit.moveDepositsToOutputDir(deposits).toEitherNec
+      _ = logger.info(s"deposits were successfully moved to ${ output.outputDepositDir }")
     } yield ()
   }
 }
@@ -123,8 +86,8 @@ object SplitMultiDepositApp {
       val ffProbePath = configuration.properties.getString("audio-video.ffprobe")
       require(ffProbePath != null, "Missing configuration for ffprobe")
       val exeFile = File(ffProbePath)
-      require(exeFile isRegularFile, s"Ffprobe at $exeFile does not exist or is not a regular file")
-      require(exeFile isExecutable, s"Ffprobe at $exeFile is not executable")
+      require(exeFile.isRegularFile, s"Ffprobe at $exeFile does not exist or is not a regular file")
+      require(exeFile.isExecutable, s"Ffprobe at $exeFile is not executable")
       FfprobeRunner(exeFile)
     }
 

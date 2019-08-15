@@ -15,25 +15,24 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
-import nl.knaw.dans.easy.multideposit.BetterFileExtensions
+import cats.syntax.either._
+import nl.knaw.dans.easy.multideposit.{ ActionError, BetterFileExtensions, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
-import scala.util.control.NonFatal
-import scala.util.{ Failure, Try }
 import scala.xml.{ Elem, Null, PrefixedAttribute }
 
 class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLogging {
 
-  def addDatasetMetadata(deposit: Deposit)(implicit stage: StagingPathExplorer): Try[Unit] = Try {
-    logger.debug(s"add dataset metadata for ${ deposit.depositId }")
+  def addDatasetMetadata(deposit: Deposit)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
+    Either.catchNonFatal {
+      logger.debug(s"add dataset metadata for ${ deposit.depositId }")
 
-    stage.stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
-  } recoverWith {
-    case NonFatal(e) => Failure(ActionException(s"Could not write deposit metadata for ${ deposit.depositId }", e))
+      stage.stagingDatasetMetadataFile(deposit.depositId).writeXml(depositToDDM(deposit))
+    }.leftMap(e => ActionError(s"Could not write deposit metadata for ${ deposit.depositId }", e))
   }
 
   def depositToDDM(deposit: Deposit): Elem = {
@@ -58,12 +57,12 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
 
   def createProfile(profile: Profile): Elem = {
     <ddm:profile>
-      {profile.titles.map(elem("dc:title"))}
-      {profile.descriptions.map(elem("dcterms:description"))}
-      {profile.creators.map(createCreator)}
+      {profile.titles.toList.map(elem("dc:title"))}
+      {profile.descriptions.toList.map(elem("dcterms:description"))}
+      {profile.creators.toList.map(createCreator)}
       {elem("ddm:created")(formatDate(profile.created))}
       {elem("ddm:available")(formatDate(profile.available))}
-      {profile.audiences.map(elem("ddm:audience"))}
+      {profile.audiences.toList.map(elem("ddm:audience"))}
       {elem("ddm:accessRights")(profile.accessright.toString)}
     </ddm:profile>
   }
@@ -210,13 +209,13 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
       case QualifiedRelation(qualifier, Some(link), Some(title)) =>
         <key href={link}>{title}</key>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, Some(link), None) =>
-        <key href={link}/>.copy(label = s"ddm:${ qualifier.toString }")
+          <key href={link}/>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, None, Some(title)) =>
         <key>{title}</key>.copy(label = s"dcterms:${ qualifier.toString }")
       case UnqualifiedRelation(Some(link), Some(title)) =>
         <ddm:relation href={link}>{title}</ddm:relation>
       case UnqualifiedRelation(Some(link), None) =>
-        <ddm:relation href={link}/>
+          <ddm:relation href={link}/>
       case UnqualifiedRelation(None, Some(title)) =>
         <dc:relation>{title}</dc:relation>
       case other => throw new UnsupportedOperationException(s"Relation $other is not supported. You should not even be able to create this object!")
@@ -267,13 +266,13 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
     <ddm:dcmiMetadata>
       {metadata.alternatives.map(elem("dcterms:alternative"))}
       {metadata.publishers.map(elem("dcterms:publisher"))}
-      {metadata.types.map(createType)}
+      {metadata.types.toList.map(createType)}
       {metadata.formats.map(createFormat)}
       {metadata.identifiers.map(createIdentifier)}
       {metadata.sources.map(elem("dc:source"))}
       {metadata.languages.map(createLanguage)}
       {metadata.spatials.map(elem("dcterms:spatial"))}
-      {metadata.rightsholder.map(elem("dcterms:rightsHolder"))}
+      {metadata.rightsholder.toList.map(elem("dcterms:rightsHolder"))}
       {metadata.relations.map(createRelation) ++ maybeSpringfield.map(createSurrogateRelation) }
       {metadata.dates.map(createDate)}
       {metadata.contributors.map(createContributor)}

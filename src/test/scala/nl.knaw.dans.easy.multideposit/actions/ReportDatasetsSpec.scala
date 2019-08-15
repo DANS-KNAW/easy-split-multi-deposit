@@ -47,7 +47,7 @@ class ReportDatasetsSpec extends TestSupportFixture with BeforeAndAfterEach {
 
     outputPathExplorer.reportFile.toJava shouldNot exist
 
-    action.report(deposits)
+    action.report(deposits) shouldBe right[Unit]
 
     outputPathExplorer.reportFile.toJava should exist
     outputPathExplorer.reportFile.lines.toList should contain inOrderOnly(
@@ -74,7 +74,7 @@ class ReportDatasetsSpec extends TestSupportFixture with BeforeAndAfterEach {
 
     outputPathExplorer.reportFile.toJava shouldNot exist
 
-    action.report(deposits)
+    action.report(deposits) shouldBe right[Unit]
 
     outputPathExplorer.reportFile.toJava should exist
     outputPathExplorer.reportFile.lines.toList should contain inOrderOnly(

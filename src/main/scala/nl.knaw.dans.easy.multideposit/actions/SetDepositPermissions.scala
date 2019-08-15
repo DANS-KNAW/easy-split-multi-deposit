@@ -20,42 +20,45 @@ import java.nio.file._
 import java.nio.file.attribute._
 
 import better.files.File
-import nl.knaw.dans.easy.multideposit.DepositPermissions
+import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.DepositId
-import nl.knaw.dans.lib.error.TryExtensions
+import nl.knaw.dans.easy.multideposit.{ ActionError, DepositPermissions, FailFast }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
 
 class SetDepositPermissions(depositPermissions: DepositPermissions) extends DebugEnhancedLogging {
 
-  def setDepositPermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+  case class FilePermissionException(msg: String, cause: Throwable) extends Exception(msg, cause)
+
+  def setDepositPermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
     logger.debug(s"set deposit permissions for $depositId")
 
-    setFilePermissions(depositId).recoverWith {
-      case e: ActionException => Failure(e)
-      case NonFatal(e) => Failure(ActionException(e.getMessage, e))
+    setFilePermissions(depositId).leftMap {
+      case FilePermissionException(msg, cause) => ActionError(msg, cause)
+      case e => ActionError(e.getMessage, e)
     }
   }
 
-  private def setFilePermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): Try[Unit] = {
+  private def setFilePermissions(depositId: DepositId)(implicit stage: StagingPathExplorer): Either[Throwable, Unit] = {
     val stagingDirectory = stage.stagingDir(depositId)
     isOnPosixFileSystem(stagingDirectory)
       .flatMap {
-        case true => Try {
+        case true => Either.catchNonFatal {
           Files.walkFileTree(stagingDirectory.path, PermissionFileVisitor(depositPermissions))
         }
-        case false => Success(())
+        case false => ().asRight
       }
   }
 
-  private def isOnPosixFileSystem(file: File): Try[Boolean] = Try {
-    file.permissions
-    true
-  } recover {
-    case _: UnsupportedOperationException => false
+  private def isOnPosixFileSystem(file: File): Either[Throwable, Boolean] = {
+    Either.catchNonFatal {
+      file.permissions
+      true
+    } recover {
+      case _: UnsupportedOperationException => false
+    }
   }
 
   private case class PermissionFileVisitor(depositPermissions: DepositPermissions) extends SimpleFileVisitor[Path] with DebugEnhancedLogging {
@@ -70,23 +73,23 @@ class SetDepositPermissions(depositPermissions: DepositPermissions) extends Debu
     }
 
     private def changePermissions(path: Path): FileVisitResult = {
-      Try {
+      Either.catchNonFatal {
         Files.setPosixFilePermissions(path, PosixFilePermissions.fromString(depositPermissions.permissions))
 
         val group = path.getFileSystem.getUserPrincipalLookupService.lookupPrincipalByGroupName(depositPermissions.group)
         Files.getFileAttributeView(path, classOf[PosixFileAttributeView], LinkOption.NOFOLLOW_LINKS).setGroup(group)
 
         FileVisitResult.CONTINUE
-      } getOrRecover {
-        case upnf: UserPrincipalNotFoundException => throw ActionException(s"Group ${ depositPermissions.group } could not be found", upnf)
-        case usoe: UnsupportedOperationException => throw ActionException("Not on a POSIX supported file system", usoe)
-        case cce: ClassCastException => throw ActionException("No file permission elements in set", cce)
-        case iae: IllegalArgumentException => throw ActionException(s"Invalid privileges (${ depositPermissions.permissions })", iae)
-        case fse: FileSystemException => throw ActionException(s"Not able to set the group to ${ depositPermissions.group }. Probably the current user (${ System.getProperty("user.name") }) is not part of this group.", fse)
-        case ioe: IOException => throw ActionException(s"Could not set file permissions or group on $path", ioe)
-        case se: SecurityException => throw ActionException(s"Not enough privileges to set file permissions or group on $path", se)
-        case NonFatal(e) => throw ActionException(s"unexpected error occured on $path", e)
-      }
+      }.fold({
+        case upnf: UserPrincipalNotFoundException => throw FilePermissionException(s"Group ${ depositPermissions.group } could not be found", upnf)
+        case usoe: UnsupportedOperationException => throw FilePermissionException("Not on a POSIX supported file system", usoe)
+        case cce: ClassCastException => throw FilePermissionException("No file permission elements in set", cce)
+        case iae: IllegalArgumentException => throw FilePermissionException(s"Invalid privileges (${ depositPermissions.permissions })", iae)
+        case fse: FileSystemException => throw FilePermissionException(s"Not able to set the group to ${ depositPermissions.group }. Probably the current user (${ System.getProperty("user.name") }) is not part of this group.", fse)
+        case ioe: IOException => throw FilePermissionException(s"Could not set file permissions or group on $path", ioe)
+        case se: SecurityException => throw FilePermissionException(s"Not enough privileges to set file permissions or group on $path", se)
+        case NonFatal(e) => throw FilePermissionException(s"unexpected error occured on $path", e)
+      }, fvr => fvr)
     }
   }
 }

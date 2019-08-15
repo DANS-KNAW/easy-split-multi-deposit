@@ -18,6 +18,7 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.util.UUID
 
 import better.files.File
+import cats.data.NonEmptyList
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
@@ -25,7 +26,6 @@ import nl.knaw.dans.easy.multideposit.{ CustomMatchers, TestSupportFixture }
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.Success
 import scala.xml.{ Elem, Node }
 
 class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatchers with BeforeAndAfterEach {
@@ -37,15 +37,15 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
     row = 1,
     depositorUserId = "dep",
     profile = Profile(
-      titles = List("dataset title"),
-      descriptions = List("omschr1"),
-      creators = List(
+      titles = NonEmptyList.of("dataset title"),
+      descriptions = NonEmptyList.of("omschr1"),
+      creators = NonEmptyList.of(
         CreatorPerson(initials = "A.", surname = "Jones", organization = Option("Lorem ipsum dolor sit amet")),
         CreatorOrganization("consectetur adipiscing elit", Some(ContributorRole.SUPERVISOR)),
         CreatorOrganization("sed do eiusmod tempor incididunt ut labore et dolore magna aliqua")),
       created = DateTime.parse("1992-07-30"),
       available = DateTime.parse("1992-07-31"),
-      audiences = List("everyone", "nobody", "some people", "people with yellow hear"),
+      audiences = NonEmptyList.of("everyone", "nobody", "some people", "people with yellow hear"),
       accessright = AccessCategory.NO_ACCESS
     ),
     baseUUID = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")),
@@ -55,7 +55,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
       publishers = List("random publisher"),
       identifiers = List(Identifier("123456", Some(IdentifierType.ISBN)), Identifier("id")),
       userLicense = Option(UserLicense("http://www.tapr.org/TAPR_Open_Hardware_License_v1.0.txt")),
-      rightsholder = List("some rightsholder")
+      rightsholder = NonEmptyList.of("some rightsholder")
     )
   )
 
@@ -141,7 +141,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
 
     file.toJava shouldNot exist
 
-    action.addDatasetMetadata(deposit) shouldBe a[Success[_]]
+    action.addDatasetMetadata(deposit) shouldBe right[Unit]
 
     file.toJava should exist
   }
@@ -152,16 +152,14 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
 
   it should "return xml on reading from the allfields input instructions csv" in {
     val multidepositDir = File(getClass.getResource("/allfields/input").toURI)
-    inside(MultiDepositParser.parse(multidepositDir, userLicenses).map(_.map(action.depositToDDM))) {
-      case Success(xmls) => xmls should have size 4
-    }
+    MultiDepositParser.parse(multidepositDir, userLicenses).map(_.map(action.depositToDDM)).value should have size 4
   }
 
   "createDcmiMetadata" should "return the expected dcmidata" in {
     val metadata = Metadata(
       alternatives = List("alt1", "alt2"),
       publishers = List("pub1"),
-      types = List(DcType.INTERACTIVERESOURCE, DcType.SOFTWARE),
+      types = NonEmptyList.of(DcType.INTERACTIVERESOURCE, DcType.SOFTWARE),
       formats = List("arbitrary format", "text/xml"),
       identifiers = List(
         Identifier("123456", Some(IdentifierType.ISBN)),
@@ -170,7 +168,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
       sources = List("src", "test"),
       languages = List("eng", "nld"),
       spatials = List("sp1"),
-      rightsholder = List("rh1"),
+      rightsholder = NonEmptyList.of("rh1"),
       relations = List(
         QualifiedRelation(RelationQualifier.Replaces, link = Some("l1"), title = Some("t1")),
         QualifiedRelation(RelationQualifier.IsVersionOf, link = Some("l2")),

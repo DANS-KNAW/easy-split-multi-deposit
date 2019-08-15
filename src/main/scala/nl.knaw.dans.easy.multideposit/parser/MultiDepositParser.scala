@@ -15,22 +15,26 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.NoSuchFileException
 import java.util.UUID
 
 import better.files.File
+import cats.data.NonEmptyChain
+import cats.data.Validated.catchOnly
+import cats.instances.list._
+import cats.syntax.apply._
+import cats.syntax.either._
+import cats.syntax.functor._
+import cats.syntax.option._
+import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit.encoding
-import nl.knaw.dans.easy.multideposit.model.{ Deposit, DepositId, Instructions, MultiDepositKey, listToNEL }
-import nl.knaw.dans.lib.error._
+import nl.knaw.dans.easy.multideposit.{ ParseFailed, encoding }
+import nl.knaw.dans.easy.multideposit.model.{ Deposit, DepositId, Instructions, MultiDepositKey }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-import nl.knaw.dans.lib.string.StringExtensions
+import nl.knaw.dans.lib.string._
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
 import resource.managed
 
 import scala.collection.JavaConverters._
-import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
 
 trait MultiDepositParser extends ParserUtils with InputPathExplorer
   with AudioVideoParser
@@ -41,45 +45,57 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
   with ParserValidation
   with DebugEnhancedLogging {
 
-  def parse: Try[Seq[Deposit]] = {
+  def parse: Either[ParseFailed, List[Deposit]] = {
     logger.info(s"Reading data in $multiDepositDir")
 
     val instructions = instructionsFile
     if (instructions.exists) {
       logger.info(s"Parsing $instructions")
 
-      val deposits = for {
-        (headers, content) <- read(instructions)
-        depositIdIndex = headers.indexOf("DATASET")
-        _ <- detectEmptyDepositCells(content.map(_ (depositIdIndex)))
-        result <- content.groupBy(_ (depositIdIndex))
-          .mapValues(_.map(headers.zip(_).filterNot { case (_, value) => value.isBlank }.toMap))
-          .map { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows) }
-          .toSeq
-          .collectResults
-      } yield result
-
-      deposits.recoverWith { case NonFatal(e) => recoverParsing(e) }
+      read(instructions)
+        .andThen {
+          case (headers, content) =>
+            val depositIdIndex = headers.indexOf("DATASET")
+            detectEmptyDepositCells(content.map { case (_, cs) => cs(depositIdIndex) })
+              .productR(createDeposits(depositIdIndex)(headers, content))
+        }
+        .leftMap(parserErrorReport)
+        .toEither
     }
     else
-      Failure(new NoSuchFileException(s"Could not find a file called 'instructions.csv' in $multiDepositDir"))
+      ParseFailed(s"Could not find a file called 'instructions.csv' in $multiDepositDir").asLeft
   }
 
   private type Index = Int
   private type CsvHeaderRow = List[MultiDepositKey]
   private type CsvRow = List[String]
 
-  def read(instructions: File): Try[(CsvHeaderRow, List[CsvRow])] = {
+  private def createDeposits(depositIdIndex: Int)
+                            (headers: CsvHeaderRow, content: List[(Index, CsvRow)]): Validated[List[Deposit]] = {
+    content.groupBy { case (_, cs) => cs(depositIdIndex) }
+      .mapValues(_.map { case (rowNum, data) => createDepositRow(headers)(rowNum, data) })
+      .toList
+      .traverse { case (depositId, rows) => extractDeposit(multiDepositDir)(depositId, rows) }
+  }
+
+  private def createDepositRow(headers: CsvHeaderRow)(rowNum: Index, data: CsvRow): DepositRow = {
+    val content = headers.zip(data)
+      .filterNot { case (_, value) => value.isBlank }
+      .toMap
+
+    DepositRow(rowNum, content)
+  }
+
+  def read(instructions: File): Validated[(CsvHeaderRow, List[(Index, CsvRow)])] = {
     managed(CSVParser.parse(instructions.toJava, encoding, CSVFormat.RFC4180))
       .map(csvParse)
       .tried
-      .flatMap {
-        case Nil => Failure(EmptyInstructionsFileException(instructions))
-        case (_, headers) :: rows =>
-          validateDepositHeaders(headers)
-            .map(_ => ("ROW" :: headers, rows.collect {
-              case (index, row) => index.toString :: row
-            }))
+      .toEither
+      .toValidated
+      .leftMap(e => ParseError(-1, e.getMessage).chained)
+      .andThen {
+        case Nil => EmptyInstructionsFileError(instructions).toInvalid
+        case (_, headers) :: rows => validateDepositHeaders(headers).map(_ => headers -> rows)
       }
   }
 
@@ -91,7 +107,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       .toList
   }
 
-  private def validateDepositHeaders(headers: CsvHeaderRow): Try[Unit] = {
+  private def validateDepositHeaders(headers: CsvHeaderRow): Validated[Unit] = {
     val validHeaders = Headers.validHeaders
     val invalidHeaders = headers.filterNot(validHeaders.contains)
     lazy val uniqueHeaders = headers.distinct
@@ -100,89 +116,92 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       case Nil =>
         headers match {
           case hs if hs.size != uniqueHeaders.size =>
-            Failure(ParseException(0, "SIP Instructions file contains duplicate headers: " +
-              s"${ headers.diff(uniqueHeaders).mkString("[", ", ", "]") }"))
-          case _ => Success(())
+            ParseError(0, "SIP Instructions file contains duplicate headers: " + headers.diff(uniqueHeaders).mkString("[", ", ", "]")).toInvalid
+          case _ => ().toValidated
         }
       case invalids =>
-        Failure(ParseException(0, "SIP Instructions file contains unknown headers: " +
+        ParseError(0, "SIP Instructions file contains unknown headers: " +
           s"${ invalids.mkString("[", ", ", "]") }. Please, check for spelling errors and " +
-          "consult the documentation for the list of valid headers."))
+          "consult the documentation for the list of valid headers.").toInvalid
     }
   }
 
-  def detectEmptyDepositCells(depositIds: List[String]): Try[Unit] = {
+  def detectEmptyDepositCells(depositIds: List[String]): Validated[Unit] = {
     depositIds.zipWithIndex
-      .collect { case (s, i) if s.isBlank => i + 2 }
-      .map(index => Failure(ParseException(index, s"Row $index does not have a depositId in column DATASET")): Try[Unit])
-      .collectResults
+      .traverse {
+        case (s, i) if s.isBlank =>
+          val index = i + 2
+          ParseError(index, s"Row $index does not have a depositId in column DATASET").toInvalid
+        case _ => ().toValidated
+      }
       .map(_ => ())
   }
 
-  private def extractDeposit(multiDepositDirectory: File)
-                            (depositId: DepositId, rows: DepositRows): Try[Deposit] = {
-    for {
-      instructions <- extractInstructions(depositId, rows)
-      depositDir = multiDepositDirectory / depositId
-      fileMetadata <- extractFileMetadata(depositDir, instructions)
-      deposit = instructions.toDeposit(fileMetadata)
-      _ <- validateDeposit(deposit)
-    } yield deposit
-  }
+  def extractDeposit(multiDepositDirectory: File)(depositId: DepositId, rows: DepositRows): Validated[Deposit] = {
+    val rowNum = rows.map(_.rowNum).min
 
-  def extractInstructions(depositId: DepositId, rows: DepositRows): Try[Instructions] = {
-    val rowNum = rows.map(getRowNum).min
     checkValidChars(depositId, rowNum, "DATASET")
-      .flatMap(dsId => Try { Instructions.curried }
-        .map(_ (dsId))
-        .map(_ (rowNum))
-        .combine(extractNEL(rows, rowNum, "DEPOSITOR_ID").flatMap(exactlyOne(rowNum, List("DEPOSITOR_ID"))))
-        .combine(extractProfile(rows, rowNum))
-        .combine(extractList(rows)(uuid("BASE_REVISION")).flatMap(atMostOne(rowNum, List("BASE_REVISION"))))
-        .combine(extractMetadata(rows, rowNum))
-        .combine(extractFileDescriptors(rows, rowNum, depositId))
-        .combine(extractAudioVideo(rows, rowNum, depositId)))
+      .andThen(depositId =>
+        extractInstructions(depositId, rowNum, rows)
+          .tupleRight(multiDepositDirectory / depositId)
+      )
+      .andThen {
+        case (instructions, depositDir) =>
+          extractFileMetadata(depositDir, instructions)
+            .map(instructions.toDeposit)
+      }
+      .andThen(deposit => validateDeposit(deposit).as(deposit))
   }
 
-  def uuid(columnName: MultiDepositKey)(rowNum: => Int)(row: DepositRow): Option[Try[UUID]] = {
-    row.find(columnName)
-      .map(uuid => Try { UUID.fromString(uuid) }.recoverWith {
-        case e: IllegalArgumentException => Failure(ParseException(rowNum, s"$columnName value " +
-          s"base revision '$uuid' does not conform to the UUID format", e))
-      })
+  def extractInstructions(depositId: DepositId, rowNum: Int, rows: DepositRows): Validated[Instructions] = {
+    (
+      depositId.toValidated,
+      rowNum.toValidated,
+      extractExactlyOne(rowNum, "DEPOSITOR_ID", rows),
+      extractProfile(rowNum, rows),
+      extractBaseRevision(rowNum, rows),
+      extractMetadata(rowNum, rows),
+      extractFileDescriptors(depositId, rowNum, rows),
+      extractAudioVideo(depositId, rowNum, rows),
+    ).mapN(Instructions)
   }
 
-  private def recoverParsing(t: Throwable): Failure[Nothing] = {
-    def generateReport(header: String = "", throwable: Throwable, footer: String = ""): String = {
-      header.toOption.fold("")(_ + "\n") +
-        List(throwable)
-          .flatMap {
-            case es: CompositeException => es.throwables
-            case e => Seq(e)
-          }
-          .sortBy {
-            case ParseException(row, _, _) => row
-            case _ => -1
-          }
-          .map {
-            case ParseException(row, msg, _) => s" - row $row: $msg"
-            case e => s" - unexpected: ${ e.getMessage }"
-          }
-          .mkString("\n") +
-        footer.toOption.fold("")("\n" + _)
-    }
+  private def extractBaseRevision(rowNum: Int, rows: DepositRows): Validated[Option[UUID]] = {
+    extractAtMostOne(rowNum, "BASE_REVISION", rows)
+      .andThen {
+        case Some(value) => uuid(rowNum, "BASE_REVISION")(value)
+        case None => none.toValidated
+      }
+  }
 
-    Failure(ParserFailedException(
-      report = generateReport(
-        header = "CSV failures:",
-        throwable = t,
-        footer = "Due to these errors in the 'instructions.csv', nothing was done."),
-      cause = t))
+  def uuid(rowNum: => Int, columnName: => String)(s: String): Validated[Option[UUID]] = {
+    catchOnly[IllegalArgumentException] { Option(UUID.fromString(s)) }
+      .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' does not conform to the UUID format"))
+      .toValidatedNec
+  }
+
+  private def parserErrorReport(errors: NonEmptyChain[ParserError]): ParseFailed = {
+    val summary = errors.toNonEmptyList.toList
+      .sortBy {
+        case EmptyInstructionsFileError(_) => -1
+        case ParseError(row, _) => row
+      }
+      .map {
+        case EmptyInstructionsFileError(file) => s" - unexpected: The given instructions file in '$file' is empty"
+        case ParseError(row, msg) => s" - row $row: $msg"
+      }
+      .mkString("\n")
+
+    ParseFailed(
+      s"""CSV failures:
+         |$summary
+         |Due to these errors in the 'instructions.csv', nothing was done.""".stripMargin
+    )
   }
 }
 
 object MultiDepositParser {
-  def parse(md: File, licenses: Set[String]): Try[Seq[Deposit]] = new MultiDepositParser {
+  def parse(md: File, licenses: Set[String]): Either[ParseFailed, List[Deposit]] = new MultiDepositParser {
     val multiDepositDir: File = md
     val userLicenses: Set[String] = licenses
   }.parse

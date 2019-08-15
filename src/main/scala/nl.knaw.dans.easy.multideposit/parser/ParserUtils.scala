@@ -15,114 +15,73 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
-import java.nio.file.NoSuchFileException
-import java.util.Locale
-
 import better.files.File
+import cats.data.NonEmptyList
+import cats.data.Validated.catchOnly
+import cats.instances.list._
+import cats.syntax.option._
+import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.lib.error._
-import nl.knaw.dans.lib.logging.DebugEnhancedLogging
-import nl.knaw.dans.lib.string.StringExtensions
+import nl.knaw.dans.easy.multideposit.model.{ DepositId, MultiDepositKey }
+import nl.knaw.dans.lib.string._
+import org.joda.time.DateTime
 
-import scala.language.implicitConversions
-import scala.util.{ Failure, Success, Try }
-
-trait ParserUtils extends DebugEnhancedLogging {
+trait ParserUtils {
   this: InputPathExplorer =>
 
-  def getRowNum(row: DepositRow): Int = row("ROW").toInt
-
-  def extractNEL[T](rows: DepositRows)(f: (=> Int) => DepositRow => Option[Try[T]]): Try[NonEmptyList[T]] = {
-    rows.flatMap(row => f(getRowNum(row))(row)).collectResults.map(_.toList)
-  }
-
-  def extractNEL(rows: DepositRows, rowNum: Int, name: MultiDepositKey): Try[NonEmptyList[String]] = {
-    rows.flatMap(_.find(name)) match {
-      case Seq() => Failure(ParseException(rowNum, s"There should be at least one non-empty value for $name"))
-      case xs => Try { xs.toList }
+  def extractExactlyOne(rowNum: Int, name: MultiDepositKey, rows: DepositRows): Validated[String] = {
+    rows.flatMap(_.find(name)).distinct match {
+      case Seq() => ParseError(rowNum, s"There should be one non-empty value for $name").toInvalid
+      case Seq(t) => t.toValidated
+      case ts => ParseError(rowNum, s"Only one row is allowed to contain a value for the column '$name'. Found: ${ ts.mkString("[", ", ", "]") }").toInvalid
     }
   }
 
-  def extractList[T](rows: DepositRows)(f: (=> Int) => DepositRow => Option[Try[T]]): Try[List[T]] = {
-    rows.flatMap(row => f(getRowNum(row))(row)).collectResults.map(_.toList)
+  def extractAtLeastOne(rowNum: Int, name: MultiDepositKey, rows: DepositRows): Validated[NonEmptyList[String]] = {
+    rows.flatMap(_.find(name)).distinct match {
+      case Seq() => ParseError(rowNum, s"There should be at least one non-empty value for $name").toInvalid
+      case Seq(head, tail @ _*) => NonEmptyList.of(head, tail: _*).toValidated
+    }
+  }
+
+  def extractAtMostOne(rowNum: Int, name: MultiDepositKey, rows: DepositRows): Validated[Option[String]] = {
+    rows.flatMap(_.find(name)).distinct match {
+      case Seq() => none.toValidated
+      case Seq(t) => t.some.toValidated
+      case ts => ParseError(rowNum, s"At most one row is allowed to contain a value for the column '$name'. Found: ${ ts.mkString("[", ", ", "]") }").toInvalid
+    }
+  }
+
+  def extractList[T](rows: DepositRows)(f: DepositRow => Option[Validated[T]]): Validated[List[T]] = {
+    rows.flatMap(row => f(row)).toList.sequence
   }
 
   def extractList(rows: DepositRows, name: MultiDepositKey): List[String] = {
     rows.flatMap(_.find(name)).toList
   }
 
-  def atMostOne[T](rowNum: => Int, columnNames: => NonEmptyList[MultiDepositKey])(values: List[T]): Try[Option[T]] = {
-    values.distinct match {
-      case Nil => Success(None)
-      case t :: Nil => Success(Some(t))
-      case ts => checkMultipleValues(rowNum, columnNames, ts)
-    }
-  }
-
-  def exactlyOne[T](rowNum: => Int, columnNames: => NonEmptyList[MultiDepositKey])(values: List[T]): Try[T] = {
-    values.distinct match {
-      case Nil =>
-        columnNames match {
-          case name :: Nil => Failure(ParseException(rowNum, "One row has to contain " +
-            s"a value for the column: '$name'"))
-          case names => Failure(ParseException(rowNum, "One row has to contain a value for these " +
-            s"columns: ${ names.mkString("[", ", ", "]") }"))
-        }
-      case t :: Nil => Success(t)
-      case ts => checkMultipleValues(rowNum, columnNames, ts)
-    }
-  }
-
-  private def checkMultipleValues[T](rowNum:Int, columnNames: NonEmptyList[MultiDepositKey], ts: List[Any]) = {
-    columnNames match {
-      case name :: Nil => Failure(ParseException(rowNum, "Only one row is allowed " +
-        s"to contain a value for the column '$name'. Found: ${ ts.mkString("[", ", ", "]") }"))
-      case names => Failure(ParseException(rowNum, "Only one row is allowed to contain a value for " +
-        s"these columns: ${ names.mkString("[", ", ", "]") }. Found: ${ ts.mkString("[", ", ", "]") }"))
-    }
-  }
-
-  def checkValidChars(value: String, rowNum: => Int, column: => MultiDepositKey): Try[String] = {
+  def checkValidChars(value: String, rowNum: => Int, column: => MultiDepositKey): Validated[String] = {
     val invalidCharacters = "[^a-zA-Z0-9_-]".r.findAllIn(value).toSeq.distinct
-    if (invalidCharacters.isEmpty) Success(value)
-    else Failure(ParseException(rowNum, s"The column '$column' contains the following invalid characters: ${ invalidCharacters.mkString("{", ", ", "}") }"))
+    if (invalidCharacters.isEmpty) value.toValidated
+    else ParseError(rowNum, s"The column '$column' contains the following invalid characters: ${ invalidCharacters.mkString("{", ", ", "}") }").toInvalid
   }
 
-  def missingRequired[T](rowNum: Int, row: DepositRow, required: Set[String]): Failure[T] = {
-    val blankRequired = row.collect { case (key, value) if value.isBlank && required.contains(key) => key }
-    val missingColumns = required.diff(row.keySet)
+  def date(rowNum: => Int, columnName: => String)(s: String): Validated[DateTime] = {
+    catchOnly[IllegalArgumentException] { DateTime.parse(s) }
+      .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' does not represent a date"))
+      .toValidatedNec
+  }
+
+  def missingRequired[T](row: DepositRow, required: Set[String]): ParseError = {
+    val blankRequired = row.content.collect { case (key, value) if value.isBlank && required.contains(key) => key }
+    val missingColumns = required.diff(row.content.keySet)
     val missing = blankRequired.toSet ++ missingColumns
     require(missing.nonEmpty, "the list of missing elements is supposed to be non-empty")
 
     missing.toList match {
-      case value :: Nil => Failure(ParseException(rowNum, s"Missing value for: $value"))
-      case values => Failure(ParseException(rowNum, s"Missing value(s) for: ${ values.mkString("[", ", ", "]") }"))
+      case value :: Nil => ParseError(row.rowNum, s"Missing value for: $value")
+      case values => ParseError(row.rowNum, s"Missing value(s) for: ${ values.mkString("[", ", ", "]") }")
     }
-  }
-
-  def isValidISO639_1Language(lang: String): Boolean = {
-    val b0: Boolean = lang.length == 2
-    val b1: Boolean = new Locale(lang).getDisplayLanguage.toLowerCase != lang.toLowerCase
-
-    b0 && b1
-  }
-
-  private lazy val iso639v2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
-
-  def iso639_2Language(columnName: MultiDepositKey)(rowNum: => Int)(row: DepositRow): Option[Try[String]] = {
-    row.find(columnName)
-      .map(lang => {
-        // Most ISO 639-2/T languages are contained in the iso639v2Languages Set.
-        // However, some of them are not and need to be checked using the second predicate.
-        // The latter also allows to check ISO 639-2/B language codes.
-        lazy val b0 = lang.length == 3
-        lazy val b1 = iso639v2Languages.contains(lang)
-        lazy val b2 = new Locale(lang).getDisplayLanguage.toLowerCase != lang.toLowerCase
-
-        if (b0 && (b1 || b2)) Success(lang)
-        else Failure(ParseException(rowNum, s"Value '$lang' is not a valid value for $columnName"))
-      })
   }
 
   /**
@@ -134,13 +93,13 @@ trait ParserUtils extends DebugEnhancedLogging {
    * @param path the path to a file, as provided by the user input
    * @return the absolute path to this file, if it exists
    */
-  def findRegularFile(depositId: DepositId)(path: String): Try[File] = {
+  def findRegularFile(depositId: DepositId, rowNum: => Int)(path: String): Validated[File] = {
     val file = depositDir(depositId) / path
 
     file match {
-      case f if f.isRegularFile => Success(f)
-      case f if f.exists => Failure(new NoSuchFileException(s"path '$path' exists, but is not a regular file"))
-      case _ => Failure(new NoSuchFileException(s"unable to find path '$path'"))
+      case f if f.isRegularFile => f.toValidated
+      case f if f.exists => ParseError(rowNum, s"path '$path' exists, but is not a regular file").toInvalid
+      case _ => ParseError(rowNum, s"unable to find path '$path'").toInvalid
     }
   }
 }

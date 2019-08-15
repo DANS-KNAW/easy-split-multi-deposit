@@ -18,11 +18,8 @@ package nl.knaw.dans.easy.multideposit.parser
 import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
-import nl.knaw.dans.easy.multideposit.model._
-import nl.knaw.dans.lib.error.CompositeException
+import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, DefaultFileMetadata, FileAccessRights, FileDescriptor, PlayMode, Springfield, SubtitlesFile, Video }
 import org.scalatest.BeforeAndAfterEach
-
-import scala.util.{ Failure, Success }
 
 trait FileMetadataTestObjects {
   this: InputPathExplorer =>
@@ -133,9 +130,8 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
   import parser._
 
   "extractFileMetadata" should "collect the metadata for all files in ruimtereis01" in {
-    inside(extractFileMetadata(multiDepositDir / "ruimtereis01", testInstructions1)) {
-      case Success(fms) =>
-        fms should { have size 9 and contain allElementsOf fileMetadata1 }
+    extractFileMetadata(multiDepositDir / "ruimtereis01", testInstructions1).value should {
+      have size 9 and contain allElementsOf fileMetadata1
     }
   }
 
@@ -146,9 +142,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     ruimtereis03Path shouldNot exist
 
     // test
-    extractFileMetadata(ruimtereis03Path, testInstructions1) should matchPattern {
-      case Success(Nil) =>
-    }
+    extractFileMetadata(ruimtereis03Path, testInstructions1).value shouldBe empty
   }
 
   it should "collect the metadata for all files in ruimtereis04" in {
@@ -157,9 +151,9 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
         springfield = Some(Springfield("dans", "janvanmansum", "Jans-test-files", PlayMode.Continuous))
       )
     )
-    inside(extractFileMetadata(multiDepositDir / "ruimtereis04", instructions)) {
-      case Success(fms) =>
-        fms should { have size 3 and contain allElementsOf fileMetadata4 }
+
+    extractFileMetadata(multiDepositDir / "ruimtereis04", instructions).value should {
+      have size 3 and contain allElementsOf fileMetadata4
     }
   }
 
@@ -168,10 +162,9 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     val instructions = testInstructions1.copy(
       files = testInstructions1.files.updated(fileWithNoDescription, FileDescriptor(title = Option.empty)),
     )
-    inside(extractFileMetadata(multiDepositDir / "ruimtereis01", instructions)) {
-      case Failure(CompositeException(List(e1: ParseException))) =>
-        e1 should have message s"No FILE_TITLE given for A/V file $fileWithNoDescription."
-    }
+
+    extractFileMetadata(multiDepositDir / "ruimtereis01", instructions).invalidValue shouldBe
+      ParseError(2, s"No FILE_TITLE given for A/V file $fileWithNoDescription.").chained
   }
 
   it should "fail when the deposit contains A/V files, Springfield PlayMode is Menu, and an A/V file is not listed" in {
@@ -179,9 +172,23 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     val instructions = testInstructions1.copy(
       files = testInstructions1.files - fileWithNoDescription,
     )
-    inside(extractFileMetadata(multiDepositDir / "ruimtereis01", instructions)) {
-      case Failure(CompositeException(List(e1: ParseException))) =>
-        e1 should have message s"Not listed A/V file detected: $fileWithNoDescription. Because Springfield PlayMode 'MENU' was choosen, all A/V files must be listed with a human readable title in the FILE_TITLE field."
-    }
+
+    extractFileMetadata(multiDepositDir / "ruimtereis01", instructions).invalidValue shouldBe
+      ParseError(2, s"Not listed A/V file detected: $fileWithNoDescription. Because Springfield PlayMode 'MENU' was choosen, all A/V files must be listed with a human readable title in the FILE_TITLE field.").chained
+  }
+
+  it should "collect multiple errors" in {
+    val file1 = testDir / "md/ruimtereis01/reisverslag/centaur.mpg"
+    val file2 = testDir / "md/ruimtereis01/path/to/a/random/video/hubble.mpg"
+    val instructions = testInstructions1.copy(
+      files = testInstructions1.files
+        .updated(file1, FileDescriptor(Option.empty))
+        .updated(file2, FileDescriptor(Option.empty))
+    )
+
+    extractFileMetadata(multiDepositDir / "ruimtereis01", instructions).invalidValue.toNonEmptyList.toList should contain only(
+      ParseError(2, s"No FILE_TITLE given for A/V file $file1."),
+      ParseError(2, s"No FILE_TITLE given for A/V file $file2."),
+    )
   }
 }

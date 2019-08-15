@@ -19,33 +19,43 @@ import java.io.IOException
 import java.nio.charset.Charset
 
 import better.files.File
+import cats.data.EitherNec
 import org.apache.commons.io.Charsets
-import org.joda.time.{ DateTime, DateTimeZone }
 import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
+import org.joda.time.{ DateTime, DateTimeZone }
 
-import scala.collection.generic.CanBuildFrom
-import scala.util.{ Failure, Success, Try }
 import scala.xml.{ Elem, PrettyPrinter, Utility, XML }
 
 package object multideposit {
+  type FailFast[T] = Either[ConversionFailed, T]
+  type FailFastNec[T] = EitherNec[ConversionFailed, T]
+
   val dateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime()
+
   def now: String = DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)
 
   val encoding: Charset = Charsets.UTF_8
 
   case class DepositPermissions(permissions: String, group: String)
 
-  implicit class SeqExtensions[T](val seq: Seq[T]) extends AnyVal {
-    def mapUntilFailure[S](f: T => Try[S])(implicit cbf: CanBuildFrom[Seq[T], S, Seq[S]]): Try[Seq[S]] = {
-      val bf = cbf()
-      for (t <- seq) {
-        f(t) match {
-          case Success(x) => bf += x
-          case Failure(e) => return Failure(e)
-        }
-      }
-      Success(bf.result())
-    }
+  sealed trait SmdError {
+    val msg: String
+    val cause: Option[Throwable] = None
+  }
+
+  case class ParseFailed(override val msg: String) extends SmdError
+
+  sealed trait ConversionFailed extends SmdError
+
+  case class ActionError(override val msg: String, override val cause: Option[Throwable] = None) extends ConversionFailed
+  object ActionError {
+    def apply(msg: String, cause: Throwable): ActionError = new ActionError(msg, Option(cause))
+  }
+
+  case class InvalidDatamanager(override val msg: String) extends ConversionFailed
+
+  case class InvalidInput(row: Int, localMsg: String) extends ConversionFailed {
+    override val msg = s"row $row: $localMsg"
   }
 
   implicit class BetterFileExtensions(val file: File) extends AnyVal {

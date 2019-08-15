@@ -16,20 +16,21 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.{ Dispose, _ }
+import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.PathExplorer.OutputPathExplorer
 import nl.knaw.dans.easy.multideposit.actions.ReportDatasets._
-import nl.knaw.dans.easy.multideposit.encoding
+import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast, encoding }
 import nl.knaw.dans.easy.multideposit.model.Deposit
 import org.apache.commons.csv.{ CSVFormat, CSVPrinter }
 
-import scala.util.Try
-
 class ReportDatasets {
 
-  def report(deposits: Seq[Deposit])(implicit output: OutputPathExplorer): Try[Unit] = Try {
-    for(printer <- csvPrinter(output.reportFile);
-        deposit <- deposits)
-      printRecord(deposit, printer)
+  def report(deposits: Seq[Deposit])(implicit output: OutputPathExplorer): FailFast[Unit] = {
+    Either.catchNonFatal {
+      for (printer <- csvPrinter(output.reportFile);
+           deposit <- deposits)
+        printRecord(deposit, printer)
+    }.leftMap(e => ActionError("Could not write the dataset report", e))
   }
 
   private def csvPrinter(file: File): Dispose[CSVPrinter] = {

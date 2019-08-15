@@ -15,18 +15,16 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import cats.syntax.either._
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
-import nl.knaw.dans.easy.multideposit.now
+import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast, now }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.configuration.PropertiesConfiguration
 
-import scala.util.control.NonFatal
-import scala.util.{ Failure, Try }
-
 class AddPropertiesToDeposit extends DebugEnhancedLogging {
 
-  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(implicit stage: StagingPathExplorer): Try[Unit] = {
+  def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
     logger.debug(s"add deposit properties for ${ deposit.depositId }")
 
     val props = new PropertiesConfiguration {
@@ -36,11 +34,9 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
         .toJava)
     }
 
-    Try { addProperties(deposit, datamanagerId, emailaddress, stage.bagDirName)(props) }
+    Either.catchNonFatal { addProperties(deposit, datamanagerId, emailaddress, stage.bagDirName)(props) }
       .map(_ => props.save())
-      .recoverWith {
-        case NonFatal(e) => Failure(ActionException(s"Could not write properties to file: $e", e))
-      }
+      .leftMap(e => ActionError(s"Could not write properties to file: $e", e))
   }
 
   private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress, bagDirName: String)(properties: PropertiesConfiguration): Unit = {
@@ -63,7 +59,6 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       "identifier.dans-doi.action" -> Some("create"),
       "bag-store.bag-name" ->  Some(bagDirName),
       "deposit.origin" ->  Some("SMD"),
-
     )
 
     for ((key, value) <- props.collect { case (k, Some(v)) => (k, v) }) {

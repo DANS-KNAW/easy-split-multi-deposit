@@ -18,10 +18,10 @@ package nl.knaw.dans.easy.multideposit.actions
 import java.nio.file.FileSystemException
 import java.nio.file.attribute.{ PosixFilePermission, UserPrincipalNotFoundException }
 
-import nl.knaw.dans.easy.multideposit.{ DepositPermissions, TestSupportFixture }
+import nl.knaw.dans.easy.multideposit.{ ActionError, DepositPermissions, TestSupportFixture }
 import org.scalatest.BeforeAndAfterEach
 
-import scala.util.{ Failure, Properties, Success }
+import scala.util.Properties
 
 class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEach {
 
@@ -73,7 +73,7 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
 
     val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", userGroup))
 
-    action.setDepositPermissions(depositId) shouldBe a[Success[_]]
+    action.setDepositPermissions(depositId) shouldBe right[Unit]
 
     for (file <- filesAndFolders) {
       file.permissions should {
@@ -98,24 +98,27 @@ class SetDepositPermissionsSpec extends TestSupportFixture with BeforeAndAfterEa
   it should "fail if the group name does not exist" in {
     val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", "non-existing-group-name"))
 
-    inside(action.setDepositPermissions(depositId)) {
-      case Failure(ActionException(msg, _: UserPrincipalNotFoundException)) => msg shouldBe "Group non-existing-group-name could not be found"
+    inside(action.setDepositPermissions(depositId).leftValue) {
+      case ActionError(msg, Some(_: UserPrincipalNotFoundException)) =>
+        msg shouldBe "Group non-existing-group-name could not be found"
     }
   }
 
   it should "fail if the access permissions are invalid" in {
     val action = new SetDepositPermissions(DepositPermissions("abcdefghi", "admin"))
 
-    inside(action.setDepositPermissions(depositId)) {
-      case Failure(ActionException(msg, _: IllegalArgumentException)) => msg shouldBe "Invalid privileges (abcdefghi)"
+    inside(action.setDepositPermissions(depositId).leftValue) {
+      case ActionError(msg, Some(_: IllegalArgumentException)) =>
+        msg shouldBe "Invalid privileges (abcdefghi)"
     }
   }
 
   it should "fail if the user is not part of the given group" in {
     val action = new SetDepositPermissions(DepositPermissions("rwxrwx---", unrelatedGroup))
 
-    inside(action.setDepositPermissions(depositId)) {
-      case Failure(ActionException(msg, _: FileSystemException)) => msg should include(s"Not able to set the group to $unrelatedGroup")
+    inside(action.setDepositPermissions(depositId).leftValue) {
+      case ActionError(msg, Some(_: FileSystemException)) =>
+        msg should include(s"Not able to set the group to $unrelatedGroup")
     }
   }
 }

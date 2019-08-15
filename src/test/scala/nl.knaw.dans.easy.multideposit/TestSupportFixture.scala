@@ -19,14 +19,16 @@ import java.util.UUID
 
 import better.files.File
 import better.files.File.currentWorkingDirectory
+import cats.data.NonEmptyList
+import cats.scalatest.{ EitherMatchers, EitherValues, ValidatedValues }
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model._
 import org.joda.time.DateTime
+import org.scalatest._
 import org.scalatest.enablers.Existence
-import org.scalatest.{ FlatSpec, Inside, Matchers, OptionValues }
 
-trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
+trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with EitherMatchers with EitherValues with ValidatedValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
 
   implicit def existenceOfFile[FILE <: better.files.File]: Existence[FILE] = _.exists
 
@@ -56,9 +58,9 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
       row = 2,
       depositorUserId = "ruimtereiziger1",
       profile = Profile(
-        titles = List("Reis naar Centaur-planetoïde", "Trip to Centaur asteroid"),
-        descriptions = List("Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.", "A two day mission to boldly go where no man has gone before"),
-        creators = List(
+        titles = NonEmptyList.of("Reis naar Centaur-planetoïde", "Trip to Centaur asteroid"),
+        descriptions = NonEmptyList.of("Een tweedaagse reis per ruimteschip naar een bijzondere planetoïde in de omgeving van Jupiter.", "A two day mission to boldly go where no man has gone before"),
+        creators = NonEmptyList.of(
           CreatorPerson(
             titles = Some("Captain"),
             initials = "J.T.",
@@ -67,7 +69,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
           )
         ),
         created = DateTime.parse("2015-05-19"),
-        audiences = List("D30000"),
+        audiences = NonEmptyList.of("D30000"),
         accessright = AccessCategory.OPEN_ACCESS
       ),
       baseUUID = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")),
@@ -75,7 +77,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         formats = List("video/mpeg", "text/plain"),
         languages = List("NL", "encoding=UTF-8"),
         subjects = List(Subject("astronomie"), Subject("ruimtevaart"), Subject("planetoïden")),
-        rightsholder = List("Mr. Anderson"),
+        rightsholder = NonEmptyList.one("Mr. Anderson"),
       ),
       files = Map(
         testDir / "md/ruimtereis01/reisverslag/centaur.mpg" -> FileDescriptor(Option("flyby of centaur")),
@@ -99,12 +101,12 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
       row = 5,
       depositorUserId = "ruimtereiziger2",
       profile = Profile(
-        titles = List("Title 1 of deposit 2", "Title 2 of deposit 2"),
-        descriptions = List("A sample deposit with a not very long description"),
-        creators = List(CreatorOrganization("Creator A")),
+        titles = NonEmptyList.of("Title 1 of deposit 2", "Title 2 of deposit 2"),
+        descriptions = NonEmptyList.of("A sample deposit with a not very long description"),
+        creators = NonEmptyList.of(CreatorOrganization("Creator A")),
         created = DateTime.now(),
         available = DateTime.parse("2016-07-30"),
-        audiences = List("D37000"),
+        audiences = NonEmptyList.of("D37000"),
         accessright = AccessCategory.GROUP_ACCESS
       ),
       baseUUID = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")),
@@ -112,9 +114,9 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with I
         contributors = List(ContributorOrganization("Contributor 1"), ContributorOrganization("Contributor 2")),
         subjects = List(Subject("subject 1", Option("abr:ABRcomplex")), Subject("subject 2"), Subject("subject 3")),
         publishers = List("publisher 1"),
-        types = List(DcType.STILLIMAGE),
+        types = NonEmptyList.of(DcType.STILLIMAGE),
         identifiers = List(Identifier("id1234")),
-        rightsholder = List("Neo"),
+        rightsholder = NonEmptyList.of("Neo"),
       ),
       files = Map(
         testDir / "md/ruimtereis02/path/to/images/Hubble_01.jpg" -> FileDescriptor(Some("Hubble"), Some(FileAccessRights.RESTRICTED_REQUEST))

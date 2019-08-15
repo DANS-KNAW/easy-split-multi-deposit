@@ -16,77 +16,86 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
+import cats.instances.list._
+import cats.instances.option._
+import cats.syntax.apply._
+import cats.syntax.option._
+import cats.syntax.traverse._
+import cats.syntax.validated._
+import nl.knaw.dans.easy.multideposit.model.FileAccessRights.FileAccessRights
 import nl.knaw.dans.easy.multideposit.model.{ DepositId, FileAccessRights, FileDescriptor }
-import nl.knaw.dans.lib.error._
-
-import scala.collection.mutable.ListBuffer
-import scala.util.{ Failure, Success, Try }
 
 trait FileDescriptorParser {
   this: ParserUtils =>
 
-  def extractFileDescriptors(rows: DepositRows, rowNum: Int, depositId: DepositId): Try[Map[File, FileDescriptor]] = {
+  def extractFileDescriptors(depositId: DepositId, rowNum: Int, rows: DepositRows): Validated[Map[File, FileDescriptor]] = {
     extractList(rows)(fileDescriptor(depositId))
-      .flatMap(_.groupBy { case (file, _, _, _) => file }
-        .map((toFileDescriptor(rowNum) _).tupled)
-        .collectResults
-        .map(_.toMap))
+      .fold(_.invalid, combineFileDescriptors(rowNum))
   }
 
-  private def toFileDescriptor(rowNum: => Int)(file: File, dataPerPath: List[(File, Option[String], Option[FileAccessRights.Value], Option[FileAccessRights.Value])]): Try[(File, FileDescriptor)] = {
-    val titles = dataPerPath.collect { case (_, Some(title), _, _) => title }
-    val fileAccessibilities = dataPerPath.collect { case (_, _, Some(far), _) => far }
-    val fileVisibilities = dataPerPath.collect { case (_, _, _, Some(fv)) => fv }
-    val errors = ListBuffer[Throwable]()
-
-    if (titles.size > 1) errors.append(ParseException(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ titles.mkString("[", ", ", "]") }"))
-    if (fileAccessibilities.size > 1) errors.append(ParseException(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fileAccessibilities.mkString("[", ", ", "]") }"))
-    if (fileVisibilities.size > 1) errors.append(ParseException(rowNum, s"FILE_VISIBILITY defined multiple values for file '$file': ${ fileVisibilities.mkString("[", ", ", "]") }"))
-
-    if (errors.nonEmpty) Failure(CompositeException(errors))
-    else {
-      (fileAccessibilities, fileVisibilities) match {
-        case (List(as), List(vs)) if vs > as => Failure(ParseException(rowNum,
-          s"FILE_VISIBILITY ($vs) is more restricted than FILE_ACCESSIBILITY ($as) for file '$file'. (User will potentially have access to an invisible file.)"))
-        case _ => Success((file, FileDescriptor(titles.headOption, fileAccessibilities.headOption, fileVisibilities.headOption)))
-      }
-    }
-  }
-
-  def fileDescriptor(depositId: DepositId)(rowNum: => Int)(row: DepositRow): Option[Try[(File, Option[String], Option[FileAccessRights.Value], Option[FileAccessRights.Value])]] = {
-    def collectErrors(rs: Option[Try[_]]*): Seq[Throwable] = {
-      rs.collect { case Some(Failure(t)) => ParseException(rowNum, t.getMessage, t) }
-    }
-
-    val path = row.find("FILE_PATH").map(findRegularFile(depositId))
+  def fileDescriptor(depositId: DepositId)(row: DepositRow): Option[Validated[(File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]] = {
+    val path = row.find("FILE_PATH").map(findRegularFile(depositId, row.rowNum))
     val title = row.find("FILE_TITLE")
-    val accessibility = fileAccessibility(rowNum)(row)
-    val visibility = fileVisibility(rowNum)(row)
+    val accessibility = row.find("FILE_ACCESSIBILITY").map(fileAccessibility(row.rowNum))
+    val visibility = row.find("FILE_VISIBILITY").map(fileVisibility(row.rowNum))
 
     (path, title, accessibility, visibility) match {
       case (None, None, None, None) => None
       case (None, _, a, v) =>
-        val errors = collectErrors(a, v)
-        Some(Failure(CompositeException(
-          ParseException(rowNum, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given") +: errors)))
+        val err = ParseError(row.rowNum, "FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given")
+
+        (
+          a.sequence,
+          v.sequence,
+        ).tupled
+          .fold(e => (err +: e).invalid, _ => err.toInvalid)
+          .some
       case (Some(p), t, a, v) =>
-        val errors = collectErrors(Some(p), a, v)
-        if (errors.isEmpty) Some(Success((p.get, t, a.map(_.get), v.map(_.get)))) // _.get is safe here, because errors.isEmpty means that neither a nor v is a Failure.
-        else Some(Failure(CompositeException(errors)))
+        (
+          p,
+          t.toValidated,
+          a.sequence,
+          v.sequence,
+        ).tupled.some
     }
   }
 
-  def fileAccessibility(rowNum: => Int)(row: DepositRow): Option[Try[FileAccessRights.Value]] = {
-    row.find("FILE_ACCESSIBILITY")
-      .map(acc => FileAccessRights.valueOf(acc)
-        .map(Success(_))
-        .getOrElse(Failure(ParseException(rowNum, s"Value '$acc' is not a valid file accessright"))))
+  private def combineFileDescriptors(rowNum: Int)(descriptors: List[(File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]): Validated[Map[File, FileDescriptor]] = {
+    descriptors.groupBy { case (file, _, _, _) => file }
+      .map((toFileDescriptor(rowNum) _).tupled)
+      .toList
+      .sequence
+      .map(_.toMap)
   }
 
-  def fileVisibility(rowNum: => Int)(row: DepositRow): Option[Try[FileAccessRights.Value]] = {
-    row.find("FILE_VISIBILITY")
-      .map(acc => FileAccessRights.valueOf(acc)
-        .map(Success(_))
-        .getOrElse(Failure(ParseException(rowNum, s"Value '$acc' is not a valid file visibility"))))
+  private def ensureAtMostOneElementInList[T](list: List[T])(err: List[T] => ParseError): Validated[Option[T]] = {
+    list match {
+      case Nil => none.toValidated
+      case title :: Nil => title.some.toValidated
+      case multipleTitles => err(multipleTitles).toInvalid
+    }
+  }
+
+  private def toFileDescriptor(rowNum: => Int)(file: File, dataPerPath: List[(File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]): Validated[(File, FileDescriptor)] = {
+    (
+      ensureAtMostOneElementInList(dataPerPath.collect { case (_, Some(title), _, _) => title })(titles => ParseError(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ titles.mkString("[", ", ", "]") }")),
+      ensureAtMostOneElementInList(dataPerPath.collect { case (_, _, Some(far), _) => far })(fileAccessibilities => ParseError(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fileAccessibilities.mkString("[", ", ", "]") }")),
+      ensureAtMostOneElementInList(dataPerPath.collect { case (_, _, _, Some(fv)) => fv })(fileVisibilities => ParseError(rowNum, s"FILE_VISIBILITY defined multiple values for file '$file': ${ fileVisibilities.mkString("[", ", ", "]") }")),
+    ).mapN(FileDescriptor)
+      .map((file, _))
+      .andThen {
+        case (_, FileDescriptor(_, Some(as), Some(vs))) if vs >= as => ParseError(rowNum, s"FILE_VISIBILITY ($vs) is more restricted than FILE_ACCESSIBILITY ($as) for file '$file'. (User will potentially have access to an invisible file.)").toInvalid
+        case otherwise => otherwise.toValidated
+      }
+  }
+
+  def fileAccessibility(rowNum: => Int)(role: String): Validated[FileAccessRights] = {
+    FileAccessRights.valueOf(role)
+      .toValidNec(ParseError(rowNum, s"Value '$role' is not a valid file accessright"))
+  }
+
+  def fileVisibility(rowNum: => Int)(role: String): Validated[FileAccessRights] = {
+    FileAccessRights.valueOf(role)
+      .toValidNec(ParseError(rowNum, s"Value '$role' is not a valid file visibility"))
   }
 }
