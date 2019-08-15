@@ -58,6 +58,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       "identifier.dans-doi.registered" -> Some("no"),
       "identifier.dans-doi.action" -> Some("create"),
       "bag-store.bag-name" ->  Some(bagDirName),
+      "deposit.origin" ->  Some("SMD"),
     )
 
     for ((key, value) <- props.collect { case (k, Some(v)) => (k, v) }) {
