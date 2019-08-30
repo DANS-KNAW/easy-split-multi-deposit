@@ -17,6 +17,7 @@ package nl.knaw.dans.easy
 
 import java.io.IOException
 import java.nio.charset.Charset
+import java.nio.file.Paths
 
 import better.files.File
 import cats.data.EitherNec
@@ -35,6 +36,8 @@ package object multideposit {
   def now: String = DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)
 
   val encoding: Charset = Charsets.UTF_8
+
+  val licensesDir = Paths.get("target/easy-licenses/licenses")
 
   case class DepositPermissions(permissions: String, group: String)
 

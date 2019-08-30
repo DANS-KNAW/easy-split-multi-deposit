@@ -24,9 +24,12 @@ import cats.scalatest.{ EitherMatchers, EitherValues, ValidatedValues }
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model._
+import org.apache.commons.configuration.PropertiesConfiguration
 import org.joda.time.DateTime
 import org.scalatest._
 import org.scalatest.enablers.Existence
+
+import scala.collection.JavaConverters._
 
 trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with EitherMatchers with EitherValues with ValidatedValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
 
@@ -47,10 +50,8 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
   implicit val stagingPathExplorer: StagingPathExplorer = this
   implicit val outputPathExplorer: OutputPathExplorer = this
 
-  private val userLicensesFile: File = currentWorkingDirectory / "src" / "main" / "assembly" / "dist" / "cfg" / "licenses.txt"
-  val userLicenses: Set[MimeType] =
-    if (userLicensesFile.exists) userLicensesFile.lines.map(_.trim).toSet
-    else fail("Cannot find file: licenses.txt")
+  val userLicenses: Set[MimeType] = new PropertiesConfiguration(licensesDir.resolve("licenses.properties").toFile)
+    .getKeys.asScala.filterNot(_.isEmpty).toSet
 
   def testInstructions1: Instructions = {
     Instructions(
