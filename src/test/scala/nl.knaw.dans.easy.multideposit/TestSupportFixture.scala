@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit
 
+import java.nio.file.Paths
 import java.util.UUID
 
 import better.files.File
@@ -50,6 +51,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
   implicit val stagingPathExplorer: StagingPathExplorer = this
   implicit val outputPathExplorer: OutputPathExplorer = this
 
+  val licensesDir = Paths.get(getClass.getResource("/licenses").toURI)
   val userLicenses: Set[MimeType] = new PropertiesConfiguration(licensesDir.resolve("licenses.properties").toFile)
     .getKeys.asScala.filterNot(_.isEmpty).toSet
 

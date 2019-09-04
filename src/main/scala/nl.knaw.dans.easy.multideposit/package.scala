@@ -37,8 +37,6 @@ package object multideposit {
 
   val encoding: Charset = Charsets.UTF_8
 
-  val licensesDir = Paths.get("target/easy-licenses/licenses")
-
   case class DepositPermissions(permissions: String, group: String)
 
   sealed trait SmdError {

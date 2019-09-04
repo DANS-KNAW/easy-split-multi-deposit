@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit
 
+import java.nio.file.Paths
+
 import better.files.File
 import better.files.File.root
 import org.apache.commons.configuration.PropertiesConfiguration
@@ -32,6 +34,7 @@ object Configuration {
       .find(_.exists)
       .getOrElse { throw new IllegalStateException("No configuration directory found") }
     val formatsFile = cfgPath / "acceptedMediaTypes.txt"
+    val licensesDir = Paths.get(getClass.getResource("/licenses").toURI)
 
     new Configuration(
       version = (home / "bin" / "version").contentAsString.stripLineEnd,
