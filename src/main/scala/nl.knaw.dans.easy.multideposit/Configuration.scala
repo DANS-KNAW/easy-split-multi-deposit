@@ -33,8 +33,9 @@ object Configuration {
       home / "cfg")
       .find(_.exists)
       .getOrElse { throw new IllegalStateException("No configuration directory found") }
+
     val formatsFile = cfgPath / "acceptedMediaTypes.txt"
-    val licensesDir = Paths.get(getClass.getResource("/licenses").toURI)
+    val licenses = new PropertiesConfiguration(Paths.get(home.toString()).resolve("lic/licenses.properties").toFile)
 
     new Configuration(
       version = (home / "bin" / "version").contentAsString.stripLineEnd,
@@ -45,8 +46,7 @@ object Configuration {
       formats =
         if (formatsFile.exists) formatsFile.lines.map(_.trim).toSet
         else Set.empty,
-      licenses = new PropertiesConfiguration(licensesDir.resolve("licenses.properties").toFile)
-        .getKeys.asScala.filterNot(_.isEmpty).toSet
+      licenses = licenses.getKeys.asScala.filterNot(_.isEmpty).toSet
     )
   }
 }
