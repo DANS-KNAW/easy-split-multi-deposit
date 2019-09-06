@@ -17,7 +17,6 @@ package nl.knaw.dans.easy
 
 import java.io.IOException
 import java.nio.charset.Charset
-import java.nio.file.Paths
 
 import better.files.File
 import cats.data.EitherNec
