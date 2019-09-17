@@ -35,7 +35,7 @@ object Configuration {
       .getOrElse { throw new IllegalStateException("No configuration directory found") }
 
     val formatsFile = cfgPath / "acceptedMediaTypes.txt"
-    val licenses = new PropertiesConfiguration(Paths.get(s"/etc/opt/dans.knaw.nl/easy-validate-dans-bag/lic/licenses.properties").toFile)
+    val licenses = new PropertiesConfiguration(Paths.get(s"/etc/opt/dans.knaw.nl/easy-split-multi-deposit/lic/licenses.properties").toFile)
 
     new Configuration(
       version = (home / "bin" / "version").contentAsString.stripLineEnd,
