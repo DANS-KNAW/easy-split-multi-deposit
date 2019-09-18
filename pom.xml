@@ -35,7 +35,8 @@
 
     <properties>
         <main-class>nl.knaw.dans.easy.multideposit.Command</main-class>
-        <easy.ddm.version>3.8.2</easy.ddm.version>
+        <easy-ddm.version>3.8.2</easy-ddm.version>
+        <easy-licenses.version>1.0.1</easy-licenses.version>
     </properties>
 
     <scm>
@@ -92,7 +93,7 @@
         <dependency>
             <groupId>nl.knaw.dans.easy</groupId>
             <artifactId>ddm</artifactId>
-            <version>${easy.ddm.version}</version>
+            <version>${easy-ddm.version}</version>
         </dependency>
 
         <!-- BagIt -->
@@ -165,6 +166,33 @@
         </repository>
     </repositories>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>resources</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>nl.knaw.dans.easy</groupId>
+                                    <artifactId>easy-licenses</artifactId>
+                                    <version>${easy-licenses.version}</version>
+                                    <outputDirectory>${project.build.directory}/easy-licenses</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <profiles>
         <profile>
             <id>rpm</id>
@@ -181,6 +209,17 @@
                         <artifactId>rpm-maven-plugin</artifactId>
                         <configuration>
                             <group>Applications/Archiving</group>
+                            <mappings combine.children="append">
+                                <mapping>
+                                    <directory>/etc/opt/${dans-provider-name}/${project.artifactId}/lic</directory>
+                                    <configuration>${rpm-replace-configuration}</configuration>
+                                    <sources>
+                                        <source>
+                                            <location>target/easy-licenses/licenses</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                            </mappings>
                             <requires combine.children="append">
                                 <require>ffmpeg</require>
                                 <require>ffmpeg-libs</require>
