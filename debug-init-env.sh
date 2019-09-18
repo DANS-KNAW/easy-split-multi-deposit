@@ -19,6 +19,7 @@ HOMEDIR=home
 DATADIR=data
 
 echo "Copying licenses to $HOMEDIR/cfg..."
+mvn generate-resources
 LICENSES=target/easy-licenses/licenses
 cp -r "$LICENSES" $HOMEDIR/cfg/lic
 
