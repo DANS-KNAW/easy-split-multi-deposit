@@ -15,7 +15,12 @@
 # limitations under the License.
 #
 
+HOMEDIR=home
 DATADIR=data
+
+echo "Copying licenses to $HOMEDIR/cfg..."
+LICENSES=target/easy-licenses/licenses
+cp -r "$LICENSES" $HOMEDIR/cfg/lic
 
 touch ${DATADIR}/easy-split-multi-deposit.log
 

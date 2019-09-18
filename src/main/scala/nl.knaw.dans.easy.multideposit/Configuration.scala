@@ -15,8 +15,6 @@
  */
 package nl.knaw.dans.easy.multideposit
 
-import java.nio.file.Paths
-
 import better.files.File
 import better.files.File.root
 import org.apache.commons.configuration.PropertiesConfiguration
@@ -35,7 +33,7 @@ object Configuration {
       .getOrElse { throw new IllegalStateException("No configuration directory found") }
 
     val formatsFile = cfgPath / "acceptedMediaTypes.txt"
-    val licenses = new PropertiesConfiguration(Paths.get(s"/etc/opt/dans.knaw.nl/easy-split-multi-deposit/lic/licenses.properties").toFile)
+    val licenses = new PropertiesConfiguration((cfgPath / "lic/licenses.properties").toJava)
 
     new Configuration(
       version = (home / "bin" / "version").contentAsString.stripLineEnd,
