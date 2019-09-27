@@ -20,6 +20,7 @@ import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.{ FileAccessRights, FileDescriptor }
 import org.scalatest.BeforeAndAfterEach
+import cats.syntax.option._
 
 trait FileDescriptorTestObjects {
   this: InputPathExplorer =>
@@ -207,6 +208,20 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
     extractFileDescriptors("ruimtereis01", 2, row :: Nil).invalidValue shouldBe
       ParseError(2, s"FILE_VISIBILITY (NONE) is more restricted than FILE_ACCESSIBILITY (KNOWN) for file '$file'. (User will potentially have access to an invisible file.)").chained
+  }
+
+  it should "succeed if visibility is equally restricted as accessibility" in {
+    val row = DepositRow(2, Map(
+      "FILE_PATH" -> "reisverslag/centaur.mpg",
+      "FILE_VISIBILITY" -> "NONE",
+      "FILE_ACCESSIBILITY" -> "NONE"
+    ))
+
+    val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
+    val expectedOutput = Map(
+      file -> FileDescriptor(none, FileAccessRights.NONE.some, FileAccessRights.NONE.some),
+    )
+    extractFileDescriptors("ruimtereis01", 2, row :: Nil).value shouldBe expectedOutput
   }
 
   "fileDescriptor" should "convert the csv input to the corresponding output" in {
