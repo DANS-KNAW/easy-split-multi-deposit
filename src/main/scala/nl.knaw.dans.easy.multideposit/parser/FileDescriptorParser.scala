@@ -84,7 +84,7 @@ trait FileDescriptorParser {
     ).mapN(FileDescriptor)
       .map((file, _))
       .andThen {
-        case (_, FileDescriptor(_, Some(as), Some(vs))) if vs >= as => ParseError(rowNum, s"FILE_VISIBILITY ($vs) is more restricted than FILE_ACCESSIBILITY ($as) for file '$file'. (User will potentially have access to an invisible file.)").toInvalid
+        case (_, FileDescriptor(_, Some(as), Some(vs))) if vs > as => ParseError(rowNum, s"FILE_VISIBILITY ($vs) is more restricted than FILE_ACCESSIBILITY ($as) for file '$file'. (User will potentially have access to an invisible file.)").toInvalid
         case otherwise => otherwise.toValidated
       }
   }
