@@ -83,8 +83,8 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
         rightsholder = NonEmptyList.one("Mr. Anderson"),
       ),
       files = Map(
-        testDir / "md/ruimtereis01/reisverslag/centaur.mpg" -> FileDescriptor(Option("flyby of centaur")),
-        testDir / "md/ruimtereis01/path/to/a/random/video/hubble.mpg" -> FileDescriptor(Option("video about the hubble space telescope")),
+        testDir / "md/ruimtereis01/reisverslag/centaur.mpg" -> FileDescriptor(2, Option("flyby of centaur")),
+        testDir / "md/ruimtereis01/path/to/a/random/video/hubble.mpg" -> FileDescriptor(3, Option("video about the hubble space telescope")),
       ),
       audioVideo = AudioVideo(
         springfield = Option(Springfield("dans", "janvanmansum", "Jans-test-files", PlayMode.Menu)),
@@ -122,7 +122,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
         rightsholder = NonEmptyList.of("Neo"),
       ),
       files = Map(
-        testDir / "md/ruimtereis02/path/to/images/Hubble_01.jpg" -> FileDescriptor(Some("Hubble"), Some(FileAccessRights.RESTRICTED_REQUEST))
+        testDir / "md/ruimtereis02/path/to/images/Hubble_01.jpg" -> FileDescriptor(5, Some("Hubble"), Some(FileAccessRights.RESTRICTED_REQUEST))
       )
     )
   }

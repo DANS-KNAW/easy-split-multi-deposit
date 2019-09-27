@@ -160,7 +160,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
   it should "fail when the deposit contains A/V files, Springfield PlayMode is Menu, and a FileTitle is not present" in {
     val fileWithNoDescription = testDir / "md/ruimtereis01/path/to/a/random/video/hubble.mpg"
     val instructions = testInstructions1.copy(
-      files = testInstructions1.files.updated(fileWithNoDescription, FileDescriptor(title = Option.empty)),
+      files = testInstructions1.files.updated(fileWithNoDescription, FileDescriptor(3, title = Option.empty)),
     )
 
     extractFileMetadata(multiDepositDir / "ruimtereis01", instructions).invalidValue shouldBe
@@ -182,8 +182,8 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     val file2 = testDir / "md/ruimtereis01/path/to/a/random/video/hubble.mpg"
     val instructions = testInstructions1.copy(
       files = testInstructions1.files
-        .updated(file1, FileDescriptor(Option.empty))
-        .updated(file2, FileDescriptor(Option.empty))
+        .updated(file1, FileDescriptor(2, Option.empty))
+        .updated(file2, FileDescriptor(3, Option.empty))
     )
 
     extractFileMetadata(multiDepositDir / "ruimtereis01", instructions).invalidValue.toNonEmptyList.toList should contain only(

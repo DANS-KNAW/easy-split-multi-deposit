@@ -327,7 +327,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
 
   it should "succeed if there are multiple depositorUserIDs that are all equal" in {
     val rows = DepositRow(2, depositCSVRow1) ::
-      DepositRow(2, depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) ::
+      DepositRow(3, depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) ::
       Nil
 
     extractInstructions("ruimtereis01", 2, rows).value shouldBe instructions
