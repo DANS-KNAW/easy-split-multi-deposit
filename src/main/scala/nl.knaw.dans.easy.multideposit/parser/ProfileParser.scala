@@ -39,11 +39,6 @@ trait ProfileParser {
       extractAtLeastOne(rowNum, "DDM_AUDIENCE", rows),
       extractDdmAccessrights(rowNum, rows),
     ).mapN(Profile)
-      .andThen {
-        case Profile(_, _, _, _, _, audiences, AccessCategory.GROUP_ACCESS) if !audiences.exists(_ == "D37000") =>
-          ParseError(rowNum, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeology)").toInvalid
-        case otherwise => otherwise.toValidated
-      }
   }
 
   private def extractCreators(rowNum: Int, rows: DepositRows): Validated[NonEmptyList[Creator]] = {

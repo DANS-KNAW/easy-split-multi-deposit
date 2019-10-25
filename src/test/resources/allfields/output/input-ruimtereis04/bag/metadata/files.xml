@@ -8,7 +8,7 @@
         <dcterms:type>http://schema.org/AudioObject</dcterms:type>
         <dcterms:format>audio/mpeg</dcterms:format>
         <dcterms:title>our daily wake up call</dcterms:title>
-        <accessibleToRights>KNOWN</accessibleToRights>
+        <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
         <visibleToRights>ANONYMOUS</visibleToRights>
     </file>
     <file filepath="data/Quicksort.hs">

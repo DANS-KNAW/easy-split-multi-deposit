@@ -16,7 +16,7 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <ddm:created>2016-07-30</ddm:created>
     <ddm:available>2017-04-17</ddm:available>
     <ddm:audience>D37000</ddm:audience>
-    <ddm:accessRights>GROUP_ACCESS</ddm:accessRights>
+    <ddm:accessRights>REQUEST_PERMISSION</ddm:accessRights>
   </ddm:profile>
   <ddm:dcmiMetadata>
     <dcterms:type xsi:type="dcterms:DCMIType">Dataset</dcterms:type>

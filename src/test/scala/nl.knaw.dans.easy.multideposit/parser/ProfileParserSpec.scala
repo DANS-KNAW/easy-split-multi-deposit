@@ -35,7 +35,7 @@ trait ProfileTestObjects {
       "DDM_CREATED" -> "2016-07-30",
       "DDM_AVAILABLE" -> "2016-07-31",
       "DDM_AUDIENCE" -> "D30000",
-      "DDM_ACCESSRIGHTS" -> "GROUP_ACCESS"
+      "DDM_ACCESSRIGHTS" -> "REQUEST_PERMISSION"
     ),
     Map(
       "DC_TITLE" -> "title2",
@@ -56,7 +56,7 @@ trait ProfileTestObjects {
     created = DateTime.parse("2016-07-30"),
     available = DateTime.parse("2016-07-31"),
     audiences = NonEmptyList.of("D30000", "D37000"),
-    accessright = AccessCategory.GROUP_ACCESS
+    accessright = AccessCategory.REQUEST_PERMISSION
   )
 }
 
@@ -96,15 +96,8 @@ class ProfileParserSpec extends TestSupportFixture with ProfileTestObjects {
     extractProfile(2, rows).invalidValue.toNonEmptyList.toList should contain inOrderOnly(
       ParseError(2, "Only one row is allowed to contain a value for the column 'DDM_CREATED'. Found: [2016-07-30, 2015-07-30]"),
       ParseError(2, "At most one row is allowed to contain a value for the column 'DDM_AVAILABLE'. Found: [2016-07-31, 2015-07-31]"),
-      ParseError(2, "Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'. Found: [GROUP_ACCESS, NO_ACCESS]"),
+      ParseError(2, "Only one row is allowed to contain a value for the column 'DDM_ACCESSRIGHTS'. Found: [REQUEST_PERMISSION, NO_ACCESS]"),
     )
-  }
-
-  it should "fail if DDM_ACCESSRIGHTS is GROUPACCESS and DDM_AUDIENCE does not contain D37000" in {
-    val rows = DepositRow(2, profileCSVRow1) :: Nil
-
-    extractProfile(2, rows).invalidValue shouldBe
-      ParseError(2, "When DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeology)").chained
   }
 
   "accessCategory" should "convert the value for DDM_ACCESSRIGHTS into the corresponding enum object" in {

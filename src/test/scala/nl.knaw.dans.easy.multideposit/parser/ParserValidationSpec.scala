@@ -93,7 +93,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     val deposit = baseDeposit.copy(
       depositId = depositId,
       profile = baseDeposit.profile.copy(
-        accessright = AccessCategory.OPEN_ACCESS_FOR_REGISTERED_USERS,
+        accessright = AccessCategory.REQUEST_PERMISSION,
       ),
       metadata = baseDeposit.metadata.copy(
         userLicense = Option(UserLicense("http://creativecommons.org/licenses/by-nc-sa/4.0/")),
@@ -109,7 +109,7 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     val deposit = baseDeposit.copy(
       depositId = depositId,
       profile = baseDeposit.profile.copy(
-        accessright = AccessCategory.OPEN_ACCESS_FOR_REGISTERED_USERS,
+        accessright = AccessCategory.REQUEST_PERMISSION,
       ),
       metadata = baseDeposit.metadata.copy(
         userLicense = Option.empty,
@@ -224,11 +224,11 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "flyby of centaur",
-        accessibleTo = FileAccessRights.RESTRICTED_GROUP,
+        accessibleTo = FileAccessRights.RESTRICTED_REQUEST,
         visibleTo = FileAccessRights.ANONYMOUS
       ))
 
     validation.checkAllAVFilesHaveSameAccessibility(deposit) shouldBe
-      ParseError(2, "Multiple accessibility levels found for A/V files: {ANONYMOUS, RESTRICTED_GROUP}").toInvalid
+      ParseError(2, "Multiple accessibility levels found for A/V files: {ANONYMOUS, RESTRICTED_REQUEST}").toInvalid
   }
 }

@@ -5,7 +5,7 @@
         <dcterms:type>http://schema.org/VideoObject</dcterms:type>
         <dcterms:format>video/mpeg</dcterms:format>
         <dcterms:title>video about the hubble space telescope</dcterms:title>
-        <accessibleToRights>RESTRICTED_GROUP</accessibleToRights>
+        <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
         <visibleToRights>ANONYMOUS</visibleToRights>
     </file>
     <file filepath="data/reisverslag/centaur-nederlands.srt">
@@ -15,7 +15,7 @@
         <dcterms:type>http://schema.org/VideoObject</dcterms:type>
         <dcterms:format>video/mpeg</dcterms:format>
         <dcterms:title>video about the centaur meteorite</dcterms:title>
-        <accessibleToRights>RESTRICTED_GROUP</accessibleToRights>
+        <accessibleToRights>RESTRICTED_REQUEST</accessibleToRights>
         <visibleToRights>ANONYMOUS</visibleToRights>
         <dcterms:relation xml:lang="en">data/reisverslag/centaur.srt</dcterms:relation>
         <dcterms:relation xml:lang="nl">data/reisverslag/centaur-nederlands.srt</dcterms:relation>

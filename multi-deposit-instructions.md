@@ -138,14 +138,12 @@ file that is described here, at least `FILE_PATH` and at least one of `FILE_TITL
 need to be provided. A file can only have one value for each of these properties.
 
 `FILE_ACCESSIBILITY` and `FILE_VISIBILITY` provide a way to override the default accessibility and visibility respectively.
-Their value must be one of: 'ANONYMOUS', 'RESTRICTED_REQUEST', 'RESTRICTED_GROUP', 'KNOWN' and 'NONE'. The default
+Their value must be one of: 'ANONYMOUS', 'RESTRICTED_REQUEST', and 'NONE'. The default
 accessibility is derived from the access category specified in the `DDM_ACCESSRIGHTS` field.
 
 DDM_ACCESSRIGHTS                       | Default accessibility
 ---------------------------------------|----------------------
 `OPEN_ACCESS`                          | `ANONYMOUS`
-`OPEN_ACCESS_FOR_REGISTERED_USERS`     | `KNOWN`
-`GROUP_ACCESS`                         | `RESTRICTED_GROUP`
 `REQUEST_PERMISSION`                   | `RESTRICTED_REQUEST`
 `NO_ACCESS`                            | `NONE`
 

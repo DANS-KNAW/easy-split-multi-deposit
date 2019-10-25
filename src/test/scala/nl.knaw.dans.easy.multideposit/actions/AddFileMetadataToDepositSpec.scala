@@ -75,7 +75,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "video about the hubble space telescope",
-        accessibleTo = FileAccessRights.RESTRICTED_GROUP,
+        accessibleTo = FileAccessRights.RESTRICTED_REQUEST,
         visibleTo = FileAccessRights.ANONYMOUS
       ),
       AVFileMetadata(
@@ -83,7 +83,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         mimeType = "video/mpeg",
         vocabulary = Video,
         title = "video about the centaur meteorite",
-        accessibleTo = FileAccessRights.RESTRICTED_GROUP,
+        accessibleTo = FileAccessRights.RESTRICTED_REQUEST,
         visibleTo = FileAccessRights.ANONYMOUS,
         subtitles = Set(
           SubtitlesFile(multiDepositDir / "ruimtereis01/reisverslag/centaur.srt", Option("en")),
@@ -117,7 +117,7 @@ class AddFileMetadataToDepositSpec extends TestSupportFixture with CustomMatcher
         mimeType = "image/jpeg",
         title = Some("Hubble"),
         accessibleTo = Some(FileAccessRights.RESTRICTED_REQUEST),
-        visibleTo = Some(FileAccessRights.KNOWN)
+        visibleTo = Some(FileAccessRights.ANONYMOUS)
       ),
       DefaultFileMetadata(
         filepath = testDir / "md/ruimtereis02/path/to/images/Hubbleshots.jpg",
