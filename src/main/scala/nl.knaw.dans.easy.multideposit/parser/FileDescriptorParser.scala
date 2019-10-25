@@ -33,7 +33,7 @@ trait FileDescriptorParser {
       .fold(_.invalid, combineFileDescriptors(rowNum))
   }
 
-  def fileDescriptor(depositId: DepositId)(row: DepositRow): Option[Validated[(File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]] = {
+  def fileDescriptor(depositId: DepositId)(row: DepositRow): Option[Validated[(Int, File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]] = {
     val path = row.find("FILE_PATH").map(findRegularFile(depositId, row.rowNum))
     val title = row.find("FILE_TITLE")
     val accessibility = row.find("FILE_ACCESSIBILITY").map(fileAccessibility(row.rowNum))
@@ -52,6 +52,7 @@ trait FileDescriptorParser {
           .some
       case (Some(p), t, a, v) =>
         (
+          row.rowNum.toValidated,
           p,
           t.toValidated,
           a.sequence,
@@ -60,15 +61,15 @@ trait FileDescriptorParser {
     }
   }
 
-  private def combineFileDescriptors(rowNum: Int)(descriptors: List[(File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]): Validated[Map[File, FileDescriptor]] = {
-    descriptors.groupBy { case (file, _, _, _) => file }
+  private def combineFileDescriptors(rowNum: Int)(descriptors: List[(Int, File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]): Validated[Map[File, FileDescriptor]] = {
+    descriptors.groupBy { case (_, file, _, _, _) => file }
       .map((toFileDescriptor(rowNum) _).tupled)
       .toList
       .sequence
       .map(_.toMap)
   }
 
-  private def ensureAtMostOneElementInList[T](list: List[T])(err: List[T] => ParseError): Validated[Option[T]] = {
+  private def checkAtMostOneElementInList[T](list: List[T])(err: List[T] => ParseError): Validated[Option[T]] = {
     list match {
       case Nil => none.toValidated
       case title :: Nil => title.some.toValidated
@@ -76,15 +77,16 @@ trait FileDescriptorParser {
     }
   }
 
-  private def toFileDescriptor(rowNum: => Int)(file: File, dataPerPath: List[(File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]): Validated[(File, FileDescriptor)] = {
+  private def toFileDescriptor(rowNum: => Int)(file: File, dataPerPath: List[(Int, File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]): Validated[(File, FileDescriptor)] = {
     (
-      ensureAtMostOneElementInList(dataPerPath.collect { case (_, Some(title), _, _) => title })(titles => ParseError(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ titles.mkString("[", ", ", "]") }")),
-      ensureAtMostOneElementInList(dataPerPath.collect { case (_, _, Some(far), _) => far })(fileAccessibilities => ParseError(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fileAccessibilities.mkString("[", ", ", "]") }")),
-      ensureAtMostOneElementInList(dataPerPath.collect { case (_, _, _, Some(fv)) => fv })(fileVisibilities => ParseError(rowNum, s"FILE_VISIBILITY defined multiple values for file '$file': ${ fileVisibilities.mkString("[", ", ", "]") }")),
+      dataPerPath.collect { case (localRowNum, _, _, _, _) => localRowNum }.min.toValidated,
+      checkAtMostOneElementInList(dataPerPath.collect { case (_, _, Some(title), _, _) => title })(titles => ParseError(rowNum, s"FILE_TITLE defined multiple values for file '$file': ${ titles.mkString("[", ", ", "]") }")),
+      checkAtMostOneElementInList(dataPerPath.collect { case (_, _, _, Some(far), _) => far })(fileAccessibilities => ParseError(rowNum, s"FILE_ACCESSIBILITY defined multiple values for file '$file': ${ fileAccessibilities.mkString("[", ", ", "]") }")),
+      checkAtMostOneElementInList(dataPerPath.collect { case (_, _, _, _, Some(fv)) => fv })(fileVisibilities => ParseError(rowNum, s"FILE_VISIBILITY defined multiple values for file '$file': ${ fileVisibilities.mkString("[", ", ", "]") }")),
     ).mapN(FileDescriptor)
       .map((file, _))
       .andThen {
-        case (_, FileDescriptor(_, Some(as), Some(vs))) if vs >= as => ParseError(rowNum, s"FILE_VISIBILITY ($vs) is more restricted than FILE_ACCESSIBILITY ($as) for file '$file'. (User will potentially have access to an invisible file.)").toInvalid
+        case (_, FileDescriptor(localRowNum, _, Some(as), Some(vs))) if vs > as => ParseError(localRowNum, s"FILE_VISIBILITY ($vs) is more restricted than FILE_ACCESSIBILITY ($as) for file '$file'. (User will potentially have access to an invisible file.)").toInvalid
         case otherwise => otherwise.toValidated
       }
   }

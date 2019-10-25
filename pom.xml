@@ -22,12 +22,12 @@
     <parent>
         <groupId>nl.knaw.dans.shared</groupId>
         <artifactId>dans-scala-app-project</artifactId>
-        <version>4.0.0</version>
+        <version>5.1.0</version>
     </parent>
 
     <groupId>nl.knaw.dans.easy</groupId>
     <artifactId>easy-split-multi-deposit</artifactId>
-    <version>1.6.9-SNAPSHOT</version>
+    <version>1.6.10-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EASY Split Multi-Deposit</name>
@@ -35,7 +35,8 @@
 
     <properties>
         <main-class>nl.knaw.dans.easy.multideposit.Command</main-class>
-        <easy.ddm.version>3.8.2</easy.ddm.version>
+        <easy.ddm.version>3.9.0</easy.ddm.version>
+        <easy.licenses.version>1.0.1</easy.licenses.version>
     </properties>
 
     <scm>
@@ -144,23 +145,53 @@
 
     <repositories>
         <repository>
-            <id>DANS</id>
+            <id>dans-releases</id>
             <releases>
                 <enabled>true</enabled>
             </releases>
-            <url>http://maven.dans.knaw.nl/releases</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <url>https://maven.dans.knaw.nl/releases/</url>
+        </repository>
+        <repository>
+            <id>dans-snapshots</id>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <url>https://maven.dans.knaw.nl/snapshots/</url>
         </repository>
     </repositories>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <id>DANS</id>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <url>http://maven.dans.knaw.nl/releases</url>
-        </pluginRepository>
-    </pluginRepositories>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>resources</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>nl.knaw.dans.easy</groupId>
+                                    <artifactId>easy-licenses</artifactId>
+                                    <version>${easy.licenses.version}</version>
+                                    <outputDirectory>${project.build.directory}/easy-licenses</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <profiles>
         <profile>
@@ -178,6 +209,17 @@
                         <artifactId>rpm-maven-plugin</artifactId>
                         <configuration>
                             <group>Applications/Archiving</group>
+                            <mappings combine.children="append">
+                                <mapping>
+                                    <directory>/etc/opt/${dans-provider-name}/${project.artifactId}/lic</directory>
+                                    <configuration>${rpm-replace-configuration}</configuration>
+                                    <sources>
+                                        <source>
+                                            <location>target/easy-licenses/licenses</location>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                            </mappings>
                             <requires combine.children="append">
                                 <require>ffmpeg</require>
                                 <require>ffmpeg-libs</require>

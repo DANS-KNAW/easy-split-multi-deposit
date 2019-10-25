@@ -20,6 +20,7 @@ import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.{ FileAccessRights, FileDescriptor }
 import org.scalatest.BeforeAndAfterEach
+import cats.syntax.option._
 
 trait FileDescriptorTestObjects {
   this: InputPathExplorer =>
@@ -45,11 +46,13 @@ trait FileDescriptorTestObjects {
   lazy val fileDescriptors: Map[File, FileDescriptor] = Map(
     multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg" ->
       FileDescriptor(
+        rowNum = 2,
         title = Option("video about the centaur meteorite"),
         accessibility = Option(FileAccessRights.RESTRICTED_REQUEST)
       ),
     multiDepositDir / "ruimtereis01/path/to/a/random/video/hubble.mpg" ->
       FileDescriptor(
+        rowNum = 3,
         title = Option.empty,
         accessibility = Option(FileAccessRights.RESTRICTED_REQUEST)
       )
@@ -88,7 +91,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).value should {
       have size 1 and contain only
-        file -> FileDescriptor(Some("some title"), Some(FileAccessRights.ANONYMOUS))
+        file -> FileDescriptor(2, Some("some title"), Some(FileAccessRights.ANONYMOUS))
     }
   }
 
@@ -107,7 +110,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
 
     extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).value should {
-      have size 1 and contain only file -> FileDescriptor()
+      have size 1 and contain only file -> FileDescriptor(2)
     }
   }
 
@@ -122,7 +125,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     extractFileDescriptors("ruimtereis01", 2, row :: Nil).value should {
       have size 1 and contain only
-        file -> FileDescriptor(Some("some title"), None)
+        file -> FileDescriptor(2, Some("some title"), None)
     }
   }
 
@@ -137,7 +140,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
     extractFileDescriptors("ruimtereis01", 2, row :: Nil).value should {
       have size 1 and contain only
-        file -> FileDescriptor(accessibility = Some(FileAccessRights.ANONYMOUS))
+        file -> FileDescriptor(2, accessibility = Some(FileAccessRights.ANONYMOUS))
     }
   }
 
@@ -198,15 +201,34 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
   }
 
   it should "fail if visibility is more restricted than accessibility" in {
-    val row = DepositRow(2, Map(
+    val row1 = DepositRow(2, Map(
+      "FILE_PATH" -> "path/to/a/random/video/hubble.mpg",
+      "FILE_VISIBILITY" -> "NONE",
+      "FILE_ACCESSIBILITY" -> "NONE"
+    ))
+    val row2 = DepositRow(3, Map(
       "FILE_PATH" -> "reisverslag/centaur.mpg",
       "FILE_VISIBILITY" -> "NONE",
       "FILE_ACCESSIBILITY" -> "ANONYMOUS"
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
-    extractFileDescriptors("ruimtereis01", 2, row :: Nil).invalidValue shouldBe
-      ParseError(2, s"FILE_VISIBILITY (NONE) is more restricted than FILE_ACCESSIBILITY (ANONYMOUS) for file '$file'. (User will potentially have access to an invisible file.)").chained
+    extractFileDescriptors("ruimtereis01", 2, row1 :: row2 :: Nil).invalidValue shouldBe
+      ParseError(3, s"FILE_VISIBILITY (NONE) is more restricted than FILE_ACCESSIBILITY (ANONYMOUS) for file '$file'. (User will potentially have access to an invisible file.)").chained
+  }
+
+  it should "succeed if visibility is equally restricted as accessibility" in {
+    val row = DepositRow(2, Map(
+      "FILE_PATH" -> "reisverslag/centaur.mpg",
+      "FILE_VISIBILITY" -> "NONE",
+      "FILE_ACCESSIBILITY" -> "NONE"
+    ))
+
+    val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
+    val expectedOutput = Map(
+      file -> FileDescriptor(2, none, FileAccessRights.NONE.some, FileAccessRights.NONE.some),
+    )
+    extractFileDescriptors("ruimtereis01", 2, row :: Nil).value shouldBe expectedOutput
   }
 
   "fileDescriptor" should "convert the csv input to the corresponding output" in {
@@ -217,7 +239,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
-    fileDescriptor("ruimtereis01")(row).value.value shouldBe (file, Some("some title"), Some(FileAccessRights.ANONYMOUS), None)
+    fileDescriptor("ruimtereis01")(row).value.value shouldBe (2, file, Some("some title"), Some(FileAccessRights.ANONYMOUS), None)
   }
 
   it should "fail if the path does not exist" in {
@@ -250,7 +272,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
-    fileDescriptor("ruimtereis01")(row).value.value shouldBe (file, Some("some title"), None, None)
+    fileDescriptor("ruimtereis01")(row).value.value shouldBe (2, file, Some("some title"), None, None)
   }
 
   it should "fail if an invalid FILE_ACCESSIBILITY is given" in {

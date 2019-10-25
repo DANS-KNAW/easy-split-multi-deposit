@@ -118,7 +118,7 @@ following four values: {`ISBN`, `ISSN`, `NWO-PROJECTNR`, `ARCHIS-ZAAK-IDENTIFICA
 In the latter case an extra `xsi:type` is added to the resulting DDM xml.
 
 #### User license
-`DCT_LICENSE` can be one of the elements listed in the [licenses list](src/main/assembly/dist/cfg/licenses.txt).
+`DCT_LICENSE` can be one of the elements listed in the [licenses list](target/easy-licenses/licenses/licenses.properties).
 This field must be used when `DDM_ACCESSRIGHTS` is set to `OPEN_ACCESS` and is not accepted when `DDM_ACCESSRIGHTS` is set to any other value.
 
 #### Type
