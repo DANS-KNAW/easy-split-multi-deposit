@@ -110,7 +110,7 @@ trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with E
         created = DateTime.now(),
         available = DateTime.parse("2016-07-30"),
         audiences = NonEmptyList.of("D37000"),
-        accessright = AccessCategory.GROUP_ACCESS
+        accessright = AccessCategory.REQUEST_PERMISSION
       ),
       baseUUID = Option(UUID.fromString("1de3f841-0f0d-048b-b3db-4b03ad4834d7")),
       metadata = Metadata(

@@ -29,9 +29,7 @@ object FileAccessRights extends Enumeration {
 
   val
   ANONYMOUS, // a user that is not logged in
-  KNOWN, // a logged in user
   RESTRICTED_REQUEST, // a user that received permission to access the dataset
-  RESTRICTED_GROUP, // a user belonging to the same group as the dataset
   NONE // none of the above
   = Value
 
@@ -39,11 +37,11 @@ object FileAccessRights extends Enumeration {
     // https://github.com/DANS-KNAW/easy-app/blob/1080eff457/lib/easy-business/src/main/java/nl/knaw/dans/easy/domain/model/AccessibleTo.java#L23-L37
     // the legacy code lacks OPEN_ACCESS, ACCESS_ELSEWHERE, FREELY_AVAILABLE
     ANONYMOUS_ACCESS -> ANONYMOUS,
-    OPEN_ACCESS_FOR_REGISTERED_USERS -> KNOWN,
-    GROUP_ACCESS -> RESTRICTED_GROUP,
     REQUEST_PERMISSION -> RESTRICTED_REQUEST,
     OPEN_ACCESS -> ANONYMOUS,
     // deprecated keys
+    OPEN_ACCESS_FOR_REGISTERED_USERS -> RESTRICTED_REQUEST,
+    GROUP_ACCESS -> RESTRICTED_REQUEST,
     NO_ACCESS -> NONE, // used by Excel2EasyMetadataXMLTask.java for invalid values in some spread-sheet cell
     ACCESS_ELSEWHERE -> NONE,
     FREELY_AVAILABLE -> ANONYMOUS // used for thumbnails in EASY-v1

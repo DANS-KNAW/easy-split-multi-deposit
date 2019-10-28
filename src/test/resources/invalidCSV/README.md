@@ -39,8 +39,6 @@ first badge of errors is resolved.
 
 * DDM_AVAILABLE
     * more than one value is defined
-* DDM_AUDIENCE/DDM_ACCESSRIGHT
-    * when DDM_ACCESSRIGHTS is GROUP_ACCESS, DDM_AUDIENCE should be D37000 (Archaeologie), but it is: D30000
 * SF_DOMAIN
     * only characters `[a-zA-Z0-9-_]` are allowed in this property
 * SF_COLLECTION
