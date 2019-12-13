@@ -67,20 +67,14 @@ ARGUMENTS
 ```
 
 
-### Installation steps:
+INSTALLATION AND CONFIGURATION
+------------------------------
+Currently this project is built as an RPM package for RHEL7/CentOS7 and later. The RPM will install the binaries to
+`/opt/dans.knaw.nl/easy-split-multi-deposit` and the configuration files to `/etc/opt/dans.knaw.nl/easy-split-multi-deposit`. 
 
-1. Unzip the tarball to a directory of your choice, e.g. `/opt/`
-2. A new directory called easy-split-mult-deposit-<version> will be created, referred to below as `${app.home}`
-3. Create a symbolic link to the executable script in a directory that is in your `PATH`, e.g.
-
-        ln -s ${app.home}/bin/easy-split-multi-deposit /usr/bin/easy-split-multi-deposit
-
-
-### Configuration
-
-General configuration settings can be set in `${app.home}/cfg/application.properties` and logging can be
-configured in `${app.home}/cfg/logback.xml`. The available settings are explained in comments in 
-aforementioned files.
+To install the module on systems that do not support RPM, you can copy and unarchive the tarball to the target host.
+You will have to take care of placing the files in the correct locations for your system yourself. For instructions
+on building the tarball, see next section.
 
 
 BUILDING FROM SOURCE
@@ -90,6 +84,7 @@ Prerequisites:
 
 * Java 8 or higher
 * Maven 3.3.3 or higher
+* RPM
  
 Steps:
 
@@ -97,15 +92,13 @@ Steps:
         cd easy-split-multi-deposit
         mvn install
 
+If the `rpm` executable is found at `/usr/local/bin/rpm`, the build profile that includes the RPM 
+packaging will be activated. If `rpm` is available, but at a different path, then activate it by using
+Maven's `-P` switch: `mvn -Pprm install`.
 
+Alternatively, to build the tarball execute:
+
+    mvn clean install assembly:single
+    
 [Multi-Deposit Instructions]: multi-deposit-instructions.md
 [easy-ingest-flow]: https://github.com/DANS-KNAW/easy-ingest-flow
-
-  
-
-
-
-
-
-
-
