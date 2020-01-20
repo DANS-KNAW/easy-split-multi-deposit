@@ -175,7 +175,8 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
   }
 
   def uuid(rowNum: => Int, columnName: => String)(s: String): Validated[Option[UUID]] = {
-    catchOnly[IllegalArgumentException] { Option(UUID.fromString(s)) }
+    s.toUUID
+      .map(Option(_))
       .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' does not conform to the UUID format"))
       .toValidatedNec
   }
