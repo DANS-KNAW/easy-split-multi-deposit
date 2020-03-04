@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import java.net.URI
+
 import better.files.File
 import cats.data.NonEmptyList
 import cats.data.Validated.Valid
@@ -43,6 +45,9 @@ trait LanguageBehavior {
 
 trait MetadataTestObjects {
 
+  val testUriString = "http://does.not.exist.dans.knaw.nl/"
+  val testUri = new URI(testUriString)
+
   lazy val metadataCSV @ metadataCSVRow1 :: metadataCSVRow2 :: Nil = List(
     Map(
       "DCT_ALTERNATIVE" -> "alt1",
@@ -58,7 +63,7 @@ trait MetadataTestObjects {
       "DCT_RIGHTSHOLDER" -> "right1",
       // relation
       "DCX_RELATION_QUALIFIER" -> "replaces",
-      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_LINK" -> testUriString,
       "DCX_RELATION_TITLE" -> "bar",
       // date
       "DCT_DATE" -> "2016-02-01",
@@ -90,7 +95,7 @@ trait MetadataTestObjects {
       "DC_LANGUAGE" -> "nld",
       "DCT_SPATIAL" -> "spat2",
       "DCT_RIGHTSHOLDER" -> "right2",
-      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_LINK" -> testUriString,
       "DCX_RELATION_TITLE" -> "bar",
       "DCT_DATE" -> "some random text",
       // spatialBox
@@ -119,7 +124,7 @@ trait MetadataTestObjects {
     languages = List("dut", "nld"),
     spatials = List("spat1", "spat2"),
     rightsholder = NonEmptyList.of("right1", "right2"),
-    relations = List(QualifiedRelation(RelationQualifier.Replaces, link = Some("foo"), title = Some("bar")), UnqualifiedRelation(link = Some("foo"), title = Some("bar"))),
+    relations = List(QualifiedRelation(RelationQualifier.Replaces, link = Some(testUri), title = Some("bar")), UnqualifiedRelation(link = Some(testUri), title = Some("bar"))),
     dates = List(QualifiedDate(new DateTime(2016, 2, 1, 0, 0), DateQualifier.DATE_SUBMITTED), TextualDate("some random text")),
     contributors = List(ContributorPerson(initials = "A.", surname = "Jones", role = Some(ContributorRole.RELATED_PERSON))),
     subjects = List(Subject("IX", Option("abr:ABRcomplex"))),
@@ -242,27 +247,27 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
   "relation" should "succeed if both the link and title are defined" in {
     val row = DepositRow(2, Map(
       "DCX_RELATION_QUALIFIER" -> "",
-      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_LINK" -> testUriString,
       "DCX_RELATION_TITLE" -> "bar"
     ))
 
-    relation(row).value.value shouldBe UnqualifiedRelation(Some("foo"), Some("bar"))
+    relation(row).value.value shouldBe UnqualifiedRelation(Some(testUri), Some("bar"))
   }
 
   it should "succeed if the qualifier and both the link and title are defined" in {
     val row = DepositRow(2, Map(
       "DCX_RELATION_QUALIFIER" -> "replaces",
-      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_LINK" -> testUriString,
       "DCX_RELATION_TITLE" -> "bar"
     ))
 
-    relation(row).value.value shouldBe QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))
+    relation(row).value.value shouldBe QualifiedRelation(RelationQualifier.Replaces, Some(testUri), Some("bar"))
   }
 
   it should "fail when only the qualifier and link are defined" in {
     val row = DepositRow(2, Map(
       "DCX_RELATION_QUALIFIER" -> "replaces",
-      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_LINK" -> testUriString,
       "DCX_RELATION_TITLE" -> ""
     ))
 
@@ -294,7 +299,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
   it should "fail if an invalid qualifier is given" in {
     val row = DepositRow(2, Map(
       "DCX_RELATION_QUALIFIER" -> "invalid",
-      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_LINK" -> testUriString,
       "DCX_RELATION_TITLE" -> "bar"
     ))
 
@@ -302,14 +307,25 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       ParseError(2, "Value 'invalid' is not a valid relation qualifier").chained
   }
 
-  it should "succeed if the qualifier is formatted differently" in {
+  it should "fail if an invalid link is given" in {
     val row = DepositRow(2, Map(
-      "DCX_RELATION_QUALIFIER" -> "rEplAcEs",
-      "DCX_RELATION_LINK" -> "foo",
+      "DCX_RELATION_QUALIFIER" -> "replaces",
+      "DCX_RELATION_LINK" -> "invalid uri",
       "DCX_RELATION_TITLE" -> "bar"
     ))
 
-    relation(row).value.value shouldBe QualifiedRelation(RelationQualifier.Replaces, Some("foo"), Some("bar"))
+    relation(row).value.invalidValue shouldBe
+      ParseError(2, "DCX_RELATION_LINK value 'invalid uri' is not a valid URI").chained
+  }
+
+  it should "succeed if the qualifier is formatted differently" in {
+    val row = DepositRow(2, Map(
+      "DCX_RELATION_QUALIFIER" -> "rEplAcEs",
+      "DCX_RELATION_LINK" -> testUriString,
+      "DCX_RELATION_TITLE" -> "bar"
+    ))
+
+    relation(row).value.value shouldBe QualifiedRelation(RelationQualifier.Replaces, Some(testUri), Some("bar"))
   }
 
   it should "fail if only the link is defined" in {
@@ -321,6 +337,17 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
 
     relation(row).value.invalidValue shouldBe
       ParseError(2, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context").chained
+  }
+
+  it should "fail if no qualifier is given and an invalid link is given" in {
+    val row = DepositRow(2, Map(
+      "DCX_RELATION_QUALIFIER" -> "",
+      "DCX_RELATION_LINK" -> "invalid uri",
+      "DCX_RELATION_TITLE" -> "bar"
+    ))
+
+    relation(row).value.invalidValue shouldBe
+      ParseError(2, "DCX_RELATION_LINK value 'invalid uri' is not a valid URI").chained
   }
 
   it should "succeed if only the title is defined" in {
