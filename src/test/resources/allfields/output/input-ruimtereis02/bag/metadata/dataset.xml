@@ -52,7 +52,7 @@ xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.k
     <dcterms:rightsHolder>richard</dcterms:rightsHolder>
     <dcterms:rightsHolder>joke</dcterms:rightsHolder>
     <dcterms:rightsHolder>vesa</dcterms:rightsHolder>
-    <ddm:isVersionOf href="barbapappa">context</ddm:isVersionOf>
+    <ddm:isVersionOf href="http://barbapappa">context</ddm:isVersionOf>
     <dcterms:dateAccepted>2017-08-01</dcterms:dateAccepted>
       <dc:date>random text</dc:date>
     <dcterms:dateCopyrighted>2017-08-02</dcterms:dateCopyrighted>

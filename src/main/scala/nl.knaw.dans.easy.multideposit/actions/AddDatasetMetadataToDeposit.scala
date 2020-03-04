@@ -16,9 +16,9 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import cats.syntax.either._
-import nl.knaw.dans.easy.multideposit.{ ActionError, BetterFileExtensions, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
 import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.easy.multideposit.{ ActionError, BetterFileExtensions, FailFast }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
@@ -207,15 +207,15 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
   def createRelation(relation: Relation): Elem = {
     relation match {
       case QualifiedRelation(qualifier, Some(link), Some(title)) =>
-        <key href={link}>{title}</key>.copy(label = s"ddm:${ qualifier.toString }")
+        <key href={link.toString}>{title}</key>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, Some(link), None) =>
-          <key href={link}/>.copy(label = s"ddm:${ qualifier.toString }")
+          <key href={link.toString}/>.copy(label = s"ddm:${ qualifier.toString }")
       case QualifiedRelation(qualifier, None, Some(title)) =>
         <key>{title}</key>.copy(label = s"dcterms:${ qualifier.toString }")
       case UnqualifiedRelation(Some(link), Some(title)) =>
-        <ddm:relation href={link}>{title}</ddm:relation>
+        <ddm:relation href={link.toString}>{title}</ddm:relation>
       case UnqualifiedRelation(Some(link), None) =>
-          <ddm:relation href={link}/>
+          <ddm:relation href={link.toString}/>
       case UnqualifiedRelation(None, Some(title)) =>
         <dc:relation>{title}</dc:relation>
       case other => throw new UnsupportedOperationException(s"Relation $other is not supported. You should not even be able to create this object!")

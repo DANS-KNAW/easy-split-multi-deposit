@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.model
 
+import java.net.URI
+
 import cats.data.NonEmptyList
 import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
 import org.joda.time.DateTime
@@ -42,11 +44,11 @@ case class Identifier(id: String, idType: Option[IdentifierType.Value] = Option.
 
 sealed abstract class Relation
 case class QualifiedRelation(qualifier: RelationQualifier.Value,
-                             link: Option[String] = Option.empty,
+                             link: Option[URI] = Option.empty,
                              title: Option[String] = Option.empty) extends Relation {
   require(link.isDefined || title.isDefined, "at least one of [link, title] must be filled in")
 }
-case class UnqualifiedRelation(link: Option[String] = Option.empty,
+case class UnqualifiedRelation(link: Option[URI] = Option.empty,
                                title: Option[String] = Option.empty) extends Relation {
   require(link.isDefined || title.isDefined, "at least one of [link, title] must be filled in")
 }

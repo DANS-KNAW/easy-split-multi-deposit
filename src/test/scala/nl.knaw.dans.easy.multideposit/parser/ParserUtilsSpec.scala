@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import java.net.URI
+
 import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
@@ -207,6 +209,20 @@ class ParserUtilsSpec extends TestSupportFixture {
   it should "fail if the value does not represent a date" in {
     date(2, "datum")("you can't parse me!").invalidValue shouldBe
       ParseError(2, "datum value 'you can't parse me!' does not represent a date").chained
+  }
+
+  "url" should "convert the value of a URI into the corresponding object" in {
+    uri(2, "my-uri")("http://does.not.exist.dans.knaw.nl/").value shouldBe new URI("http://does.not.exist.dans.knaw.nl/")
+  }
+
+  it should "fail if the value does not represent a URI" in {
+    uri(2, "my-uri")("you can't parse me!").invalidValue shouldBe
+      ParseError(2, "my-uri value 'you can't parse me!' is not a valid URI").chained
+  }
+
+  it should "fail if the value does not represent a URI with one of the accepted schemes" in {
+    uri(2, "my-uri")("javascript://hello-world").invalidValue shouldBe
+      ParseError(2, "my-uri value 'javascript://hello-world' is a valid URI but doesn't have one of the accepted protocols: {http, https}").chained
   }
 
   "missingRequired" should "return a ParseError listing the one missing column" in {
