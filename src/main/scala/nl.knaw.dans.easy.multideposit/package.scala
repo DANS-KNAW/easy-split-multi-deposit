@@ -16,11 +16,10 @@
 package nl.knaw.dans.easy
 
 import java.io.IOException
-import java.nio.charset.Charset
+import java.nio.charset.{ Charset, StandardCharsets }
 
 import better.files.File
 import cats.data.EitherNec
-import org.apache.commons.io.Charsets
 import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
 import org.joda.time.{ DateTime, DateTimeZone }
 
@@ -34,7 +33,7 @@ package object multideposit {
 
   def now: String = DateTime.now(DateTimeZone.UTC).toString(dateTimeFormatter)
 
-  val encoding: Charset = Charsets.UTF_8
+  val encoding: Charset = StandardCharsets.UTF_8
 
   case class DepositPermissions(permissions: String, group: String)
 
