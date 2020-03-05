@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.easy.multideposit.actions
 
+import java.net.URI
 import java.util.UUID
 
 import better.files.File
@@ -170,11 +171,11 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
       spatials = List("sp1"),
       rightsholder = NonEmptyList.of("rh1"),
       relations = List(
-        QualifiedRelation(RelationQualifier.Replaces, link = Some("l1"), title = Some("t1")),
-        QualifiedRelation(RelationQualifier.IsVersionOf, link = Some("l2")),
+        QualifiedRelation(RelationQualifier.Replaces, link = Some(new URI("http://does.not.exist1.dans.knaw.nl/")), title = Some("t1")),
+        QualifiedRelation(RelationQualifier.IsVersionOf, link = Some(new URI("http://does.not.exist2.dans.knaw.nl/"))),
         QualifiedRelation(RelationQualifier.HasVersion, title = Some("t3")),
-        UnqualifiedRelation(link = Some("l4"), title = Some("t4")),
-        UnqualifiedRelation(link = Some("l5")),
+        UnqualifiedRelation(link = Some(new URI("http://does.not.exist4.dans.knaw.nl/")), title = Some("t4")),
+        UnqualifiedRelation(link = Some(new URI("http://does.not.exist5.dans.knaw.nl/"))),
         UnqualifiedRelation(title = Some("t6"))),
       dates = List(
         QualifiedDate(new DateTime(2017, 7, 30, 0, 0), DateQualifier.VALID),
@@ -222,11 +223,11 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
       <dc:language xsi:type='dcterms:ISO639-2'>nld</dc:language>
       <dcterms:spatial>sp1</dcterms:spatial>
       <dcterms:rightsHolder>rh1</dcterms:rightsHolder>
-      <ddm:replaces href="l1">t1</ddm:replaces>
-      <ddm:isVersionOf href="l2"/>
+      <ddm:replaces href="http://does.not.exist1.dans.knaw.nl/">t1</ddm:replaces>
+      <ddm:isVersionOf href="http://does.not.exist2.dans.knaw.nl/"/>
       <dcterms:hasVersion>t3</dcterms:hasVersion>
-      <ddm:relation href="l4">t4</ddm:relation>
-      <ddm:relation href="l5"/>
+      <ddm:relation href="http://does.not.exist4.dans.knaw.nl/">t4</ddm:relation>
+      <ddm:relation href="http://does.not.exist5.dans.knaw.nl/"/>
       <dc:relation>t6</dc:relation>
       <dcterms:valid>2017-07-30</dcterms:valid>
       <dcterms:dateSubmitted>2017-07-31</dcterms:dateSubmitted>
