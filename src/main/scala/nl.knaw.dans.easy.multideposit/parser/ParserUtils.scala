@@ -15,12 +15,15 @@
  */
 package nl.knaw.dans.easy.multideposit.parser
 
+import java.net.{ URI, URISyntaxException }
+
 import better.files.File
 import cats.data.NonEmptyList
 import cats.data.Validated.catchOnly
 import cats.instances.list._
 import cats.syntax.option._
 import cats.syntax.traverse._
+import cats.syntax.validated._
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.model.{ DepositId, MultiDepositKey }
 import nl.knaw.dans.lib.string._
@@ -69,6 +72,18 @@ trait ParserUtils {
   def date(rowNum: => Int, columnName: => String)(s: String): Validated[DateTime] = {
     catchOnly[IllegalArgumentException] { DateTime.parse(s) }
       .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' does not represent a date"))
+      .toValidatedNec
+  }
+
+  val validURIschemes = List("http", "https")
+
+  def uri(rowNum: => Int, columnName: => String)(s: String): Validated[URI] = {
+    catchOnly[URISyntaxException] { new URI(s) }
+      .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' is not a valid URI"))
+      .andThen {
+        case uri if validURIschemes contains uri.getScheme => uri.valid
+        case _ => ParseError(rowNum, s"$columnName value '$s' is a valid URI but doesn't have one of the accepted protocols: ${ validURIschemes.mkString("{", ", ", "}") }").invalid
+      }
       .toValidatedNec
   }
 

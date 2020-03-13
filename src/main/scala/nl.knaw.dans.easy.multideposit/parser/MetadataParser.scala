@@ -126,11 +126,15 @@ trait MetadataParser {
       case (Some(q), l, t) =>
         (
           RelationQualifier.valueOf(q).map(_.toValidated).getOrElse(ParseError(row.rowNum, s"Value '$q' is not a valid relation qualifier").toInvalid),
-          l.toValidated,
+          l.traverse(uri(row.rowNum, "DCX_RELATION_LINK")),
           t.toValidated,
         ).mapN(QualifiedRelation).some
       case (None, None, None) => none
-      case (None, l, t) => UnqualifiedRelation(l, t).toValidated.some
+      case (None, l, t) =>
+        (
+          l.traverse(uri(row.rowNum, "DCX_RELATION_LINK")),
+          t.toValidated
+        ).mapN(UnqualifiedRelation).some
     }
   }
 
@@ -201,11 +205,11 @@ trait MetadataParser {
     (subject, scheme) match {
       case (Some(subj), sch) =>
         val subjectScheme: Validated[Option[String]] = sch.toValidated
-            .andThen {
-              case abr @ Some("abr:ABRcomplex") => abr.toValidated
-              case Some(_) => ParseError(row.rowNum, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'").toInvalid
-              case None => none.toValidated
-            }
+          .andThen {
+            case abr @ Some("abr:ABRcomplex") => abr.toValidated
+            case Some(_) => ParseError(row.rowNum, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'").toInvalid
+            case None => none.toValidated
+          }
 
         (
           subj.toValidated,
