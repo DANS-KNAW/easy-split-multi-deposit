@@ -27,12 +27,14 @@ import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPa
 import nl.knaw.dans.easy.multideposit.model._
 import org.apache.commons.configuration.PropertiesConfiguration
 import org.joda.time.DateTime
-import org.scalatest._
+import org.scalatest.{ Inside, OptionValues }
 import org.scalatest.enablers.Existence
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.collection.JavaConverters._
 
-trait TestSupportFixture extends FlatSpec with Matchers with OptionValues with EitherMatchers with EitherValues with ValidatedValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
+trait TestSupportFixture extends AnyFlatSpec with Matchers with OptionValues with EitherMatchers with EitherValues with ValidatedValues with Inside with InputPathExplorer with StagingPathExplorer with OutputPathExplorer {
 
   implicit def existenceOfFile[FILE <: better.files.File]: Existence[FILE] = _.exists
 

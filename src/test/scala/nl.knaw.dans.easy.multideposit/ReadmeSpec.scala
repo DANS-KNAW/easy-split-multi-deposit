@@ -19,9 +19,10 @@ import java.io.ByteArrayOutputStream
 
 import better.files.File
 import better.files.File.currentWorkingDirectory
-import org.scalatest._
+import org.scalamock.matchers.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 
-class ReadmeSpec extends FlatSpec with Matchers with CustomMatchers {
+class ReadmeSpec extends AnyFlatSpec with Matchers with CustomMatchers {
   private val resourceDirString: String = File(getClass.getResource("/").toURI).toString
 
   val mockedArgs = Array("-s", resourceDirString,
