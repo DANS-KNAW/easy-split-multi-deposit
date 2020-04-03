@@ -19,8 +19,8 @@ import java.io.ByteArrayOutputStream
 
 import better.files.File
 import better.files.File.currentWorkingDirectory
-import org.scalamock.matchers.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class ReadmeSpec extends AnyFlatSpec with Matchers with CustomMatchers {
   private val resourceDirString: String = File(getClass.getResource("/").toURI).toString
