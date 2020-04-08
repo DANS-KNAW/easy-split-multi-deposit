@@ -19,6 +19,7 @@ import java.util.UUID
 
 import better.files.File
 import better.files.File.currentWorkingDirectory
+import cats.syntax.either._
 import javax.naming.directory.{ Attributes, BasicAttribute, BasicAttributes }
 import nl.knaw.dans.easy.multideposit.PathExplorer.PathExplorers
 import org.apache.commons.configuration.PropertiesConfiguration
@@ -107,7 +108,7 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
 
     def configureMocksBehavior() = {
       (ldap.query(_: String)(_: Attributes => Attributes)) expects(datamanager, *) returning Right(Seq(createDatamanagerAttributes))
-      (ldap.query(_: String)(_: Attributes => Boolean)) expects("user001", *) repeat 4 returning Right(Seq(true))
+      (ldap.query(_: String)(_: Attributes => FailFast[Unit])) expects("user001", *) repeat 4 returning Right(Seq(().asRight))
       (ffprobe.run(_: File)) expects * anyNumberOfTimes() returning Right(())
     }
 
