@@ -109,12 +109,12 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val depositorId = "user001"
 
     val attrs: Attributes = mock[Attributes]
-    val attr1: Attribute = mock[Attribute]
-    val attr2: Attribute = mock[Attribute]
-    attrs.get _ expects "uid" once() returning attr1
-    attrs.get _ expects "dansState" once() returning attr2
-    (() => attr1.get()) expects() once() returning depositorId
-    (() => attr2.get()) expects() once() returning "ACTIVE"
+    val uidAttr: Attribute = mock[Attribute]
+    val dansStateAttr: Attribute = mock[Attribute]
+    attrs.get _ expects "uid" once() returning uidAttr
+    attrs.get _ expects "dansState" once() returning dansStateAttr
+    (() => uidAttr.get()) expects() once() returning depositorId
+    (() => dansStateAttr.get()) expects() once() returning "ACTIVE"
 
     action.validateDepositorUserId(2, depositorId)(attrs) shouldBe right[Unit]
   }
@@ -123,10 +123,10 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val depositorId = "UseR001"
 
     val attrs: Attributes = mock[Attributes]
-    val attr1: Attribute = mock[Attribute]
-    attrs.get _ expects "uid" once() returning attr1
+    val uidAttr: Attribute = mock[Attribute]
+    attrs.get _ expects "uid" once() returning uidAttr
     attrs.get _ expects "dansState" never()
-    (() => attr1.get()) expects() once() returning depositorId
+    (() => uidAttr.get()) expects() once() returning depositorId
 
     action.validateDepositorUserId(2, depositorId.toLowerCase)(attrs).leftValue.msg shouldBe "row 2: The depositor does not exist. Please check for spelling mistakes and upper/lowercase letters"
   }
@@ -135,12 +135,12 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val depositorId = "user001"
 
     val attrs: Attributes = mock[Attributes]
-    val attr1: Attribute = mock[Attribute]
-    val attr2: Attribute = mock[Attribute]
-    attrs.get _ expects "uid" once() returning attr1
-    attrs.get _ expects "dansState" once() returning attr2
-    (() => attr1.get()) expects() once() returning depositorId
-    (() => attr2.get()) expects() once() returning "BLOCKED"
+    val uidAttr: Attribute = mock[Attribute]
+    val dansStateAttr: Attribute = mock[Attribute]
+    attrs.get _ expects "uid" once() returning uidAttr
+    attrs.get _ expects "dansState" once() returning dansStateAttr
+    (() => uidAttr.get()) expects() once() returning depositorId
+    (() => dansStateAttr.get()) expects() once() returning "BLOCKED"
 
     action.validateDepositorUserId(2, depositorId)(attrs).leftValue.msg shouldBe s"row 2: The depositor '$depositorId' is not an active user"
   }
@@ -158,10 +158,10 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val depositorId = "user001"
 
     val attrs: Attributes = mock[Attributes]
-    val attr1: Attribute = mock[Attribute]
-    attrs.get _ expects "uid" once() returning attr1
+    val uidAttr: Attribute = mock[Attribute]
+    attrs.get _ expects "uid" once() returning uidAttr
     attrs.get _ expects "dansState" once() returning null
-    (() => attr1.get()) expects() once() returning depositorId
+    (() => uidAttr.get()) expects() once() returning depositorId
 
     action.validateDepositorUserId(2, depositorId)(attrs).leftValue.msg shouldBe s"row 2: The depositor '$depositorId' is not an active user"
   }

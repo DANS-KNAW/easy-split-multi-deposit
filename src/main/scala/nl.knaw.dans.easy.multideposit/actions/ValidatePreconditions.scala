@@ -79,7 +79,7 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
   }
 
   def validateDepositorUserId(row: Int, depositorUserId: DepositorUserId)(attrs: Attributes): FailFast[Unit] = {
-    lazy val existingDepositorId = Option(attrs.get("uid")).exists(attr => attr.get().toString == depositorUserId)
+    val existingDepositorId = Option(attrs.get("uid")).exists(_.get().toString == depositorUserId)
     lazy val activeState = Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE")
 
     if (existingDepositorId)
