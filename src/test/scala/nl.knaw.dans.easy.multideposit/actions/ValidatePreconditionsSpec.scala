@@ -128,7 +128,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     attrs.get _ expects "dansState" never()
     (() => uidAttr.get()) expects() once() returning depositorId
 
-    action.validateDepositorUserId(2, depositorId.toLowerCase)(attrs).leftValue.msg shouldBe "row 2: The depositor does not exist. Please check for spelling mistakes and upper/lowercase letters"
+    action.validateDepositorUserId(2, depositorId.toLowerCase)(attrs).leftValue.msg shouldBe "row 2: Depositor 'user001' does not exist in LDAP. We've found 'UseR001', which is slightly different. Please check for upper/lowercase spelling mistakes."
   }
 
   it should "return false if the uid is equal to the given depositorUserId and the state is not 'ACTIVE'" in {
@@ -151,7 +151,7 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
     val attrs: Attributes = mock[Attributes]
     attrs.get _ expects "uid" once() returning null
 
-    action.validateDepositorUserId(2, depositorId)(attrs).leftValue.msg shouldBe "row 2: The depositor does not exist. Please check for spelling mistakes and upper/lowercase letters"
+    action.validateDepositorUserId(2, depositorId)(attrs).leftValue.msg shouldBe "row 2: Depositor 'user001' does not exist in LDAP."
   }
 
   it should "return false if the 'uid' parameter is found in the given Attribute, but 'dansState' is not" in {

@@ -79,12 +79,17 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
   }
 
   def validateDepositorUserId(row: Int, depositorUserId: DepositorUserId)(attrs: Attributes): FailFast[Unit] = {
-    val existingDepositorId = Option(attrs.get("uid")).exists(_.get().toString == depositorUserId)
     lazy val activeState = Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE")
 
-    if (existingDepositorId)
-      if (activeState) ().asRight
-      else InvalidInput(row, s"The depositor '$depositorUserId' is not an active user").asLeft
-    else InvalidInput(row, "The depositor does not exist. Please check for spelling mistakes and upper/lowercase letters").asLeft
+    Option(attrs.get("uid"))
+      .map(_.get().toString)
+      .map {
+        case `depositorUserId` if activeState => ().asRight
+        case `depositorUserId` => InvalidInput(row, s"The depositor '$depositorUserId' is not an active user").asLeft
+        case mismatch => InvalidInput(row, s"Depositor '$depositorUserId' does not exist in LDAP. We've found '$mismatch', which is slightly different. Please check for upper/lowercase spelling mistakes.").asLeft
+      }
+      .getOrElse {
+        InvalidInput(row, s"Depositor '$depositorUserId' does not exist in LDAP.").asLeft
+      }
   }
 }
