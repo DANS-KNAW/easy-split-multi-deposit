@@ -16,7 +16,8 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import better.files.File
-import javax.naming.directory.Attributes
+import cats.syntax.either._
+import javax.naming.directory.{ Attribute, Attributes }
 import nl.knaw.dans.easy.multideposit.FfprobeRunner.FfprobeError
 import nl.knaw.dans.easy.multideposit._
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, FileAccessRights, Video }
@@ -73,18 +74,18 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
       visibleTo = FileAccessRights.ANONYMOUS
     ))
 
-  def mockLdapForDepositor(expectedResult: Seq[Boolean]): Unit = {
-    (ldapMock.query(_: String)(_: Attributes => Boolean)) expects("dp1", *) returning Right(expectedResult)
+  def mockLdapForDepositor(expectedResult: Seq[FailFast[Unit]]): Unit = {
+    (ldapMock.query(_: String)(_: Attributes => FailFast[Unit])) expects("dp1", *) returning Right(expectedResult)
   }
 
   "checkDepositorUserId" should "succeed if ldap identifies the depositorUserId as active" in {
-    mockLdapForDepositor(Seq(true))
+    mockLdapForDepositor(Seq(().asRight))
 
     action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit()) shouldBe right[Unit]
   }
 
   it should "fail if ldap identifies the depositorUserId as not active" in {
-    mockLdapForDepositor(Seq(false))
+    mockLdapForDepositor(Seq(InvalidInput(2, "depositor 'dp1' is not an active user").asLeft))
 
     action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())
       .leftValue.msg should include("depositor 'dp1' is not an active user")
@@ -98,10 +99,71 @@ class ValidatePreconditionsSpec extends TestSupportFixture with BeforeAndAfterEa
   }
 
   it should "fail if ldap returns multiple values" in {
-    mockLdapForDepositor(Seq(true, true))
+    mockLdapForDepositor(Seq(().asRight, ().asRight))
 
     action.checkDepositorUserId(testInstructions1.copy(depositorUserId = "dp1").toDeposit())
       .leftValue.msg should include("multiple users with id 'dp1'")
+  }
+
+  "validateDepositorUserId" should "return true if the uid is equal to the given depositorUserId and the state is 'ACTIVE'" in {
+    val depositorId = "user001"
+
+    val attrs: Attributes = mock[Attributes]
+    val uidAttr: Attribute = mock[Attribute]
+    val dansStateAttr: Attribute = mock[Attribute]
+    attrs.get _ expects "uid" once() returning uidAttr
+    attrs.get _ expects "dansState" once() returning dansStateAttr
+    (() => uidAttr.get()) expects() once() returning depositorId
+    (() => dansStateAttr.get()) expects() once() returning "ACTIVE"
+
+    action.validateDepositorUserId(2, depositorId)(attrs) shouldBe right[Unit]
+  }
+
+  it should "return false if the uid is not case sensitive equal to the given depositorUserId" in {
+    val depositorId = "UseR001"
+
+    val attrs: Attributes = mock[Attributes]
+    val uidAttr: Attribute = mock[Attribute]
+    attrs.get _ expects "uid" once() returning uidAttr
+    attrs.get _ expects "dansState" never()
+    (() => uidAttr.get()) expects() once() returning depositorId
+
+    action.validateDepositorUserId(2, depositorId.toLowerCase)(attrs).leftValue.msg shouldBe "row 2: Depositor 'user001' does not exist in LDAP. We've found 'UseR001', which is slightly different. Please check for upper/lowercase spelling mistakes."
+  }
+
+  it should "return false if the uid is equal to the given depositorUserId and the state is not 'ACTIVE'" in {
+    val depositorId = "user001"
+
+    val attrs: Attributes = mock[Attributes]
+    val uidAttr: Attribute = mock[Attribute]
+    val dansStateAttr: Attribute = mock[Attribute]
+    attrs.get _ expects "uid" once() returning uidAttr
+    attrs.get _ expects "dansState" once() returning dansStateAttr
+    (() => uidAttr.get()) expects() once() returning depositorId
+    (() => dansStateAttr.get()) expects() once() returning "BLOCKED"
+
+    action.validateDepositorUserId(2, depositorId)(attrs).leftValue.msg shouldBe s"row 2: The depositor '$depositorId' is not an active user"
+  }
+
+  it should "return false if the 'uid' parameter is not found in the given Attribute" in {
+    val depositorId = "user001"
+
+    val attrs: Attributes = mock[Attributes]
+    attrs.get _ expects "uid" once() returning null
+
+    action.validateDepositorUserId(2, depositorId)(attrs).leftValue.msg shouldBe "row 2: Depositor 'user001' does not exist in LDAP."
+  }
+
+  it should "return false if the 'uid' parameter is found in the given Attribute, but 'dansState' is not" in {
+    val depositorId = "user001"
+
+    val attrs: Attributes = mock[Attributes]
+    val uidAttr: Attribute = mock[Attribute]
+    attrs.get _ expects "uid" once() returning uidAttr
+    attrs.get _ expects "dansState" once() returning null
+    (() => uidAttr.get()) expects() once() returning depositorId
+
+    action.validateDepositorUserId(2, depositorId)(attrs).leftValue.msg shouldBe s"row 2: The depositor '$depositorId' is not an active user"
   }
 
   def mockFfprobeRunnerForAllSuccess(): Unit = {

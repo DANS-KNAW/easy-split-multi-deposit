@@ -20,10 +20,11 @@ import cats.data.ValidatedNec
 import cats.instances.list._
 import cats.syntax.either._
 import cats.syntax.traverse._
+import javax.naming.directory.Attributes
 import nl.knaw.dans.easy.multideposit.FfprobeRunner.FfprobeError
 import nl.knaw.dans.easy.multideposit.PathExplorer.StagingPathExplorer
-import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit, DepositId }
 import nl.knaw.dans.easy.multideposit._
+import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit, DepositId, DepositorUserId }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnhancedLogging {
@@ -68,15 +69,27 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
     logger.debug("check that the depositor is an active user")
 
     val depositorUserId = deposit.depositorUserId
-    ldap.query(depositorUserId)(attrs => Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE"))
+    ldap.query(depositorUserId)(validateDepositorUserId(deposit.row, depositorUserId))
       .flatMap {
         case Seq() => InvalidInput(deposit.row, s"depositorUserId '$depositorUserId' is unknown").asLeft
         case Seq(head) => head.asRight
         case _ => ActionError(s"There appear to be multiple users with id '$depositorUserId'").asLeft
       }
-      .flatMap {
-        case true => ().asRight
-        case false => InvalidInput(deposit.row, s"The depositor '$depositorUserId' is not an active user").asLeft
+      .flatMap(identity)
+  }
+
+  def validateDepositorUserId(row: Int, depositorUserId: DepositorUserId)(attrs: Attributes): FailFast[Unit] = {
+    lazy val activeState = Option(attrs.get("dansState")).exists(_.get().toString == "ACTIVE")
+
+    Option(attrs.get("uid"))
+      .map(_.get().toString)
+      .map {
+        case `depositorUserId` if activeState => ().asRight
+        case `depositorUserId` => InvalidInput(row, s"The depositor '$depositorUserId' is not an active user").asLeft
+        case mismatch => InvalidInput(row, s"Depositor '$depositorUserId' does not exist in LDAP. We've found '$mismatch', which is slightly different. Please check for upper/lowercase spelling mistakes.").asLeft
+      }
+      .getOrElse {
+        InvalidInput(row, s"Depositor '$depositorUserId' does not exist in LDAP.").asLeft
       }
   }
 }
