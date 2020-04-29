@@ -27,14 +27,14 @@ trait FileDescriptorTestObjects {
 
   lazy val fileDescriptorCSV @ fileDescriptorCSVRow1 :: fileDescriptorCSVRow2 :: Nil = List(
     Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "video about the centaur meteorite",
-      "FILE_ACCESSIBILITY" -> "RESTRICTED_REQUEST"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "video about the centaur meteorite",
+      Headers.FileAccessibility -> "RESTRICTED_REQUEST"
     ),
     Map(
-      "FILE_PATH" -> "path/to/a/random/video/hubble.mpg",
-      "FILE_TITLE" -> "",
-      "FILE_ACCESSIBILITY" -> "RESTRICTED_REQUEST"
+      Headers.FilePath -> "path/to/a/random/video/hubble.mpg",
+      Headers.FileTitle -> "",
+      Headers.FileAccessibility -> "RESTRICTED_REQUEST"
     ),
   )
 
@@ -77,14 +77,14 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   "extractFileDescriptors" should "convert the csv input to the corresponding output" in {
     val row1 = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> "ANONYMOUS"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "some title",
+      Headers.FileAccessibility -> "ANONYMOUS"
     ))
     val row2 = DepositRow(3, Map(
-      "FILE_PATH" -> "",
-      "FILE_TITLE" -> "",
-      "FILE_ACCESSIBILITY" -> ""
+      Headers.FilePath -> "",
+      Headers.FileTitle -> "",
+      Headers.FileAccessibility -> ""
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
@@ -97,14 +97,14 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "succeed if no title or accessibility is given for a single file" in {
     val row1 = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "",
-      "FILE_ACCESSIBILITY" -> ""
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "",
+      Headers.FileAccessibility -> ""
     ))
     val row2 = DepositRow(3, Map(
-      "FILE_PATH" -> "",
-      "FILE_TITLE" -> "",
-      "FILE_ACCESSIBILITY" -> ""
+      Headers.FilePath -> "",
+      Headers.FileTitle -> "",
+      Headers.FileAccessibility -> ""
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
@@ -116,9 +116,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "succeed if only a title is given for a single file" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> ""
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "some title",
+      Headers.FileAccessibility -> ""
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
@@ -131,9 +131,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "succeed if only an accessibility is given for a single file" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "",
-      "FILE_ACCESSIBILITY" -> "ANONYMOUS"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "",
+      Headers.FileAccessibility -> "ANONYMOUS"
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
@@ -146,14 +146,14 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "fail if multiple titles are given for a single file" in {
     val row1 = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "title1",
-      "FILE_ACCESSIBILITY" -> "ANONYMOUS"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "title1",
+      Headers.FileAccessibility -> "ANONYMOUS"
     ))
     val row2 = DepositRow(3, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "title2",
-      "FILE_ACCESSIBILITY" -> ""
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "title2",
+      Headers.FileAccessibility -> ""
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
@@ -164,14 +164,14 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "fail if multiple accessibilities are given for a single file" in {
     val row1 = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "title",
-      "FILE_ACCESSIBILITY" -> "NONE"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "title",
+      Headers.FileAccessibility -> "NONE"
     ))
     val row2 = DepositRow(3, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "",
-      "FILE_ACCESSIBILITY" -> "ANONYMOUS"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "",
+      Headers.FileAccessibility -> "ANONYMOUS"
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
@@ -182,14 +182,14 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "fail if multiple titles and accessibilities are given for a single file" in {
     val row1 = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "title1",
-      "FILE_ACCESSIBILITY" -> "NONE"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "title1",
+      Headers.FileAccessibility -> "NONE"
     ))
     val row2 = DepositRow(3, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "title2",
-      "FILE_ACCESSIBILITY" -> "ANONYMOUS"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "title2",
+      Headers.FileAccessibility -> "ANONYMOUS"
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
@@ -202,14 +202,14 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "fail if visibility is more restricted than accessibility" in {
     val row1 = DepositRow(2, Map(
-      "FILE_PATH" -> "path/to/a/random/video/hubble.mpg",
-      "FILE_VISIBILITY" -> "NONE",
-      "FILE_ACCESSIBILITY" -> "NONE"
+      Headers.FilePath -> "path/to/a/random/video/hubble.mpg",
+      Headers.FileVisibility -> "NONE",
+      Headers.FileAccessibility -> "NONE"
     ))
     val row2 = DepositRow(3, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_VISIBILITY" -> "NONE",
-      "FILE_ACCESSIBILITY" -> "ANONYMOUS"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileVisibility -> "NONE",
+      Headers.FileAccessibility -> "ANONYMOUS"
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
@@ -219,9 +219,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "succeed if visibility is equally restricted as accessibility" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_VISIBILITY" -> "NONE",
-      "FILE_ACCESSIBILITY" -> "NONE"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileVisibility -> "NONE",
+      Headers.FileAccessibility -> "NONE"
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
@@ -233,9 +233,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   "fileDescriptor" should "convert the csv input to the corresponding output" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> "ANONYMOUS"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "some title",
+      Headers.FileAccessibility -> "ANONYMOUS"
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
@@ -244,9 +244,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "fail if the path does not exist" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "path/that/does/not/exist.txt",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> "NONE"
+      Headers.FilePath -> "path/that/does/not/exist.txt",
+      Headers.FileTitle -> "some title",
+      Headers.FileAccessibility -> "NONE"
     ))
 
     fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
@@ -255,9 +255,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "fail if the path represents a directory" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> "ANONYMOUS"
+      Headers.FilePath -> "reisverslag/",
+      Headers.FileTitle -> "some title",
+      Headers.FileAccessibility -> "ANONYMOUS"
     ))
 
     fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
@@ -266,9 +266,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "succeed if no FILE_ACCESSIBILITY is given" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> ""
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "some title",
+      Headers.FileAccessibility -> ""
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
@@ -277,9 +277,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "fail if an invalid FILE_ACCESSIBILITY is given" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "reisverslag/centaur.mpg",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> "invalid"
+      Headers.FilePath -> "reisverslag/centaur.mpg",
+      Headers.FileTitle -> "some title",
+      Headers.FileAccessibility -> "invalid"
     ))
 
     fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
@@ -288,9 +288,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "fail if FILE_PATH is not given but FILE_TITLE and FILE_ACCESSIBILITY are given" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> "ANONYMOUS"
+      Headers.FilePath -> "",
+      Headers.FileTitle -> "some title",
+      Headers.FileAccessibility -> "ANONYMOUS"
     ))
 
     fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
@@ -299,9 +299,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "fail if only FILE_TITLE is given" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "",
-      "FILE_TITLE" -> "some title",
-      "FILE_ACCESSIBILITY" -> ""
+      Headers.FilePath -> "",
+      Headers.FileTitle -> "some title",
+      Headers.FileAccessibility -> ""
     ))
 
     fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
@@ -310,9 +310,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "fail if only FILE_ACCESSIBILITY is given" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "",
-      "FILE_TITLE" -> "",
-      "FILE_ACCESSIBILITY" -> "NONE"
+      Headers.FilePath -> "",
+      Headers.FileTitle -> "",
+      Headers.FileAccessibility -> "NONE"
     ))
 
     fileDescriptor("ruimtereis01")(row).value.invalidValue shouldBe
@@ -321,9 +321,9 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
 
   it should "succeed when all fields are empty" in {
     val row = DepositRow(2, Map(
-      "FILE_PATH" -> "",
-      "FILE_TITLE" -> "",
-      "FILE_ACCESSIBILITY" -> ""
+      Headers.FilePath -> "",
+      Headers.FileTitle -> "",
+      Headers.FileAccessibility -> ""
     ))
 
     fileDescriptor("ruimtereis01")(row) shouldBe empty

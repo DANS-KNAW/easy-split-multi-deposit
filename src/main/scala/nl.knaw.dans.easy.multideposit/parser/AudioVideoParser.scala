@@ -26,7 +26,8 @@ import cats.syntax.option._
 import cats.syntax.traverse._
 import cats.syntax.validated._
 import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
-import nl.knaw.dans.easy.multideposit.model.{ AudioVideo, DepositId, PlayMode, Springfield, SubtitlesFile }
+import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.easy.multideposit.parser.Headers._
 
 trait AudioVideoParser {
   this: ParserUtils =>
@@ -53,21 +54,21 @@ trait AudioVideoParser {
   }
 
   def springfield(row: DepositRow): Option[Validated[Springfield]] = {
-    val domain = row.find("SF_DOMAIN")
-    val user = row.find("SF_USER")
-    val collection = row.find("SF_COLLECTION")
-    val playmode = row.find("SF_PLAY_MODE").map(playMode(row.rowNum))
+    val domain = row.find(SpringfieldDomain)
+    val user = row.find(SpringfieldUser)
+    val collection = row.find(SpringfieldCollection)
+    val playmode = row.find(SpringfieldPlayMode).map(playMode(row.rowNum))
 
-    lazy val collectionException = ParseError(row.rowNum, "Missing value for: SF_COLLECTION")
-    lazy val userException = ParseError(row.rowNum, "Missing value for: SF_USER")
-    lazy val playModeException = ParseError(row.rowNum, "Missing value for: SF_PLAY_MODE")
+    lazy val collectionException = ParseError(row.rowNum, s"Missing value for: $SpringfieldCollection")
+    lazy val userException = ParseError(row.rowNum, s"Missing value for: $SpringfieldUser")
+    lazy val playModeException = ParseError(row.rowNum, s"Missing value for: $SpringfieldPlayMode")
 
     (domain, user, collection, playmode) match {
       case (maybeD, Some(u), Some(c), Some(pm)) =>
         (
-          maybeD.map(checkValidChars(_, row.rowNum, "SF_DOMAIN")).sequence,
-          checkValidChars(u, row.rowNum, "SF_USER"),
-          checkValidChars(c, row.rowNum, "SF_COLLECTION"),
+          maybeD.map(checkValidChars(_, row.rowNum, SpringfieldDomain)).sequence,
+          checkValidChars(u, row.rowNum, SpringfieldUser),
+          checkValidChars(c, row.rowNum, SpringfieldCollection),
           pm,
         ).mapN(Springfield.maybeWithDomain).some
       case (_, Some(_), Some(_), None) => playModeException.toInvalid.some
@@ -94,9 +95,9 @@ trait AudioVideoParser {
   }
 
   def avFile(depositId: DepositId)(row: DepositRow): Option[Validated[(File, SubtitlesFile)]] = {
-    val file = row.find("AV_FILE_PATH").map(findRegularFile(depositId, row.rowNum))
-    val subtitle = row.find("AV_SUBTITLES").map(findRegularFile(depositId, row.rowNum))
-    val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
+    val file = row.find(AudioVideoFilePath).map(findRegularFile(depositId, row.rowNum))
+    val subtitle = row.find(AudioVideoSubtitles).map(findRegularFile(depositId, row.rowNum))
+    val subtitleLang = row.find(AudioVideoSubtitlesLanguage)
 
     (file, subtitle, subtitleLang) match {
       case (Some(Invalid(_)), Some(Invalid(_)), _) => ParseError(row.rowNum, "Both AV_FILE_PATH and AV_SUBTITLES do not represent a valid path").toInvalid.some

@@ -26,6 +26,7 @@ import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
 import nl.knaw.dans.easy.multideposit.model.DcType.DcType
 import nl.knaw.dans.easy.multideposit.model.IdentifierType.IdentifierType
 import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.easy.multideposit.parser.Headers.Header
 
 trait MetadataParser {
   this: ParserUtils =>
@@ -34,15 +35,15 @@ trait MetadataParser {
 
   def extractMetadata(rowNum: Int, rows: DepositRows): Validated[Metadata] = {
     (
-      extractList(rows, "DCT_ALTERNATIVE").toValidated,
-      extractList(rows, "DC_PUBLISHER").toValidated,
+      extractList(rows, Headers.AlternativeTitle).toValidated,
+      extractList(rows, Headers.Publisher).toValidated,
       extractDcType(rows),
-      extractList(rows, "DC_FORMAT").toValidated,
+      extractList(rows, Headers.Format).toValidated,
       extractList(rows)(identifier),
-      extractList(rows, "DC_SOURCE").toValidated,
-      extractList(rows)(iso639_2Language("DC_LANGUAGE")),
-      extractList(rows, "DCT_SPATIAL").toValidated,
-      extractAtLeastOne(rowNum, "DCT_RIGHTSHOLDER", rows),
+      extractList(rows, Headers.Source).toValidated,
+      extractList(rows)(iso639_2Language(Headers.Language)),
+      extractList(rows, Headers.Spatial).toValidated,
+      extractAtLeastOne(rowNum, Headers.Rightsholder, rows),
       extractList(rows)(relation),
       extractList(rows)(dateColumn),
       extractList(rows)(contributor),
@@ -62,23 +63,23 @@ trait MetadataParser {
   }
 
   private def extractUserLicenses(rowNum: Int, rows: DepositRows): Validated[Option[UserLicense]] = {
-    extractAtMostOne(rowNum, "DCT_LICENSE", rows)
+    extractAtMostOne(rowNum, Headers.License, rows)
       .andThen {
-        case Some(license) => userLicense(rowNum, "DCT_LICENSE")(license).map(_.some)
+        case Some(license) => userLicense(rowNum, Headers.License)(license).map(_.some)
         case None => none.toValidated
       }
   }
 
   def dcType(row: DepositRow): Option[Validated[DcType]] = {
-    row.find("DC_TYPE")
+    row.find(Headers.Type)
       .map(t => DcType.valueOf(t)
         .map(_.toValidated)
         .getOrElse(ParseError(row.rowNum, s"Value '$t' is not a valid type").toInvalid))
   }
 
   def identifier(row: DepositRow): Option[Validated[Identifier]] = {
-    val identifier = row.find("DC_IDENTIFIER")
-    val idType = row.find("DC_IDENTIFIER_TYPE")
+    val identifier = row.find(Headers.Identifier)
+    val idType = row.find(Headers.IdentifierType)
 
     (identifier, idType) match {
       case (Some(id), idt) =>
@@ -86,7 +87,7 @@ trait MetadataParser {
           id.toValidated,
           idt.map(identifierType(row.rowNum)).sequence
         ).mapN(Identifier).some
-      case (None, Some(_)) => missingRequired(row, Set("DC_IDENTIFIER")).toInvalid.some
+      case (None, Some(_)) => missingRequired(row, Headers.Identifier).toInvalid.some
       case (None, None) => none
     }
   }
@@ -98,7 +99,7 @@ trait MetadataParser {
 
   private lazy val iso639v2Languages = Locale.getISOLanguages.map(new Locale(_).getISO3Language).toSet
 
-  def iso639_2Language(columnName: MultiDepositKey)(row: DepositRow): Option[Validated[String]] = {
+  def iso639_2Language(columnName: Header)(row: DepositRow): Option[Validated[String]] = {
     row.find(columnName)
       .map(lang => {
         // Most ISO 639-2/T languages are contained in the iso639v2Languages Set.
@@ -114,63 +115,63 @@ trait MetadataParser {
   }
 
   def relation(row: DepositRow): Option[Validated[Relation]] = {
-    val qualifier = row.find("DCX_RELATION_QUALIFIER")
-    val link = row.find("DCX_RELATION_LINK")
-    val title = row.find("DCX_RELATION_TITLE")
+    val qualifier = row.find(Headers.RelationQualifier)
+    val link = row.find(Headers.RelationLink)
+    val title = row.find(Headers.RelationTitle)
 
     (qualifier, link, title) match {
       case (Some(_), None, None) =>
-        ParseError(row.rowNum, "When DCX_RELATION_QUALIFIER is defined, one of the values [DCX_RELATION_LINK, DCX_RELATION_TITLE] must be defined as well").toInvalid.some
+        ParseError(row.rowNum, s"When ${ Headers.RelationQualifier } is defined, one of the values [${ Headers.RelationLink }, ${ Headers.RelationTitle }] must be defined as well").toInvalid.some
       case (_, Some(_), None) =>
-        ParseError(row.rowNum, "When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context").toInvalid.some
+        ParseError(row.rowNum, s"When ${ Headers.RelationLink } is defined, a ${ Headers.RelationTitle } must be given as well to provide context").toInvalid.some
       case (Some(q), l, t) =>
         (
           RelationQualifier.valueOf(q).map(_.toValidated).getOrElse(ParseError(row.rowNum, s"Value '$q' is not a valid relation qualifier").toInvalid),
-          l.traverse(uri(row.rowNum, "DCX_RELATION_LINK")),
+          l.traverse(uri(row.rowNum, Headers.RelationLink)),
           t.toValidated,
         ).mapN(QualifiedRelation).some
       case (None, None, None) => none
       case (None, l, t) =>
         (
-          l.traverse(uri(row.rowNum, "DCX_RELATION_LINK")),
+          l.traverse(uri(row.rowNum, Headers.RelationLink)),
           t.toValidated
         ).mapN(UnqualifiedRelation).some
     }
   }
 
   def dateColumn(row: DepositRow): Option[Validated[Date]] = {
-    val dateString = row.find("DCT_DATE")
-    val qualifierString = row.find("DCT_DATE_QUALIFIER")
+    val dateString = row.find(Headers.Date)
+    val qualifierString = row.find(Headers.DateQualifier)
 
     (dateString, qualifierString) match {
       case (Some(d), Some(q)) =>
         (
-          date(row.rowNum, "DCT_DATE")(d),
+          date(row.rowNum, Headers.Date)(d),
           DateQualifier.valueOf(q)
             .map(_.toValidated)
             .getOrElse {
               q.toLowerCase match {
-                case "created" => ParseError(row.rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_CREATED instead.").toInvalid
-                case "available" => ParseError(row.rowNum, s"DCT_DATE_QUALIFIER value '$q' is not allowed here. Use column DDM_AVAILABLE instead.").toInvalid
+                case "created" => ParseError(row.rowNum, s"${ Headers.DateQualifier } value '$q' is not allowed here. Use column ${ Headers.Created } instead.").toInvalid
+                case "available" => ParseError(row.rowNum, s"${ Headers.DateQualifier } value '$q' is not allowed here. Use column ${ Headers.Available } instead.").toInvalid
                 case _ => ParseError(row.rowNum, s"Value '$q' is not a valid date qualifier").toInvalid
               }
             },
         ).mapN(QualifiedDate).some
       case (Some(d), None) => TextualDate(d).toValidated.some
       case (None, Some(_)) =>
-        ParseError(row.rowNum, "DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it").toInvalid.some
+        ParseError(row.rowNum, s"${ Headers.DateQualifier } is only allowed to have a value if ${ Headers.Date } has a well formatted date to go with it").toInvalid.some
       case (None, None) => none
     }
   }
 
   def contributor(row: DepositRow): Option[Validated[Contributor]] = {
-    val titles = row.find("DCX_CONTRIBUTOR_TITLES")
-    val initials = row.find("DCX_CONTRIBUTOR_INITIALS")
-    val insertions = row.find("DCX_CONTRIBUTOR_INSERTIONS")
-    val surname = row.find("DCX_CONTRIBUTOR_SURNAME")
-    val organization = row.find("DCX_CONTRIBUTOR_ORGANIZATION")
-    val dai = row.find("DCX_CONTRIBUTOR_DAI")
-    val cRole = row.find("DCX_CONTRIBUTOR_ROLE")
+    val titles = row.find(Headers.ContributorTitles)
+    val initials = row.find(Headers.ContributorInitials)
+    val insertions = row.find(Headers.ContributorInsertions)
+    val surname = row.find(Headers.ContributorSurname)
+    val organization = row.find(Headers.ContributorOrganization)
+    val dai = row.find(Headers.ContributorDAI)
+    val cRole = row.find(Headers.ContributorRole)
 
     (titles, initials, insertions, surname, organization, dai, cRole) match {
       case (None, None, None, None, None, None, None) => none
@@ -189,7 +190,7 @@ trait MetadataParser {
           cRole.map(contributorRole(row.rowNum)).sequence,
           dai.toValidated,
         ).mapN(ContributorPerson).some
-      case (_, _, _, _, _, _, _) => missingRequired(row, Set("DCX_CONTRIBUTOR_INITIALS", "DCX_CONTRIBUTOR_SURNAME")).toInvalid.some
+      case (_, _, _, _, _, _, _) => missingRequired(row, Headers.ContributorInitials, Headers.ContributorSurname).toInvalid.some
     }
   }
 
@@ -199,15 +200,15 @@ trait MetadataParser {
   }
 
   def subject(row: DepositRow): Option[Validated[Subject]] = {
-    val subject = row.find("DC_SUBJECT")
-    val scheme = row.find("DC_SUBJECT_SCHEME")
+    val subject = row.find(Headers.Subject)
+    val scheme = row.find(Headers.SubjectScheme)
 
     (subject, scheme) match {
       case (Some(subj), sch) =>
         val subjectScheme: Validated[Option[String]] = sch.toValidated
           .andThen {
             case abr @ Some("abr:ABRcomplex") => abr.toValidated
-            case Some(_) => ParseError(row.rowNum, "The given value for DC_SUBJECT_SCHEME is not allowed. This can only be 'abr:ABRcomplex'").toInvalid
+            case Some(_) => ParseError(row.rowNum, s"The given value for ${ Headers.SubjectScheme } is not allowed. This can only be 'abr:ABRcomplex'").toInvalid
             case None => none.toValidated
           }
 
@@ -221,43 +222,43 @@ trait MetadataParser {
   }
 
   def spatialPoint(row: DepositRow): Option[Validated[SpatialPoint]] = {
-    val maybeX = row.find("DCX_SPATIAL_X")
-    val maybeY = row.find("DCX_SPATIAL_Y")
-    val maybeScheme = row.find("DCX_SPATIAL_SCHEME")
+    val maybeX = row.find(Headers.SpatialX)
+    val maybeY = row.find(Headers.SpatialY)
+    val maybeScheme = row.find(Headers.SpatialScheme)
 
     (maybeX, maybeY, maybeScheme) match {
       case (Some(x), Some(y), scheme) => SpatialPoint(x, y, scheme).toValidated.some
       case (None, None, _) => none
-      case _ => missingRequired(row, Set("DCX_SPATIAL_X", "DCX_SPATIAL_Y")).toInvalid.some
+      case _ => missingRequired(row, Headers.SpatialX, Headers.SpatialY).toInvalid.some
     }
   }
 
   def spatialBox(row: DepositRow): Option[Validated[SpatialBox]] = {
-    val west = row.find("DCX_SPATIAL_WEST")
-    val east = row.find("DCX_SPATIAL_EAST")
-    val south = row.find("DCX_SPATIAL_SOUTH")
-    val north = row.find("DCX_SPATIAL_NORTH")
-    val maybeScheme = row.find("DCX_SPATIAL_SCHEME")
+    val west = row.find(Headers.SpatialWest)
+    val east = row.find(Headers.SpatialEast)
+    val south = row.find(Headers.SpatialSouth)
+    val north = row.find(Headers.SpatialNorth)
+    val maybeScheme = row.find(Headers.SpatialScheme)
 
     (west, east, south, north, maybeScheme) match {
       case (Some(w), Some(e), Some(s), Some(n), scheme) =>
         SpatialBox(n, s, e, w, scheme).toValidated.some
       case (None, None, None, None, _) => none
       case _ =>
-        missingRequired(row, Set("DCX_SPATIAL_WEST", "DCX_SPATIAL_EAST", "DCX_SPATIAL_SOUTH", "DCX_SPATIAL_NORTH")).toInvalid.some
+        missingRequired(row, Headers.SpatialWest, Headers.SpatialEast, Headers.SpatialSouth, Headers.SpatialNorth).toInvalid.some
     }
   }
 
   def temporal(row: DepositRow): Option[Validated[Temporal]] = {
-    val temporal = row.find("DCT_TEMPORAL")
-    val scheme = row.find("DCT_TEMPORAL_SCHEME")
+    val temporal = row.find(Headers.Temporal)
+    val scheme = row.find(Headers.TemporalScheme)
 
     (temporal, scheme) match {
       case (Some(temp), sch) =>
         val temporalScheme: Validated[Option[String]] = sch.toValidated
           .andThen {
             case abr @ Some("abr:ABRperiode") => abr.toValidated
-            case Some(_) => ParseError(row.rowNum, "The given value for DCT_TEMPORAL_SCHEME is not allowed. This can only be 'abr:ABRperiode'").toInvalid
+            case Some(_) => ParseError(row.rowNum, s"The given value for ${ Headers.TemporalScheme } is not allowed. This can only be 'abr:ABRperiode'").toInvalid
             case None => none.toValidated
           }
 
@@ -270,10 +271,10 @@ trait MetadataParser {
     }
   }
 
-  def userLicense(rowNum: => Int, columnName: => String)(licenseString: String): Validated[UserLicense] = {
+  def userLicense(rowNum: => Int, columnName: => Header)(licenseString: String): Validated[UserLicense] = {
     if (userLicenses contains licenseString)
       UserLicense(licenseString).toValidated
     else
-      ParseError(rowNum, s"User license '$licenseString' is not allowed.").toInvalid
+      ParseError(rowNum, s"User license '$licenseString' is not allowed in column $columnName.").toInvalid
   }
 }

@@ -174,7 +174,7 @@ class FileMetadataParserSpec extends TestSupportFixture with FileMetadataTestObj
     )
 
     extractFileMetadata(multiDepositDir / "ruimtereis01", instructions).invalidValue shouldBe
-      ParseError(2, s"Not listed A/V file detected: $fileWithNoDescription. Because Springfield PlayMode 'MENU' was choosen, all A/V files must be listed with a human readable title in the FILE_TITLE field.").chained
+      ParseError(2, s"Not listed A/V file detected: $fileWithNoDescription. Because SF_PLAY_MODE 'menu' was choosen, all A/V files must be listed with a human readable title in the FILE_TITLE field.").chained
   }
 
   it should "collect multiple errors" in {

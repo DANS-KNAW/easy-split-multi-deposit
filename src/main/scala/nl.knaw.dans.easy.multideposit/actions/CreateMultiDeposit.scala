@@ -42,7 +42,7 @@ class CreateMultiDeposit(formats: Set[String],
   private val moveDeposit = new MoveDepositToOutputDir()
 
   def validateDeposits(deposits: List[Deposit])(implicit staging: StagingPathExplorer): ValidatedNec[ConversionFailed, Unit] = {
-    deposits.traverse[ValidatedNec[ConversionFailed, ?], Unit](validateDeposit).map(_ => ())
+    deposits.traverse[ValidatedNec[ConversionFailed, *], Unit](validateDeposit).map(_ => ())
   }
 
   private def validateDeposit(deposit: Deposit)(implicit staging: StagingPathExplorer): ValidatedNec[ConversionFailed, Unit] = {
@@ -78,7 +78,7 @@ class CreateMultiDeposit(formats: Set[String],
     implicit val staging: StagingPathExplorer = paths
     implicit val output: OutputPathExplorer = paths
 
-    logger.info(s"convert ${ depositId }")
+    logger.info(s"convert $depositId")
 
     for {
       _ <- validator.validateDeposit(deposit)

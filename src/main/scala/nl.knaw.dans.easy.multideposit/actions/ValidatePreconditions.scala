@@ -53,7 +53,7 @@ class ValidatePreconditions(ldap: Ldap, ffprobe: FfprobeRunner) extends DebugEnh
 
     deposit.files.collect { case fmd: AVFileMetadata => fmd.filepath }
       .toList
-      .traverse[ValidatedNec[FfprobeError, ?], Unit](ffprobe.run(_).toValidatedNec)
+      .traverse[ValidatedNec[FfprobeError, *], Unit](ffprobe.run(_).toValidatedNec)
       .leftMap(errors => {
         val ffProbeErrors = errors.toNonEmptyList.toList
           .map { case FfprobeError(t, e, _) => s" - File: $t, exit code: $e" }

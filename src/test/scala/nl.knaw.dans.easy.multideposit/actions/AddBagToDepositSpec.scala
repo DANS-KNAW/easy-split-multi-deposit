@@ -170,7 +170,7 @@ class AddBagToDepositSpec extends TestSupportFixture with BeforeAndAfterEach {
     val root = stagingBagDir(depositId)
     (root / manifestFile).contentAsString
       .split('\n')
-      .map(_.split("  "))
+      .map(_.split(" {2}"))
       .foreach {
         case Array(sha1, file) => calcSHA1((root / file).contentAsString) shouldBe sha1
         case line => fail(s"unexpected line detected: ${ line.mkString("  ") }")

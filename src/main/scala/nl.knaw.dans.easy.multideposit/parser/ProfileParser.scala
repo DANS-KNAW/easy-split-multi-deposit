@@ -24,6 +24,7 @@ import cats.syntax.traverse._
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
 import nl.knaw.dans.easy.multideposit.model.{ ContributorRole, Creator, CreatorOrganization, CreatorPerson, Profile }
+import nl.knaw.dans.easy.multideposit.parser.Headers.Header
 import org.joda.time.DateTime
 
 trait ProfileParser {
@@ -31,12 +32,12 @@ trait ProfileParser {
 
   def extractProfile(rowNum: Int, rows: DepositRows): Validated[Profile] = {
     (
-      extractAtLeastOne(rowNum, "DC_TITLE", rows),
-      extractAtLeastOne(rowNum, "DC_DESCRIPTION", rows),
+      extractAtLeastOne(rowNum, Headers.Title, rows),
+      extractAtLeastOne(rowNum, Headers.Description, rows),
       extractCreators(rowNum, rows),
       extractDdmCreated(rowNum, rows),
       extractDdmAvailable(rowNum, rows),
-      extractAtLeastOne(rowNum, "DDM_AUDIENCE", rows),
+      extractAtLeastOne(rowNum, Headers.Audience, rows),
       extractDdmAccessrights(rowNum, rows),
     ).mapN(Profile)
   }
@@ -48,37 +49,37 @@ trait ProfileParser {
   }
 
   private def extractDdmCreated(rowNum: Int, rows: DepositRows): Validated[DateTime] = {
-    extractExactlyOne(rowNum, "DDM_CREATED", rows)
-      .andThen(date(rowNum, "DDM_CREATED"))
+    extractExactlyOne(rowNum, Headers.Created, rows)
+      .andThen(date(rowNum, Headers.Created))
   }
 
   private def extractDdmAvailable(rowNum: Int, rows: DepositRows): Validated[DateTime] = {
-    extractAtMostOne(rowNum, "DDM_AVAILABLE", rows)
+    extractAtMostOne(rowNum, Headers.Available, rows)
       .andThen {
-        case Some(value) => date(rowNum, "DDM_AVAILABLE")(value)
+        case Some(value) => date(rowNum, Headers.Available)(value)
         case None => DateTime.now().toValidated
       }
   }
 
   private def extractDdmAccessrights(rowNum: Int, rows: DepositRows): Validated[AccessCategory] = {
-    extractExactlyOne(rowNum, "DDM_ACCESSRIGHTS", rows)
-      .andThen(accessCategory(rowNum, "DDM_ACCESSRIGHTS")(_))
+    extractExactlyOne(rowNum, Headers.AccessRights, rows)
+      .andThen(accessCategory(rowNum, Headers.AccessRights)(_))
   }
 
-  def accessCategory(rowNum: => Int, columnName: => String)(s: String): Validated[AccessCategory] = {
+  def accessCategory(rowNum: => Int, columnName: => Header)(s: String): Validated[AccessCategory] = {
     catchOnly[IllegalArgumentException] { AccessCategory.valueOf(s) }
       .leftMap(_ => ParseError(rowNum, s"Value '$s' is not a valid accessright in column $columnName"))
       .toValidatedNec
   }
 
   def creator(row: DepositRow): Option[Validated[Creator]] = {
-    val titles = row.find("DCX_CREATOR_TITLES")
-    val initials = row.find("DCX_CREATOR_INITIALS")
-    val insertions = row.find("DCX_CREATOR_INSERTIONS")
-    val surname = row.find("DCX_CREATOR_SURNAME")
-    val organization = row.find("DCX_CREATOR_ORGANIZATION")
-    val dai = row.find("DCX_CREATOR_DAI")
-    val cRole = row.find("DCX_CREATOR_ROLE")
+    val titles = row.find(Headers.CreatorTitles)
+    val initials = row.find(Headers.CreatorInitials)
+    val insertions = row.find(Headers.CreatorInsertions)
+    val surname = row.find(Headers.CreatorSurname)
+    val organization = row.find(Headers.CreatorOrganization)
+    val dai = row.find(Headers.CreatorDAI)
+    val cRole = row.find(Headers.CreatorRole)
 
     (titles, initials, insertions, surname, organization, dai, cRole) match {
       case (None, None, None, None, None, None, None) => none
@@ -98,7 +99,7 @@ trait ProfileParser {
           dai.toValidated,
         ).mapN(CreatorPerson).some
       case (_, _, _, _, _, _, _) =>
-        missingRequired(row, Set("DCX_CREATOR_INITIALS", "DCX_CREATOR_SURNAME")).toInvalid.some
+        missingRequired(row, Headers.CreatorSurname, Headers.CreatorInitials).toInvalid.some
     }
   }
 

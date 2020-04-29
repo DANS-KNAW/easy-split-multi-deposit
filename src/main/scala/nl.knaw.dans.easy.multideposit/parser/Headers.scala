@@ -17,131 +17,100 @@ package nl.knaw.dans.easy.multideposit.parser
 
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-object Headers extends DebugEnhancedLogging {
+object Headers extends Enumeration with DebugEnhancedLogging {
+  type Header = Value
 
-  lazy val validHeaders: Set[String] = {
-    administrativeHeaders ++
-      profileFields ++
-      metadataFields ++
-      composedCreatorFields ++
-      composedContributorFields ++
-      composedSpatialPointFields ++
-      composedSpatialBoxFields ++
-      composedRelationFields ++
-      composedDateFields ++
-      composedTemporalFields ++
-      composedSubjectFields ++
-      fileDescriptorHeaders ++
-      springfieldHeaders ++
-      audioVideoHeaders
-  }
+  // profile fields
+  val Title: Header = Value("DC_TITLE")
+  val Description: Header = Value("DC_DESCRIPTION")
+  val Creator: Header = Value("DC_CREATOR")
+  val Created: Header = Value("DDM_CREATED")
+  val Available: Header = Value("DDM_AVAILABLE")
+  val Audience: Header = Value("DDM_AUDIENCE")
+  val AccessRights: Header = Value("DDM_ACCESSRIGHTS")
 
-  logger.debug(s"VALID HEADERS $validHeaders")
+  // metadata fields
+  val Contributor: Header = Value("DC_CONTRIBUTOR")
+  val AlternativeTitle: Header = Value("DCT_ALTERNATIVE")
+  val Publisher: Header = Value("DC_PUBLISHER")
+  val Type: Header = Value("DC_TYPE")
+  val Format: Header = Value("DC_FORMAT")
+  val Identifier: Header = Value("DC_IDENTIFIER")
+  val IdentifierType: Header = Value("DC_IDENTIFIER_TYPE")
+  val Source: Header = Value("DC_SOURCE")
+  val Language: Header = Value("DC_LANGUAGE")
+  val Spatial: Header = Value("DCT_SPATIAL")
+  val Rightsholder: Header = Value("DCT_RIGHTSHOLDER")
+  val License: Header = Value("DCT_LICENSE")
 
-  private lazy val profileFields = Set(
-    "DC_TITLE",
-    "DC_DESCRIPTION",
-    "DC_CREATOR",
-    "DDM_CREATED",
-    "DDM_AVAILABLE",
-    "DDM_AUDIENCE",
-    "DDM_ACCESSRIGHTS",
-  )
+  // composed creator fields
+  val CreatorTitles: Header = Value("DCX_CREATOR_TITLES")
+  val CreatorInitials: Header = Value("DCX_CREATOR_INITIALS")
+  val CreatorInsertions: Header = Value("DCX_CREATOR_INSERTIONS")
+  val CreatorSurname: Header = Value("DCX_CREATOR_SURNAME")
+  val CreatorDAI: Header = Value("DCX_CREATOR_DAI")
+  val CreatorOrganization: Header = Value("DCX_CREATOR_ORGANIZATION")
+  val CreatorRole: Header = Value("DCX_CREATOR_ROLE")
 
-  private lazy val metadataFields = Set(
-    "DC_CONTRIBUTOR",
-    "DCT_ALTERNATIVE",
-    "DC_PUBLISHER",
-    "DC_TYPE",
-    "DC_FORMAT",
-    "DC_IDENTIFIER",
-    "DC_IDENTIFIER_TYPE",
-    "DC_SOURCE",
-    "DC_LANGUAGE",
-    "DCT_SPATIAL",
-    "DCT_RIGHTSHOLDER",
-    "DCT_LICENSE",
-  )
+  // composed contributor fields
+  val ContributorTitles: Header = Value("DCX_CONTRIBUTOR_TITLES")
+  val ContributorInitials: Header = Value("DCX_CONTRIBUTOR_INITIALS")
+  val ContributorInsertions: Header = Value("DCX_CONTRIBUTOR_INSERTIONS")
+  val ContributorSurname: Header = Value("DCX_CONTRIBUTOR_SURNAME")
+  val ContributorDAI: Header = Value("DCX_CONTRIBUTOR_DAI")
+  val ContributorOrganization: Header = Value("DCX_CONTRIBUTOR_ORGANIZATION")
+  val ContributorRole: Header = Value("DCX_CONTRIBUTOR_ROLE")
 
-  private lazy val composedCreatorFields = Set(
-    "DCX_CREATOR_TITLES",
-    "DCX_CREATOR_INITIALS",
-    "DCX_CREATOR_INSERTIONS",
-    "DCX_CREATOR_SURNAME",
-    "DCX_CREATOR_DAI",
-    "DCX_CREATOR_ORGANIZATION",
-    "DCX_CREATOR_ROLE",
-  )
+  // spatial point fields
+  val SpatialScheme: Header = Value("DCX_SPATIAL_SCHEME")
+  val SpatialX: Header = Value("DCX_SPATIAL_X")
+  val SpatialY: Header = Value("DCX_SPATIAL_Y")
 
-  private lazy val composedContributorFields = Set(
-    "DCX_CONTRIBUTOR_TITLES",
-    "DCX_CONTRIBUTOR_INITIALS",
-    "DCX_CONTRIBUTOR_INSERTIONS",
-    "DCX_CONTRIBUTOR_SURNAME",
-    "DCX_CONTRIBUTOR_DAI",
-    "DCX_CONTRIBUTOR_ORGANIZATION",
-    "DCX_CONTRIBUTOR_ROLE",
-  )
+  // spatial box fields
+  val SpatialNorth: Header = Value("DCX_SPATIAL_NORTH")
+  val SpatialSouth: Header = Value("DCX_SPATIAL_SOUTH")
+  val SpatialEast: Header = Value("DCX_SPATIAL_EAST")
+  val SpatialWest: Header = Value("DCX_SPATIAL_WEST")
 
-  private lazy val composedSpatialPointFields = Set(
-    "DCX_SPATIAL_SCHEME",
-    "DCX_SPATIAL_X",
-    "DCX_SPATIAL_Y",
-  )
+  // relation fields
+  val RelationQualifier: Header = Value("DCX_RELATION_QUALIFIER")
+  val RelationTitle: Header = Value("DCX_RELATION_TITLE")
+  val RelationLink: Header = Value("DCX_RELATION_LINK")
 
-  private lazy val composedSpatialBoxFields = Set(
-    "DCX_SPATIAL_SCHEME",
-    "DCX_SPATIAL_NORTH",
-    "DCX_SPATIAL_SOUTH",
-    "DCX_SPATIAL_EAST",
-    "DCX_SPATIAL_WEST",
-  )
+  // date fields
+  val Date: Header = Value("DCT_DATE")
+  val DateQualifier: Header = Value("DCT_DATE_QUALIFIER")
 
-  private lazy val composedRelationFields = Set(
-    "DCX_RELATION_QUALIFIER",
-    "DCX_RELATION_TITLE",
-    "DCX_RELATION_LINK",
-  )
+  // temporal fields
+  val Temporal: Header = Value("DCT_TEMPORAL")
+  val TemporalScheme: Header = Value("DCT_TEMPORAL_SCHEME")
 
-  private lazy val composedDateFields = Set(
-    "DCT_DATE",
-    "DCT_DATE_QUALIFIER",
-  )
+  // subject fields
+  val Subject: Header = Value("DC_SUBJECT")
+  val SubjectScheme: Header = Value("DC_SUBJECT_SCHEME")
 
-  private lazy val composedTemporalFields = Set(
-    "DCT_TEMPORAL",
-    "DCT_TEMPORAL_SCHEME",
-  )
+  // file fields
+  val FilePath: Header = Value("FILE_PATH")
+  val FileTitle: Header = Value("FILE_TITLE")
+  val FileAccessibility: Header = Value("FILE_ACCESSIBILITY")
+  val FileVisibility: Header = Value("FILE_VISIBILITY")
 
-  private lazy val composedSubjectFields = Set(
-    "DC_SUBJECT",
-    "DC_SUBJECT_SCHEME",
-  )
+  // springfield fields
+  val SpringfieldDomain: Header = Value("SF_DOMAIN")
+  val SpringfieldUser: Header = Value("SF_USER")
+  val SpringfieldCollection: Header = Value("SF_COLLECTION")
+  val SpringfieldPlayMode: Header = Value("SF_PLAY_MODE")
 
-  private lazy val fileDescriptorHeaders = Set(
-    "FILE_PATH",
-    "FILE_TITLE",
-    "FILE_ACCESSIBILITY",
-    "FILE_VISIBILITY",
-  )
+  // A/V fields
+  val AudioVideoFilePath: Header = Value("AV_FILE_PATH")
+  val AudioVideoSubtitles: Header = Value("AV_SUBTITLES")
+  val AudioVideoSubtitlesLanguage: Header = Value("AV_SUBTITLES_LANGUAGE")
 
-  private lazy val springfieldHeaders = Set(
-    "SF_DOMAIN",
-    "SF_USER",
-    "SF_COLLECTION",
-    "SF_PLAY_MODE",
-  )
+  // administrative fields
+  val Row: Header = Value("ROW")
+  val Dataset: Header = Value("DATASET")
+  val DepositorId: Header = Value("DEPOSITOR_ID")
+  val BaseRevision: Header = Value("BASE_REVISION")
 
-  private lazy val audioVideoHeaders = Set(
-    "AV_FILE_PATH",
-    "AV_SUBTITLES",
-    "AV_SUBTITLES_LANGUAGE",
-  )
-
-  private lazy val administrativeHeaders = Set(
-    "ROW",
-    "DATASET",
-    "DEPOSITOR_ID",
-    "BASE_REVISION",
-  )
+  logger.debug(s"VALID HEADERS $values")
 }

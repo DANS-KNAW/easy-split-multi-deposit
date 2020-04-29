@@ -52,7 +52,7 @@ trait ParserValidation extends DebugEnhancedLogging {
         .find(s => s.startsWith("audio/") || s.startsWith("video/"))
         .map(_ => ().toValidated)
         .getOrElse(ParseError(deposit.row,
-          "No audio/video format found for this column: [DC_FORMAT]\n" +
+          s"No audio/video format found for this column: [${ Headers.Format }]\n" +
             "cause: this column should contain at least one " +
             "audio/ or video/ value because SF columns are present").toInvalid)
     }
@@ -65,12 +65,12 @@ trait ParserValidation extends DebugEnhancedLogging {
       case (true, false) | (false, true) => ().toValidated
       case (true, true) =>
         ParseError(deposit.row,
-          "Values found for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]; " +
+          s"Values found for these columns: [${ Headers.SpringfieldDomain }, ${ Headers.SpringfieldUser }, ${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldPlayMode }]; " +
             "these columns should be empty because there are no audio/video files " +
             "found in this deposit").toInvalid
       case (false, false) =>
         ParseError(deposit.row,
-          "No values found for these columns: [SF_USER, SF_COLLECTION, SF_PLAY_MODE]; " +
+          s"No values found for these columns: [${ Headers.SpringfieldUser }, ${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldPlayMode }]; " +
             "these columns should contain values because audio/video files are " +
             s"found:\n${ avFiles.map(filepath => s" - $filepath").mkString("\n") }").toInvalid
     }
@@ -86,7 +86,7 @@ trait ParserValidation extends DebugEnhancedLogging {
   def checkAllAVFilesHaveSameAccessibility(deposit: Deposit): Validated[Unit] = {
     deposit.files.collect { case fmd: AVFileMetadata => fmd.accessibleTo }.distinct match {
       case Seq() | Seq(_) => ().toValidated
-      case accs => ParseError(deposit.row, s"Multiple accessibility levels found for A/V files: ${accs.mkString("{", ", ", "}")}").toInvalid
+      case accs => ParseError(deposit.row, s"Multiple accessibility levels found for A/V files: ${ accs.mkString("{", ", ", "}") }").toInvalid
     }
   }
 }
