@@ -131,7 +131,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       .traverse {
         case (s, i) if s.isBlank =>
           val index = i + 2
-          ParseError(index, s"Row $index does not have a depositId in column DATASET").toInvalid
+          ParseError(index, s"Row $index does not have a depositId in column ${ Headers.Dataset }").toInvalid
         case _ => ().toValidated
       }
       .map(_ => ())
