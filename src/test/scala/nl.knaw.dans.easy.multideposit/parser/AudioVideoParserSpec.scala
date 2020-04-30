@@ -116,6 +116,131 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       ParseError(2, "At most one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]. Found: [(dans,janvanmansum,jans-test-files,menu), (extra1,extra2,extra3,continuous)]").chained
   }
 
+  "extractSpringfieldList" should "succeed if no Springfield is provided" in {
+    val rows = DepositRow(2, Map(
+      Headers.SpringfieldDomain -> "",
+      Headers.SpringfieldUser -> "",
+      Headers.SpringfieldCollection -> "",
+      Headers.SpringfieldPlayMode -> "",
+    )) :: DepositRow(3, Map(
+      Headers.SpringfieldDomain -> "",
+      Headers.SpringfieldUser -> "",
+      Headers.SpringfieldCollection -> "",
+      Headers.SpringfieldPlayMode -> "",
+    )) :: Nil
+
+    extractSpringfieldList(2, rows).value shouldBe empty
+  }
+
+  it should "fail if the Springfield row is incomplete" in {
+    val rows = DepositRow(2, Map(
+      Headers.SpringfieldDomain -> "",
+      Headers.SpringfieldUser -> "",
+      Headers.SpringfieldCollection -> "",
+      Headers.SpringfieldPlayMode -> "menu",
+    )) :: Nil
+
+    extractSpringfieldList(2, rows).invalidValue.toNonEmptyList.toList should contain inOrderOnly(
+      ParseError(2, "Missing value for: SF_COLLECTION"),
+      ParseError(2, "Missing value for: SF_USER"),
+    )
+  }
+
+  it should "fail if all (multiple) Springfield rows are incomplete" in {
+    val rows = DepositRow(2, Map(
+      Headers.SpringfieldDomain -> "",
+      Headers.SpringfieldUser -> "",
+      Headers.SpringfieldCollection -> "",
+      Headers.SpringfieldPlayMode -> "menu",
+    )) :: DepositRow(3, Map(
+      Headers.SpringfieldDomain -> "",
+      Headers.SpringfieldUser -> "",
+      Headers.SpringfieldCollection -> "",
+      Headers.SpringfieldPlayMode -> "continuous",
+    )) :: Nil
+
+    extractSpringfieldList(2, rows).invalidValue.toNonEmptyList.toList should contain inOrderOnly(
+      ParseError(2, "Missing value for: SF_COLLECTION"),
+      ParseError(2, "Missing value for: SF_USER"),
+      ParseError(3, "Missing value for: SF_COLLECTION"),
+      ParseError(3, "Missing value for: SF_USER"),
+    )
+  }
+
+  it should "fail if one complete row and one or more incomplete rows are provided" in {
+    val rows = DepositRow(2, Map(
+      Headers.SpringfieldDomain -> "randomdomain",
+      Headers.SpringfieldUser -> "randomuser",
+      Headers.SpringfieldCollection -> "randomcollection",
+      Headers.SpringfieldPlayMode -> "menu"
+    )) :: DepositRow(3, Map(
+      Headers.SpringfieldDomain -> "",
+      Headers.SpringfieldUser -> "",
+      Headers.SpringfieldCollection -> "",
+      Headers.SpringfieldPlayMode -> "continuous",
+    )) :: Nil
+
+    extractSpringfieldList(2, rows).invalidValue.toNonEmptyList.toList should contain only ParseError(2, "At most one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]. Found one complete instance (randomdomain,randomuser,randomcollection,menu) as well as one or more incomplete instances.")
+  }
+
+  it should "succeed if multiple rows with the same values are provided" in {
+    val rows = DepositRow(2, Map(
+      Headers.SpringfieldDomain -> "randomdomain",
+      Headers.SpringfieldUser -> "randomuser",
+      Headers.SpringfieldCollection -> "randomcollection",
+      Headers.SpringfieldPlayMode -> "menu"
+    )) :: DepositRow(3, Map(
+      Headers.SpringfieldDomain -> "randomdomain",
+      Headers.SpringfieldUser -> "randomuser",
+      Headers.SpringfieldCollection -> "randomcollection",
+      Headers.SpringfieldPlayMode -> "menu"
+    )) :: Nil
+
+    extractSpringfieldList(2, rows).value.value shouldBe Springfield("randomdomain", "randomuser", "randomcollection", PlayMode.Menu)
+  }
+
+  it should "fail if multiple rows with different values are provided" in {
+    val rows = DepositRow(2, Map(
+      Headers.SpringfieldDomain -> "randomdomain1",
+      Headers.SpringfieldUser -> "randomuser1",
+      Headers.SpringfieldCollection -> "randomcollection1",
+      Headers.SpringfieldPlayMode -> "menu"
+    )) :: DepositRow(3, Map(
+      Headers.SpringfieldDomain -> "randomdomain2",
+      Headers.SpringfieldUser -> "randomuser2",
+      Headers.SpringfieldCollection -> "randomcollection2",
+      Headers.SpringfieldPlayMode -> "menu"
+    )) :: Nil
+
+    extractSpringfieldList(2, rows).invalidValue.toNonEmptyList.toList should contain only ParseError(2, "At most one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]. Found: [(randomdomain1,randomuser1,randomcollection1,menu), (randomdomain2,randomuser2,randomcollection2,menu)]")
+  }
+
+  it should "fail if both complete and incomplete instances are provided" in {
+    val rows = DepositRow(2, Map(
+      Headers.SpringfieldDomain -> "randomdomain1",
+      Headers.SpringfieldUser -> "randomuser1",
+      Headers.SpringfieldCollection -> "randomcollection1",
+      Headers.SpringfieldPlayMode -> "menu"
+    )) :: DepositRow(3, Map(
+      Headers.SpringfieldDomain -> "randomdomain2",
+      Headers.SpringfieldUser -> "randomuser2",
+      Headers.SpringfieldCollection -> "randomcollection2",
+      Headers.SpringfieldPlayMode -> "menu"
+    )) :: DepositRow(4, Map(
+      Headers.SpringfieldDomain -> "",
+      Headers.SpringfieldUser -> "",
+      Headers.SpringfieldCollection -> "",
+      Headers.SpringfieldPlayMode -> "menu"
+    )) :: DepositRow(5, Map(
+      Headers.SpringfieldDomain -> "",
+      Headers.SpringfieldUser -> "",
+      Headers.SpringfieldCollection -> "",
+      Headers.SpringfieldPlayMode -> "continuous"
+    )) :: Nil
+
+    extractSpringfieldList(2, rows).invalidValue.toNonEmptyList.toList should contain only ParseError(2, "At most one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]. Found: [(randomdomain1,randomuser1,randomcollection1,menu), (randomdomain2,randomuser2,randomcollection2,menu)] as well as one or more incomplete instances.")
+  }
+
   "springfield" should "convert the csv input into the corresponding object" in {
     val row = DepositRow(2, Map(
       Headers.SpringfieldDomain -> "randomdomain",
