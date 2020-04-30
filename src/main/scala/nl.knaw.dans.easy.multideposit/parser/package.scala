@@ -18,16 +18,16 @@ package nl.knaw.dans.easy.multideposit
 import better.files.File
 import cats.data.{ NonEmptyChain, ValidatedNec }
 import cats.syntax.validated._
-import nl.knaw.dans.easy.multideposit.model.MultiDepositKey
+import nl.knaw.dans.easy.multideposit.parser.Headers.Header
 import nl.knaw.dans.lib.string._
 
 package object parser {
 
-  case class DepositRow(rowNum: Int, content: Map[MultiDepositKey, String])
+  case class DepositRow(rowNum: Int, content: Map[Header, String])
   type DepositRows = Seq[DepositRow]
 
   implicit class DatasetRowFind(val row: DepositRow) extends AnyVal {
-    def find(name: MultiDepositKey): Option[String] = row.content.get(name).filterNot(_.isBlank)
+    def find(name: Header): Option[String] = row.content.get(name).filterNot(_.isBlank)
   }
 
   type Validated[T] = ValidatedNec[ParserError, T]
@@ -38,6 +38,7 @@ package object parser {
 
   private[parser] sealed abstract class ParserError {
     def toInvalid[T]: Validated[T] = this.invalidNec[T]
+
     def chained: NonEmptyChain[ParserError] = NonEmptyChain.one(this)
   }
   private[parser] case class EmptyInstructionsFileError(file: File) extends ParserError

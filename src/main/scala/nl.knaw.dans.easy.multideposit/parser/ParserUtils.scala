@@ -25,14 +25,15 @@ import cats.syntax.option._
 import cats.syntax.traverse._
 import cats.syntax.validated._
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
-import nl.knaw.dans.easy.multideposit.model.{ DepositId, MultiDepositKey }
+import nl.knaw.dans.easy.multideposit.model.DepositId
+import nl.knaw.dans.easy.multideposit.parser.Headers.Header
 import nl.knaw.dans.lib.string._
 import org.joda.time.DateTime
 
 trait ParserUtils {
   this: InputPathExplorer =>
 
-  def extractExactlyOne(rowNum: Int, name: MultiDepositKey, rows: DepositRows): Validated[String] = {
+  def extractExactlyOne(rowNum: Int, name: Header, rows: DepositRows): Validated[String] = {
     rows.flatMap(_.find(name)).distinct match {
       case Seq() => ParseError(rowNum, s"There should be one non-empty value for $name").toInvalid
       case Seq(t) => t.toValidated
@@ -40,14 +41,14 @@ trait ParserUtils {
     }
   }
 
-  def extractAtLeastOne(rowNum: Int, name: MultiDepositKey, rows: DepositRows): Validated[NonEmptyList[String]] = {
+  def extractAtLeastOne(rowNum: Int, name: Header, rows: DepositRows): Validated[NonEmptyList[String]] = {
     rows.flatMap(_.find(name)).distinct match {
       case Seq() => ParseError(rowNum, s"There should be at least one non-empty value for $name").toInvalid
       case Seq(head, tail @ _*) => NonEmptyList.of(head, tail: _*).toValidated
     }
   }
 
-  def extractAtMostOne(rowNum: Int, name: MultiDepositKey, rows: DepositRows): Validated[Option[String]] = {
+  def extractAtMostOne(rowNum: Int, name: Header, rows: DepositRows): Validated[Option[String]] = {
     rows.flatMap(_.find(name)).distinct match {
       case Seq() => none.toValidated
       case Seq(t) => t.some.toValidated
@@ -59,17 +60,17 @@ trait ParserUtils {
     rows.flatMap(row => f(row)).toList.sequence
   }
 
-  def extractList(rows: DepositRows, name: MultiDepositKey): List[String] = {
+  def extractList(rows: DepositRows, name: Header): List[String] = {
     rows.flatMap(_.find(name)).toList
   }
 
-  def checkValidChars(value: String, rowNum: => Int, column: => MultiDepositKey): Validated[String] = {
+  def checkValidChars(value: String, rowNum: => Int, column: => Header): Validated[String] = {
     val invalidCharacters = "[^a-zA-Z0-9_-]".r.findAllIn(value).toSeq.distinct
     if (invalidCharacters.isEmpty) value.toValidated
     else ParseError(rowNum, s"The column '$column' contains the following invalid characters: ${ invalidCharacters.mkString("{", ", ", "}") }").toInvalid
   }
 
-  def date(rowNum: => Int, columnName: => String)(s: String): Validated[DateTime] = {
+  def date(rowNum: => Int, columnName: => Header)(s: String): Validated[DateTime] = {
     catchOnly[IllegalArgumentException] { DateTime.parse(s) }
       .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' does not represent a date"))
       .toValidatedNec
@@ -77,7 +78,7 @@ trait ParserUtils {
 
   val validURIschemes = List("http", "https")
 
-  def uri(rowNum: => Int, columnName: => String)(s: String): Validated[URI] = {
+  def uri(rowNum: => Int, columnName: => Header)(s: String): Validated[URI] = {
     catchOnly[URISyntaxException] { new URI(s) }
       .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' is not a valid URI"))
       .andThen {
@@ -87,9 +88,9 @@ trait ParserUtils {
       .toValidatedNec
   }
 
-  def missingRequired[T](row: DepositRow, required: Set[String]): ParseError = {
+  def missingRequired(row: DepositRow, required: Header*): ParseError = {
     val blankRequired = row.content.collect { case (key, value) if value.isBlank && required.contains(key) => key }
-    val missingColumns = required.diff(row.content.keySet)
+    val missingColumns = required.toSet.diff(row.content.keySet)
     val missing = blankRequired.toSet ++ missingColumns
     require(missing.nonEmpty, "the list of missing elements is supposed to be non-empty")
 

@@ -20,22 +20,22 @@ import nl.knaw.dans.easy.multideposit.TestSupportFixture
 class ParserPackageSpec extends TestSupportFixture {
 
   "find" should "return the value corresponding to the key in the row" in {
-    val row = DepositRow(2, Map("foo" -> "abc", "bar" -> "def"))
-    row.find("foo").value shouldBe "abc"
+    val row = DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def"))
+    row.find(Headers.Title).value shouldBe "abc"
   }
 
   it should "return None if the key is not present in the row" in {
-    val row = DepositRow(2, Map("foo" -> "abc", "bar" -> "def"))
-    row.find("baz") shouldBe empty
+    val row = DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def"))
+    row.find(Headers.Creator) shouldBe empty
   }
 
   it should "return None if the value corresponding to the key in the row is empty" in {
-    val row = DepositRow(2, Map("foo" -> "abc", "bar" -> ""))
-    row.find("bar") shouldBe empty
+    val row = DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> ""))
+    row.find(Headers.Description) shouldBe empty
   }
 
   it should "return None if the value corresponding to the key in the row is blank" in {
-    val row = DepositRow(2, Map("foo" -> "abc", "bar" -> "  \t  "))
-    row.find("bar") shouldBe empty
+    val row = DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "  \t  "))
+    row.find(Headers.Description) shouldBe empty
   }
 }

@@ -62,7 +62,7 @@ trait FileMetadataParser extends DebugEnhancedLogging {
     val subtitles = instructions.audioVideo.avFiles.getOrElse(file.path, Set.empty)
     lazy val defaultAccess = defaultAccessibility(instructions)
     lazy val defaultVisibility = FileAccessRights.ANONYMOUS
-    lazy val filename = file.name.toString
+    lazy val filename = file.name
 
     instructions.files.get(file.path)
       .map(fd => {
@@ -73,7 +73,7 @@ trait FileMetadataParser extends DebugEnhancedLogging {
           case PlayMode.Menu =>
             fd.title
               .map(title => AVFileMetadata(file.path, m, vocabulary, title, accessibility, visibility, subtitles).toValidated)
-              .getOrElse(ParseError(instructions.row, s"No FILE_TITLE given for A/V file $file.").toInvalid)
+              .getOrElse(ParseError(instructions.row, s"No ${ Headers.FileTitle } given for A/V file $file.").toInvalid)
           case PlayMode.Continuous =>
             AVFileMetadata(file.path, m, vocabulary, fd.title.getOrElse(filename), accessibility, visibility, subtitles).toValidated
         }
@@ -82,8 +82,8 @@ trait FileMetadataParser extends DebugEnhancedLogging {
         springfield.playMode match {
           case PlayMode.Menu =>
             ParseError(instructions.row, s"Not listed A/V file detected: $file. " +
-              "Because Springfield PlayMode 'MENU' was choosen, all A/V files must be listed " +
-              "with a human readable title in the FILE_TITLE field.").toInvalid
+              s"Because ${ Headers.SpringfieldPlayMode } '${ PlayMode.Menu }' was choosen, all A/V files must be listed " +
+              s"with a human readable title in the ${ Headers.FileTitle } field.").toInvalid
           case PlayMode.Continuous =>
             AVFileMetadata(file.path, m, vocabulary, filename, defaultAccess, defaultVisibility, subtitles).toValidated
         }
@@ -95,7 +95,7 @@ trait FileMetadataParser extends DebugEnhancedLogging {
     val subtitles = instructions.audioVideo.avFiles.getOrElse(file.path, Set.empty)
     lazy val defaultAccess = defaultAccessibility(instructions)
     lazy val defaultVisibility = FileAccessRights.ANONYMOUS
-    lazy val filename = file.name.toString
+    lazy val filename = file.name
 
     instructions.files.get(file.path)
       .map(fd => {

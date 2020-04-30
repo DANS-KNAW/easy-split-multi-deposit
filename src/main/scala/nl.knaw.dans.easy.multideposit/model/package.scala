@@ -21,7 +21,6 @@ import scala.language.implicitConversions
 
 package object model {
 
-  type MultiDepositKey = String
   type DepositId = String
   type DepositorUserId = String
   type MimeType = String

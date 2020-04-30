@@ -25,7 +25,7 @@ import org.scalatest.matchers.should.Matchers
 class ReadmeSpec extends AnyFlatSpec with Matchers with CustomMatchers {
   private val resourceDirString: String = File(getClass.getResource("/").toURI).toString
 
-  val mockedArgs = Array("-s", resourceDirString,
+  val mockedArgs: Array[String] = Array("-s", resourceDirString,
     resourceDirString + "/allfields/input",
     resourceDirString + "/allfields/output",
     "datamanager")

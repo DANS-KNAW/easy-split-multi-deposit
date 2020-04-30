@@ -33,136 +33,136 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   "extractExactlyOne" should "find the value for the given rows" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
     )
 
-    extractExactlyOne(2, "FOO", rows).value shouldBe "abc"
+    extractExactlyOne(2, Headers.Title, rows).value shouldBe "abc"
   }
 
   it should "filter out the blank values" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "ghi", Headers.Description -> "")),
     )
 
-    extractExactlyOne(2, "BAR", rows).value shouldBe "def"
+    extractExactlyOne(2, Headers.Description, rows).value shouldBe "def"
   }
 
   it should "fail when the output is empty" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "ghi", Headers.Description -> "jkl")),
     )
 
-    extractExactlyOne(2, "QUX", rows).invalidValue shouldBe
-      ParseError(2, "There should be one non-empty value for QUX").chained
+    extractExactlyOne(2, Headers.Creator, rows).invalidValue shouldBe
+      ParseError(2, "There should be one non-empty value for DC_CREATOR").chained
   }
 
   it should "fail when the input contains multiple distinct values for the same columnName" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "ghi", Headers.Description -> "jkl")),
     )
 
-    extractExactlyOne(2, "FOO", rows).invalidValue shouldBe
-      ParseError(2, "Only one row is allowed to contain a value for the column 'FOO'. Found: [abc, ghi]").chained
+    extractExactlyOne(2, Headers.Title, rows).invalidValue shouldBe
+      ParseError(2, "Only one row is allowed to contain a value for the column 'DC_TITLE'. Found: [abc, ghi]").chained
   }
 
   it should "succeed when the input contains multiple identical values for the same columnName" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "jkl")),
     )
 
-    extractExactlyOne(2, "FOO", rows).value shouldBe "abc"
+    extractExactlyOne(2, Headers.Title, rows).value shouldBe "abc"
   }
 
   "extractAtLeastOne" should "find the values for the given rows" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "ghi", Headers.Description -> "jkl")),
     )
 
-    extractAtLeastOne(2, "FOO", rows).value.toList should contain inOrderOnly("abc", "ghi")
+    extractAtLeastOne(2, Headers.Title, rows).value.toList should contain inOrderOnly("abc", "ghi")
   }
 
   it should "filter out the blank values" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "ghi", Headers.Description -> "")),
     )
 
-    extractAtLeastOne(2, "BAR", rows).value.toList should contain only "def"
+    extractAtLeastOne(2, Headers.Description, rows).value.toList should contain only "def"
   }
 
   it should "fail when the output is empty" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "ghi", Headers.Description -> "jkl")),
     )
 
-    extractAtLeastOne(2, "QUX", rows).invalidValue shouldBe
-      ParseError(2, "There should be at least one non-empty value for QUX").chained
+    extractAtLeastOne(2, Headers.Creator, rows).invalidValue shouldBe
+      ParseError(2, "There should be at least one non-empty value for DC_CREATOR").chained
   }
 
   it should "succeed when the input contains multiple identical values for the same columnName" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "jkl")),
     )
 
-    extractAtLeastOne(2, "FOO", rows).value.toList should contain only "abc"
+    extractAtLeastOne(2, Headers.Title, rows).value.toList should contain only "abc"
   }
 
   "extractAtMostOne" should "find the value for the given rows" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
     )
 
-    extractAtMostOne(2, "FOO", rows).value.value shouldBe "abc"
+    extractAtMostOne(2, Headers.Title, rows).value.value shouldBe "abc"
   }
 
   it should "filter out the blank values" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "ghi", Headers.Description -> "")),
     )
 
-    extractAtMostOne(2, "BAR", rows).value.value shouldBe "def"
+    extractAtMostOne(2, Headers.Description, rows).value.value shouldBe "def"
   }
 
   it should "return a None when the output is empty" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "ghi", Headers.Description -> "jkl")),
     )
 
-    extractAtMostOne(2, "QUX", rows).value shouldBe empty
+    extractAtMostOne(2, Headers.Creator, rows).value shouldBe empty
   }
 
   it should "fail when the input contains multiple distinct values for the same columnName" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "ghi", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "ghi", Headers.Description -> "jkl")),
     )
 
-    extractAtMostOne(2, "FOO", rows).invalidValue shouldBe
-      ParseError(2, "At most one row is allowed to contain a value for the column 'FOO'. Found: [abc, ghi]").chained
+    extractAtMostOne(2, Headers.Title, rows).invalidValue shouldBe
+      ParseError(2, "At most one row is allowed to contain a value for the column 'DC_TITLE'. Found: [abc, ghi]").chained
   }
 
   it should "succeed when the input contains multiple identical values for the same columnName" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "jkl")),
     )
 
-    extractAtMostOne(2, "FOO", rows).value.value shouldBe "abc"
+    extractAtMostOne(2, Headers.Title, rows).value.value shouldBe "abc"
   }
 
   "extractList curried" should "for each row run the given function and collect the results" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(3, Map("FOO" -> "ghi", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(3, Map(Headers.Title -> "ghi", Headers.Description -> "jkl")),
     )
 
     extractList(rows)(i => Some(i.rowNum.toValidated)).value should contain inOrderOnly(2, 3)
@@ -170,8 +170,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "leave out the rows for which the function returns a None" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(3, Map("FOO" -> "ghi", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(3, Map(Headers.Title -> "ghi", Headers.Description -> "jkl")),
     )
 
     extractList(rows) {
@@ -182,8 +182,8 @@ class ParserUtilsSpec extends TestSupportFixture {
 
   it should "iterate over all rows and aggregate all errors until the end" in {
     val rows = List(
-      DepositRow(2, Map("FOO" -> "abc", "BAR" -> "def")),
-      DepositRow(3, Map("FOO" -> "ghi", "BAR" -> "jkl")),
+      DepositRow(2, Map(Headers.Title -> "abc", Headers.Description -> "def")),
+      DepositRow(3, Map(Headers.Title -> "ghi", Headers.Description -> "jkl")),
     )
 
     extractList(rows)(i => Some(ParseError(i.rowNum, s"foo ${ i.rowNum }").toInvalid))
@@ -194,52 +194,52 @@ class ParserUtilsSpec extends TestSupportFixture {
   }
 
   "checkValidChars" should "succeed with the input value when all characters are valid" in {
-    checkValidChars("valid-input", 2, "TEST").value shouldBe "valid-input"
+    checkValidChars("valid-input", 2, Headers.Title).value shouldBe "valid-input"
   }
 
   it should "fail when the input contains invalid characters" in {
-    checkValidChars("#$%", 2, "TEST").invalidValue shouldBe
-      ParseError(2, "The column 'TEST' contains the following invalid characters: {#, $, %}").chained
+    checkValidChars("#$%", 2, Headers.Title).invalidValue shouldBe
+      ParseError(2, "The column 'DC_TITLE' contains the following invalid characters: {#, $, %}").chained
   }
 
   "date" should "convert the value of the date into the corresponding object" in {
-    date(2, "datum")("2016-07-30").value shouldBe DateTime.parse("2016-07-30")
+    date(2, Headers.Date)("2016-07-30").value shouldBe DateTime.parse("2016-07-30")
   }
 
   it should "fail if the value does not represent a date" in {
-    date(2, "datum")("you can't parse me!").invalidValue shouldBe
-      ParseError(2, "datum value 'you can't parse me!' does not represent a date").chained
+    date(2, Headers.Date)("you can't parse me!").invalidValue shouldBe
+      ParseError(2, "DCT_DATE value 'you can't parse me!' does not represent a date").chained
   }
 
   "url" should "convert the value of a URI into the corresponding object" in {
-    uri(2, "my-uri")("http://does.not.exist.dans.knaw.nl/").value shouldBe new URI("http://does.not.exist.dans.knaw.nl/")
+    uri(2, Headers.RelationLink)("http://does.not.exist.dans.knaw.nl/").value shouldBe new URI("http://does.not.exist.dans.knaw.nl/")
   }
 
   it should "fail if the value does not represent a URI" in {
-    uri(2, "my-uri")("you can't parse me!").invalidValue shouldBe
-      ParseError(2, "my-uri value 'you can't parse me!' is not a valid URI").chained
+    uri(2, Headers.RelationLink)("you can't parse me!").invalidValue shouldBe
+      ParseError(2, "DCX_RELATION_LINK value 'you can't parse me!' is not a valid URI").chained
   }
 
   it should "fail if the value does not represent a URI with one of the accepted schemes" in {
-    uri(2, "my-uri")("javascript://hello-world").invalidValue shouldBe
-      ParseError(2, "my-uri value 'javascript://hello-world' is a valid URI but doesn't have one of the accepted protocols: {http, https}").chained
+    uri(2, Headers.RelationLink)("javascript://hello-world").invalidValue shouldBe
+      ParseError(2, "DCX_RELATION_LINK value 'javascript://hello-world' is a valid URI but doesn't have one of the accepted protocols: {http, https}").chained
   }
 
   "missingRequired" should "return a ParseError listing the one missing column" in {
-    val row = DepositRow(2, Map("a" -> "1", "b" -> "2", "c" -> "3", "d" -> "4"))
+    val row = DepositRow(2, Map(Headers.Title -> "1", Headers.Description -> "2", Headers.Subject -> "3", Headers.Temporal -> "4"))
 
-    missingRequired(row, Set("a", "b", "c", "d", "e")) shouldBe ParseError(2, "Missing value for: e")
+    missingRequired(row, Headers.Title, Headers.Description, Headers.Subject, Headers.Temporal, Headers.Language) shouldBe ParseError(2, "Missing value for: DC_LANGUAGE")
   }
 
   it should "return a ParseError listing the missing columns" in {
-    val row = DepositRow(2, Map("a" -> "1", "b" -> "2", "c" -> "3", "d" -> ""))
+    val row = DepositRow(2, Map(Headers.Title -> "1", Headers.Description -> "2", Headers.Subject -> "3", Headers.Temporal -> ""))
 
-    missingRequired(row, Set("a", "b", "c", "d", "e")) shouldBe ParseError(2, "Missing value(s) for: [d, e]")
+    missingRequired(row, Headers.Title, Headers.Description, Headers.Subject, Headers.Temporal, Headers.Language) shouldBe ParseError(2, "Missing value(s) for: [DCT_TEMPORAL, DC_LANGUAGE]")
   }
 
   it should "throw an IllegalArgumentException if no columns were missing" in {
-    val row = DepositRow(2, Map("a" -> "1", "b" -> "2", "c" -> "3"))
+    val row = DepositRow(2, Map(Headers.Title -> "1", Headers.Description -> "2", Headers.Subject -> "3"))
 
-    the[IllegalArgumentException] thrownBy missingRequired(row, Set("a", "b", "c")) should have message "requirement failed: the list of missing elements is supposed to be non-empty"
+    the[IllegalArgumentException] thrownBy missingRequired(row, Headers.Title, Headers.Description, Headers.Subject) should have message "requirement failed: the list of missing elements is supposed to be non-empty"
   }
 }

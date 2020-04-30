@@ -31,8 +31,8 @@ trait DepositTestObjects extends AudioVideoTestObjects
   this: TestSupportFixture =>
 
   lazy val depositCSV @ depositCSVRow1 :: depositCSVRow2 :: Nil = List(
-    Map("DATASET" -> "ruimtereis01", "DEPOSITOR_ID" -> "ikke", "BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
-    Map("DATASET" -> "ruimtereis01", "BASE_REVISION" -> "") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2,
+    Map(Headers.Dataset -> "ruimtereis01", Headers.DepositorId -> "ikke", Headers.BaseRevision -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow1 ++ metadataCSVRow1 ++ fileDescriptorCSVRow1 ++ audioVideoCSVRow1,
+    Map(Headers.Dataset -> "ruimtereis01", Headers.BaseRevision -> "") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2,
   )
 
   lazy val depositCSVRow = List(
@@ -40,7 +40,7 @@ trait DepositTestObjects extends AudioVideoTestObjects
     DepositRow(3, depositCSVRow2),
   )
 
-  lazy val instructions = Instructions(
+  lazy val instructions: Instructions = Instructions(
     depositId = "ruimtereis01",
     row = 2,
     depositorUserId = "ikke",
@@ -84,20 +84,20 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
         val deposit1 :: deposit2 :: deposit3 :: deposit4 :: Nil = datasets.sortBy(_.depositId)
 
         deposit1 should have(
-          'depositId ("ruimtereis01"),
-          'row (2)
+          'depositId("ruimtereis01"),
+          'row(2)
         )
         deposit2 should have(
-          'depositId ("ruimtereis02"),
-          'row (5)
+          'depositId("ruimtereis02"),
+          'row(5)
         )
         deposit3 should have(
-          'depositId ("ruimtereis03"),
-          'row (10)
+          'depositId("ruimtereis03"),
+          'row(10)
         )
         deposit4 should have(
-          'depositId ("ruimtereis04"),
-          'row (11)
+          'depositId("ruimtereis04"),
+          'row(11)
         )
     }
   }
@@ -113,7 +113,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List(Headers.Dataset, Headers.DepositorId, Headers.SpringfieldUser, Headers.SpringfieldDomain)
     val expectedData = List(
       2 -> List("abc", "def", "ghi", "jkl"),
       3 -> List("mno", "pqr", "stu", "vwx"),
@@ -137,7 +137,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List(Headers.Dataset, Headers.DepositorId, Headers.SpringfieldUser, Headers.SpringfieldDomain)
     val expectedData = List(
       2 -> List("a  bc", "def", "ghi", "jkl"),
       3 -> List("mno", "pq\nr", "stu", "vwx"),
@@ -160,7 +160,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List(Headers.Dataset, Headers.DepositorId, Headers.SpringfieldUser, Headers.SpringfieldDomain)
     val expectedData = List(
       2 -> List("abc", "def", "", "jkl"),
       3 -> List("mno", "", "stu", "vwx"),
@@ -183,7 +183,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List(Headers.Dataset, Headers.DepositorId, Headers.SpringfieldUser, Headers.SpringfieldDomain)
     val expectedData = List(
       2 -> List("abc", "def", "ghi", "jkl"),
       3 -> List("mno", "", "stu", "vwx"),
@@ -206,7 +206,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List(Headers.Dataset, Headers.DepositorId, Headers.SpringfieldUser, Headers.SpringfieldDomain)
     val expectedData = List(
       2 -> List("abc", "def", "ghi", "jkl"),
       3 -> List("mno", "pqr", "stu", "vwx"),
@@ -233,7 +233,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List(Headers.Dataset, Headers.DepositorId, Headers.SpringfieldUser, Headers.SpringfieldDomain)
     val expectedData = List(
       2 -> List("abc", "def", "ghi", "jkl"),
       4 -> List("mno", "pqr", "stu", "vwx"),
@@ -241,7 +241,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
       11 -> List("cba", "abc", "def", "ghi"),
     )
 
-    read(file).value shouldBe (expectedHeaders, expectedData)
+    read(file).value shouldBe(expectedHeaders, expectedData)
   }
 
   it should "parse the input if it only contains a row of headers and no data" in {
@@ -249,10 +249,10 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
     val file = testDir / "input.csv"
     file.write(csv)
 
-    val expectedHeaders = List("DATASET", "DEPOSITOR_ID", "SF_USER", "SF_DOMAIN")
+    val expectedHeaders = List(Headers.Dataset, Headers.DepositorId, Headers.SpringfieldUser, Headers.SpringfieldDomain)
     val expectedData = List.empty[(Int, String)]
 
-    read(file).value shouldBe (expectedHeaders, expectedData)
+    read(file).value shouldBe(expectedHeaders, expectedData)
   }
 
   it should "fail when the input csv file is empty" in {
@@ -318,7 +318,7 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
 
   it should "fail if there are multiple distinct depositorUserIDs" in {
     val rows = DepositRow(2, depositCSVRow1) ::
-      DepositRow(3, depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke2")) ::
+      DepositRow(3, depositCSVRow2 + (Headers.DepositorId -> "ikke2")) ::
       Nil
 
     extractInstructions("ruimtereis01", 2, rows).invalidValue shouldBe
@@ -327,14 +327,14 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
 
   it should "succeed if there are multiple depositorUserIDs that are all equal" in {
     val rows = DepositRow(2, depositCSVRow1) ::
-      DepositRow(3, depositCSVRow2 + ("DEPOSITOR_ID" -> "ikke")) ::
+      DepositRow(3, depositCSVRow2 + (Headers.DepositorId -> "ikke")) ::
       Nil
 
     extractInstructions("ruimtereis01", 2, rows).value shouldBe instructions
   }
 
   it should "fail if there are multiple distinct base revisions" in {
-    val row = DepositRow(3, Map("DATASET" -> "ruimtereis01", "BASE_REVISION" -> "9de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2)
+    val row = DepositRow(3, Map(Headers.Dataset -> "ruimtereis01", Headers.BaseRevision -> "9de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2)
     val rows = DepositRow(2, depositCSVRow1) :: row :: Nil
 
     extractInstructions("ruimtereis01", 2, rows).invalidValue shouldBe
@@ -342,19 +342,19 @@ class MultiDepositParserSpec extends TestSupportFixture with DepositTestObjects 
   }
 
   it should "not fail if there are multiple nondistinct base revisions" in {
-    val row = DepositRow(3, Map("DATASET" -> "ruimtereis01", "BASE_REVISION" -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2)
+    val row = DepositRow(3, Map(Headers.Dataset -> "ruimtereis01", Headers.BaseRevision -> "1de3f841-0f0d-048b-b3db-4b03ad4834d7") ++ profileCSVRow2 ++ metadataCSVRow2 ++ fileDescriptorCSVRow2 ++ audioVideoCSVRow2)
     val rows = DepositRow(2, depositCSVRow1) :: row :: Nil
 
     extractInstructions("ruimtereis01", 2, rows).isValid shouldBe true
   }
 
   "uuid" should "fail if the base revision does not conform to uuid format" in {
-    uuid(2, "BASE_REVISION")("abcd-12xy").invalidValue shouldBe
+    uuid(2, Headers.BaseRevision)("abcd-12xy").invalidValue shouldBe
       ParseError(2, "BASE_REVISION value 'abcd-12xy' does not conform to the UUID format").chained
   }
 
   it should "not fail if the base revision conforms to uuid format" in {
     val uuidString = "1de3f841-0f0d-048b-b3db-4b03ad4834d7"
-    uuid(2, "BASE_REVISION")(uuidString).value.value shouldBe UUID.fromString(uuidString)
+    uuid(2, Headers.BaseRevision)(uuidString).value.value shouldBe UUID.fromString(uuidString)
   }
 }

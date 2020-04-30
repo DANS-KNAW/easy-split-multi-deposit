@@ -19,7 +19,6 @@ import java.util.UUID
 
 import better.files.File
 import cats.data.NonEmptyChain
-import cats.data.Validated.catchOnly
 import cats.instances.list._
 import cats.syntax.apply._
 import cats.syntax.either._
@@ -27,8 +26,9 @@ import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
+import nl.knaw.dans.easy.multideposit.model.{ Deposit, DepositId, Instructions }
+import nl.knaw.dans.easy.multideposit.parser.Headers.{ BaseRevision, Dataset, DepositorId, Header }
 import nl.knaw.dans.easy.multideposit.{ ParseFailed, encoding }
-import nl.knaw.dans.easy.multideposit.model.{ Deposit, DepositId, Instructions, MultiDepositKey }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import nl.knaw.dans.lib.string._
 import org.apache.commons.csv.{ CSVFormat, CSVParser }
@@ -55,7 +55,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       read(instructions)
         .andThen {
           case (headers, content) =>
-            val depositIdIndex = headers.indexOf("DATASET")
+            val depositIdIndex = headers.indexOf(Headers.Dataset)
             detectEmptyDepositCells(content.map { case (_, cs) => cs(depositIdIndex) })
               .productR(createDeposits(depositIdIndex)(headers, content))
         }
@@ -67,7 +67,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
   }
 
   private type Index = Int
-  private type CsvHeaderRow = List[MultiDepositKey]
+  private type CsvHeaderRow = List[Header]
   private type CsvRow = List[String]
 
   private def createDeposits(depositIdIndex: Int)
@@ -95,7 +95,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       .leftMap(e => ParseError(-1, e.getMessage).chained)
       .andThen {
         case Nil => EmptyInstructionsFileError(instructions).toInvalid
-        case (_, headers) :: rows => validateDepositHeaders(headers).map(_ => headers -> rows)
+        case (_, headers) :: rows => validateDepositHeaders(headers).map(_ -> rows)
       }
   }
 
@@ -107,8 +107,8 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       .toList
   }
 
-  private def validateDepositHeaders(headers: CsvHeaderRow): Validated[Unit] = {
-    val validHeaders = Headers.validHeaders
+  private def validateDepositHeaders(headers: CsvRow): Validated[CsvHeaderRow] = {
+    val validHeaders = Headers.values.map(_.toString)
     val invalidHeaders = headers.filterNot(validHeaders.contains)
     lazy val uniqueHeaders = headers.distinct
 
@@ -117,7 +117,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
         headers match {
           case hs if hs.size != uniqueHeaders.size =>
             ParseError(0, "SIP Instructions file contains duplicate headers: " + headers.diff(uniqueHeaders).mkString("[", ", ", "]")).toInvalid
-          case _ => ().toValidated
+          case _ => headers.map(Headers.withName).toValidated
         }
       case invalids =>
         ParseError(0, "SIP Instructions file contains unknown headers: " +
@@ -131,7 +131,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       .traverse {
         case (s, i) if s.isBlank =>
           val index = i + 2
-          ParseError(index, s"Row $index does not have a depositId in column DATASET").toInvalid
+          ParseError(index, s"Row $index does not have a depositId in column ${ Headers.Dataset }").toInvalid
         case _ => ().toValidated
       }
       .map(_ => ())
@@ -140,7 +140,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
   def extractDeposit(multiDepositDirectory: File)(depositId: DepositId, rows: DepositRows): Validated[Deposit] = {
     val rowNum = rows.map(_.rowNum).min
 
-    checkValidChars(depositId, rowNum, "DATASET")
+    checkValidChars(depositId, rowNum, Dataset)
       .andThen(depositId =>
         extractInstructions(depositId, rowNum, rows)
           .tupleRight(multiDepositDirectory / depositId)
@@ -157,7 +157,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
     (
       depositId.toValidated,
       rowNum.toValidated,
-      extractExactlyOne(rowNum, "DEPOSITOR_ID", rows),
+      extractExactlyOne(rowNum, DepositorId, rows),
       extractProfile(rowNum, rows),
       extractBaseRevision(rowNum, rows),
       extractMetadata(rowNum, rows),
@@ -167,14 +167,14 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
   }
 
   private def extractBaseRevision(rowNum: Int, rows: DepositRows): Validated[Option[UUID]] = {
-    extractAtMostOne(rowNum, "BASE_REVISION", rows)
+    extractAtMostOne(rowNum, BaseRevision, rows)
       .andThen {
-        case Some(value) => uuid(rowNum, "BASE_REVISION")(value)
+        case Some(value) => uuid(rowNum, BaseRevision)(value)
         case None => none.toValidated
       }
   }
 
-  def uuid(rowNum: => Int, columnName: => String)(s: String): Validated[Option[UUID]] = {
+  def uuid(rowNum: => Int, columnName: => Header)(s: String): Validated[Option[UUID]] = {
     s.toUUID
       .map(Option(_))
       .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' does not conform to the UUID format"))

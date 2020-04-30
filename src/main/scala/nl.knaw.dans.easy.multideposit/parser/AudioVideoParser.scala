@@ -26,7 +26,7 @@ import cats.syntax.option._
 import cats.syntax.traverse._
 import cats.syntax.validated._
 import nl.knaw.dans.easy.multideposit.model.PlayMode.PlayMode
-import nl.knaw.dans.easy.multideposit.model.{ AudioVideo, DepositId, PlayMode, Springfield, SubtitlesFile }
+import nl.knaw.dans.easy.multideposit.model._
 
 trait AudioVideoParser {
   this: ParserUtils =>
@@ -38,7 +38,7 @@ trait AudioVideoParser {
     ).mapN(AudioVideo)
       .andThen {
         case AudioVideo(None, avFiles) if avFiles.nonEmpty =>
-          ParseError(rowNum, "The column 'AV_FILE_PATH' contains values, but the columns [SF_COLLECTION, SF_USER] do not").toInvalid
+          ParseError(rowNum, s"The column '${ Headers.AudioVideoFilePath }' contains values, but the columns [${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldUser }] do not").toInvalid
         case otherwise => otherwise.toValidated
       }
   }
@@ -48,26 +48,26 @@ trait AudioVideoParser {
       .fold(_.invalid, springfields => springfields.distinct match {
         case Seq() => none.toValidated
         case Seq(t) => t.some.toValidated
-        case ts => ParseError(rowNum, s"At most one row is allowed to contain a value for these columns: [SF_DOMAIN, SF_USER, SF_COLLECTION, SF_PLAY_MODE]. Found: ${ ts.map(_.toTuple).mkString("[", ", ", "]") }").toInvalid
+        case ts => ParseError(rowNum, s"At most one row is allowed to contain a value for these columns: [${ Headers.SpringfieldDomain }, ${ Headers.SpringfieldUser }, ${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldPlayMode }]. Found: ${ ts.map(_.toTuple).mkString("[", ", ", "]") }").toInvalid
       })
   }
 
   def springfield(row: DepositRow): Option[Validated[Springfield]] = {
-    val domain = row.find("SF_DOMAIN")
-    val user = row.find("SF_USER")
-    val collection = row.find("SF_COLLECTION")
-    val playmode = row.find("SF_PLAY_MODE").map(playMode(row.rowNum))
+    val domain = row.find(Headers.SpringfieldDomain)
+    val user = row.find(Headers.SpringfieldUser)
+    val collection = row.find(Headers.SpringfieldCollection)
+    val playmode = row.find(Headers.SpringfieldPlayMode).map(playMode(row.rowNum))
 
-    lazy val collectionException = ParseError(row.rowNum, "Missing value for: SF_COLLECTION")
-    lazy val userException = ParseError(row.rowNum, "Missing value for: SF_USER")
-    lazy val playModeException = ParseError(row.rowNum, "Missing value for: SF_PLAY_MODE")
+    lazy val collectionException = ParseError(row.rowNum, s"Missing value for: ${ Headers.SpringfieldCollection }")
+    lazy val userException = ParseError(row.rowNum, s"Missing value for: ${ Headers.SpringfieldUser }")
+    lazy val playModeException = ParseError(row.rowNum, s"Missing value for: ${ Headers.SpringfieldPlayMode }")
 
     (domain, user, collection, playmode) match {
       case (maybeD, Some(u), Some(c), Some(pm)) =>
         (
-          maybeD.map(checkValidChars(_, row.rowNum, "SF_DOMAIN")).sequence,
-          checkValidChars(u, row.rowNum, "SF_USER"),
-          checkValidChars(c, row.rowNum, "SF_COLLECTION"),
+          maybeD.map(checkValidChars(_, row.rowNum, Headers.SpringfieldDomain)).sequence,
+          checkValidChars(u, row.rowNum, Headers.SpringfieldUser),
+          checkValidChars(c, row.rowNum, Headers.SpringfieldCollection),
           pm,
         ).mapN(Springfield.maybeWithDomain).some
       case (_, Some(_), Some(_), None) => playModeException.toInvalid.some
@@ -94,14 +94,14 @@ trait AudioVideoParser {
   }
 
   def avFile(depositId: DepositId)(row: DepositRow): Option[Validated[(File, SubtitlesFile)]] = {
-    val file = row.find("AV_FILE_PATH").map(findRegularFile(depositId, row.rowNum))
-    val subtitle = row.find("AV_SUBTITLES").map(findRegularFile(depositId, row.rowNum))
-    val subtitleLang = row.find("AV_SUBTITLES_LANGUAGE")
+    val file = row.find(Headers.AudioVideoFilePath).map(findRegularFile(depositId, row.rowNum))
+    val subtitle = row.find(Headers.AudioVideoSubtitles).map(findRegularFile(depositId, row.rowNum))
+    val subtitleLang = row.find(Headers.AudioVideoSubtitlesLanguage)
 
     (file, subtitle, subtitleLang) match {
-      case (Some(Invalid(_)), Some(Invalid(_)), _) => ParseError(row.rowNum, "Both AV_FILE_PATH and AV_SUBTITLES do not represent a valid path").toInvalid.some
-      case (Some(Invalid(_)), _, _) => ParseError(row.rowNum, "AV_FILE_PATH does not represent a valid path").toInvalid.some
-      case (_, Some(Invalid(_)), _) => ParseError(row.rowNum, "AV_SUBTITLES does not represent a valid path").toInvalid.some
+      case (Some(Invalid(_)), Some(Invalid(_)), _) => ParseError(row.rowNum, s"Both ${ Headers.AudioVideoFilePath } and ${ Headers.AudioVideoSubtitles } do not represent a valid path").toInvalid.some
+      case (Some(Invalid(_)), _, _) => ParseError(row.rowNum, s"${ Headers.AudioVideoFilePath } does not represent a valid path").toInvalid.some
+      case (_, Some(Invalid(_)), _) => ParseError(row.rowNum, s"${ Headers.AudioVideoSubtitles } does not represent a valid path").toInvalid.some
       case (Some(Valid(p)), Some(Valid(sub)), subLang)
         if p.exists &&
           p.isRegularFile &&
@@ -111,33 +111,33 @@ trait AudioVideoParser {
         (p, SubtitlesFile(sub, subLang)).toValidated.some
       case (Some(Valid(p)), Some(_), _)
         if !p.exists =>
-        ParseError(row.rowNum, s"AV_FILE_PATH '$p' does not exist").toInvalid.some
+        ParseError(row.rowNum, s"${ Headers.AudioVideoFilePath } '$p' does not exist").toInvalid.some
       case (Some(Valid(p)), Some(_), _)
         if !p.isRegularFile =>
-        ParseError(row.rowNum, s"AV_FILE_PATH '$p' is not a file").toInvalid.some
+        ParseError(row.rowNum, s"${ Headers.AudioVideoFilePath } '$p' is not a file").toInvalid.some
       case (Some(_), Some(Valid(sub)), _)
         if !sub.exists =>
-        ParseError(row.rowNum, s"AV_SUBTITLES '$sub' does not exist").toInvalid.some
+        ParseError(row.rowNum, s"${ Headers.AudioVideoSubtitles } '$sub' does not exist").toInvalid.some
       case (Some(_), Some(Valid(sub)), _)
         if !sub.isRegularFile =>
-        ParseError(row.rowNum, s"AV_SUBTITLES '$sub' is not a file").toInvalid.some
+        ParseError(row.rowNum, s"${ Headers.AudioVideoSubtitles } '$sub' is not a file").toInvalid.some
       case (Some(_), Some(_), Some(subLang))
         if !isValidISO639_1Language(subLang) =>
-        ParseError(row.rowNum, s"AV_SUBTITLES_LANGUAGE '$subLang' doesn't have a valid ISO 639-1 language value").toInvalid.some
+        ParseError(row.rowNum, s"${ Headers.AudioVideoSubtitlesLanguage } '$subLang' doesn't have a valid ISO 639-1 language value").toInvalid.some
       case (Some(_), None, Some(subLang)) =>
-        ParseError(row.rowNum, s"Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: '$subLang'").toInvalid.some
+        ParseError(row.rowNum, s"Missing value for ${ Headers.AudioVideoSubtitles }, since ${ Headers.AudioVideoSubtitlesLanguage } does have a value: '$subLang'").toInvalid.some
       case (Some(Valid(p)), None, None)
         if p.exists &&
           p.isRegularFile => none
       case (Some(Valid(p)), None, None)
         if !p.exists =>
-        ParseError(row.rowNum, s"AV_FILE_PATH '$p' does not exist").toInvalid.some
+        ParseError(row.rowNum, s"${ Headers.AudioVideoFilePath } '$p' does not exist").toInvalid.some
       case (Some(Valid(p)), None, None)
         if !p.isRegularFile =>
-        ParseError(row.rowNum, s"AV_FILE_PATH '$p' is not a file").toInvalid.some
+        ParseError(row.rowNum, s"${ Headers.AudioVideoFilePath } '$p' is not a file").toInvalid.some
       case (None, None, None) => None
       case (None, _, _) =>
-        ParseError(row.rowNum, "No value is defined for AV_FILE_PATH, while some of [AV_SUBTITLES, AV_SUBTITLES_LANGUAGE] are defined").toInvalid.some
+        ParseError(row.rowNum, s"No value is defined for ${ Headers.AudioVideoFilePath }, while some of [${ Headers.AudioVideoSubtitles }, ${ Headers.AudioVideoSubtitlesLanguage }] are defined").toInvalid.some
     }
   }
 
