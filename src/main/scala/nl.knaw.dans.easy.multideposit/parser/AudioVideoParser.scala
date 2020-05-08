@@ -44,12 +44,19 @@ trait AudioVideoParser {
   }
 
   def extractSpringfieldList(rowNum: => Int, rows: DepositRows): Validated[Option[Springfield]] = {
-    extractList(rows)(springfield)
-      .fold(_.invalid, springfields => springfields.distinct match {
-        case Seq() => none.toValidated
-        case Seq(t) => t.some.toValidated
-        case ts => ParseError(rowNum, s"At most one row is allowed to contain a value for these columns: [${ Headers.SpringfieldDomain }, ${ Headers.SpringfieldUser }, ${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldPlayMode }]. Found: ${ ts.map(_.toTuple).mkString("[", ", ", "]") }").toInvalid
-      })
+    val records = rows.flatMap(springfield).toList
+    val validSpringfields = records.collect { case Valid(a) => a }
+    val invalidRecords = records.collect { case Invalid(e) => e }.reduceOption(_ ++ _)
+
+    (validSpringfields, invalidRecords) match {
+      case (Nil, None) => none.toValidated
+      case (Nil, Some(invalids)) => invalids.invalid
+      case (singleSpringfield :: Nil, None) => singleSpringfield.some.toValidated
+      case (singleSpringfield :: Nil, Some(_)) => ParseError(rowNum, s"At most one row is allowed to contain a value for these columns: [${ Headers.SpringfieldDomain }, ${ Headers.SpringfieldUser }, ${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldPlayMode }]. Found one complete instance ${singleSpringfield.toTuple} as well as one or more incomplete instances.").toInvalid
+      case (multipleSpringfields @ head :: _, None) if multipleSpringfields.distinct.size == 1 => head.some.toValidated
+      case (multipleSpringfields, None) => ParseError(rowNum, s"At most one row is allowed to contain a value for these columns: [${ Headers.SpringfieldDomain }, ${ Headers.SpringfieldUser }, ${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldPlayMode }]. Found: ${ multipleSpringfields.map(_.toTuple).mkString("[", ", ", "]") }").toInvalid
+      case (multipleSpringfields, Some(_)) => ParseError(rowNum, s"At most one row is allowed to contain a value for these columns: [${ Headers.SpringfieldDomain }, ${ Headers.SpringfieldUser }, ${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldPlayMode }]. Found: ${ multipleSpringfields.map(_.toTuple).mkString("[", ", ", "]") } as well as one or more incomplete instances.").toInvalid
+    }
   }
 
   def springfield(row: DepositRow): Option[Validated[Springfield]] = {
