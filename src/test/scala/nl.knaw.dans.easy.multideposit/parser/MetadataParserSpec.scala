@@ -94,7 +94,7 @@ trait MetadataTestObjects {
       Headers.Identifier -> "id",
       Headers.Source -> "src2",
       Headers.Language -> "nld",
-      Headers.SchemeSpatial -> "ISO3166",
+      Headers.SchemeSpatial -> "dcterms:ISO3166",
       Headers.Spatial -> "FI",
       Headers.Rightsholder -> "right2",
       Headers.RelationLink -> testUriString,
@@ -124,7 +124,7 @@ trait MetadataTestObjects {
     identifiers = List(Identifier("123456", Some(IdentifierType.ARCHIS_ZAAK_IDENTIFICATIE)), Identifier("id")),
     sources = List("src1", "src2"),
     languages = List("dut", "nld"),
-    spatials = List("spat1", "FI"),
+    spatials = List(Spatial("spat1"), Spatial("FI", Some(SpatialScheme.ISO3166))),
     rightsholder = NonEmptyList.of("right1", "right2"),
     relations = List(QualifiedRelation(RelationQualifier.Replaces, link = Some(testUri), title = Some("bar")), UnqualifiedRelation(link = Some(testUri), title = Some("bar"))),
     dates = List(QualifiedDate(new DateTime(2016, 2, 1, 0, 0), DateQualifier.DATE_SUBMITTED), TextualDate("some random text")),
@@ -252,31 +252,31 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
       Headers.Spatial -> "bar",
     ))
 
-    spatial(row).value.value shouldBe "bar"
+    spatial(row).value.value shouldBe Spatial("bar", None)
   }
 
   it should "succeed if spatial scheme is ISO3166 and spatial is country code following iso3166 scheme" in {
     val row = DepositRow(2, Map(
-      Headers.SchemeSpatial -> "ISO3166",
+      Headers.SchemeSpatial -> "dcterms:ISO3166",
       Headers.Spatial -> "FI",
     ))
 
-    spatial(row).value.value shouldBe "FI"
+    spatial(row).value.value shouldBe Spatial("FI", Some(SpatialScheme.ISO3166))
   }
 
-  it should "fail when scheme is given and it is not ISO3166" in {
-    val row = DepositRow(2, Map(
-      Headers.SchemeSpatial -> "ISO3177",
-      Headers.Spatial -> "FI",
-    ))
-
-    spatial(row).value.invalidValue shouldBe
-      ParseError(2,"Value 'ISO3177' is not a valid scheme").chained
-  }
+//  it should "fail when scheme is given and it is not ISO3166" in {
+//    val row = DepositRow(2, Map(
+//      Headers.SchemeSpatial -> "dcterms:ISO3177",
+//      Headers.Spatial -> "FI",
+//    ))
+//
+//    spatial(row).value.invalidValue shouldBe
+//      ParseError(2,"Value 'FI' invalid because spatial scheme 'dcterms:ISO3177' is not a valid value").chained
+//  }
 
   it should "fail when scheme is ISO3166 and spatial is not a country code following ISO3166 scheme" in {
     val row = DepositRow(2, Map(
-      Headers.SchemeSpatial -> "ISO3166",
+      Headers.SchemeSpatial -> "dcterms:ISO3166",
       Headers.Spatial -> "XYZ",
     ))
 
