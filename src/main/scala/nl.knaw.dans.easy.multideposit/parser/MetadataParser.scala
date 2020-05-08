@@ -131,7 +131,8 @@ trait MetadataParser {
         (
           sp.toValidated,
           none.toValidated
-          ).mapN(Spatial).some
+          ).mapN(Spatial)
+          .some
       case (None, Some(_)) => missingRequired(row, Headers.Spatial).toInvalid.some
       case (None, None) => none
     }
