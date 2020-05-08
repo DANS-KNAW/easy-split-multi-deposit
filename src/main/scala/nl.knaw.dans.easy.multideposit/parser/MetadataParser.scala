@@ -18,7 +18,6 @@ package nl.knaw.dans.easy.multideposit.parser
 import java.util.Locale
 
 import cats.data.NonEmptyList
-import cats.data.Validated.{ Invalid, Valid }
 import cats.instances.option._
 import cats.syntax.apply._
 import cats.syntax.option._
@@ -34,7 +33,7 @@ trait MetadataParser {
   this: ParserUtils =>
 
   val userLicenses: Set[String]
-  val countries: Array[String] = Locale.getISOCountries
+  val countries: Set[String] = Set("NLD", "GBR", "DEU", "BEL")
 
   def extractMetadata(rowNum: Int, rows: DepositRows): Validated[Metadata] = {
     (
@@ -123,15 +122,15 @@ trait MetadataParser {
 
     (spatial, schemeSpatial) match {
       case (Some(sp), Some(scheme)) =>
-        val validatedScheme = schemeSpatial.map(spatialScheme(row.rowNum)).sequence
-        (
-          spatialCheck(row.rowNum)(sp, scheme, validatedScheme),
-          validatedScheme
-          ).mapN(Spatial).some
+        spatialScheme(row.rowNum)(scheme)
+          .andThen(scheme => spatialCheck(row.rowNum)(sp, scheme)
+            .map(Spatial(_, scheme.some))
+          )
+          .some
       case (Some(sp), None) =>
         (
           sp.toValidated,
-          None.toValidated
+          none.toValidated
           ).mapN(Spatial).some
       case (None, Some(_)) => missingRequired(row, Headers.Spatial).toInvalid.some
       case (None, None) => none
@@ -143,10 +142,9 @@ trait MetadataParser {
       .toValidNec(ParseError(rowNum, s"Value '$scheme' is not a valid scheme"))
   }
 
-  private def spatialCheck(rowNum: => Int)(spatial: String, scheme: String, validatedScheme: Validated[Option[SpatialScheme]]): Validated[String] = {
-    (spatial, validatedScheme) match {
-      case (_, Invalid(_)) => ParseError(rowNum, s"Value '$spatial' invalid because spatial scheme '$scheme' is not a valid value").toInvalid
-      case (spatial, Valid(Some(SpatialScheme.ISO3166))) => countryCodeIso3166(rowNum)(spatial)
+  private def spatialCheck(rowNum: => Int)(spatial: String, scheme: SpatialScheme): Validated[String] = {
+    (spatial, scheme) match {
+      case (spatial, SpatialScheme.ISO3166) => countryCodeIso3166(rowNum)(spatial)
       case (spatial, _) => spatial.toValidated
     }
   }
