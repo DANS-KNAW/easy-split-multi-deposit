@@ -39,6 +39,7 @@ object Headers extends Enumeration with DebugEnhancedLogging {
   val IdentifierType: Header = Value("DC_IDENTIFIER_TYPE")
   val Source: Header = Value("DC_SOURCE")
   val Language: Header = Value("DC_LANGUAGE")
+  val SchemeSpatial: Header = Value("DCT_SPATIAL_SCHEME")
   val Spatial: Header = Value("DCT_SPATIAL")
   val Rightsholder: Header = Value("DCT_RIGHTSHOLDER")
   val License: Header = Value("DCT_LICENSE")

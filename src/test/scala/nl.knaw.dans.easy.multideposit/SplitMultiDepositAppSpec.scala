@@ -360,9 +360,11 @@ class SplitMultiDepositAppSpec extends TestSupportFixture with MockFactory with 
             | - row 2: Missing value for: SF_PLAY_MODE
             | - row 3: Missing value for: DC_IDENTIFIER
             | - row 3: Value 'encoding=UTF-8' is not a valid value for DC_LANGUAGE
+            | - row 3: Value 'ISO3177' is not a valid scheme
             | - row 3: DCX_RELATION_LINK value 'invalid url' is not a valid URI
             | - row 3: DCT_DATE_QUALIFIER is only allowed to have a value if DCT_DATE has a well formatted date to go with it
             | - row 3: FILE_TITLE, FILE_ACCESSIBILITY and FILE_VISIBILITY are only allowed if FILE_PATH is also given
+            | - row 4: Value 'XYZ' is not a valid value for country code
             | - row 4: When DCX_RELATION_LINK is defined, a DCX_RELATION_TITLE must be given as well to provide context
             | - row 4: DCT_DATE value '30-07-1992' does not represent a date
             |Due to these errors in the 'instructions.csv', nothing was done.""".stripMargin

@@ -59,6 +59,7 @@ trait MetadataTestObjects {
       Headers.IdentifierType -> "ARCHIS-ZAAK-IDENTIFICATIE",
       Headers.Source -> "src1",
       Headers.Language -> "dut",
+      Headers.SchemeSpatial -> "",
       Headers.Spatial -> "spat1",
       Headers.Rightsholder -> "right1",
       // relation
@@ -93,7 +94,8 @@ trait MetadataTestObjects {
       Headers.Identifier -> "id",
       Headers.Source -> "src2",
       Headers.Language -> "nld",
-      Headers.Spatial -> "spat2",
+      Headers.SchemeSpatial -> "ISO3166",
+      Headers.Spatial -> "FI",
       Headers.Rightsholder -> "right2",
       Headers.RelationLink -> testUriString,
       Headers.RelationTitle -> "bar",
@@ -122,7 +124,7 @@ trait MetadataTestObjects {
     identifiers = List(Identifier("123456", Some(IdentifierType.ARCHIS_ZAAK_IDENTIFICATIE)), Identifier("id")),
     sources = List("src1", "src2"),
     languages = List("dut", "nld"),
-    spatials = List("spat1", "spat2"),
+    spatials = List("spat1", "FI"),
     rightsholder = NonEmptyList.of("right1", "right2"),
     relations = List(QualifiedRelation(RelationQualifier.Replaces, link = Some(testUri), title = Some("bar")), UnqualifiedRelation(link = Some(testUri), title = Some("bar"))),
     dates = List(QualifiedDate(new DateTime(2016, 2, 1, 0, 0), DateQualifier.DATE_SUBMITTED), TextualDate("some random text")),
@@ -243,6 +245,44 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
   "iso639_2Language (with a too long tag)" should behave like invalidLanguage3Tag(parser, "abcdef")
 
   "iso639_2Language (with encoding tag)" should behave like invalidLanguage3Tag(parser, "encoding=UTF-8")
+
+  "spatial" should "succeed if spatial scheme is empty and spatial does not follow any standard" in {
+    val row = DepositRow(2, Map(
+      Headers.SchemeSpatial -> "",
+      Headers.Spatial -> "bar",
+    ))
+
+    spatial(row).value.value shouldBe "bar"
+  }
+
+  it should "succeed if spatial scheme is ISO3166 and spatial is country code following iso3166 scheme" in {
+    val row = DepositRow(2, Map(
+      Headers.SchemeSpatial -> "ISO3166",
+      Headers.Spatial -> "FI",
+    ))
+
+    spatial(row).value.value shouldBe "FI"
+  }
+
+  it should "fail when scheme is given and it is not ISO3166" in {
+    val row = DepositRow(2, Map(
+      Headers.SchemeSpatial -> "ISO3177",
+      Headers.Spatial -> "FI",
+    ))
+
+    spatial(row).value.invalidValue shouldBe
+      ParseError(2,"Value 'ISO3177' is not a valid scheme").chained
+  }
+
+  it should "fail when scheme is ISO3166 and spatial is not a country code following ISO3166 scheme" in {
+    val row = DepositRow(2, Map(
+      Headers.SchemeSpatial -> "ISO3166",
+      Headers.Spatial -> "XYZ",
+    ))
+
+    spatial(row).value.invalidValue shouldBe
+      ParseError(2,"Value 'XYZ' is not a valid value for country code").chained
+  }
 
   "relation" should "succeed if both the link and title are defined" in {
     val row = DepositRow(2, Map(
@@ -596,7 +636,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     contributor(row).value.invalidValue shouldBe
-      ParseError(2, "Missing value(s) for: [DCX_CONTRIBUTOR_SURNAME, DCX_CONTRIBUTOR_INITIALS]").chained
+      ParseError(2, "Missing value(s) for: [DCX_CONTRIBUTOR_INITIALS, DCX_CONTRIBUTOR_SURNAME]").chained
   }
 
   it should "fail if DCX_CREATOR_ROLE has an invalid value" in {
@@ -747,7 +787,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     spatialBox(row).value.invalidValue shouldBe
-      ParseError(2, "Missing value(s) for: [DCX_SPATIAL_EAST, DCX_SPATIAL_NORTH]").chained
+      ParseError(2, "Missing value(s) for: [DCX_SPATIAL_NORTH, DCX_SPATIAL_EAST]").chained
   }
 
   "temporal" should "convert the csv input into the corresponding object" in {
