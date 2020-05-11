@@ -28,7 +28,7 @@ case class Metadata(alternatives: List[String] = List.empty,
                     identifiers: List[Identifier] = List.empty,
                     sources: List[String] = List.empty,
                     languages: List[String] = List.empty,
-                    spatials: List[String] = List.empty,
+                    spatials: List[Spatial] = List.empty,
                     rightsholder: NonEmptyList[String],
                     relations: List[Relation] = List.empty,
                     dates: List[Date] = List.empty,
@@ -69,6 +69,8 @@ case class ContributorPerson(titles: Option[String] = Option.empty,
                              dai: Option[String] = Option.empty) extends Contributor
 
 case class Subject(subject: String = "", scheme: Option[String] = Option.empty)
+
+case class Spatial(value: String, spatialScheme: Option[SpatialScheme.Value] = Option.empty)
 
 case class SpatialPoint(x: String, y: String, scheme: Option[String] = Option.empty)
 

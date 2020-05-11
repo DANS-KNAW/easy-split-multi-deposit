@@ -262,6 +262,12 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
     <dcterms:license xsi:type="dcterms:URI">{license.license}</dcterms:license>
   }
 
+  def createSpatial(spatial: Spatial): Elem = {
+    spatial.spatialScheme
+      .map(spatialScheme => <dcterms:spatial xsi:type={s"$spatialScheme"}>{spatial.value}</dcterms:spatial>)
+      .getOrElse(<dcterms:spatial>{spatial.value}</dcterms:spatial>)
+  }
+
   def createMetadata(metadata: Metadata, maybeSpringfield: Option[Springfield] = Option.empty): Elem = {
     <ddm:dcmiMetadata>
       {metadata.alternatives.map(elem("dcterms:alternative"))}
@@ -271,7 +277,7 @@ class AddDatasetMetadataToDeposit(formats: Set[String]) extends DebugEnhancedLog
       {metadata.identifiers.map(createIdentifier)}
       {metadata.sources.map(elem("dc:source"))}
       {metadata.languages.map(createLanguage)}
-      {metadata.spatials.map(elem("dcterms:spatial"))}
+      {metadata.spatials.map(createSpatial)}
       {metadata.rightsholder.toList.map(elem("dcterms:rightsHolder"))}
       {metadata.relations.map(createRelation) ++ maybeSpringfield.map(createSurrogateRelation) }
       {metadata.dates.map(createDate)}

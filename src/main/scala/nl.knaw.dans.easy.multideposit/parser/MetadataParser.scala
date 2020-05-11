@@ -25,6 +25,7 @@ import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.model.ContributorRole.ContributorRole
 import nl.knaw.dans.easy.multideposit.model.DcType.DcType
 import nl.knaw.dans.easy.multideposit.model.IdentifierType.IdentifierType
+import nl.knaw.dans.easy.multideposit.model.SpatialScheme.SpatialScheme
 import nl.knaw.dans.easy.multideposit.model._
 import nl.knaw.dans.easy.multideposit.parser.Headers.Header
 
@@ -32,6 +33,7 @@ trait MetadataParser {
   this: ParserUtils =>
 
   val userLicenses: Set[String]
+  val countries: Set[String] = Set("NLD", "GBR", "DEU", "BEL")
 
   def extractMetadata(rowNum: Int, rows: DepositRows): Validated[Metadata] = {
     (
@@ -42,7 +44,7 @@ trait MetadataParser {
       extractList(rows)(identifier),
       extractList(rows, Headers.Source).toValidated,
       extractList(rows)(iso639_2Language(Headers.Language)),
-      extractList(rows, Headers.Spatial).toValidated,
+      extractList(rows)(spatial),
       extractAtLeastOne(rowNum, Headers.Rightsholder, rows),
       extractList(rows)(relation),
       extractList(rows)(dateColumn),
@@ -112,6 +114,47 @@ trait MetadataParser {
         if (b0 && (b1 || b2)) lang.toValidated
         else ParseError(row.rowNum, s"Value '$lang' is not a valid value for $columnName").toInvalid
       })
+  }
+
+  def spatial(row: DepositRow): Option[Validated[Spatial]] = {
+    val spatial = row.find(Headers.Spatial)
+    val schemeSpatial = row.find(Headers.SchemeSpatial)
+
+    (spatial, schemeSpatial) match {
+      case (Some(sp), Some(scheme)) =>
+        spatialScheme(row.rowNum)(scheme)
+          .andThen(scheme => spatialCheck(row.rowNum)(sp, scheme)
+            .map(Spatial(_, scheme.some))
+          )
+          .some
+      case (Some(sp), None) =>
+        (
+          sp.toValidated,
+          none.toValidated
+        ).mapN(Spatial)
+        .some
+      case (None, Some(_)) => missingRequired(row, Headers.Spatial).toInvalid.some
+      case (None, None) => none
+    }
+  }
+
+  private def spatialScheme(rowNum: => Int)(scheme: String): Validated[SpatialScheme] = {
+    SpatialScheme.valueOf(scheme)
+      .toValidNec(ParseError(rowNum, s"Value '$scheme' is not a valid scheme"))
+  }
+
+  private def spatialCheck(rowNum: => Int)(spatial: String, scheme: SpatialScheme): Validated[String] = {
+    (spatial, scheme) match {
+      case (spatial, SpatialScheme.ISO3166) => countryCodeIso3166(rowNum)(spatial)
+      case (spatial, _) => spatial.toValidated
+    }
+  }
+
+  private def countryCodeIso3166(rowNum: => Int)(countryCode: String): Validated[String] = {
+    if (countries.contains(countryCode))
+      countryCode.toValidated
+    else
+      ParseError(rowNum, s"Value '$countryCode' is not a valid value for country code").toInvalid
   }
 
   def relation(row: DepositRow): Option[Validated[Relation]] = {
