@@ -168,8 +168,7 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
         Identifier("987654", Some(IdentifierType.E_DNA))),
       sources = List("src", "test"),
       languages = List("eng", "nld"),
-      spatials = List(
-        Spatial("sp1")),
+      spatials = List(Spatial("sp1")),
       rightsholder = NonEmptyList.of("rh1"),
       relations = List(
         QualifiedRelation(RelationQualifier.Replaces, link = Some(new URI("http://does.not.exist1.dans.knaw.nl/")), title = Some("t1")),
