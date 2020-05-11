@@ -46,7 +46,7 @@ The supported metadata elements are subdivided into the following groups:
 * The following [Dublin Core elements]: `DC_TITLE`, `DC	_DESCRIPTION`,
   `DC_CREATOR`*, `DC_CONTRIBUTOR`*, `DC_SUBJECT`, `DC_PUBLISHER`,
   `DC_TYPE`, `DC_FORMAT`, `DC_IDENTIFIER`, `DC_IDENTIFIER_TYPE`, `DC_SOURCE`, `DC_LANGUAGE`.
-* The following [Dublin Core Term elements]: `DCT_ALTERNATIVE`, `DCT_SPATIAL`,
+* The following [Dublin Core Term elements]: `DCT_ALTERNATIVE`, `DCT_SPATIAL`, `DCT_SPATIAL_SCHEME`
   `DCT_TEMPORAL`, `DCT_RIGHTSHOLDER`, `DCT_DATE`, `DCT_DATE_QUALIFIER`, `DCT_LICENSE`.
 * DANS specific specializations of Dublin Core: `DCX_CREATOR_TITLES`, 
   `DCX_CREATOR_INITIALS`, `DCX_CREATOR_INSERTIONS`,
@@ -89,6 +89,16 @@ the [DataCite ContributorType list].
 #### Spatial
 `DCT_SPATIAL` can contain any value that can be construed as "spatial characteristic" of the
 dataset. A more specific value can be provided by means of the `DCX_SPATIAL_*` elements.
+
+`DCT_SPATIAL_SCHEME` can be provided in addition to `DCT_SPATIAL`. Below are listed the valid
+values for `DCT_SPATIAL_SCHEME` and their corresponding valid values for `DCT_SPATIAL`.
+
+`DCT_SPATIAL_SCHEME` | `DCT_SPATIAL`
+-------------------- | -------------
+_dcterms:ISO3166_    | NLD
+                     | GBR
+                     | DEU
+                     | BEL
 
 `DCX_SPATIAL_SCHEME` must currently be `RD`. Other schemes may be supported in the 
 future. The scheme determines how the other `DCX_SPATIAL_*` elements are to be interpreted.
