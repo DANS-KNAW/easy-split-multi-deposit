@@ -24,9 +24,9 @@ import gov.loc.repository.bagit.creator.BagCreator
 import gov.loc.repository.bagit.domain.{ Metadata => BagitMetadata }
 import gov.loc.repository.bagit.hash.StandardSupportedAlgorithms
 import gov.loc.repository.bagit.verify.FileCountAndTotalSizeVistor
-import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model.{ BaseUUID, DepositId }
+import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
