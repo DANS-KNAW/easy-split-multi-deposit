@@ -18,7 +18,7 @@ package nl.knaw.dans.easy.multideposit.parser
 import better.files.File
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
-import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, DefaultFileMetadata, FileAccessRights, FileDescriptor, PlayMode, Springfield, SubtitlesFile, Video }
+import nl.knaw.dans.easy.multideposit.model._
 import org.scalatest.BeforeAndAfterEach
 
 trait FileMetadataTestObjects {

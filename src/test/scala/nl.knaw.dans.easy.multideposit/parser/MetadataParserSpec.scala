@@ -271,7 +271,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     spatial(row).value.invalidValue shouldBe
-      ParseError(2,"Value 'dcterms:ISO3177' is not a valid scheme").chained
+      ParseError(2, "Value 'dcterms:ISO3177' is not a valid scheme").chained
   }
 
   it should "fail when scheme is ISO3166 and spatial is not a country code following ISO3166 scheme" in {
@@ -281,7 +281,7 @@ class MetadataParserSpec extends TestSupportFixture with MetadataTestObjects wit
     ))
 
     spatial(row).value.invalidValue shouldBe
-      ParseError(2,"Value 'XYZ' is not a valid value for country code").chained
+      ParseError(2, "Value 'XYZ' is not a valid value for country code").chained
   }
 
   "relation" should "succeed if both the link and title are defined" in {

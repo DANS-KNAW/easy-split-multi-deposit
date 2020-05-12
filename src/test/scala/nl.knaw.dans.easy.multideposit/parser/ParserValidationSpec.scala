@@ -20,7 +20,7 @@ import better.files.File.currentWorkingDirectory
 import cats.data.NonEmptyList
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
-import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Audio, FileAccessRights, Metadata, PlayMode, Springfield, UserLicense, Video }
+import nl.knaw.dans.easy.multideposit.model._
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterEach
 

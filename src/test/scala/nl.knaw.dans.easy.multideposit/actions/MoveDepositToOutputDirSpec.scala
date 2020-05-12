@@ -76,8 +76,8 @@ class MoveDepositToOutputDirSpec extends TestSupportFixture with BeforeAndAfterE
 
     inside(action.moveDepositsToOutputDir(depositId1, bagId).leftValue) {
       case ActionError(msg, None) =>
-        msg should startWith (s"Could not move ${stagingDir(depositId1)} to " +
-          s"${outputDepositDir(bagId)}. The target directory already exists.")
+        msg should startWith(s"Could not move ${ stagingDir(depositId1) } to " +
+          s"${ outputDepositDir(bagId) }. The target directory already exists.")
     }
   }
 }
