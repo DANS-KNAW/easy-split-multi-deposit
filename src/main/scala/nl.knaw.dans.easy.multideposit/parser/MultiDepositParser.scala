@@ -154,6 +154,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
   }
 
   def extractInstructions(depositId: DepositId, rowNum: Int, rows: DepositRows): Validated[Instructions] = {
+    // @formatter:off
     (
       depositId.toValidated,
       rowNum.toValidated,
@@ -164,6 +165,7 @@ trait MultiDepositParser extends ParserUtils with InputPathExplorer
       extractFileDescriptors(depositId, rowNum, rows),
       extractAudioVideo(depositId, rowNum, rows),
     ).mapN(Instructions)
+    // @formatter:on
   }
 
   private def extractBaseRevision(rowNum: Int, rows: DepositRows): Validated[Option[UUID]] = {

@@ -31,6 +31,7 @@ trait ProfileParser {
   this: ParserUtils =>
 
   def extractProfile(rowNum: Int, rows: DepositRows): Validated[Profile] = {
+    // @formatter:off
     (
       extractAtLeastOne(rowNum, Headers.Title, rows),
       extractAtLeastOne(rowNum, Headers.Description, rows),
@@ -40,6 +41,7 @@ trait ProfileParser {
       extractAtLeastOne(rowNum, Headers.Audience, rows),
       extractDdmAccessrights(rowNum, rows),
     ).mapN(Profile)
+    // @formatter:on
   }
 
   private def extractCreators(rowNum: Int, rows: DepositRows): Validated[NonEmptyList[Creator]] = {
@@ -84,11 +86,14 @@ trait ProfileParser {
     (titles, initials, insertions, surname, organization, dai, cRole) match {
       case (None, None, None, None, None, None, None) => none
       case (None, None, None, None, Some(org), None, _) =>
+        // @formatter:off
         (
           org.toValidated,
           cRole.traverse(creatorRole(row.rowNum)),
         ).mapN(CreatorOrganization).some
+        // @formatter:on
       case (_, Some(init), _, Some(sur), _, _, _) =>
+        // @formatter:off
         (
           titles.toValidated,
           init.toValidated,
@@ -98,6 +103,7 @@ trait ProfileParser {
           cRole.traverse(creatorRole(row.rowNum)),
           dai.toValidated,
         ).mapN(CreatorPerson).some
+        // @formatter:on
       case (_, _, _, _, _, _, _) =>
         missingRequired(row, Headers.CreatorSurname, Headers.CreatorInitials).toInvalid.some
     }
