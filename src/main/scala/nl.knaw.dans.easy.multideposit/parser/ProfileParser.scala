@@ -16,7 +16,7 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import cats.data.NonEmptyList
-import cats.data.Validated.catchOnly
+import cats.data.Validated
 import cats.instances.option._
 import cats.syntax.apply._
 import cats.syntax.option._
@@ -69,7 +69,7 @@ trait ProfileParser {
   }
 
   def accessCategory(rowNum: => Int, columnName: => Header)(s: String): Validated[AccessCategory] = {
-    catchOnly[IllegalArgumentException] { AccessCategory.valueOf(s) }
+    Validated.catchOnly[IllegalArgumentException] { AccessCategory.valueOf(s) }
       .leftMap(_ => ParseError(rowNum, s"Value '$s' is not a valid accessright in column $columnName"))
       .toValidatedNec
   }

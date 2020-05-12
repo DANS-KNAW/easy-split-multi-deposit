@@ -18,8 +18,7 @@ package nl.knaw.dans.easy.multideposit.parser
 import java.net.{ URI, URISyntaxException }
 
 import better.files.File
-import cats.data.NonEmptyList
-import cats.data.Validated.catchOnly
+import cats.data.{ NonEmptyList, Validated }
 import cats.instances.list._
 import cats.syntax.option._
 import cats.syntax.traverse._
@@ -71,7 +70,7 @@ trait ParserUtils {
   }
 
   def date(rowNum: => Int, columnName: => Header)(s: String): Validated[DateTime] = {
-    catchOnly[IllegalArgumentException] { DateTime.parse(s) }
+    Validated.catchOnly[IllegalArgumentException] { DateTime.parse(s) }
       .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' does not represent a date"))
       .toValidatedNec
   }
@@ -79,7 +78,7 @@ trait ParserUtils {
   val validURIschemes = List("http", "https")
 
   def uri(rowNum: => Int, columnName: => Header)(s: String): Validated[URI] = {
-    catchOnly[URISyntaxException] { new URI(s) }
+    Validated.catchOnly[URISyntaxException] { new URI(s) }
       .leftMap(_ => ParseError(rowNum, s"$columnName value '$s' is not a valid URI"))
       .andThen {
         case uri if validURIschemes contains uri.getScheme => uri.valid
