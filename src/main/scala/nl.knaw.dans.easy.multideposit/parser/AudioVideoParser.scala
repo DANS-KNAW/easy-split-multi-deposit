@@ -72,7 +72,7 @@ trait AudioVideoParser {
     (domain, user, collection, playmode) match {
       case (maybeD, Some(u), Some(c), Some(pm)) =>
         (
-          maybeD.map(checkValidChars(_, row.rowNum, Headers.SpringfieldDomain)).sequence,
+          maybeD.traverse(checkValidChars(_, row.rowNum, Headers.SpringfieldDomain)),
           checkValidChars(u, row.rowNum, Headers.SpringfieldUser),
           checkValidChars(c, row.rowNum, Headers.SpringfieldCollection),
           pm,

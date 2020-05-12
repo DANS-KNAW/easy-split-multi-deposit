@@ -87,7 +87,7 @@ trait MetadataParser {
       case (Some(id), idt) =>
         (
           id.toValidated,
-          idt.map(identifierType(row.rowNum)).sequence
+          idt.traverse(identifierType(row.rowNum))
         ).mapN(Identifier).some
       case (None, Some(_)) => missingRequired(row, Headers.Identifier).toInvalid.some
       case (None, None) => none
@@ -220,7 +220,7 @@ trait MetadataParser {
       case (None, None, None, None, Some(org), None, _) =>
         (
           org.toValidated,
-          cRole.map(contributorRole(row.rowNum)).sequence,
+          cRole.traverse(contributorRole(row.rowNum)),
         ).mapN(ContributorOrganization).some
       case (_, Some(init), _, Some(sur), _, _, _) =>
         (
@@ -229,7 +229,7 @@ trait MetadataParser {
           insertions.toValidated,
           sur.toValidated,
           organization.toValidated,
-          cRole.map(contributorRole(row.rowNum)).sequence,
+          cRole.traverse(contributorRole(row.rowNum)),
           dai.toValidated,
         ).mapN(ContributorPerson).some
       case (_, _, _, _, _, _, _) => missingRequired(row, Headers.ContributorInitials, Headers.ContributorSurname).toInvalid.some
