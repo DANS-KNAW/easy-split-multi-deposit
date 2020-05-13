@@ -553,16 +553,15 @@ class AudioVideoParserSpec extends TestSupportFixture with AudioVideoTestObjects
       ParseError(2, "Missing value for AV_SUBTITLES, since AV_SUBTITLES_LANGUAGE does have a value: 'en'").chained
   }
 
-  it should "succeed if there is a value for AV_SUBTITLES, but no value for AV_SUBTITLES_LANGUAGE" in {
+  it should "fail if there is a value for AV_SUBTITLES, but no value for AV_SUBTITLES_LANGUAGE" in {
     val row = DepositRow(2, Map(
       Headers.AudioVideoFilePath -> "reisverslag/centaur.mpg",
       Headers.AudioVideoSubtitles -> "reisverslag/centaur.srt",
       Headers.AudioVideoSubtitlesLanguage -> ""
     ))
 
-    val file = multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.mpg"
-    val subtitles = SubtitlesFile(multiDepositDir / "ruimtereis01" / "reisverslag" / "centaur.srt")
-    avFile("ruimtereis01")(row).value.value shouldBe(`file`, `subtitles`)
+    avFile("ruimtereis01")(row).value.invalidValue shouldBe
+      ParseError(2, "AV_SUBTITLES_LANGUAGE AV_SUBTITLES specified without AV_SUBTITLES_LANGUAGE").chained
   }
 
   it should "succeed if there is no value for both AV_SUBTITLES and AV_SUBTITLES_LANGUAGE" in {
