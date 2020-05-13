@@ -44,13 +44,16 @@ trait FileDescriptorParser {
       case (None, _, a, v) =>
         val err = ParseError(row.rowNum, s"${ Headers.FileTitle }, ${ Headers.FileAccessibility } and ${ Headers.FileVisibility } are only allowed if ${ Headers.FilePath } is also given")
 
+        // @formatter:off
         (
           a.sequence,
           v.sequence,
         ).tupled
+        // @formatter:on
           .fold(e => (err +: e).invalid, _ => err.toInvalid)
           .some
       case (Some(p), t, a, v) =>
+        // @formatter:off
         (
           row.rowNum.toValidated,
           p,
@@ -58,6 +61,7 @@ trait FileDescriptorParser {
           a.sequence,
           v.sequence,
         ).tupled.some
+        // @formatter:on
     }
   }
 
@@ -78,12 +82,14 @@ trait FileDescriptorParser {
   }
 
   private def toFileDescriptor(rowNum: => Int)(file: File, dataPerPath: List[(Int, File, Option[String], Option[FileAccessRights], Option[FileAccessRights])]): Validated[(File, FileDescriptor)] = {
+    // @formatter:off
     (
       dataPerPath.collect { case (localRowNum, _, _, _, _) => localRowNum }.min.toValidated,
       checkAtMostOneElementInList(dataPerPath.collect { case (_, _, Some(title), _, _) => title })(titles => ParseError(rowNum, s"${ Headers.FileTitle } defined multiple values for file '$file': ${ titles.mkString("[", ", ", "]") }")),
       checkAtMostOneElementInList(dataPerPath.collect { case (_, _, _, Some(far), _) => far })(fileAccessibilities => ParseError(rowNum, s"${ Headers.FileAccessibility } defined multiple values for file '$file': ${ fileAccessibilities.mkString("[", ", ", "]") }")),
       checkAtMostOneElementInList(dataPerPath.collect { case (_, _, _, _, Some(fv)) => fv })(fileVisibilities => ParseError(rowNum, s"${ Headers.FileVisibility } defined multiple values for file '$file': ${ fileVisibilities.mkString("[", ", ", "]") }")),
     ).mapN(FileDescriptor)
+    // @formatter:on
       .map((file, _))
       .andThen {
         case (_, FileDescriptor(localRowNum, _, Some(as), Some(vs))) if vs > as => ParseError(localRowNum, s"${ Headers.FileVisibility } ($vs) is more restricted than ${ Headers.FileAccessibility } ($as) for file '$file'. (User will potentially have access to an invisible file.)").toInvalid

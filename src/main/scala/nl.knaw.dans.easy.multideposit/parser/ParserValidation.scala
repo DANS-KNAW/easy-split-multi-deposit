@@ -23,6 +23,7 @@ import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 trait ParserValidation extends DebugEnhancedLogging {
 
   def validateDeposit(deposit: Deposit): Validated[Unit] = {
+    // @formatter:off
     (
       checkUserLicenseOnlyWithOpenAccess(deposit),
       checkSpringFieldDepositHasAVformat(deposit),
@@ -30,6 +31,7 @@ trait ParserValidation extends DebugEnhancedLogging {
       checkEitherVideoOrAudio(deposit),
       checkAllAVFilesHaveSameAccessibility(deposit),
     ).tupled.map(_ => ())
+    // @formatter:on
   }
 
   def checkUserLicenseOnlyWithOpenAccess(deposit: Deposit): Validated[Unit] = {

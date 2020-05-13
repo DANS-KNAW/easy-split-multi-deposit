@@ -36,6 +36,7 @@ trait MetadataParser {
   val countries: Set[String] = Set("NLD", "GBR", "DEU", "BEL")
 
   def extractMetadata(rowNum: Int, rows: DepositRows): Validated[Metadata] = {
+    // @formatter:off
     (
       extractList(rows, Headers.AlternativeTitle).toValidated,
       extractList(rows, Headers.Publisher).toValidated,
@@ -55,6 +56,7 @@ trait MetadataParser {
       extractList(rows)(temporal),
       extractUserLicenses(rowNum, rows),
     ).mapN(Metadata)
+    // @formatter:on
   }
 
   private def extractDcType(rows: DepositRows): Validated[NonEmptyList[DcType]] = {
@@ -85,10 +87,12 @@ trait MetadataParser {
 
     (identifier, idType) match {
       case (Some(id), idt) =>
+        // @formatter:off
         (
           id.toValidated,
-          idt.map(identifierType(row.rowNum)).sequence
+          idt.traverse(identifierType(row.rowNum))
         ).mapN(Identifier).some
+        // @formatter:on
       case (None, Some(_)) => missingRequired(row, Headers.Identifier).toInvalid.some
       case (None, None) => none
     }
@@ -128,11 +132,12 @@ trait MetadataParser {
           )
           .some
       case (Some(sp), None) =>
+        // @formatter:off
         (
           sp.toValidated,
           none.toValidated
-        ).mapN(Spatial)
-        .some
+        ).mapN(Spatial).some
+        // @formatter:on
       case (None, Some(_)) => missingRequired(row, Headers.Spatial).toInvalid.some
       case (None, None) => none
     }
@@ -168,17 +173,21 @@ trait MetadataParser {
       case (_, Some(_), None) =>
         ParseError(row.rowNum, s"When ${ Headers.RelationLink } is defined, a ${ Headers.RelationTitle } must be given as well to provide context").toInvalid.some
       case (Some(q), l, t) =>
+        // @formatter:off
         (
           RelationQualifier.valueOf(q).map(_.toValidated).getOrElse(ParseError(row.rowNum, s"Value '$q' is not a valid relation qualifier").toInvalid),
           l.traverse(uri(row.rowNum, Headers.RelationLink)),
           t.toValidated,
         ).mapN(QualifiedRelation).some
+        // @formatter:on
       case (None, None, None) => none
       case (None, l, t) =>
+        // @formatter:off
         (
           l.traverse(uri(row.rowNum, Headers.RelationLink)),
           t.toValidated
         ).mapN(UnqualifiedRelation).some
+        // @formatter:on
     }
   }
 
@@ -188,6 +197,7 @@ trait MetadataParser {
 
     (dateString, qualifierString) match {
       case (Some(d), Some(q)) =>
+        // @formatter:off
         (
           date(row.rowNum, Headers.Date)(d),
           DateQualifier.valueOf(q)
@@ -200,6 +210,7 @@ trait MetadataParser {
               }
             },
         ).mapN(QualifiedDate).some
+        // @formatter:on
       case (Some(d), None) => TextualDate(d).toValidated.some
       case (None, Some(_)) =>
         ParseError(row.rowNum, s"${ Headers.DateQualifier } is only allowed to have a value if ${ Headers.Date } has a well formatted date to go with it").toInvalid.some
@@ -219,20 +230,24 @@ trait MetadataParser {
     (titles, initials, insertions, surname, organization, dai, cRole) match {
       case (None, None, None, None, None, None, None) => none
       case (None, None, None, None, Some(org), None, _) =>
+        // @formatter:off
         (
           org.toValidated,
-          cRole.map(contributorRole(row.rowNum)).sequence,
+          cRole.traverse(contributorRole(row.rowNum)),
         ).mapN(ContributorOrganization).some
+        // @formatter:on
       case (_, Some(init), _, Some(sur), _, _, _) =>
+        // @formatter:off
         (
           titles.toValidated,
           init.toValidated,
           insertions.toValidated,
           sur.toValidated,
           organization.toValidated,
-          cRole.map(contributorRole(row.rowNum)).sequence,
+          cRole.traverse(contributorRole(row.rowNum)),
           dai.toValidated,
         ).mapN(ContributorPerson).some
+        // @formatter:on
       case (_, _, _, _, _, _, _) => missingRequired(row, Headers.ContributorInitials, Headers.ContributorSurname).toInvalid.some
     }
   }
@@ -255,10 +270,12 @@ trait MetadataParser {
             case None => none.toValidated
           }
 
+        // @formatter:off
         (
           subj.toValidated,
           subjectScheme,
         ).mapN(Subject).some
+        // @formatter:on
       case (None, Some(_)) => Subject(scheme = scheme).toValidated.some
       case (None, None) => none
     }
@@ -305,10 +322,12 @@ trait MetadataParser {
             case None => none.toValidated
           }
 
+        // @formatter:off
         (
           temp.toValidated,
           temporalScheme,
         ).mapN(Temporal).some
+        // @formatter:on
       case (None, Some(_)) => Temporal(scheme = scheme).toValidated.some
       case (None, None) => none
     }

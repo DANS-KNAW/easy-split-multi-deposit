@@ -16,9 +16,9 @@
 package nl.knaw.dans.easy.multideposit.actions
 
 import cats.syntax.either._
-import nl.knaw.dans.easy.multideposit.{ ActionError, BetterFileExtensions, FailFast }
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, StagingPathExplorer }
 import nl.knaw.dans.easy.multideposit.model._
+import nl.knaw.dans.easy.multideposit.{ ActionError, BetterFileExtensions, FailFast }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 import scala.xml.{ Elem, NodeSeq }

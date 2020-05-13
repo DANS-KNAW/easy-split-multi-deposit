@@ -32,10 +32,12 @@ trait AudioVideoParser {
   this: ParserUtils =>
 
   def extractAudioVideo(depositId: DepositId, rowNum: Int, rows: DepositRows): Validated[AudioVideo] = {
+    // @formatter:off
     (
       extractSpringfieldList(rowNum, rows),
       extractSubtitlesPerFile(depositId, rows),
     ).mapN(AudioVideo)
+    // @formatter:on
       .andThen {
         case AudioVideo(None, avFiles) if avFiles.nonEmpty =>
           ParseError(rowNum, s"The column '${ Headers.AudioVideoFilePath }' contains values, but the columns [${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldUser }] do not").toInvalid
@@ -52,7 +54,7 @@ trait AudioVideoParser {
       case (Nil, None) => none.toValidated
       case (Nil, Some(invalids)) => invalids.invalid
       case (singleSpringfield :: Nil, None) => singleSpringfield.some.toValidated
-      case (singleSpringfield :: Nil, Some(_)) => ParseError(rowNum, s"At most one row is allowed to contain a value for these columns: [${ Headers.SpringfieldDomain }, ${ Headers.SpringfieldUser }, ${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldPlayMode }]. Found one complete instance ${singleSpringfield.toTuple} as well as one or more incomplete instances.").toInvalid
+      case (singleSpringfield :: Nil, Some(_)) => ParseError(rowNum, s"At most one row is allowed to contain a value for these columns: [${ Headers.SpringfieldDomain }, ${ Headers.SpringfieldUser }, ${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldPlayMode }]. Found one complete instance ${ singleSpringfield.toTuple } as well as one or more incomplete instances.").toInvalid
       case (multipleSpringfields @ head :: _, None) if multipleSpringfields.distinct.size == 1 => head.some.toValidated
       case (multipleSpringfields, None) => ParseError(rowNum, s"At most one row is allowed to contain a value for these columns: [${ Headers.SpringfieldDomain }, ${ Headers.SpringfieldUser }, ${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldPlayMode }]. Found: ${ multipleSpringfields.map(_.toTuple).mkString("[", ", ", "]") }").toInvalid
       case (multipleSpringfields, Some(_)) => ParseError(rowNum, s"At most one row is allowed to contain a value for these columns: [${ Headers.SpringfieldDomain }, ${ Headers.SpringfieldUser }, ${ Headers.SpringfieldCollection }, ${ Headers.SpringfieldPlayMode }]. Found: ${ multipleSpringfields.map(_.toTuple).mkString("[", ", ", "]") } as well as one or more incomplete instances.").toInvalid
@@ -71,12 +73,14 @@ trait AudioVideoParser {
 
     (domain, user, collection, playmode) match {
       case (maybeD, Some(u), Some(c), Some(pm)) =>
+        // @formatter:off
         (
-          maybeD.map(checkValidChars(_, row.rowNum, Headers.SpringfieldDomain)).sequence,
+          maybeD.traverse(checkValidChars(_, row.rowNum, Headers.SpringfieldDomain)),
           checkValidChars(u, row.rowNum, Headers.SpringfieldUser),
           checkValidChars(c, row.rowNum, Headers.SpringfieldCollection),
           pm,
         ).mapN(Springfield.maybeWithDomain).some
+        // @formatter:on
       case (_, Some(_), Some(_), None) => playModeException.toInvalid.some
       case (_, Some(_), None, Some(Valid(_))) => collectionException.toInvalid.some
       case (_, Some(_), None, Some(Invalid(parseError))) => (collectionException +: parseError).invalid.some

@@ -16,11 +16,11 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import better.files.File
+import cats.syntax.option._
 import nl.knaw.dans.easy.multideposit.PathExplorer.InputPathExplorer
 import nl.knaw.dans.easy.multideposit.TestSupportFixture
 import nl.knaw.dans.easy.multideposit.model.{ FileAccessRights, FileDescriptor }
 import org.scalatest.BeforeAndAfterEach
-import cats.syntax.option._
 
 trait FileDescriptorTestObjects {
   this: InputPathExplorer =>
@@ -239,7 +239,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
-    fileDescriptor("ruimtereis01")(row).value.value shouldBe (2, file, Some("some title"), Some(FileAccessRights.ANONYMOUS), None)
+    fileDescriptor("ruimtereis01")(row).value.value shouldBe(2, file, Some("some title"), Some(FileAccessRights.ANONYMOUS), None)
   }
 
   it should "fail if the path does not exist" in {
@@ -272,7 +272,7 @@ class FileDescriptorParserSpec extends TestSupportFixture with FileDescriptorTes
     ))
 
     val file = multiDepositDir / "ruimtereis01/reisverslag/centaur.mpg"
-    fileDescriptor("ruimtereis01")(row).value.value shouldBe (2, file, Some("some title"), None, None)
+    fileDescriptor("ruimtereis01")(row).value.value shouldBe(2, file, Some("some title"), None, None)
   }
 
   it should "fail if an invalid FILE_ACCESSIBILITY is given" in {

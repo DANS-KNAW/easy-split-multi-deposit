@@ -15,11 +15,11 @@
  */
 package nl.knaw.dans.easy.multideposit
 
+import cats.syntax.either._
 import javax.naming.directory.{ Attributes, SearchControls }
 import javax.naming.ldap.LdapContext
 
 import scala.collection.JavaConverters._
-import cats.syntax.either._
 
 trait Ldap extends AutoCloseable {
 

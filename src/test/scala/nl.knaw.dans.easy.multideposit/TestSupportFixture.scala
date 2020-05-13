@@ -27,10 +27,10 @@ import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPa
 import nl.knaw.dans.easy.multideposit.model._
 import org.apache.commons.configuration.PropertiesConfiguration
 import org.joda.time.DateTime
-import org.scalatest.{ Inside, OptionValues }
 import org.scalatest.enablers.Existence
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{ Inside, OptionValues }
 
 import scala.collection.JavaConverters._
 

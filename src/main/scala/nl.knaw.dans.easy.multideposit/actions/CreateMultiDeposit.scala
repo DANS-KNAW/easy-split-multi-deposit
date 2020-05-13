@@ -21,8 +21,8 @@ import cats.instances.list._
 import cats.syntax.either._
 import cats.syntax.traverse._
 import nl.knaw.dans.easy.multideposit.PathExplorer.{ InputPathExplorer, OutputPathExplorer, PathExplorers, StagingPathExplorer }
-import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.easy.multideposit._
+import nl.knaw.dans.easy.multideposit.model.{ Datamanager, DatamanagerEmailaddress, Deposit }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
 class CreateMultiDeposit(formats: Set[String],
