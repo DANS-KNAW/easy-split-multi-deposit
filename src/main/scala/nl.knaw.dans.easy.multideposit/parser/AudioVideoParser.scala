@@ -118,7 +118,7 @@ trait AudioVideoParser {
           p.isRegularFile &&
           sub.exists &&
           sub.isRegularFile &&
-          subLang.forall(isValidISO639_1Language) =>
+          subLang.exists(isValidISO639_1Language) =>
         (p, SubtitlesFile(sub, subLang)).toValidated.some
       case (Some(Valid(p)), Some(_), _)
         if !p.exists =>
@@ -135,6 +135,8 @@ trait AudioVideoParser {
       case (Some(_), Some(_), Some(subLang))
         if !isValidISO639_1Language(subLang) =>
         ParseError(row.rowNum, s"${ Headers.AudioVideoSubtitlesLanguage } '$subLang' doesn't have a valid ISO 639-1 language value").toInvalid.some
+      case (Some(_), Some(_), None) =>
+        ParseError(row.rowNum, s"${ Headers.AudioVideoSubtitlesLanguage } AV_SUBTITLES specified without AV_SUBTITLES_LANGUAGE").toInvalid.some
       case (Some(_), None, Some(subLang)) =>
         ParseError(row.rowNum, s"Missing value for ${ Headers.AudioVideoSubtitles }, since ${ Headers.AudioVideoSubtitlesLanguage } does have a value: '$subLang'").toInvalid.some
       case (Some(Valid(p)), None, None)
