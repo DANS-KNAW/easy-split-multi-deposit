@@ -57,6 +57,17 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
     )
   )
 
+  private val avFileReferences2 = Seq(
+    AVFileMetadata(
+      filepath = testDir / "md" / "ruimtereis01" / "reisverslag" / "big centaur.mpg",
+      mimeType = "video/mpeg",
+      vocabulary = Video,
+      title = "flyby of centaur",
+      accessibleTo = FileAccessRights.ANONYMOUS,
+      visibleTo = FileAccessRights.ANONYMOUS
+    )
+  )
+
   "checkUserLicenseOnlyWithOpenAccess" should "succeed when accessright=OPEN_ACCESS and user license is given" in {
     val baseDeposit = testInstructions1.toDeposit()
     val deposit = baseDeposit.copy(
@@ -230,5 +241,22 @@ class ParserValidationSpec extends TestSupportFixture with BeforeAndAfterEach wi
 
     validation.checkAllAVFilesHaveSameAccessibility(deposit) shouldBe
       ParseError(2, "Multiple accessibility levels found for A/V files: {ANONYMOUS, RESTRICTED_REQUEST}").toInvalid
+  }
+
+  "checkAllAVFileNamesWithoutSpaces" should "succeed when there are no spaces in A/V filenames" in {
+    val deposit = testInstructions1.toDeposit(avFileReferences).copy(
+      depositId = depositId,
+      springfield = Option(Springfield("domain", "user", "collection", PlayMode.Continuous))
+    )
+    validation.checkAllAVFileNamesWithoutSpaces(deposit).isValid shouldBe true
+  }
+
+  it should "fail when there are spaces in A/V filenames" in {
+    val deposit = testInstructions1.toDeposit(avFileReferences2).copy(
+      depositId = depositId,
+      springfield = Option(Springfield("domain", "user", "collection", PlayMode.Continuous))
+    )
+    validation.checkAllAVFileNamesWithoutSpaces(deposit) shouldBe
+      ParseError(2, "A/V filename 'big centaur.mpg' contains spaces").toInvalid
   }
 }

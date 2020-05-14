@@ -16,6 +16,8 @@
 package nl.knaw.dans.easy.multideposit.parser
 
 import cats.syntax.apply._
+import cats.syntax.traverse._
+import cats.instances.list._
 import nl.knaw.dans.common.lang.dataset.AccessCategory
 import nl.knaw.dans.easy.multideposit.model.{ AVFileMetadata, Deposit }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
@@ -30,6 +32,7 @@ trait ParserValidation extends DebugEnhancedLogging {
       checkSFColumnsIfDepositContainsAVFiles(deposit),
       checkEitherVideoOrAudio(deposit),
       checkAllAVFilesHaveSameAccessibility(deposit),
+      checkAllAVFileNamesWithoutSpaces(deposit),
     ).tupled.map(_ => ())
     // @formatter:on
   }
@@ -90,5 +93,19 @@ trait ParserValidation extends DebugEnhancedLogging {
       case Seq() | Seq(_) => ().toValidated
       case accs => ParseError(deposit.row, s"Multiple accessibility levels found for A/V files: ${ accs.mkString("{", ", ", "}") }").toInvalid
     }
+  }
+
+  def checkAllAVFileNamesWithoutSpaces(deposit: Deposit): Validated[Unit] = {
+    deposit.files.collect { case fmd: AVFileMetadata => fmd.filepath.name }
+      .toList
+      .traverse(name => noSpaces(deposit.row, name))
+      .map(_ => ())
+  }
+
+  private def noSpaces(row: Int, s: String): Validated[String] = {
+    if (!s.contains(' '))
+      s.toValidated
+    else
+      ParseError(row, s"A/V filename '$s' contains spaces").toInvalid
   }
 }
