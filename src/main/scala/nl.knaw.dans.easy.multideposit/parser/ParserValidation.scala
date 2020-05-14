@@ -98,14 +98,14 @@ trait ParserValidation extends DebugEnhancedLogging {
   def checkAllAVFileNamesWithoutSpaces(deposit: Deposit): Validated[Unit] = {
     deposit.files.collect { case fmd: AVFileMetadata => fmd.filepath.name }
       .toList
-      .traverse(name => noSpaces(deposit.row, name))
+      .traverse(noSpaces(deposit.row))
       .map(_ => ())
   }
 
-  private def noSpaces(row: Int, s: String): Validated[String] = {
-    if (!s.contains(' '))
-      s.toValidated
-    else
+  private def noSpaces(row: Int)(s: String): Validated[String] = {
+    if (s.contains(' '))
       ParseError(row, s"A/V filename '$s' contains spaces").toInvalid
+    else
+      s.toValidated
   }
 }
