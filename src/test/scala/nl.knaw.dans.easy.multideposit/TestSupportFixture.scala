@@ -120,7 +120,7 @@ trait TestSupportFixture extends AnyFlatSpec with Matchers with OptionValues wit
         subjects = List(Subject("subject 1", Option("abr:ABRcomplex")), Subject("subject 2"), Subject("subject 3")),
         publishers = List("publisher 1"),
         types = NonEmptyList.of(DcType.STILLIMAGE),
-        identifiers = List(Identifier("id1234")),
+        identifiers = List(Identifier("10.17026/abcdef12345")),
         rightsholder = NonEmptyList.of("Neo"),
       ),
       files = Map(
