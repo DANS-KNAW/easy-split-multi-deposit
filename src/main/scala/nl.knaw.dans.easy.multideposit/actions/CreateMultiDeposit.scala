@@ -29,7 +29,7 @@ class CreateMultiDeposit(formats: Set[String],
                          ldap: Ldap,
                          ffprobe: FfprobeRunner,
                          permissions: DepositPermissions,
-                         dansDoi:String) extends DebugEnhancedLogging {
+                         dansDoiPrefix:String) extends DebugEnhancedLogging {
 
   private val validator = new ValidatePreconditions(ldap, ffprobe)
   private val datamanager = new RetrieveDatamanager(ldap)
@@ -37,7 +37,7 @@ class CreateMultiDeposit(formats: Set[String],
   private val createBag = new AddBagToDeposit()
   private val datasetMetadata = new AddDatasetMetadataToDeposit(formats)
   private val fileMetadata = new AddFileMetadataToDeposit()
-  private val depositProperties = new AddPropertiesToDeposit(dansDoi)
+  private val depositProperties = new AddPropertiesToDeposit(dansDoiPrefix)
   private val setPermissions = new SetDepositPermissions(permissions)
   private val reportDatasets = new ReportDatasets()
   private val moveDeposit = new MoveDepositToOutputDir()

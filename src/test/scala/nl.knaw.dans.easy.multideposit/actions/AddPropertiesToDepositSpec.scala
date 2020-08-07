@@ -29,8 +29,8 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
   private val depositId = "ds1"
   private val datamanagerId = "dm"
   private val datamanagerEmail = "dm@test.org"
-  private val dansDoi = "10.17026/"
-  private val action = new AddPropertiesToDeposit(dansDoi)
+  private val dansDoiPrefix = "10.17026/"
+  private val action = new AddPropertiesToDeposit(dansDoiPrefix)
 
   override def beforeEach(): Unit = {
     val path = stagingDir / s"sd-$depositId"
