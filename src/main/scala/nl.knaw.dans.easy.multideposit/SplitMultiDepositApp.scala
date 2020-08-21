@@ -28,8 +28,8 @@ import nl.knaw.dans.easy.multideposit.model.Datamanager
 import nl.knaw.dans.easy.multideposit.parser.MultiDepositParser
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 
-class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap: Ldap, ffprobe: FfprobeRunner, permissions: DepositPermissions) extends AutoCloseable with DebugEnhancedLogging {
-  private val createMultiDeposit = new CreateMultiDeposit(formats, ldap, ffprobe, permissions)
+class SplitMultiDepositApp(formats: Set[String], userLicenses: Set[String], ldap: Ldap, ffprobe: FfprobeRunner, permissions: DepositPermissions, dansDoiPrefix: String) extends AutoCloseable with DebugEnhancedLogging {
+  private val createMultiDeposit = new CreateMultiDeposit(formats, ldap, ffprobe, permissions, dansDoiPrefix)
 
   override def close(): Unit = ldap.close()
 
@@ -90,7 +90,8 @@ object SplitMultiDepositApp {
       require(exeFile.isExecutable, s"Ffprobe at $exeFile is not executable")
       FfprobeRunner(exeFile)
     }
+    val dansDoiPrefix = configuration.properties.getString("dans.doi.prefix")
 
-    new SplitMultiDepositApp(configuration.formats, configuration.licenses, ldap, ffprobe, permissions)
+    new SplitMultiDepositApp(configuration.formats, configuration.licenses, ldap, ffprobe, permissions, dansDoiPrefix)
   }
 }

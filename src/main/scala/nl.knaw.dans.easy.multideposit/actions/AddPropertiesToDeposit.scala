@@ -22,7 +22,7 @@ import nl.knaw.dans.easy.multideposit.{ ActionError, FailFast, now }
 import nl.knaw.dans.lib.logging.DebugEnhancedLogging
 import org.apache.commons.configuration.PropertiesConfiguration
 
-class AddPropertiesToDeposit extends DebugEnhancedLogging {
+class AddPropertiesToDeposit(dansDoiPrefix: String) extends DebugEnhancedLogging {
 
   def addDepositProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress)(implicit stage: StagingPathExplorer): FailFast[Unit] = {
     logger.debug(s"add deposit properties for ${ deposit.depositId }")
@@ -40,6 +40,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
   }
 
   private def addProperties(deposit: Deposit, datamanagerId: Datamanager, emailaddress: DatamanagerEmailaddress, bagDirName: String)(properties: PropertiesConfiguration): Unit = {
+    val doiAction = if (deposit.baseUUID.isDefined && hasDansDoiPrefix(deposit)) "update" else "create"
     val sf = deposit.springfield
     val props: Map[String, Option[String]] = Map(
       "bag-store.bag-id" -> Some(deposit.bagId.toString),
@@ -56,7 +57,7 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
       "springfield.collection" -> sf.map(_.collection),
       "springfield.playmode" -> sf.map(_.playMode.toString),
       "identifier.dans-doi.registered" -> Some("no"),
-      "identifier.dans-doi.action" -> Some("create"),
+      "identifier.dans-doi.action" -> Some(doiAction),
       "bag-store.bag-name" -> Some(bagDirName),
       "deposit.origin" -> Some("SMD"),
     )
@@ -64,5 +65,14 @@ class AddPropertiesToDeposit extends DebugEnhancedLogging {
     for ((key, value) <- props.collect { case (k, Some(v)) => (k, v) }) {
       properties.setProperty(key, value)
     }
+  }
+
+  private def hasDansDoiPrefix(deposit: Deposit): Boolean = {
+    var exists = false
+    for (identifier <- deposit.metadata.identifiers) {
+      if (identifier.id.startsWith(dansDoiPrefix))
+        exists = true
+    }
+    exists
   }
 }

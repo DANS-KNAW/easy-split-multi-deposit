@@ -29,7 +29,8 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
   private val depositId = "ds1"
   private val datamanagerId = "dm"
   private val datamanagerEmail = "dm@test.org"
-  private val action = new AddPropertiesToDeposit
+  private val dansDoiPrefix = "10.17026/"
+  private val action = new AddPropertiesToDeposit(dansDoiPrefix)
 
   override def beforeEach(): Unit = {
     val path = stagingDir / s"sd-$depositId"
@@ -80,6 +81,52 @@ class AddPropertiesToDepositSpec extends TestSupportFixture with BeforeAndAfterE
     resultProps.getString("curation.performed") shouldBe "yes"
     resultProps.getString("identifier.dans-doi.registered") shouldBe "no"
     resultProps.getString("identifier.dans-doi.action") shouldBe "create"
+    resultProps.getString("deposit.origin") shouldBe "SMD"
+  }
+
+  it should "generate the properties file and write the properties in it with dans-doi.action 'update'" in {
+    val uuid = UUID.randomUUID()
+    action.addDepositProperties(testInstructions2.copy(audioVideo = AudioVideo()).toDeposit().copy(bagId = uuid), datamanagerId, datamanagerEmail) shouldBe right[Unit]
+
+    val props = stagingPropertiesFile(testInstructions2.depositId)
+    props.toJava should exist
+
+    val resultProps = new PropertiesConfiguration {
+      setDelimiterParsingDisabled(true)
+      load(props.toJava)
+    }
+
+    resultProps.getKeys.asScala.toList should {
+      contain only(
+        "bag-store.bag-id",
+        "creation.timestamp",
+        "state.label",
+        "state.description",
+        "depositor.userId",
+        "curation.datamanager.email",
+        "curation.datamanager.userId",
+        "curation.required",
+        "curation.performed",
+        "identifier.dans-doi.registered",
+        "identifier.dans-doi.action",
+        "bag-store.bag-name",
+        "deposit.origin",
+      ) and contain noneOf(
+        "springfield.domain",
+        "springfield.user",
+        "springfield.collection",
+        "springfield.playmode",
+      )
+    }
+
+    resultProps.getString("bag-store.bag-id") shouldBe uuid.toString
+    resultProps.getString("depositor.userId") shouldBe "ruimtereiziger2"
+    resultProps.getString("curation.datamanager.email") shouldBe datamanagerEmail
+    resultProps.getString("curation.datamanager.userId") shouldBe datamanagerId
+    resultProps.getString("curation.required") shouldBe "yes"
+    resultProps.getString("curation.performed") shouldBe "yes"
+    resultProps.getString("identifier.dans-doi.registered") shouldBe "no"
+    resultProps.getString("identifier.dans-doi.action") shouldBe "update"
     resultProps.getString("deposit.origin") shouldBe "SMD"
   }
 
