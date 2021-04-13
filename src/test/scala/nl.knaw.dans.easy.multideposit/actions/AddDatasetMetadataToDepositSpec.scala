@@ -38,8 +38,8 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
     row = 1,
     depositorUserId = "dep",
     profile = Profile(
-      titles = NonEmptyList.of("dataset title"),
-      descriptions = NonEmptyList.of("omschr1"),
+      titles = NonEmptyList.of("dataset title", "title2"), // TODO reject 2nd or put into dcmiMetadata
+      descriptions = NonEmptyList.of("omschr1","omschr2"),
       creators = NonEmptyList.of(
         CreatorPerson(initials = "A.", surname = "Jones", organization = Option("Lorem ipsum dolor sit amet")),
         CreatorOrganization("consectetur adipiscing elit", Some(ContributorRole.SUPERVISOR)),
@@ -76,7 +76,9 @@ class AddDatasetMetadataToDepositSpec extends TestSupportFixture with CustomMatc
     xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/md/ddm/ https://easy.dans.knaw.nl/schemas/md/ddm/ddm.xsd">
       <ddm:profile>
         <dc:title>dataset title</dc:title>
+        <dc:title>title2</dc:title>
         <dcterms:description>omschr1</dcterms:description>
+        <dcterms:description>omschr2</dcterms:description>
         <dcx-dai:creatorDetails>
           <dcx-dai:author>
             <dcx-dai:initials>A.</dcx-dai:initials>
