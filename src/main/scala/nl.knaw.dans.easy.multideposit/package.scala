@@ -67,7 +67,7 @@ package object multideposit {
     @throws[IOException]("in case of an I/O error")
     def writeXml(elem: Elem, encoding: Charset = encoding): Unit = {
       file.parent.createDirectories()
-      XML.save(file.toString, XML.loadString(new PrettyPrinter(160, 2).format(Utility.trim(elem))), encoding.toString, xmlDecl = true)
+      XML.save(file.toString, Utility.trim(elem), encoding.toString, xmlDecl = true)
     }
   }
 }
